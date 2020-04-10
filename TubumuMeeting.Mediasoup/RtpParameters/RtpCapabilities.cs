@@ -13,7 +13,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Supported media and RTX codecs.
         /// </summary>
-        public RtpCodecCapability[]? Codecs { get; set; }
+        public List<RtpCodecCapability>? Codecs { get; set; }
 
         /// <summary>
         /// Supported RTP header extensions.
@@ -25,13 +25,13 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string[]? FecMechanisms { get; set; }
 
-        private static RtpCapabilities _supportedRtpCapabilities;
+        public static RtpCapabilities SupportedRtpCapabilities { get; }
 
         static RtpCapabilities()
         {
-            _supportedRtpCapabilities = new RtpCapabilities
+            SupportedRtpCapabilities = new RtpCapabilities
             {
-                Codecs = new RtpCodecCapability[]
+                Codecs = new List<RtpCodecCapability>
                 {
                     new RtpCodecCapability {
                         Kind = MediaKind.Audio,
@@ -435,11 +435,5 @@ namespace TubumuMeeting.Mediasoup
             };
         }
 
-        public static RtpCapabilities SupportedRtpCapabilities {
-            get
-            {
-                return _supportedRtpCapabilities;
-            }
-        }
     }
 }

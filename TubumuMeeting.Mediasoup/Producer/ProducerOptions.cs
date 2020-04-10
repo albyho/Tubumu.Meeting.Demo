@@ -22,13 +22,13 @@ namespace TubumuMeeting.Mediasoup
 		/// <summary>
 		/// Whether the producer must start in paused mode. Default false.
 		/// </summary>
-		public bool? Paused { get; set; }
+		public bool? Paused { get; set; } = false;
 
 		/// <summary>
 		/// Just for video. Time (in ms) before asking the sender for a new key frame
 		/// after having asked a previous one. Default 0.
 		/// </summary>
-		public int? KeyFrameRequestDelay { get; set; }
+		public int? KeyFrameRequestDelay { get; set; } = 0;
 
 		/// <summary>
 		/// Custom application data.

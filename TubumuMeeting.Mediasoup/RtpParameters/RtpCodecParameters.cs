@@ -9,7 +9,7 @@ namespace TubumuMeeting.Mediasoup
     /// of media codecs supported by mediasoup and their settings is defined in the
     /// supportedRtpCapabilities.ts file.
     /// </summary>
-    public class RtpCodecParameters
+    public class RtpCodecParameters : IEquatable<RtpCodecParameters>
     {
         /// <summary>
         /// The codec MIME media type/subtype (e.g. 'audio/opus', 'video/VP8').
@@ -19,7 +19,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// The value that goes in the RTP Payload Type Field. Must be unique.
         /// </summary>
-        public int payloadType { get; set; }
+        public int PayloadType { get; set; }
 
         /// <summary>
         /// Codec clock rate expressed in Hertz.
@@ -30,7 +30,7 @@ namespace TubumuMeeting.Mediasoup
         /// The number of channels supported (e.g. two for stereo). Just for audio.
         /// Default 1.
         /// </summary>
-        public int? Channel { get; set; } = 1;
+        public int? Channels { get; set; } = 1;
 
         /// <summary>
         /// Codec-specific parameters available for signaling. Some parameters (such
@@ -43,5 +43,27 @@ namespace TubumuMeeting.Mediasoup
         /// Transport layer and codec-specific feedback messages for this codec.
         /// </summary>
         public RtcpFeedback[]? RtcpFeedback { get; set; }
+
+        public bool Equals(RtpCodecParameters other)
+        {
+            if (other == null) return false;
+
+            return (MimeType == other.MimeType)
+                && (PayloadType == other.PayloadType)
+                && (ClockRate == other.ClockRate);
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other is RtpCodecParameters)
+                return Equals((RtpCodecParameters)other);
+            else
+                return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return MimeType.GetHashCode() ^ PayloadType.GetHashCode() ^ ClockRate.GetHashCode();
+        }
     }
 }

@@ -40,7 +40,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// The MID RTP extension value as defined in the BUNDLE specification.
         /// </summary>
-        public string? MID { get; set; }
+        public string? Mid { get; set; }
 
         /// <summary>
         /// Media and RTX codecs in use.
@@ -60,6 +60,6 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Parameters used for RTCP.
         /// </summary>
-        public RtcpParameters? RTCP { get; set; }
+        public RtcpParameters? Rtcp { get; set; }
     }
 }

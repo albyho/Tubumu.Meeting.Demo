@@ -25,12 +25,12 @@ namespace TubumuMeeting.Mediasoup
 		///  When ordered is false indicates the time (in milliseconds) after which a
 		///  SCTP packet will stop being retransmitted.
 		/// </summary>
-		public int? MmaxPacketLifeTime { get; set; }
+		public int? MaxPacketLifeTime { get; set; }
 
 		/// <summary>
 		///  When ordered is false indicates the maximum number of times a packet will
 		///  be retransmitted.
 		/// </summary>
-		public int MaxRetransmits { get; set; }
+		public int? MaxRetransmits { get; set; }
 	}
 }

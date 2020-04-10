@@ -159,7 +159,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Transport was closed.
         /// </summary>
-        private void TransportClosed()
+        public void TransportClosed()
         {
             if (Closed)
                 return;

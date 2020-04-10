@@ -24,11 +24,11 @@ namespace TubumuMeeting.Mediasoup
         /// Whether reduced size RTCP RFC 5506 is configured (if true) or compound RTCP
         /// as specified in RFC 3550 (if false). Default true.
         /// </summary>
-        public bool? ReducedSize { get; set; }
+        public bool? ReducedSize { get; set; } = true;
 
         /// <summary>
         /// Whether RTCP-mux is used. Default true.
         /// </summary>
-        public bool? Mux { get; set; }
+        public bool? Mux { get; set; } = true;
     }
 }

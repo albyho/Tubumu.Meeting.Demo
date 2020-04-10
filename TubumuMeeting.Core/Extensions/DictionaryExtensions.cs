@@ -93,5 +93,22 @@ namespace Tubumu.Core.Extensions
 
             return source;
         }
+
+        public static Dictionary<TKey, TValue> Merge<TKey, TValue>(
+            this IDictionary<TKey, TValue> first,
+            IDictionary<TKey, TValue> second)
+        {
+            var result = new Dictionary<TKey, TValue>();
+            foreach (var key in first.Keys)
+            {
+                first.Add(key, first[key]);
+            }
+            foreach (var key in second.Keys)
+            {
+                first.Add(key, second[key]);
+            }
+            return first;
+        }
+
     }
 }

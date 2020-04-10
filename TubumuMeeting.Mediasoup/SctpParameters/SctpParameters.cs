@@ -7,7 +7,7 @@ namespace TubumuMeeting.Mediasoup
 		/// <summary>
 		/// Must always equal 5000.
 		/// </summary>
-		public int Port { get; set; }
+		public int Port { get; set; } = 5000;
 
 		/// <summary>
 		/// Initially requested number of outgoing SCTP streams.
