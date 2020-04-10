@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29926.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Web", "TubumuMeeting.Web\TubumuMeeting.Web.csproj", "{1D3B66F0-94D8-4FD7-9D18-357BE461623B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Mediasoup", "TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj", "{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Core", "TubumuMeeting.Core\TubumuMeeting.Core.csproj", "{9FD26270-4FD2-4583-AA76-F0D96BC451D0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Libuv", "TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj", "{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Libuv", "Tubumu.Libuv\Tubumu.Libuv.csproj", "{F5502BEE-A1C9-459B-9649-2B9003AE7321}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.AspNetCore.Mediasoup", "TubumuMeeting.AspNetCore.Mediasoup\TubumuMeeting.AspNetCore.Mediasoup.csproj", "{A1626688-249E-4C64-9CCC-94742E852B41}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D3B66F0-94D8-4FD7-9D18-357BE461623B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D3B66F0-94D8-4FD7-9D18-357BE461623B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D3B66F0-94D8-4FD7-9D18-357BE461623B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D3B66F0-94D8-4FD7-9D18-357BE461623B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9FD26270-4FD2-4583-AA76-F0D96BC451D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FD26270-4FD2-4583-AA76-F0D96BC451D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FD26270-4FD2-4583-AA76-F0D96BC451D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FD26270-4FD2-4583-AA76-F0D96BC451D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1626688-249E-4C64-9CCC-94742E852B41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1626688-249E-4C64-9CCC-94742E852B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1626688-249E-4C64-9CCC-94742E852B41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1626688-249E-4C64-9CCC-94742E852B41}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3E07B1BF-B8B0-49F6-BF3E-61B245F7AB1D}
+	EndGlobalSection
+EndGlobal

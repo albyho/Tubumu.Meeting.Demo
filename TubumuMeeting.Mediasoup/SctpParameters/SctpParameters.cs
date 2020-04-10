@@ -1,0 +1,27 @@
+﻿using System;
+
+namespace TubumuMeeting.Mediasoup
+{
+	public class SctpParameters
+	{
+		/// <summary>
+		/// Must always equal 5000.
+		/// </summary>
+		public int Port { get; set; }
+
+		/// <summary>
+		/// Initially requested number of outgoing SCTP streams.
+		/// </summary>
+		public int OS { get; set; }
+
+		/// <summary>
+		/// Maximum number of incoming SCTP streams.
+		/// </summary>
+		public int MIS { get; set; }
+
+		/// <summary>
+		/// Maximum allowed size for SCTP messages.
+		/// </summary>
+		public int MaxMessageSize { get; set; }
+	}
+}
