@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
+using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -11,7 +12,7 @@ namespace TubumuMeeting.Mediasoup
     {
         private static readonly Regex MimeTypeRegex = new Regex(@"^(audio|video)/(.+)");
         private static readonly Regex RtxMimeTypeRegex = new Regex(@"^.+/rtx$");
-        
+
         public static readonly int[] DynamicPayloadTypes = new[] {
             100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
             111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121,
@@ -170,7 +171,7 @@ namespace TubumuMeeting.Mediasoup
             // headerExtensions is optional. If unset, fill with an empty array.
             if (parameters.HeaderExtensions == null)
             {
-                parameters.HeaderExtensions = new RtpHeaderExtensionParameters[0];
+                parameters.HeaderExtensions = new List<RtpHeaderExtensionParameters>();
             }
 
             foreach (var ext in parameters.HeaderExtensions)
@@ -181,7 +182,7 @@ namespace TubumuMeeting.Mediasoup
             // encodings is optional. If unset, fill with an empty array.
             if (parameters.Encodings == null)
             {
-                parameters.Encodings = new RtpEncodingParameters[0];
+                parameters.Encodings = new List<RtpEncodingParameters>();
             }
 
             foreach (var encoding in parameters.Encodings)
@@ -550,87 +551,77 @@ namespace TubumuMeeting.Mediasoup
             var codecToCapCodec = new Dictionary<RtpCodecParameters, RtpCodecCapability>();
 
             foreach (var codec in parameters.Codecs)
-	{
+            {
                 if (IsRtxMimeType(codec.MimeType))
                     continue;
 
                 // Search for the same media codec in capabilities.
                 var matchedCapCodec = caps.Codecs
-                    .Where((capCodec) => MatchCodecs(codec, capCodec, { strict: true, modify: true }));
-			);
+                    .Where(capCodec => MatchCodecs(codec, capCodec, true, true))
+                    .FirstOrDefault();
 
-                if (!matchedCapCodec)
+                if (matchedCapCodec == null)
                 {
-                    throw new UnsupportedError(
-				`unsupported codec[mimeType:${ codec.mimeType }, payloadType:${ codec.payloadType}]`);
+                    throw new Exception($"unsupported codec[mimeType:{ codec.MimeType }, payloadType:{ codec.PayloadType }]");
                 }
-
-                codecToCapCodec.Set(codec, matchedCapCodec);
+                codecToCapCodec[codec] = matchedCapCodec;
             }
 
             // Match parameters RTX codecs to capabilities RTX codecs.
             foreach (var codec in parameters.Codecs)
-	{
-                if (!isRtxCodec(codec))
+            {
+                if (!IsRtxMimeType(codec.MimeType))
                     continue;
 
                 // Search for the associated media codec.
-                const associatedMediaCodec = parameters.Codecs
-                    .find((mediaCodec) => mediaCodec.payloadType === codec.parameters.apt);
+                var associatedMediaCodec = parameters.Codecs
+                    .Where(mediaCodec => MatchCodecsWithPayloadTypeAndApt(mediaCodec.PayloadType, codec.Parameters))
+                    .FirstOrDefault();
 
-                if (!associatedMediaCodec)
+                if (associatedMediaCodec == null)
                 {
-                    throw new TypeError(
-				`missing media codec found for RTX PT ${ codec.payloadType}`);
+                    throw new Exception($"missing media codec found for RTX PT { codec.PayloadType}");
                 }
 
-                const capMediaCodec = codecToCapCodec.get(associatedMediaCodec);
+                var capMediaCodec = codecToCapCodec[associatedMediaCodec];
 
                 // Ensure that the capabilities media codec has a RTX codec.
-                const associatedCapRtxCodec = caps.Codecs
-                    .find((capCodec) => (
-                        isRtxCodec(capCodec) &&
-                        capCodec.parameters.apt === capMediaCodec.preferredPayloadType
-                    ));
+                var associatedCapRtxCodec = caps.Codecs
+                    .Where(capCodec => IsRtxMimeType(capCodec.MimeType) && MatchCodecsWithPayloadTypeAndApt(capMediaCodec.PreferredPayloadType.Value, capCodec.Parameters))
+                    .FirstOrDefault();
 
-                if (!associatedCapRtxCodec)
+                if (associatedCapRtxCodec == null)
                 {
-                    throw new UnsupportedError(
-				`no RTX codec for capability codec PT ${ capMediaCodec.preferredPayloadType}`);
+                    throw new Exception($"no RTX codec for capability codec PT { capMediaCodec.PreferredPayloadType}");
                 }
 
-                codecToCapCodec.Set(codec, associatedCapRtxCodec);
+                codecToCapCodec[codec] = associatedCapRtxCodec;
             }
 
             // Generate codecs mapping.
-            foreach (var[codec, capCodec] in codecToCapCodec)
+            foreach (var item in codecToCapCodec)
             {
-                rtpMapping.Codecs.push(
-        
-            {
-                    payloadType: codec.payloadType,
-				mappedPayloadType: capCodec.preferredPayloadType
-
-            });
-            }
+                rtpMapping.Codecs.Add(new RtpMappingCodec
+                {
+                    PayloadType = item.Key.PayloadType,
+                    MappedPayloadType = item.Value.PreferredPayloadType.Value,
+                });
+            };
 
             // Generate encodings mapping.
-            let mappedSsrc = utils.generateRandomNumber();
+            var mappedSsrc = Utils.GenerateRandomNumber();
 
             foreach (var encoding in parameters.Encodings)
-	{
-                const mappedEncoding: any = { };
+            {
+                var mappedEncoding = new RtpMappingEncoding
+                {
+                    MappedSsrc = mappedSsrc++,
+                    Rid = encoding.Rid,
+                    Ssrc = encoding.Ssrc,
+                    ScalabilityMode = encoding.ScalabilityMode,
+                };
 
-                mappedEncoding.mappedSsrc = mappedSsrc++;
-
-                if (encoding.rid)
-                    mappedEncoding.rid = encoding.rid;
-                if (encoding.Ssrc)
-                    mappedEncoding.Ssrc = encoding.Ssrc;
-                if (encoding.ScalabilityMode)
-                    mappedEncoding.ScalabilityMode = encoding.ScalabilityMode;
-
-                rtpMapping.Encodings.push(mappedEncoding);
+                rtpMapping.Encodings.Add(mappedEncoding);
             }
 
             return rtpMapping;
@@ -640,427 +631,439 @@ namespace TubumuMeeting.Mediasoup
         /// Generate RTP parameters to be internally used by Consumers given the RTP
         /// parameters in a Producer and the RTP capabilities in the Router.
         /// </summary>
-        public getConsumableRtpParameters(
-            kind: string,
-            parameters: RtpParameters,
-            caps: RtpCapabilities,
-            rtpMapping: RtpMapping
-        ) : RtpParameters
-{
-	const consumableParams: RtpParameters =
-	{
-		codecs           : [],
-		headerExtensions : [],
-		encodings        : [],
-		rtcp             : {}
-	};
-
-	foreach(var codec in parameters.Codecs)
-	{
-		if (isRtxCodec(codec))
-			continue;
-
-		const consumableCodecPt = rtpMapping.Codecs
-            .find((entry) => entry.payloadType === codec.payloadType)
-            .mappedPayloadType;
-
-    const matchedCapCodec = caps.Codecs
-        .find((capCodec) => capCodec.preferredPayloadType === consumableCodecPt);
-
-    const consumableCodec =
-    {
-            mimeType     : matchedCapCodec.mimeType,
-            payloadType  : matchedCapCodec.preferredPayloadType,
-            clockRate    : matchedCapCodec.clockRate,
-            channels     : matchedCapCodec.channels,
-            parameters   : codec.parameters, // Keep the Producer codec parameters.
-			rtcpFeedback : matchedCapCodec.rtcpFeedback
-        };
-
-    consumableParams.Codecs.push(consumableCodec);
-
-		const consumableCapRtxCodec = caps.Codecs
-            .find((capRtxCodec) => (
-                isRtxCodec(capRtxCodec) &&
-                capRtxCodec.parameters.apt === consumableCodec.payloadType
-            ));
-
-		if (consumableCapRtxCodec)
-		{
-			const consumableRtxCodec =
+        public static RtpParameters GetConsumableRtpParameters(MediaKind kind, RtpParameters parameters, RtpCapabilities caps, RtpMapping rtpMapping)
+        {
+            var consumableParams = new RtpParameters
             {
-                mimeType     : consumableCapRtxCodec.mimeType,
-                payloadType  : consumableCapRtxCodec.preferredPayloadType,
-                clockRate    : consumableCapRtxCodec.clockRate,
-                parameters   : consumableCapRtxCodec.parameters,
-                rtcpFeedback : consumableCapRtxCodec.rtcpFeedback
+                Codecs = new List<RtpCodecParameters>(),
+                HeaderExtensions = new List<RtpHeaderExtensionParameters>(),
+                Encodings = new List<RtpEncodingParameters>(),
+                Rtcp = new RtcpParameters(),
             };
 
-    consumableParams.Codecs.push(consumableRtxCodec);
-		}
-	}
+            foreach (var codec in parameters.Codecs)
+            {
+                if (IsRtxMimeType(codec.MimeType))
+                    continue;
 
-	foreach(var capExt in caps.HeaderExtensions)
-	{
+                var consumableCodecPt = rtpMapping.Codecs
+                    .Where(entry => entry.PayloadType == codec.PayloadType)
+                    .Select(m => m.MappedPayloadType)
+                    .FirstOrDefault();
 
-		// Just take RTP header extension that can be used in Consumers.
-		if (
-            capExt.kind !== kind ||
-			(capExt.direction !== 'sendrecv' && capExt.direction !== 'sendonly')
-		)
-		{
-			continue;
-		}
+                var matchedCapCodec = caps.Codecs
+                    .Where(capCodec => capCodec.PreferredPayloadType == consumableCodecPt)
+                    .FirstOrDefault();
 
-		const consumableExt =
+                var consumableCodec = new RtpCodecParameters
+                {
+                    MimeType = matchedCapCodec.MimeType,
+                    PayloadType = matchedCapCodec.PreferredPayloadType.Value,
+                    ClockRate = matchedCapCodec.ClockRate,
+                    Channels = matchedCapCodec.Channels,
+                    Parameters = codec.Parameters, // Keep the Producer codec parameters.
+                    RtcpFeedback = matchedCapCodec.RtcpFeedback
+                };
+
+                consumableParams.Codecs.Add(consumableCodec);
+
+                var consumableCapRtxCodec = caps.Codecs
+                    .Where(capRtxCodec => IsRtxMimeType(capRtxCodec.MimeType) && MatchCodecsWithPayloadTypeAndApt(consumableCodec.PayloadType, capRtxCodec.Parameters))
+                    .FirstOrDefault();
+
+                if (consumableCapRtxCodec != null)
+                {
+                    var consumableRtxCodec = new RtpCodecParameters
+                    {
+                        MimeType = consumableCapRtxCodec.MimeType,
+                        PayloadType = consumableCapRtxCodec.PreferredPayloadType.Value,
+                        ClockRate = consumableCapRtxCodec.ClockRate,
+                        Channels = consumableCapRtxCodec.Channels,
+                        Parameters = consumableCapRtxCodec.Parameters, // Keep the Producer codec parameters.
+                        RtcpFeedback = consumableCapRtxCodec.RtcpFeedback
+                    };
+
+                    consumableParams.Codecs.Add(consumableRtxCodec);
+                }
+            }
+
+            foreach (var capExt in caps.HeaderExtensions)
+            {
+
+                // Just take RTP header extension that can be used in Consumers.
+                if (capExt.Kind != kind || (capExt.Direction != RtpHeaderExtensionDirection.SendReceive && capExt.Direction != RtpHeaderExtensionDirection.SendOnly))
+                {
+                    continue;
+                }
+
+                var consumableExt = new RtpHeaderExtensionParameters
+                {
+                    Uri = capExt.Uri,
+                    Id = capExt.PreferredId,
+                    Encrypt = capExt.PreferredEncrypt,
+                    Parameters = new Dictionary<string, object>(),
+                };
+
+                consumableParams.HeaderExtensions.Add(consumableExt);
+            }
+
+            // Clone Producer encodings since we'll mangle them.
+            var consumableEncodings = parameters.Encodings.DeepClone<List<RtpEncodingParameters>>();
+
+            foreach (var consumableEncoding in consumableEncodings)
+            {
+            }
+            for (var i = 0; i < consumableEncodings.Count; ++i)
+            {
+                var consumableEncoding = consumableEncodings[i];
+                var mappedSsrc = rtpMapping.Encodings[i].MappedSsrc;
+
+                // Remove useless fields.
+                consumableEncoding.Rid = null;
+                consumableEncoding.Rtx = null;
+                consumableEncoding.CodecPayloadType = null;
+
+                // Set the mapped ssrc.
+                consumableEncoding.Ssrc = mappedSsrc;
+
+                consumableParams.Encodings.Add(consumableEncoding);
+            }
+
+            consumableParams.Rtcp = new RtcpParameters
+            {
+                CNAME = parameters.Rtcp.CNAME,
+                ReducedSize = true,
+                Mux = true,
+            };
+
+            return consumableParams;
+        }
+
+        /// <summary>
+        /// Check whether the given RTP capabilities can consume the given Producer.
+        /// </summary>
+        public static bool CanConsume(RtpParameters consumableParams, RtpCapabilities caps)
         {
-            uri        : capExt.uri,
-            id         : capExt.preferredId,
-            encrypt    : capExt.preferredEncrypt,
-            parameters : {}
-        };
-
-consumableParams.HeaderExtensions.push(consumableExt);
-	}
-
-	// Clone Producer encodings since we'll mangle them.
-	const consumableEncodings = utils.clone(parameters.Encodings) as RtpEncodingParameters[];
-
-	for (let i = 0; i<consumableEncodings.length; ++i)
-	{
-		const consumableEncoding = consumableEncodings[i];
-const { mappedSsrc } = rtpMapping.Encodings[i];
-
-		// Remove useless fields.
-		delete consumableEncoding.rid;
-delete consumableEncoding.rtx;
-delete consumableEncoding.codecPayloadType;
-
-// Set the mapped ssrc.
-consumableEncoding.Ssrc = mappedSsrc;
-
-		consumableParams.Encodings.push(consumableEncoding);
-	}
-
-	consumableParams.rtcp =
-	{
-		cname       : parameters.rtcp.cname,
-		reducedSize : true,
-		mux         : true
-	};
-
-	return consumableParams;
-}
-
-/// <summary>
- /// Check whether the given RTP capabilities can consume the given Producer.
- /// </summary>
-public canConsume(
-    consumableParams: RtpParameters,
-    caps: RtpCapabilities
-) : boolean
-{
-	// This may throw.
-	ValidateRtpCapabilities(caps);
-
-const matchingCodecs: RtpCodecParameters[] = [];
-
-	foreach(var codec in consumableParams.Codecs)
-	{
-		const matchedCapCodec = caps.Codecs
-            .find((capCodec) => matchCodecs(capCodec, codec, { strict: true }));
-
-		if (!matchedCapCodec)
-			continue;
-
-		matchingCodecs.push(codec);
-	}
-
-	// Ensure there is at least one media codec.
-	if (matchingCodecs.length === 0 || isRtxCodec(matchingCodecs[0]))
-		return false;
-
-	return true;
-}
-
-/// <summary>
- /// Generate RTP parameters for a specific Consumer.
- ///
- /// It reduces encodings to just one and takes into account given RTP capabilities
- /// to reduce codecs, codecs' RTCP feedback and header extensions, and also enables
- /// or disabled RTX.
- /// </summary>
-public getConsumerRtpParameters(
-    consumableParams: RtpParameters,
-    caps: RtpCapabilities
-) : RtpParameters
-{
-	const consumerParams: RtpParameters =
-	{
-		codecs           : [],
-		headerExtensions : [],
-		encodings        : [],
-		rtcp             : consumableParams.rtcp
-	};
-
-	foreach(var capCodec in caps.Codecs)
-	{
-		ValidateRtpCodecCapability(capCodec);
-	}
-
-	const consumableCodecs =
-        utils.clone(consumableParams.Codecs) as RtpCodecParameters[];
-
-let rtxSupported = false;
-
-	foreach(var codec in consumableCodecs)
-	{
-		const matchedCapCodec = caps.Codecs
-            .find((capCodec) => matchCodecs(capCodec, codec, { strict: true }));
-
-		if (!matchedCapCodec)
-			continue;
-
-		codec.rtcpFeedback = matchedCapCodec.rtcpFeedback;
-
-		consumerParams.Codecs.push(codec);
-
-		if (!rtxSupported && isRtxCodec(codec))
-			rtxSupported = true;
-	}
-
-	// Ensure there is at least one media codec.
-	if (consumerParams.Codecs.length === 0 || isRtxCodec(consumerParams.Codecs[0]))
-	{
-		throw new UnsupportedError('no compatible media codecs');
-	}
-
-	consumerParams.HeaderExtensions = consumableParams.HeaderExtensions
-        .filter((ext) => (
-            caps.HeaderExtensions
-                .Some((capExt) => (
-                    capExt.preferredId === ext.id &&
-					capExt.uri === ext.uri
-				))
-		));
-
-	// Reduce codecs' RTCP feedback. Use Transport-CC if available, REMB otherwise.
-	if (
-        consumerParams.HeaderExtensions.Some((ext) => (
-            ext.uri === 'http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01'
-		))
-	)
-	{
-		foreach(var codec in consumerParams.Codecs)
-		{
-			codec.rtcpFeedback = (codec.rtcpFeedback)
-				.filter((fb) => fb.type !== 'goog-remb');
-		}
-	}
-	else if (
-        consumerParams.HeaderExtensions.Some((ext) => (
-            ext.uri === 'http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time'
-		))
-	)
-	{
-		foreach(var codec in consumerParams.Codecs)
-		{
-			codec.rtcpFeedback = (codec.rtcpFeedback)
-				.filter((fb) => fb.type !== 'transport-cc');
-		}
-	}
-	else
-	{
-		foreach(var codec in consumerParams.Codecs)
-		{
-			codec.rtcpFeedback = (codec.rtcpFeedback)
-				.filter((fb) => (
-                    fb.type !== 'transport-cc' &&
-
-                    fb.type !== 'goog-remb'
-				));
-		}
-	}
-
-	const consumerEncoding: RtpEncodingParameters =
-	{
-		ssrc : utils.generateRandomNumber()
-	};
-
-	if (rtxSupported)
-        consumerEncoding.rtx = { ssrc: utils.generateRandomNumber() };
-
-// If any in the consumableParams.Encodings has scalabilityMode, process it
-// (assume all encodings have the same value).
-const encodingWithScalabilityMode =
-    consumableParams.Encodings.find((encoding) => encoding.ScalabilityMode);
-
-let scalabilityMode = encodingWithScalabilityMode
-    ? encodingWithScalabilityMode.ScalabilityMode
-    : undefined;
-
-	// If there is simulast, mangle spatial layers in scalabilityMode.
-	if (consumableParams.Encodings.length > 1)
-	{
-		const { temporalLayers } = parseScalabilityMode(scalabilityMode);
-
-scalabilityMode = `S${consumableParams.Encodings.length}T${temporalLayers}`;
-	}
-
-	if (scalabilityMode)
-        consumerEncoding.ScalabilityMode = scalabilityMode;
-
-// Set a single encoding for the Consumer.
-consumerParams.Encodings.push(consumerEncoding);
-
-	// Copy verbatim.
-	consumerParams.rtcp = consumableParams.rtcp;
-
-	return consumerParams;
-}
-
-/// <summary>
- /// Generate RTP parameters for a pipe Consumer.
- ///
- /// It keeps all original consumable encodings and removes support for BWE. If
- /// enableRtx is false, it also removes RTX and NACK support.
- /// </summary>
-public getPipeConsumerRtpParameters(
-    consumableParams: RtpParameters,
-    enableRtx = false
-) : RtpParameters
-{
-	const consumerParams: RtpParameters =
-	{
-		codecs           : [],
-		headerExtensions : [],
-		encodings        : [],
-		rtcp             : consumableParams.rtcp
-	};
-
-	const consumableCodecs =
-        utils.clone(consumableParams.Codecs) as RtpCodecParameters[];
-
-	foreach(var codec in consumableCodecs)
-	{
-		if (!enableRtx && isRtxCodec(codec))
-			continue;
-
-		codec.rtcpFeedback = codec.rtcpFeedback
-            .filter((fb) => (
-                (fb.type === 'nack' && fb.parameter === 'pli') ||
-				(fb.type === 'ccm' && fb.parameter === 'fir') ||
-				(enableRtx && fb.type === 'nack' && !fb.parameter)
-			));
-
-		consumerParams.Codecs.push(codec);
-	}
-
-	// Reduce RTP extensions by disabling transport MID and BWE related ones.
-	consumerParams.HeaderExtensions = consumableParams.HeaderExtensions
-        .filter((ext) => (
-            ext.uri !== 'urn:ietf:parameters:rtp-hdrext:sdes:mid' &&
-			ext.uri !== 'http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time' &&
-			ext.uri !== 'http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01'
-		));
-
-	const consumableEncodings =
-        utils.clone(consumableParams.Encodings) as RtpEncodingParameters[];
-
-	foreach(var encoding in consumableEncodings)
-	{
-		if (!enableRtx)
-			delete encoding.rtx;
-
-consumerParams.Encodings.push(encoding);
-	}
-
-	return consumerParams;
-}
-
-public static bool IsRtxMimeType(string mimeType)
-{
-    return RtxMimeTypeRegex.IsMatch(mimeType);
-}
-
-public static bool MatchCodecs(
-    aCodec: RtpCodecCapability | RtpCodecParameters,
-    bCodec: RtpCodecCapability | RtpCodecParameters,
-
-    { strict = false, modify = false } = {}
-): boolean
-{
-	const aMimeType = aCodec.mimeType.toLowerCase();
-const bMimeType = bCodec.mimeType.toLowerCase();
-
-	if (aMimeType !== bMimeType)
-		return false;
-
-	if (aCodec.clockRate !== bCodec.clockRate)
-		return false;
-
-	if (aCodec.channels !== bCodec.channels)
-		return false;
-
-	// Per codec special checks.
-	switch (aMimeType)
-	{
-		case 'video/h264':
-		{
-			const aPacketizationMode = aCodec.parameters['packetization-mode'] || 0;
-const bPacketizationMode = bCodec.parameters['packetization-mode'] || 0;
-
-			if (aPacketizationMode !== bPacketizationMode)
-				return false;
-
-			// If strict matching check profile-level-id.
-			if (strict)
-			{
-				if (!h264.isSameProfile(aCodec.parameters, bCodec.parameters))
-					return false;
-
-				let selectedProfileLevelId;
-
-				try
-				{
-					selectedProfileLevelId =
-						h264.generateProfileLevelIdForAnswer(aCodec.parameters, bCodec.parameters);
-				}
-				catch (error)
-				{
-					return false;
-				}
-
-				if (modify)
-				{
-					if (selectedProfileLevelId)
-                        aCodec.parameters['profile-level-id'] = selectedProfileLevelId;
-					else
-						delete aCodec.parameters['profile-level-id'];
-				}
-			}
-
-			break;
-		}
-
-		case 'video/vp9':
-		{
-			// If strict matching check profile-id.
-			if (strict)
-			{
-				const aProfileId = aCodec.parameters['profile-id'] || 0;
-const bProfileId = bCodec.parameters['profile-id'] || 0;
-
-				if (aProfileId !== bProfileId)
-					return false;
-			}
-
-			break;
-		}
-	}
-
-	return true;
-}
+            // This may throw.
+            ValidateRtpCapabilities(caps);
+
+            var matchingCodecs = new List<RtpCodecParameters>();
+
+            foreach (var codec in consumableParams.Codecs)
+            {
+                var matchedCapCodec = caps.Codecs
+                    .Where(capCodec => MatchCodecs(capCodec, codec, true))
+                    .FirstOrDefault();
+
+                if (matchedCapCodec == null)
+                    continue;
+
+                matchingCodecs.Add(codec);
+            }
+
+            // Ensure there is at least one media codec.
+            if (matchingCodecs.Count == 0 || IsRtxMimeType(matchingCodecs[0].MimeType))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Generate RTP parameters for a specific Consumer.
+        ///
+        /// It reduces encodings to just one and takes into account given RTP capabilities
+        /// to reduce codecs, codecs' RTCP feedback and header extensions, and also enables
+        /// or disabled RTX.
+        /// </summary>
+        public static RtpParameters GetConsumerRtpParameters(RtpParameters consumableParams, RtpCapabilities caps)
+        {
+            var consumerParams = new RtpParameters
+            {
+                Codecs = new List<RtpCodecParameters>(),
+                HeaderExtensions = new List<RtpHeaderExtensionParameters>(),
+                Encodings = new List<RtpEncodingParameters>(),
+                Rtcp = consumableParams.Rtcp
+            };
+
+            foreach (var capCodec in caps.Codecs)
+            {
+                ValidateRtpCodecCapability(capCodec);
+            }
+
+            var consumableCodecs = consumableParams.Codecs.DeepClone<List<RtpCodecParameters>>();
+            var rtxSupported = false;
+
+            foreach (var codec in consumableCodecs)
+            {
+                var matchedCapCodec = caps.Codecs
+                    .Where(capCodec => MatchCodecs(capCodec, codec, true))
+                    .FirstOrDefault();
+
+                if (matchedCapCodec == null)
+                    continue;
+
+                codec.RtcpFeedback = matchedCapCodec.RtcpFeedback;
+
+                consumerParams.Codecs.Add(codec);
+
+                if (!rtxSupported && IsRtxMimeType(codec.MimeType))
+                    rtxSupported = true;
+            }
+
+            // Ensure there is at least one media codec.
+            if (consumerParams.Codecs.Count == 0 || IsRtxMimeType(consumerParams.Codecs[0].MimeType))
+            {
+                throw new Exception("no compatible media codecs");
+            }
+
+            consumerParams.HeaderExtensions = consumableParams.HeaderExtensions
+                .Where(ext =>
+                    caps.HeaderExtensions
+                        .Any(capExt => capExt.PreferredId == ext.Id && capExt.Uri == ext.Uri)
+                ).ToList();
+
+            // Reduce codecs' RTCP feedback. Use Transport-CC if available, REMB otherwise.
+            if (consumerParams.HeaderExtensions.Any(ext => ext.Uri == "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"))
+            {
+                foreach (var codec in consumerParams.Codecs)
+                {
+                    codec.RtcpFeedback = codec.RtcpFeedback.Where(fb => fb.Type != "goog-remb").ToArray();
+                }
+            }
+            else if (consumerParams.HeaderExtensions.Any(ext => ext.Uri == "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"))
+            {
+                foreach (var codec in consumerParams.Codecs)
+                {
+                    codec.RtcpFeedback = codec.RtcpFeedback.Where(fb => fb.Type != "transport-cc").ToArray();
+                }
+            }
+            else
+            {
+                foreach (var codec in consumerParams.Codecs)
+                {
+                    codec.RtcpFeedback = codec.RtcpFeedback.Where(fb => fb.Type != "transport-cc" && fb.Type != "goog-remb").ToArray();
+                }
+            }
+
+            var consumerEncoding = new RtpEncodingParameters
+            {
+                Ssrc = Utils.GenerateRandomNumber()
+
+            };
+
+            if (rtxSupported)
+            {
+                consumerEncoding.Rtx = new Rtx { Ssrc = Utils.GenerateRandomNumber() };
+            }
+
+            // If any in the consumableParams.Encodings has scalabilityMode, process it
+            // (assume all encodings have the same value).
+            var encodingWithScalabilityMode = consumableParams.Encodings.Where(encoding => !encoding.ScalabilityMode.IsNullOrWhiteSpace()).FirstOrDefault();
+
+            var scalabilityMode = encodingWithScalabilityMode != null
+                ? encodingWithScalabilityMode.ScalabilityMode
+                : null;
+
+            // If there is simulast, mangle spatial layers in scalabilityMode.
+            if (consumableParams.Encodings.Count > 1)
+            {
+                var scalabilityModeObject = ScalabilityMode.Parse(scalabilityMode);
+
+                scalabilityMode = $"S{ consumableParams.Encodings.Count}T{ scalabilityModeObject.TemporalLayers }";
+            }
+
+            if (!scalabilityMode.IsNullOrWhiteSpace())
+            {
+                consumerEncoding.ScalabilityMode = scalabilityMode;
+            }
+
+            // Set a single encoding for the Consumer.
+            consumerParams.Encodings.Add(consumerEncoding);
+
+            // Copy verbatim.
+            consumerParams.Rtcp = consumableParams.Rtcp;
+
+            return consumerParams;
+        }
+
+        /// <summary>
+        /// Generate RTP parameters for a pipe Consumer.
+        ///
+        /// It keeps all original consumable encodings and removes support for BWE. If
+        /// enableRtx is false, it also removes RTX and NACK support.
+        /// </summary>
+        public static RtpParameters GetPipeConsumerRtpParameters(RtpParameters consumableParams, bool enableRtx = false)
+        {
+            var consumerParams = new RtpParameters
+            {
+                Codecs = new List<RtpCodecParameters>(),
+                HeaderExtensions = new List<RtpHeaderExtensionParameters>(),
+                Encodings = new List<RtpEncodingParameters>(),
+                Rtcp = consumableParams.Rtcp
+            };
+
+            var consumableCodecs = consumableParams.Codecs.DeepClone<List<RtpCodecParameters>>();
+
+            foreach (var codec in consumableCodecs)
+            {
+                if (!enableRtx && IsRtxMimeType(codec.MimeType))
+                    continue;
+
+                codec.RtcpFeedback = codec.RtcpFeedback
+                    .Where(fb => 
+                        (fb.Type == "nack" && fb.Parameter == "pli") ||
+                        (fb.Type == "ccm" && fb.Parameter == "fir") ||
+                        (enableRtx && fb.Type == "nack" && fb.Parameter.IsNullOrWhiteSpace())
+                    ).ToArray();
+
+                consumerParams.Codecs.Add(codec);
+            }
+
+            // Reduce RTP extensions by disabling transport MID and BWE related ones.
+            consumerParams.HeaderExtensions = consumableParams.HeaderExtensions
+                .Where(ext => (
+                    ext.Uri != "urn:ietf:parameters:rtp-hdrext:sdes:mid" &&
+                        ext.Uri != "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" &&
+                        ext.Uri != "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
+                    )).ToList();
+
+            var consumableEncodings = consumableParams.Encodings.DeepClone<List<RtpEncodingParameters>>();
+
+            foreach (var encoding in consumableEncodings)
+            {
+                if (!enableRtx)
+                    encoding.Rtx = null;
+
+                consumerParams.Encodings.Add(encoding);
+            }
+
+            return consumerParams;
+        }
+
+        public static bool IsRtxMimeType(string mimeType)
+        {
+            return RtxMimeTypeRegex.IsMatch(mimeType);
+        }
+
+        private static bool CheckDirectoryValueEquals(IDictionary<string, object> a, IDictionary<string, object> b, string key)
+        {
+            if (a != null && b != null)
+            {
+                var got1 = a.TryGetValue(key, out var aPacketizationMode);
+                var got2 = b.TryGetValue(key, out var bPacketizationMode);
+                if (got1 && got2)
+                {
+                    if (aPacketizationMode.Equals(bPacketizationMode))
+                        return false;
+                }
+                else if ((got1 && !got2) || (!got1 && got2))
+                {
+                    return false;
+                }
+            }
+            else if (a != null && b == null)
+            {
+                var got = a.TryGetValue("packetization-mode", out var _);
+                if (got)
+                {
+                    return false;
+                }
+            }
+            else if (a == null && b != null)
+            {
+                var got = b.TryGetValue("packetization-mode", out var _);
+                if (got)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static bool MatchCodecs(RtpCodecBase aCodec, RtpCodecBase bCodec, bool strict = false, bool modify = false)
+        {
+            var aMimeType = aCodec.MimeType.ToLower();
+            var bMimeType = bCodec.MimeType.ToLower();
+
+            if (aMimeType != bMimeType)
+                return false;
+
+            if (aCodec.ClockRate != bCodec.ClockRate)
+                return false;
+
+            if (aCodec.Channels != bCodec.Channels)
+                return false;
+
+            // Per codec special checks.
+            switch (aMimeType)
+            {
+                case "video/h264":
+                    {
+                        if (!CheckDirectoryValueEquals(aCodec.Parameters, aCodec.Parameters, "packetization-mode"))
+                        {
+                            return false;
+                        }
+                        // If strict matching check profile-level-id.
+                        if (strict)
+                        {
+                            if (!H264ProfileLevelId.IsSameProfile(aCodec.Parameters, bCodec.Parameters))
+                                return false;
+
+                            string selectedProfileLevelId;
+
+                            try
+                            {
+                                selectedProfileLevelId = H264ProfileLevelId.GenerateProfileLevelIdForAnswer(aCodec.Parameters, bCodec.Parameters);
+                            }
+                            catch (Exception)
+                            {
+                                return false;
+                            }
+
+                            if (modify)
+                            {
+                                if (!selectedProfileLevelId.IsNullOrWhiteSpace())
+                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;
+                                else
+                                    aCodec.Parameters.Remove("profile-level-id");
+                            }
+                        }
+
+                        break;
+                    }
+
+                case "video/vp9":
+                    {
+                        // If strict matching check profile-id.
+                        if (strict)
+                        {
+                            if (!CheckDirectoryValueEquals(aCodec.Parameters, aCodec.Parameters, "profile-id"))
+                            {
+                                return false;
+                            }
+                        }
+
+                        break;
+                    }
+            }
+
+            return true;
+        }
+
+        public static bool MatchCodecsWithPayloadTypeAndApt(int payloadType, IDictionary<string, object> parameters)
+        {
+            if (parameters == null) return false;
+            if (!parameters.TryGetValue("apt", out var apt))
+            {
+                return false;
+            }
+            var apiInteger = (int)apt;
+            if (payloadType != apiInteger)
+            {
+                return false;
+            }
+            return true;
+        }
 
     }
 }

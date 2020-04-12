@@ -45,17 +45,17 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Media and RTX codecs in use.
         /// </summary>
-        public RtpCodecParameters[] Codecs { get; set; }
+        public List<RtpCodecParameters> Codecs { get; set; }
 
         /// <summary>
         /// RTP header extensions in use.
         /// </summary>
-        public RtpHeaderExtensionParameters[]? HeaderExtensions { get; set; }
+        public List<RtpHeaderExtensionParameters>? HeaderExtensions { get; set; }
 
         /// <summary>
         /// Transmitted RTP streams and their settings.
         /// </summary>
-        public RtpEncodingParameters[]? Encodings { get; set; }
+        public List<RtpEncodingParameters>? Encodings { get; set; }
 
         /// <summary>
         /// Parameters used for RTCP.

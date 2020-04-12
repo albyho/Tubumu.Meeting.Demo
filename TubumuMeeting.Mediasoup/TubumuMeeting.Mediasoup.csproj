@@ -21,8 +21,6 @@
   <ItemGroup>
     <Folder Include="SctpParameters\" />
     <Folder Include="SrtpParameters\" />
-    <Folder Include="RtpParameters\" />
-    <Folder Include="PlainTransport\" />
     <Folder Include="Exceptions\" />
   </ItemGroup>
   <ItemGroup>

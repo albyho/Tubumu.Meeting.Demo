@@ -16,7 +16,7 @@
         /// <summary>
         /// Interval in ms for checking audio volumes. Default 1000.
         /// </summary>
-        public int? Interval = 1000;
+        public int? Interval { get; set; } = 1000;
 
         /// <summary>
         /// Custom application data.

@@ -14,11 +14,14 @@ namespace TubumuMeeting.Mediasoup
 		[EnumStringValue("rtp")]
 		RTP,
 
+		/// <summary>
+		/// 关键帧
+		/// </summary>
 		[EnumStringValue("keyframe")]
 		Keyframe,
 
 		/// <summary>
-		/// 关键帧
+		/// NACK
 		/// </summary>
 		[EnumStringValue("nack")]
 		nack,

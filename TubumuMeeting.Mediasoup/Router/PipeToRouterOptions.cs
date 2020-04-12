@@ -27,7 +27,7 @@ namespace TubumuMeeting.Mediasoup
 		/// <summary>
 		/// Create a SCTP association. Default false.
 		/// </summary>
-		public bool? EnableSctp { get; set; }
+		public bool? EnableSctp { get; set; } = false;
 
 		/// <summary>
 		/// SCTP streams number.

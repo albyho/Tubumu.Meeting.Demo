@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
+using Tubumu.Core.Extensions.Object;
 using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
@@ -11,6 +13,7 @@ namespace TubumuMeeting.Mediasoup
     public abstract class Transport
     {
         // Logger
+        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<Transport> _logger;
 
         #region Internal data.
@@ -77,10 +80,10 @@ namespace TubumuMeeting.Mediasoup
         private string? _cnameForProducers;
 
         // Next MID for Consumers. It's converted into string when used.
-        private int _nextMidForConsumers;
+        private int _nextMidForConsumers = 0;
 
         // Buffer with available SCTP stream ids.
-        private byte[]? _sctpStreamIds;
+        private int[]? _sctpStreamIds;
 
         // Next SCTP stream id.
         private int _nextSctpStreamId;
@@ -96,29 +99,29 @@ namespace TubumuMeeting.Mediasoup
 
         public event Action? CloseEvent;
 
-        public event Action<Producer>? NewProducer;
+        public event Action<Producer>? NewProducerEvent;
 
         public event Action<Producer>? ProducerCloseEvent;
 
-        public event Action<DataProducer>? NewDataProducer;
+        public event Action<DataProducer>? NewDataProducerEvent;
 
         public event Action<DataProducer>? DataProducerCloseEvent;
 
         #endregion
 
-        public Transport(Logger<Transport> logger,
+        public Transport(ILoggerFactory loggerFactory,
             string routerId,
             string transportId,
             SctpParameters sctpParameters,
             SctpState sctpState,
-            RtpParameters consumableRtpParameters,
             Channel channel,
             object? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
             Func<string, Producer> getProducerById,
             Func<string, DataProducer> getDataProducerById)
         {
-            _logger = logger;
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<Transport>();
             RouterId = routerId;
             TransportId = transportId;
             _internal = new
@@ -262,7 +265,12 @@ namespace TubumuMeeting.Mediasoup
             return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS.GetEnumStringValue(), _internal);
         }
 
-        public abstract Task Connect(object @params);
+        /// <summary>
+        /// Provide the Transport remote parameters.
+        /// </summary>
+        /// <param name="params"></param>
+        /// <returns></returns>
+        public abstract Task ConnectAsync(object @params);
 
         /// <summary>
         /// Set maximum incoming bitrate for receiving media.
@@ -280,11 +288,11 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Create a Producer.
         /// </summary>
-        public Task<Producer> ProduceAsync(ProducerOptions producerOptions)
+        public async Task<Producer> ProduceAsync(ProducerOptions producerOptions)
         {
             _logger.LogDebug("ProduceAsync()");
 
-            if(!producerOptions.Id.IsNullOrWhiteSpace() && Producers.ContainsKey(producerOptions.Id!))
+            if (!producerOptions.Id.IsNullOrWhiteSpace() && Producers.ContainsKey(producerOptions.Id!))
             {
                 throw new Exception($"a Producer with same id \"{ producerOptions.Id }\" already exists");
             }
@@ -296,7 +304,7 @@ namespace TubumuMeeting.Mediasoup
             // TODO: (alby)注意检查这样做是否合适
             if (producerOptions.RtpParameters.Encodings.IsNullOrEmpty())
             {
-                producerOptions.RtpParameters.Encodings = new RtpEncodingParameters[0];
+                producerOptions.RtpParameters.Encodings = new List<RtpEncodingParameters>();
             }
 
             // Don't do this in PipeTransports since there we must keep CNAME value in
@@ -305,7 +313,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 // If CNAME is given and we don't have yet a CNAME for Producers in this
                 // Transport, take it.
-                if (_cnameForProducers.IsNullOrWhiteSpace() && producerOptions.RtpParameters.Rtcp!=null && !producerOptions.RtpParameters.Rtcp.CNAME.IsNullOrWhiteSpace())
+                if (_cnameForProducers.IsNullOrWhiteSpace() && producerOptions.RtpParameters.Rtcp != null && !producerOptions.RtpParameters.Rtcp.CNAME.IsNullOrWhiteSpace())
                 {
                     _cnameForProducers = producerOptions.RtpParameters.Rtcp.CNAME;
                 }
@@ -313,7 +321,7 @@ namespace TubumuMeeting.Mediasoup
                 // do not include CNAME, create a random one.
                 else if (_cnameForProducers.IsNullOrWhiteSpace())
                 {
-                    this._cnameForProducers = Guid.NewGuid().ToString().Substring(0, 8);
+                    _cnameForProducers = Guid.NewGuid().ToString().Substring(0, 8);
                 }
 
                 // Override Producer's CNAME.
@@ -328,141 +336,319 @@ namespace TubumuMeeting.Mediasoup
             var rtpMapping = ORTC.GetProducerRtpParametersMapping(producerOptions.RtpParameters, routerRtpCapabilities);
 
             // This may throw.
-            const consumableRtpParameters = ORTC.GetConsumableRtpParameters(kind, rtpParameters, routerRtpCapabilities, rtpMapping);
+            var consumableRtpParameters = ORTC.GetConsumableRtpParameters(producerOptions.Kind, producerOptions.RtpParameters, routerRtpCapabilities, rtpMapping);
 
-            const internal = { ...this._internal, producerId: id || uuidv4() };
-        const reqData = { kind, rtpParameters, rtpMapping, keyFrameRequestDelay, paused };
+            var @internal = new
+            {
+                RouterId,
+                TransportId,
+                ProducerId = producerOptions.Id.IsNullOrWhiteSpace() ? Guid.NewGuid().ToString() : producerOptions.Id!,
+            };
+            var reqData = new
+            {
+                producerOptions.Kind,
+                producerOptions.RtpParameters,
+                RtpMapping = rtpMapping,
+                producerOptions.KeyFrameRequestDelay,
+                producerOptions.Paused,
+            };
 
-        const status =
-            await this._channel.request('transport.produce', internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE.GetEnumStringValue(), @internal, reqData);
+            var transportProduceResponseData = JsonConvert.DeserializeObject<TransportProduceResponseData>(status);
+            var data = new
+            {
+                producerOptions.Kind,
+                producerOptions.RtpParameters,
+                transportProduceResponseData.Type,
+                ConsumableRtpParameters = consumableRtpParameters
+            };
 
-		const data =
+            var producer = new Producer(_loggerFactory,
+                @internal.RouterId,
+                @internal.TransportId,
+                @internal.ProducerId,
+                data.Kind,
+                data.RtpParameters,
+                data.Type,
+                data.ConsumableRtpParameters,
+                Channel,
+                AppData,
+                producerOptions.Paused.Value);
+
+            Producers[producer.Id] = producer;
+
+            producer.CloseEvent += () =>
+            {
+                Producers.Remove(producer.Id);
+                ProducerCloseEvent?.Invoke(producer);
+            };
+
+            NewProducerEvent?.Invoke(producer);
+
+            // Emit observer event.
+            Observer.EmitNewProducer(producer);
+
+            return producer;
+        }
+
+        public async Task<Consumer> ConsumeAsync(ConsumerOptions consumerOptions)
         {
-            kind,
-            rtpParameters,
-            type : status.type,
-            consumableRtpParameters
-        };
+            _logger.LogDebug("ConsumeAsync()");
 
-        const producer = new Producer(
-			{
+            if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
+            {
+                throw new Exception("missing producerId");
+            }
 
-                internal,
-				data,
-				channel : this._channel,
-                appData,
-                paused
+            // This may throw.
+            ORTC.ValidateRtpCapabilities(consumerOptions.RtpCapabilities);
 
-        });
+            var producer = GetProducerById(consumerOptions.ProducerId);
 
+            if (producer == null)
+                throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
 
-        this._producers.set(producer.id, producer);
+            // This may throw.
+            var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities);
 
-        producer.on('@close', () =>
-		{
+            // Set MID.
+            rtpParameters.Mid = $"{_nextMidForConsumers++}";
 
-            this._producers.delete(producer.id);
+            // We use up to 8 bytes for MID (string).
+            if (_nextMidForConsumers == 100000000)
 
-            this.emit('@producerclose', producer);
-    });
+            {
+                _logger.LogDebug($"consume() | reaching max MID value {_nextMidForConsumers}");
+                _nextMidForConsumers = 0;
+            }
 
+            var @internal = new
+            {
+                RouterId,
+                TransportId,
+                ConsumerId = Guid.NewGuid().ToString(),
+                consumerOptions.ProducerId,
+            };
 
-        this.emit('@newproducer', producer);
+            var reqData = new
+            {
+                producer.Kind,
+                RtpParameters = rtpParameters,
+                producer.Type,
+                ConsumableRtpEncodings = producer.ConsumableRtpParameters.Encodings,
+                consumerOptions.Paused,
+                consumerOptions.PreferredLayers
+            };
 
-		// Emit observer event.
-		this._observer.safeEmit('newproducer', producer);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME.GetEnumStringValue(), @internal, reqData);
+            var transportConsumeResponseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status);
 
-		return producer;
-    }
+            var data = new
+            {
+                producer.Kind,
+                RtpParameters = rtpParameters,
+                Type = (ConsumerType)producer.Type, // 注意：类型转换
+            };
 
-    /**
-     * Create a Consumer.
-     *
-     * @virtual
-     */
-    async consume(
-    
+            var consumer = new Consumer(_loggerFactory,
+                @internal.RouterId,
+                @internal.TransportId,
+                @internal.ConsumerId,
+                @internal.ProducerId,
+                data.Kind,
+                data.RtpParameters,
+                data.Type,
+                Channel,
+                AppData,
+                transportConsumeResponseData.Paused,
+                transportConsumeResponseData.ProducerPaused,
+                transportConsumeResponseData.Score,
+                transportConsumeResponseData.PreferredLayers);
+
+            Consumers[consumer.Id] = consumer;
+
+            consumer.CloseEvent += () => Consumers.Remove(consumer.Id);
+            consumer.ProducerCloseEvent += () => Consumers.Remove(consumer.Id);
+
+            // Emit observer event.
+            Observer.EmitNewConsumer(consumer);
+
+            return consumer;
+        }
+
+        /// <summary>
+        /// Create a DataProducer.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<DataProducer> ProduceDataAsync(DataProducerOptions dataProducerOptions)
         {
-        producerId,
-			rtpCapabilities,
-			paused = false,
-			preferredLayers,
-			appData = { }
-    }: ConsumerOptions
-	): Promise<Consumer>
-	{
-		logger.debug('consume()');
+            _logger.LogDebug("ProduceDataAsync()");
 
-		if (!producerId || typeof producerId !== 'string')
-			throw new TypeError('missing producerId');
-		else if (appData && typeof appData !== 'object')
-			throw new TypeError('if given, appData must be an object');
+            if (!dataProducerOptions.Id.IsNullOrWhiteSpace() && DataProducers.ContainsKey(dataProducerOptions.Id))
+                throw new Exception($"a DataProducer with same id {dataProducerOptions.Id} already exists");
 
-    // This may throw.
-    ortc.validateRtpCapabilities(rtpCapabilities);
+            // This may throw.
+            ORTC.ValidateSctpStreamParameters(dataProducerOptions.SctpStreamParameters);
 
-		const producer = this._getProducerById(producerId);
+            var @internal = new
+            {
+                RouterId,
+                TransportId,
+                DataProducerId = !dataProducerOptions.Id.IsNullOrWhiteSpace() ? dataProducerOptions.Id : Guid.NewGuid().ToString(),
+            };
 
-		if (!producer)
-			throw Error(`Producer with id "${producerId}" not found`);
+            var reqData = new
+            {
+                dataProducerOptions.SctpStreamParameters,
+                dataProducerOptions.Label,
+                dataProducerOptions.Protocol
+            };
 
-    // This may throw.
-    const rtpParameters = ortc.getConsumerRtpParameters(
-        producer.consumableRtpParameters, rtpCapabilities);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE_DATA.GetEnumStringValue(), @internal, reqData);
+            var transportProduceResponseData = JsonConvert.DeserializeObject<TransportDataProduceResponseData>(status);
+            var dataProducer = new DataProducer(_loggerFactory,
+                @internal.RouterId,
+                @internal.TransportId,
+                @internal.DataProducerId,
+                transportProduceResponseData.SctpStreamParameters,
+                transportProduceResponseData.Label,
+                transportProduceResponseData.Protocol,
+                Channel,
+                AppData);
 
-    // Set MID.
-    rtpParameters.mid = `${this._nextMidForConsumers++}`;
+            DataProducers[dataProducer.Id] = dataProducer;
 
-		// We use up to 8 bytes for MID (string).
-		if (this._nextMidForConsumers === 100000000)
+            dataProducer.CloseEvent += () =>
+            {
+                DataProducers.Remove(dataProducer.Id);
+                DataProducerCloseEvent?.Invoke(dataProducer);
+            };
 
+            NewDataProducerEvent?.Invoke(dataProducer);
+
+            // Emit observer event.
+            Observer.EmitNewDataProducer(dataProducer);
+
+            return dataProducer;
+        }
+
+        /// <summary>
+        /// Create a DataConsumer.
+        /// </summary>
+        /// <param name="dataConsumerOptions"></param>
+        /// <returns></returns>
+        public async Task<DataConsumer> ConsumeDataAsync(DataConsumerOptions dataConsumerOptions)
         {
-        logger.error(
-				`consume() | reaching max MID value "${this._nextMidForConsumers}"`);
+            _logger.LogDebug("ConsumeDataAsync()");
 
-        this._nextMidForConsumers = 0;
+            if (dataConsumerOptions.DataProducerId.IsNullOrWhiteSpace())
+                throw new Exception("missing dataProducerId");
+
+            var dataProducer = GetDataProducerById(dataConsumerOptions.DataProducerId);
+
+            if (dataProducer == null)
+                throw new Exception($"DataProducer with id {dataConsumerOptions.DataProducerId} not found");
+
+            var sctpStreamParameters = dataProducer.SctpStreamParameters.DeepClone<SctpStreamParameters>();
+
+            // This may throw.
+            var sctpStreamId = GetNextSctpStreamId();
+
+            _sctpStreamIds[sctpStreamId] = 1;
+
+            sctpStreamParameters.StreamId = sctpStreamId;
+
+            var @internal = new
+            {
+                RouterId,
+                TransportId,
+                DataConsumerId = Guid.NewGuid().ToString(),
+                dataConsumerOptions.DataProducerId,
+            };
+
+            var reqData = new
+            {
+                SctpStreamParameters = sctpStreamParameters,
+                dataProducer.Label,
+                dataProducer.Protocol
+            };
+
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME_DATA.GetEnumStringValue(), @internal, reqData);
+            var transportDataConsumeResponseData = JsonConvert.DeserializeObject<TransportDataConsumeResponseData>(status);
+
+            var dataConsumer = new DataConsumer(_loggerFactory,
+                @internal.RouterId,
+                @internal.TransportId,
+                @internal.DataProducerId,
+                @internal.DataConsumerId,
+                transportDataConsumeResponseData.SctpStreamParameters,
+                transportDataConsumeResponseData.Label,
+                transportDataConsumeResponseData.Protocol,
+                Channel,
+                AppData);
+
+            DataConsumers[dataConsumer.Id] = dataConsumer;
+
+            dataConsumer.CloseEvent += () =>
+            {
+                DataConsumers.Remove(dataConsumer.Id);
+                _sctpStreamIds[sctpStreamId] = 0;
+            };
+
+            dataConsumer.DataProducerCloseEvent += () =>
+            {
+                DataConsumers.Remove(dataConsumer.Id);
+                _sctpStreamIds[sctpStreamId] = 0;
+            };
+
+            // Emit observer event.
+            Observer.EmitNewDataConsumer(dataConsumer);
+
+            return dataConsumer;
+        }
+
+        /// <summary>
+        /// Enable 'trace' event.
+        /// </summary>
+        /// <param name="types"></param>
+        /// <returns></returns>
+        public Task EnableTraceEventAsync(TransportTraceEventType[] types)
+        {
+
+            _logger.LogDebug("EnableTraceEventAsync()");
+
+            var reqData = new { Types = types };
+
+            return Channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT.GetEnumStringValue(), _internal, reqData);
+        }
+
+        private int GetNextSctpStreamId()
+        {
+            if (SctpParameters == null)
+            {
+                throw new Exception("missing data.sctpParameters.MIS");
+            }
+
+            var numStreams = SctpParameters.MIS;
+
+            if (_sctpStreamIds.IsNullOrEmpty())
+                _sctpStreamIds = new int[numStreams];
+
+            int sctpStreamId;
+
+            for (var idx = 0; idx < _sctpStreamIds.Length; ++idx)
+
+            {
+                sctpStreamId = (_nextSctpStreamId + idx) % _sctpStreamIds.Length;
+
+                if (_sctpStreamIds[sctpStreamId] == 0)
+                {
+                    _nextSctpStreamId = sctpStreamId + 1;
+                    return sctpStreamId;
+                }
+            }
+
+            throw new Exception("no sctpStreamId available");
+        }
     }
-
-		const internal = { ...this._internal, consumerId: uuidv4(), producerId };
-    const reqData =
-    {
-            kind                   : producer.kind,
-            rtpParameters,
-            type                   : producer.type,
-            consumableRtpEncodings : producer.consumableRtpParameters.encodings,
-            paused,
-            preferredLayers
-        };
-
-    const status =
-        await this._channel.request('transport.consume', internal, reqData);
-
-		const data = { kind: producer.kind, rtpParameters, type: producer.type };
-
-    const consumer = new Consumer(
-			{
-
-                internal,
-				data,
-				channel         : this._channel,
-                appData,
-                paused          : status.paused,
-                producerPaused  : status.producerPaused,
-                score           : status.score,
-                preferredLayers : status.preferredLayers
-
-            });
-
-
-        this._consumers.set(consumer.id, consumer);
-
-        consumer.on('@close', () => this._consumers.delete(consumer.id));
-    consumer.on('@producerclose', () => this._consumers.delete(consumer.id));
-
-		// Emit observer event.
-		this._observer.safeEmit('newconsumer', consumer);
-
-		return consumer;
-    }
-}
 }

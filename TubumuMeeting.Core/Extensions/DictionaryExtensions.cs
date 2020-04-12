@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Tubumu.Core.Extensions
 {
@@ -107,8 +108,65 @@ namespace Tubumu.Core.Extensions
             {
                 first.Add(key, second[key]);
             }
-            return first;
+            return result;
         }
 
+        public static bool DeepEquals<TKey, TValue>(this IDictionary<TKey, TValue> first, IDictionary<TKey, TValue> second)
+        {
+            var comparer = new DictionaryComparer<TKey, TValue>();
+            return comparer.Equals(first, second);
+        }
+
+        public static int DeepGetHashCode<TKey, TValue>(this IDictionary<TKey, TValue> dic)
+        {
+            var comparer = new DictionaryComparer<TKey, TValue>();
+            return comparer.GetHashCode(dic);
+        }
+    }
+
+    public class DictionaryComparer<TKey, TValue> : IEqualityComparer<IDictionary<TKey, TValue>>
+    {
+        public bool Equals(IDictionary<TKey, TValue> x, IDictionary<TKey, TValue> y)
+        {
+            if (x == null)
+            {
+                throw new ArgumentNullException("x");
+            }
+            if (y == null)
+            {
+                throw new ArgumentNullException("y");
+            }
+            if (x.Count != y.Count)
+            {
+                return false;
+            }
+            foreach (var kvp in x)
+            {
+                TValue value;
+                if (!y.TryGetValue(kvp.Key, out value))
+                {
+                    return false;
+                }
+                if (!kvp.Value.Equals(value))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public int GetHashCode(IDictionary<TKey, TValue> obj)
+        {
+            if (obj == null)
+            {
+                throw new ArgumentNullException("obj");
+            }
+            int hash = 0;
+            foreach (var kvp in obj)
+            {
+                hash = hash ^ kvp.Key.GetHashCode() ^ kvp.Value.GetHashCode();
+            }
+            return hash;
+        }
     }
 }

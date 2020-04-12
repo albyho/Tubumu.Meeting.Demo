@@ -29,7 +29,7 @@ namespace TubumuMeeting.Mediasoup
 		/// to consume it, generating “black” video until the device requests a keyframe
 		/// by itself.
 		/// </summary>
-		public bool? Paused { get; set; }
+		public bool? Paused { get; set; } = false;
 
 		/// <summary>
 		/// Preferred spatial and temporal layer for simulcast or SVC media sources.

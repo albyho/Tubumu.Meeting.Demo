@@ -15,7 +15,7 @@ namespace TubumuMeeting.Mediasoup
 
         public static MediasoupOptions Default { get; } = new MediasoupOptions
         {
-            MediasoupVersion = "3.5.6",
+            MediasoupVersion = "3.5.7",
             NumberOfWorkers = Environment.ProcessorCount,
             MediasoupSettings = new MediasoupSettings
             {

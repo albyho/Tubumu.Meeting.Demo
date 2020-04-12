@@ -69,10 +69,10 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
-        public Worker(ILoggerFactory loggerFactory, ILogger<Worker> logger, MediasoupOptions mediasoupOptions)
+        public Worker(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions)
         {
             _loggerFactory = loggerFactory;
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<Worker>();
 
             var workerSettings = mediasoupOptions.MediasoupSettings.WorkerSettings;
 
@@ -118,7 +118,7 @@ namespace TubumuMeeting.Mediasoup
 
             try
             {
-                // 备注：(alby)和 Node.js 不同，_child 没有 error 事件。不过，Process.Spawn 可抛出异常。
+                // 备注：和 Node.js 不同，_child 没有 error 事件。不过，Process.Spawn 可抛出异常。
                 _child = Process.Spawn(new ProcessOptions()
                 {
                     File = mediasoupOptions.WorkerPath,

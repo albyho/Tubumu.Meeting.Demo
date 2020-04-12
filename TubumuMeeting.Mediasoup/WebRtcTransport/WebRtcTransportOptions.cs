@@ -30,7 +30,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public bool? PreferTcp { get; set; } = false;
 
-
         /// <summary>
         /// Initial available outgoing bitrate (in bps). Default 600000.
         /// </summary>

@@ -12,6 +12,7 @@ namespace TubumuMeeting.Mediasoup
     public class Producer
     {
         // Logger
+        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<Producer> _logger;
 
         #region Internal data.
@@ -97,10 +98,10 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
-        public Producer(Logger<Producer> logger,
+        public Producer(ILoggerFactory loggerFactory,
                     string routerId,
                     string transportId,
-                    string dataProducerId,
+                    string producerId,
                     MediaKind kind,
                     RtpParameters rtpParameters,
                     ProducerType type,
@@ -109,10 +110,11 @@ namespace TubumuMeeting.Mediasoup
                     object? appData,
                     bool paused)
         {
-            _logger = logger;
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<Producer>();
             RouterId = routerId;
             TransportId = transportId;
-            Id = dataProducerId;
+            Id = producerId;
             _internal = new
             {
                 RouterId,
@@ -143,12 +145,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.PRODUCER_CLOSE.GetEnumStringValue(), new
-            {
-                RouterId,
-                TransportId,
-                DataProducerId = Id,
-            }).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.PRODUCER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             CloseEvent?.Invoke();
 
@@ -250,9 +247,9 @@ namespace TubumuMeeting.Mediasoup
             Channel.MessageEvent += OnChannelMessage;
         }
 
-        private void OnChannelMessage(string target, string @event, string data)
+        private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (target != Id) return;
+            if (targetId != Id) return;
             switch (@event)
             {
                 case "score":

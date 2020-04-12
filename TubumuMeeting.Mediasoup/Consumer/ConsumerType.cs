@@ -9,7 +9,7 @@ namespace TubumuMeeting.Mediasoup
 	public enum ConsumerType
 	{
 		[EnumStringValue("simple")]
-		simple,
+		Simple,
 
 		[EnumStringValue("simulcast")]
 		Simulcast,

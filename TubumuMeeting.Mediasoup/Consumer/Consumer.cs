@@ -12,6 +12,7 @@ namespace TubumuMeeting.Mediasoup
     public class Consumer
     {
         // Logger
+        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<Consumer> _logger;
 
         #region Internal data.
@@ -119,7 +120,7 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
-        public Consumer(Logger<Consumer> logger,
+        public Consumer(ILoggerFactory loggerFactory,
                     string routerId,
                     string transportId,
                     string consumerId,
@@ -135,7 +136,8 @@ namespace TubumuMeeting.Mediasoup
                     ConsumerLayers? preferredLayers
                     )
         {
-            _logger = logger;
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<Consumer>();
             RouterId = routerId;
             TransportId = transportId;
             Id = consumerId;
@@ -320,9 +322,9 @@ namespace TubumuMeeting.Mediasoup
             Channel.MessageEvent += OnChannelMessage;
         }
 
-        private void OnChannelMessage(string target, string @event, string data)
+        private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (target != Id) return;
+            if (targetId != Id) return;
             switch (@event)
             {
                 case "producerclose":

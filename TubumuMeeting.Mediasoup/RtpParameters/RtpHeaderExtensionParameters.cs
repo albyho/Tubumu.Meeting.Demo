@@ -27,7 +27,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// If true, the value in the header is encrypted as per RFC 6904. Default false.
         /// </summary>
-        public bool? Encrypt { get; set; }
+        public bool? Encrypt { get; set; } = false;
 
         /// <summary>
         /// Configuration parameters for the header extension.
