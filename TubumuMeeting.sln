@@ -11,9 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Core", "Tubum
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Libuv", "TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj", "{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Libuv", "Tubumu.Libuv\Tubumu.Libuv.csproj", "{F5502BEE-A1C9-459B-9649-2B9003AE7321}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.AspNetCore.Mediasoup", "TubumuMeeting.AspNetCore.Mediasoup\TubumuMeeting.AspNetCore.Mediasoup.csproj", "{A1626688-249E-4C64-9CCC-94742E852B41}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.AspNetCore.Mediasoup", "TubumuMeeting.AspNetCore.Mediasoup\TubumuMeeting.AspNetCore.Mediasoup.csproj", "{A1626688-249E-4C64-9CCC-94742E852B41}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,10 +35,6 @@ Global
 		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F5502BEE-A1C9-459B-9649-2B9003AE7321}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A1626688-249E-4C64-9CCC-94742E852B41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A1626688-249E-4C64-9CCC-94742E852B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1626688-249E-4C64-9CCC-94742E852B41}.Release|Any CPU.ActiveCfg = Release|Any CPU

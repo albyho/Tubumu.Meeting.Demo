@@ -1,8 +1,4 @@
-﻿using System;
-using System.ComponentModel;
-using Tubumu.Core.Extensions;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
 	public class DataConsumerOptions
 	{

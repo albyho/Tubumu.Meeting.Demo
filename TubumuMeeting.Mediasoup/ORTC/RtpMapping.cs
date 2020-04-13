@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class RtpMapping
+	public class RtpMapping
     {
 		public List<RtpMappingCodec> Codecs { get; set; }
 

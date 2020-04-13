@@ -1,8 +1,7 @@
-﻿using System;
-using Tubumu.Core.Extensions;
+﻿using Tubumu.Core.Extensions;
 
 namespace TubumuMeeting.Mediasoup
-{ 
+{
 	public enum DtlsState
 	{
 		[EnumStringValue("new")]

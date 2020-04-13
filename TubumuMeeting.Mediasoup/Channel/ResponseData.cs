@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     public class RouterCreateWebRtcTransportResponseData
     {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Tubumu.Core.Extensions;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Provides information on the capabilities of a codec within the RTP

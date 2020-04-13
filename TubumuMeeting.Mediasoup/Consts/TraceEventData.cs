@@ -1,7 +1,4 @@
-﻿using System;
-using Tubumu.Core.Extensions;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
 	/// <summary>
 	/// 'trace' event data.

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using TubumuMeeting.Libuv;
-using TubumuMeeting.Libuv.Threading;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
+using TubumuMeeting.Libuv;
 
 namespace TubumuMeeting.Mediasoup
 {

@@ -1,5 +1,4 @@
-﻿using System;
-using Tubumu.Core.Extensions;
+﻿using Tubumu.Core.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {

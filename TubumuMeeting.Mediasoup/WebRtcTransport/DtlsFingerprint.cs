@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// The hash function algorithm (as defined in the "Hash function Textual Names"

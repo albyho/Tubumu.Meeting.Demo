@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Both OS and MIS are part of the SCTP INIT+ACK handshake. OS refers to the

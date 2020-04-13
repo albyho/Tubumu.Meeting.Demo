@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
 	public class PipeToRouterOptions
 	{

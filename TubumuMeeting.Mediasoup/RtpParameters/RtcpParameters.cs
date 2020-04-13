@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Tubumu.Core.Extensions;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Provides information on RTCP settings within the RTP parameters.
