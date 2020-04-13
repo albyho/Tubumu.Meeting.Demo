@@ -19,7 +19,7 @@ namespace TubumuMeeting.Mediasoup
         void Close();
     }
 
-    public class Worker : IWorker
+    public class Worker : EventEmitter, IWorker
     {
         #region Constants
 
@@ -45,6 +45,9 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly IPCPipe[] _pipes;
 
+        // Routers set.
+        private readonly List<Router> _routers = new List<Router>();
+
         #endregion
 
         #region Public Properties
@@ -55,20 +58,20 @@ namespace TubumuMeeting.Mediasoup
         // Custom app data.
         public object? AppData { get; }
 
-        public WorkerObserver Observer { get; } = new WorkerObserver();
-
         #endregion
 
-        #region Events
+        public EventEmitter Observer { get; } = new EventEmitter();
 
-        public event Action<Exception>? DiedEvent;
-
-        public event Action<Exception>? FailureEvent;
-
-        public event Action? SuccessEvent;
-
-        #endregion
-
+        /// <summary>
+        /// <para>@emits died - (error: Error)</para>
+        /// <para>@emits @success</para>
+        /// <para>@emits @failure - (error: Error)</para>
+        /// <para>Observer:</para>
+        /// <para>@emits close</para>
+        /// <para>@emits newrouter - (router: Router)</para>
+        /// </summary>
+        /// <param name="loggerFactory"></param>
+        /// <param name="mediasoupOptions"></param>
         public Worker(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions)
         {
             _loggerFactory = loggerFactory;
@@ -137,13 +140,13 @@ namespace TubumuMeeting.Mediasoup
                 {
                     _spawnDone = true;
                     _logger.LogError($"worker process failed: {ex.Message}");
-                    FailureEvent?.Invoke(ex);
+                    Emit("@failure", ex);
                 }
                 else
                 {
                     // 执行到这里的可能性？
                     _logger.LogError($"worker process error: {ex.Message}");
-                    DiedEvent?.Invoke(ex);
+                    Emit("died", ex);
                 }
             }
 
@@ -172,7 +175,7 @@ namespace TubumuMeeting.Mediasoup
             _channel?.Close();
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         #region Request
@@ -205,45 +208,31 @@ namespace TubumuMeeting.Mediasoup
             return _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS.GetEnumStringValue(), null, reqData);
         }
 
-        /*
         /// <summary>
         /// Create a Router.
         /// </summary>
-        public Router CreateRouter(IEnumerable<RtpCodecCapability> mediaCodecs, object? appData = null)
+        public async Task<Router> CreateRouter(RouterOptions routerOptions)
         {
             _logger.LogDebug("CreateRouter()");
 
-            if (appData && typeof appData !== 'object')
-			throw new TypeError('if given, appData must be an object');
+            // This may throw.
+            var rtpCapabilities = ORTC.GenerateRouterRtpCapabilities(routerOptions.MediaCodecs);
 
-        // This may throw.
-        const rtpCapabilities = ortc.generateRouterRtpCapabilities(mediaCodecs);
+            var @internal = new { RouterId = Guid.NewGuid().ToString() };
 
-        const internal = { routerId: uuidv4() };
+            await _channel.RequestAsync(MethodId.WORKER_CREATE_ROUTER.GetEnumStringValue(), @internal);
 
-        await this._channel.request('worker.createRouter', internal);
+            var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, AppData);
 
-		const data = { rtpCapabilities };
-        const router = new Router(
-			{
+            _routers.Add(router);
 
-                internal,
-				data,
-				channel : this._channel,
-                appData
+            router.On("@close", _ => _routers.Remove(router));
 
-            });
+            // Emit observer event.
+            Observer.Emit("newrouter", router);
 
-        this._routers.add(router);
-
-        router.on('@close', () => this._routers.delete(router));
-
-		// Emit observer event.
-		this._observer.safeEmit('newrouter', router);
-
-		return router;
+            return router;
         }
-        */
 
         #endregion
 
@@ -256,7 +245,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 _spawnDone = true;
                 _logger.LogDebug($"worker process running [pid:{processId}]");
-                SuccessEvent?.Invoke();
+                Emit("@success");
                 //Loop.Default.QueueUserWorkItem(async () =>
                 //{
                 //    //var ttt = await UpdateSettingsAsync(WorkerLogLevel.Debug, new[] { "info" });
@@ -281,12 +270,13 @@ namespace TubumuMeeting.Mediasoup
                 if (process.ExitCode == 42)
                 {
                     _logger.LogError("worker process failed due to wrong settings");
-                    FailureEvent?.Invoke(new Exception("wrong settings"));
+                    Emit("@failure", new Exception("wrong settings"));
                 }
                 else
                 {
                     _logger.LogError($"worker process failed unexpectedly [code:{process.ExitCode}, signal:{process.TermSignal}]");
-                    FailureEvent?.Invoke(new Exception($"[code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
+                    Emit("@failure", new Exception($"[code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
+
                 }
             }
             else

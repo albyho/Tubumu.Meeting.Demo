@@ -14,7 +14,7 @@ namespace TubumuMeeting.Mediasoup.Extensions
                 // ReSharper disable once PossibleNullReferenceException
                 foreach (var ex in val.Exception.Flatten().InnerExceptions)
                 {
-                    logger.LogError($"Task exception: {ex}");
+                    logger.LogError(ex, $"Task exception");
                 }
             }, TaskContinuationOptions.OnlyOnFaulted);
         }
@@ -24,7 +24,7 @@ namespace TubumuMeeting.Mediasoup.Extensions
             task.ContinueWith(val => {
                 val.Exception.Handle(ex =>
                 {
-                    logger.LogError($"Task exception: {ex}");
+                    logger.LogError(ex, $"Task exception");
                     return true;
                 });
             }, TaskContinuationOptions.OnlyOnFaulted);

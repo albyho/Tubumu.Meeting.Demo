@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using TubumuMeeting.Mediasoup.Extensions;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
+using Newtonsoft.Json;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class Router
+    public class Router : EventEmitter
     {
         // Logger
+        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<Router> _logger;
 
         #region Internal data.
@@ -66,23 +68,29 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Observer instance.
         /// </summary>
-        public RouterObserver Observer { get; } = new RouterObserver();
+        public EventEmitter Observer { get; } = new EventEmitter();
 
-        #region Events
-
-        public event Action? CloseEvent;
-
-        public event Action? WorkerCloseEvent;
-
-        #endregion
-
-        public Router(Logger<Router> logger,
+        /// <summary>
+        /// <para>@emits workerclose</para>
+        /// <para>@emits @close</para>
+        /// <para>Observer:</para>
+        /// <para>@emits close</para>
+        /// <para>@emits newtransport - (transport: Transport)</para>
+        /// <para>@emits newrtpobserver - (rtpObserver: RtpObserver)</para>  
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="routerId"></param>
+        /// <param name="rtpCapabilities"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        public Router(ILoggerFactory loggerFactory,
                     string routerId,
                     RtpCapabilities rtpCapabilities,
                     Channel channel,
                     object? appData)
         {
-            _logger = logger;
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<Router>();
             RouterId = routerId;
             _internal = new
             {
@@ -116,8 +124,7 @@ namespace TubumuMeeting.Mediasoup
             // Close every Transport.
             foreach (var transport in _transports.Values)
             {
-                // TODO: (alby)完善
-                //transport.RouterClosed();
+                transport.RouterClosed();
             }
 
             _transports.Clear();
@@ -128,8 +135,7 @@ namespace TubumuMeeting.Mediasoup
             // Close every RtpObserver.
             foreach (var rtpObserver in _rtpObservers.Values)
             {
-                // TODO: (alby)完善
-                //rtpObserver.RouterClosed();
+                rtpObserver.RouterClosed();
             }
             _rtpObservers.Clear();
 
@@ -143,10 +149,10 @@ namespace TubumuMeeting.Mediasoup
             // Close the pipeToRouter AwaitQueue instance.
             //_pipeToRouterQueue.close();
 
-            CloseEvent?.Invoke();
+            Emit("@close");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -164,8 +170,7 @@ namespace TubumuMeeting.Mediasoup
             // Close every Transport.
             foreach (var transport in _transports.Values)
             {
-                // TODO: (alby)完善
-                //transport.RouterClosed();
+                transport.RouterClosed();
             }
 
             _transports.Clear();
@@ -176,8 +181,7 @@ namespace TubumuMeeting.Mediasoup
             // Close every RtpObserver.
             foreach (var rtpObserver in _rtpObservers.Values)
             {
-                // TODO: (alby)完善
-                //rtpObserver.RouterClosed();
+                rtpObserver.RouterClosed();
             }
             _rtpObservers.Clear();
 
@@ -187,10 +191,10 @@ namespace TubumuMeeting.Mediasoup
             // Clear map of Router/PipeTransports.
             _mapRouterPipeTransports.Clear();
 
-            WorkerCloseEvent?.Invoke();
+            Emit("workerclose");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -228,346 +232,294 @@ namespace TubumuMeeting.Mediasoup
                 IsDataChannel = true
             };
 
-            var data = await Channel.RequestAsync(MethodId.ROUTER_CREATE_WEBRTC_TRANSPORT.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_WEBRTC_TRANSPORT.GetEnumStringValue(), @internal, reqData);
+            var responseData = JsonConvert.DeserializeObject<RouterCreateWebRtcTransportResponseData>(status);
 
-            var transport = new WebRtcTransport(
+            var transport = new WebRtcTransport(_loggerFactory,
+                @internal.RouterId,
+                @internal.TransportId,
+                sctpParameters: null,
+                sctpState: null,
+                Channel, AppData,
+                () => RtpCapabilities,
+                m => _producers[m],
+                m => _dataProducers[m],
+                responseData.IceRole,
+                responseData.IceParameters,
+                responseData.IceState,
+                responseData.IceSelectedTuple,
+                responseData.DtlsParameters,
+                responseData.DtlsState,
+                responseData.DtlsRemoteCert
+                );
+            _transports[transport.Id] = transport;
+
+            transport.On("@close", _ => _transports.Remove(transport.Id));
+            transport.On("@newproducer", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers[producer.Id] = producer;
+            });
+            transport.On("@producerclose", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers.Remove(producer.Id);
+            });
+            transport.On("@newdataproducer", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers[dataProducer.Id] = dataProducer;
+            });
+            transport.On("@dataproducerclose", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers.Remove(dataProducer.Id);
+            });
+
+            // Emit observer event.
+            Observer.Emit("newtransport", transport);
+
+            return transport;
+        }
+
+        /// <summary>
+        /// Create a PlainTransport.
+        /// </summary>
+        public async Task<PlainTransport> CreatePlainTransportAsync(PlainTransportOptions plainTransportOptions)
+        {
+            _logger.LogDebug("CreatePlainTransportAsync()");
+
+            if (plainTransportOptions.ListenIp == null || plainTransportOptions.ListenIp.Ip.IsNullOrWhiteSpace())
+                throw new Exception("missing listenIp");
+
+            var @internal = new
+            {
+                RouterId,
+                TransportId = Guid.NewGuid().ToString(),
+            };
+
+            var reqData = new
+            {
+                plainTransportOptions.ListenIp,
+                plainTransportOptions.Comedia,
+                plainTransportOptions.EnableSctp,
+                plainTransportOptions.NumSctpStreams,
+                plainTransportOptions.MaxSctpMessageSize,
+                IsDataChannel = false,
+                plainTransportOptions.EnableSrtp,
+                plainTransportOptions.SrtpCryptoSuite
+            };
+
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PLAIN_TRANSPORT.GetEnumStringValue(), @internal, reqData);
+            var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status);
+
+            var transport = new PlainTransport(_loggerFactory,
+                            @internal.RouterId,
+                            @internal.TransportId,
+                            sctpParameters: null,
+                            sctpState: null,
+                            Channel, AppData,
+                            () => RtpCapabilities,
+                            m => _producers[m],
+                            m => _dataProducers[m],
+                            responseData.RtcpMux,
+                            responseData.Comedia,
+                            responseData.Tuple,
+                            responseData.RtcpTuple,
+                            responseData.SrtpParameters
+                            );
+            _transports[transport.Id] = transport;
+
+            transport.On("@close", _ => _transports.Remove(transport.Id));
+            transport.On("@newproducer", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers[producer.Id] = producer;
+            });
+            transport.On("@producerclose", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers.Remove(producer.Id);
+            });
+            transport.On("@newdataproducer", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers[dataProducer.Id] = dataProducer;
+            });
+            transport.On("@dataproducerclose", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers.Remove(dataProducer.Id);
+            });
+
+            // Emit observer event.
+            Observer.Emit("newtransport", transport);
+
+            return transport;
+        }
+
+        /// <summary>
+        /// Create a PipeTransport.
+        /// </summary>
+        public async Task<PipeTransport> CreatePipeTransportAsync(PipeTransportOptions pipeTransportOptions)
+        {
+            _logger.LogDebug("CreatePipeTransportAsync()");
+
+            var @internal = new
+            {
+                RouterId,
+                TransportId = Guid.NewGuid().ToString(),
+            };
+
+            var reqData = new
+            {
+                pipeTransportOptions.ListenIp,
+                pipeTransportOptions.EnableSctp,
+                pipeTransportOptions.NumSctpStreams,
+                pipeTransportOptions.MaxSctpMessageSize,
+                IsDataChannel = false,
+                pipeTransportOptions.EnableRtx,
+                pipeTransportOptions.EnableSrtp,
+            };
+
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PIPE_TRANSPORT.GetEnumStringValue(), @internal, reqData);
+            var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
+
+            var transport = new PipeTransport(_loggerFactory,
+                            @internal.RouterId,
+                            @internal.TransportId,
+                            sctpParameters: null,
+                            sctpState: null,
+                            Channel, AppData,
+                            () => RtpCapabilities,
+                            m => _producers[m],
+                            m => _dataProducers[m],
+                            responseData.Tuple,
+                            responseData.Rtx,
+                            responseData.SrtpParameters
+                            );
+
+            _transports[transport.Id] = transport;
+
+            transport.On("@close", _ => _transports.Remove(transport.Id));
+            transport.On("@newproducer", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers[producer.Id] = producer;
+            });
+            transport.On("@producerclose", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers.Remove(producer.Id);
+            });
+            transport.On("@newdataproducer", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers[dataProducer.Id] = dataProducer;
+            });
+            transport.On("@dataproducerclose", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers.Remove(dataProducer.Id);
+            });
+
+            // Emit observer event.
+            Observer.Emit("newtransport", transport);
+
+            return transport;
+        }
+
+        #region PipeToRouterAsync
+        /*
+        /// <summary>
+        /// Pipes the given Producer or DataProducer into another Router in same host.
+        /// </summary>
+        public async Task<PipeToRouterResult> PipeToRouterAsync(PipeToRouterOptions pipeToRouterOptions)
+        {
+
+            if (pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
+                throw new Exception("missing producerId or dataProducerId");
+
+            if (!pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && !pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
+                throw new Exception("just producerId or dataProducerId can be given");
+
+            if (pipeToRouterOptions.Router == null)
+                throw new Exception("Router not found");
+
+            if (pipeToRouterOptions.Router == null)
+                throw new Exception("cannot use this Router as destination");
+
+            Producer producer = null;
+            DataProducer dataProducer = null;
+
+            if (!pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace())
+            {
+                producer = _producers[pipeToRouterOptions.ProducerId!];
+
+                if (producer == null)
+                    throw new Exception("Producer not found");
+            }
+            else if (!pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
+            {
+                dataProducer = _dataProducers[pipeToRouterOptions.DataProducerId!];
+
+                if (dataProducer == null)
+                    throw new Exception("DataProducer not found");
+            }
+
+            // Here we may have to create a new PipeTransport pair to connect source and
+            // destination Routers. We just want to keep a PipeTransport pair for each
+            // pair of Routers. Since this operation is async, it may happen that two
+            // simultaneous calls to router1.pipeToRouter({ producerId: xxx, router: router2 })
+            // would end up generating two pairs of PipeTranports. To prevent that, let's
+            // use an async queue.
+
+            PipeTransport localPipeTransport = null;
+            PipeTransport remotePipeTransport = null;
+
+            await this._pipeToRouterQueue.push(async () =>
+            {
+            let pipeTransportPair = this._mapRouterPipeTransports.get(router);
+
+            if (pipeTransportPair)
+            {
+                localPipeTransport = pipeTransportPair[0];
+                remotePipeTransport = pipeTransportPair[1];
+            }
+            else
+            {
+                try
                 {
-
-                internal,
-				data,
-				channel                  : this._channel,
-                appData,
-                getRouterRtpCapabilities : (): RtpCapabilities => this._data.rtpCapabilities,
-                getProducerById          : (producerId: string): Producer => (
-                    this._producers.get(producerId)
-                ),
-				getDataProducerById : (dataProducerId: string): DataProducer => (
-                    this._dataProducers.get(dataProducerId)
-                )
-            });
+                    pipeTransportPair = await Promise.all(
 
 
-        this._transports.set(transport.id, transport);
-
-        transport.on('@close', () => this._transports.delete(transport.id));
-        transport.on('@newproducer', (producer: Producer) => this._producers.set(producer.id, producer));
-        transport.on('@producerclose', (producer: Producer) => this._producers.delete(producer.id));
-        transport.on('@newdataproducer', (dataProducer: DataProducer) => (
-        this._dataProducers.set(dataProducer.id, dataProducer)
-        ));
-        transport.on('@dataproducerclose', (dataProducer: DataProducer) => (
 
 
-            this._dataProducers.delete(dataProducer.id)
-        ));
-
-        // Emit observer event.
-        this._observer.safeEmit('newtransport', transport);
-
-        return transport;
-}
-
-    /// <summary>
-    /// Create a PlainTransport.
-    /// </summary>
-    async createPlainTransport(
+                        [
+                            this.createPipeTransport(
 
 
-        {
-        listenIp,
-			rtcpMux = true,
-			comedia = false,
-			enableSctp = false,
-			numSctpStreams = { OS: 1024, MIS: 1024 },
-			maxSctpMessageSize = 262144,
-			enableSrtp = false,
-			srtpCryptoSuite = 'AES_CM_128_HMAC_SHA1_80',
-			appData = { }
-    }: PlainTransportOptions
-	): Promise<PlainTransport>
 
-    {
-    logger.debug('createPlainTransport()');
-
-    if (!listenIp)
-        throw new TypeError('missing listenIp');
-    else if (appData && typeof appData !== 'object')
-        throw new TypeError('if given, appData must be an object');
-
-    if (typeof listenIp === 'string' && listenIp)
-    {
-        listenIp = { ip: listenIp
-};
-    }
-    else if (typeof listenIp === 'object')
-    {
-        listenIp =
-
-            {
-            ip: listenIp.ip,
-				announcedIp: listenIp.announcedIp || undefined
-
-            };
-    }
-    else
-    {
-        throw new TypeError('wrong listenIp');
-    }
-
-    const internal = { ...this._internal, transportId: uuidv4() };
-const reqData = {
-    listenIp,
-            rtcpMux,
-            comedia,
-            enableSctp,
-            numSctpStreams,
-            maxSctpMessageSize,
-            isDataChannel: false,
-            enableSrtp,
-            srtpCryptoSuite
-
-        };
-
-const data =
-    await this._channel.request('router.createPlainTransport', internal, reqData);
-
-		const transport = new PlainTransport(
-			{
-
-                internal,
-				data,
-				channel                  : this._channel,
-                appData,
-                getRouterRtpCapabilities : (): RtpCapabilities => this._data.rtpCapabilities,
-                getProducerById          : (producerId: string): Producer => (
-                    this._producers.get(producerId)
-                ),
-				getDataProducerById : (dataProducerId: string): DataProducer => (
-                    this._dataProducers.get(dataProducerId)
-                )
-
-            });
-
-
-        this._transports.set(transport.id, transport);
-
-        transport.on('@close', () => this._transports.delete(transport.id));
-transport.on('@newproducer', (producer: Producer) => this._producers.set(producer.id, producer));
-transport.on('@producerclose', (producer: Producer) => this._producers.delete(producer.id));
-transport.on('@newdataproducer', (dataProducer: DataProducer) => (
-    this._dataProducers.set(dataProducer.id, dataProducer)
-));
-transport.on('@dataproducerclose', (dataProducer: DataProducer) => (
-    this._dataProducers.delete(dataProducer.id)
-));
-
-// Emit observer event.
-this._observer.safeEmit('newtransport', transport);
-
-return transport;
-}
-
-/// <summary>
-/// DEPRECATED: Use createPlainTransport().
-/// </summary>
-async createPlainRtpTransport(
-		options: PlainTransportOptions
-	): Promise<PlainTransport>
-
-    {
-    logger.warn(
-        'createPlainRtpTransport() is DEPRECATED, use createPlainTransport()');
-
-    return this.createPlainTransport(options);
-}
-
-/// <summary>
-/// Create a PipeTransport.
-/// </summary>
-async createPipeTransport(
-
-        {
-    listenIp,
-			enableSctp = false,
-			numSctpStreams = { OS: 1024, MIS: 1024 },
-			maxSctpMessageSize = 1073741823,
-			enableRtx = false,
-			enableSrtp = false,
-			appData = { }
-}: PipeTransportOptions
-	): Promise<PipeTransport>
-
-    {
-    logger.debug('createPipeTransport()');
-
-    if (!listenIp)
-        throw new TypeError('missing listenIp');
-    else if (appData && typeof appData !== 'object')
-        throw new TypeError('if given, appData must be an object');
-
-    if (typeof listenIp === 'string' && listenIp)
-    {
-        listenIp = { ip: listenIp };
-    }
-    else if (typeof listenIp === 'object')
-    {
-        listenIp =
-
-            {
-            ip: listenIp.ip,
-				announcedIp: listenIp.announcedIp || undefined
-
-            };
-    }
-    else
-    {
-        throw new TypeError('wrong listenIp');
-    }
-
-    const internal = { ...this._internal, transportId: uuidv4() };
-		const reqData = {
-    listenIp,
-			enableSctp,
-			numSctpStreams,
-			maxSctpMessageSize,
-			isDataChannel: false,
-			enableRtx,
-			enableSrtp
-
-        };
-
-		const data =
-			await this._channel.request('router.createPipeTransport', internal, reqData);
-
-		const transport = new PipeTransport(
-			{
-
-                internal,
-				data,
-				channel                  : this._channel,
-                appData,
-                getRouterRtpCapabilities : (): RtpCapabilities => this._data.rtpCapabilities,
-                getProducerById          : (producerId: string): Producer => (
-                    this._producers.get(producerId)
-                ),
-				getDataProducerById : (dataProducerId: string): DataProducer => (
-                    this._dataProducers.get(dataProducerId)
-                )
-
-            });
-
-
-        this._transports.set(transport.id, transport);
-
-        transport.on('@close', () => this._transports.delete(transport.id));
-transport.on('@newproducer', (producer: Producer) => this._producers.set(producer.id, producer));
-transport.on('@producerclose', (producer: Producer) => this._producers.delete(producer.id));
-transport.on('@newdataproducer', (dataProducer: DataProducer) => (
-    this._dataProducers.set(dataProducer.id, dataProducer)
-));
-transport.on('@dataproducerclose', (dataProducer: DataProducer) => (
-    this._dataProducers.delete(dataProducer.id)
-));
-
-// Emit observer event.
-this._observer.safeEmit('newtransport', transport);
-
-return transport;
-}
-
-/// <summary>
-/// Pipes the given Producer or DataProducer into another Router in same host.
-/// </summary>
-async pipeToRouter(
-
-        {
-    producerId,
-			dataProducerId,
-			router,
-			listenIp = '127.0.0.1',
-			enableSctp = true,
-			numSctpStreams = { OS: 1024, MIS: 1024 },
-			enableRtx = false,
-			enableSrtp = false
-
-        }: PipeToRouterOptions
-	): Promise<PipeToRouterResult>
-
-    {
-    if (!producerId && !dataProducerId)
-        throw new TypeError('missing producerId or dataProducerId');
-    else if (producerId && dataProducerId)
-        throw new TypeError('just producerId or dataProducerId can be given');
-    else if (!router)
-        throw new TypeError('Router not found');
-    else if (router === this)
-        throw new TypeError('cannot use this Router as destination');
-
-    let producer: Producer;
-    let dataProducer: DataProducer;
-
-    if (producerId)
-    {
-        producer = this._producers.get(producerId);
-
-        if (!producer)
-            throw new TypeError('Producer not found');
-    }
-    else if (dataProducerId)
-    {
-        dataProducer = this._dataProducers.get(dataProducerId);
-
-        if (!dataProducer)
-            throw new TypeError('DataProducer not found');
-    }
-
-    // Here we may have to create a new PipeTransport pair to connect source and
-    // destination Routers. We just want to keep a PipeTransport pair for each
-    // pair of Routers. Since this operation is async, it may happen that two
-    // simultaneous calls to router1.pipeToRouter({ producerId: xxx, router: router2 })
-    // would end up generating two pairs of PipeTranports. To prevent that, let's
-    // use an async queue.
-
-    let localPipeTransport: PipeTransport;
-    let remotePipeTransport: PipeTransport;
-
-    await this._pipeToRouterQueue.push(async () =>
-    {
-    let pipeTransportPair = this._mapRouterPipeTransports.get(router);
-
-    if (pipeTransportPair)
-    {
-        localPipeTransport = pipeTransportPair[0];
-        remotePipeTransport = pipeTransportPair[1];
-    }
-    else
-    {
-        try
-        {
-            pipeTransportPair = await Promise.all(
-
-
-                [
-                    this.createPipeTransport(
-
-                                { listenIp, enableSctp, numSctpStreams, enableRtx, enableSrtp }),
+                                        { listenIp, enableSctp, numSctpStreams, enableRtx, enableSrtp }),
 
 							router.createPipeTransport(
 
                                 { listenIp, enableSctp, numSctpStreams, enableRtx, enableSrtp })
 						]);
 
-    localPipeTransport = pipeTransportPair[0];
-    remotePipeTransport = pipeTransportPair[1];
+            localPipeTransport = pipeTransportPair[0];
+            remotePipeTransport = pipeTransportPair[1];
 
-    await Promise.all(
+            await Promise.all(
 
 
-        [
-            localPipeTransport.connect(
+
+
+                [
+                    localPipeTransport.connect(
 
                                 {
-        ip: remotePipeTransport.tuple.localIp,
+                ip: remotePipeTransport.tuple.localIp,
 									port: remotePipeTransport.tuple.localPort,
 									srtpParameters: remotePipeTransport.srtpParameters
 
@@ -576,28 +528,28 @@ async pipeToRouter(
 							remotePipeTransport.connect(
 
                                 {
-        ip: localPipeTransport.tuple.localIp,
+                ip: localPipeTransport.tuple.localIp,
 									port: localPipeTransport.tuple.localPort,
 									srtpParameters: localPipeTransport.srtpParameters
 
                                 })
 						]);
 
-    localPipeTransport.observer.on('close', () =>
-    {
-        remotePipeTransport.close();
-        this._mapRouterPipeTransports.delete(router);
-    });
+            localPipeTransport.observer.on('close', () =>
+            {
+                remotePipeTransport.close();
+                this._mapRouterPipeTransports.delete(router);
+            });
 
-    remotePipeTransport.observer.on('close', () =>
-    {
-        localPipeTransport.close();
-        this._mapRouterPipeTransports.delete(router);
-    });
+            remotePipeTransport.observer.on('close', () =>
+            {
+                localPipeTransport.close();
+                this._mapRouterPipeTransports.delete(router);
+            });
 
-    this._mapRouterPipeTransports.set(
-        router, [localPipeTransport, remotePipeTransport]);
-}
+            this._mapRouterPipeTransports.set(
+                router, [localPipeTransport, remotePipeTransport]);
+        }
 				catch (error)
 
                 {
@@ -714,94 +666,70 @@ async pipeToRouter(
 			throw new Error('internal error');
 		}
 	}
+*/
+        #endregion
 
-	/// <summary>
-	 /// Create an AudioLevelObserver.
-	 /// </summary>
-	async createAudioLevelObserver(
-
+        /// <summary>
+        /// Create an AudioLevelObserver.
+        /// </summary>
+        public async Task<AudioLevelObserver> CreateAudioLevelObserverAsync(AudioLevelObserverOptions audioLevelObserverOptions)
         {
-    maxEntries = 1,
-			threshold = -80,
-			interval = 1000,
-			appData = { }
-}: AudioLevelObserverOptions = {}
-	): Promise<AudioLevelObserver>
-	{
-		logger.debug('createAudioLevelObserver()');
+            _logger.LogDebug("createAudioLevelObserver()");
 
-		if (appData && typeof appData !== 'object')
-			throw new TypeError('if given, appData must be an object');
+            var @internal = new
+            {
+                RouterId,
+                RtpObserverId = Guid.NewGuid().ToString(),
+            };
 
-const internal = { ...this._internal, rtpObserverId: uuidv4() };
-const reqData = { maxEntries, threshold, interval };
+            var reqData = new
+            {
+                audioLevelObserverOptions.MaxEntries,
+                audioLevelObserverOptions.Threshold,
+                audioLevelObserverOptions.Interval
+            };
 
-await this._channel.request('router.createAudioLevelObserver', internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_AUDIO_LEVEL_OBSERVER.GetEnumStringValue(), @internal, reqData);
+            var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
 
-		const audioLevelObserver = new AudioLevelObserver(
-			{
+            var audioLevelObserver = new AudioLevelObserver(_loggerFactory,
+                @internal.RouterId,
+                @internal.RtpObserverId,
+                Channel,
+                AppData,
+                m => _producers[m]);
 
-                internal,
-				channel         : this._channel,
-                appData,
-                getProducerById : (producerId: string): Producer => (
-                    this._producers.get(producerId)
-                )
+            _rtpObservers[audioLevelObserver.Id] = audioLevelObserver;
 
-            });
+            audioLevelObserver.On("@close", _ => _rtpObservers.Remove(audioLevelObserver.Id));
 
+            // Emit observer event.
+            Observer.Emit("newrtpobserver", audioLevelObserver);
 
-        this._rtpObservers.set(audioLevelObserver.id, audioLevelObserver);
+            return audioLevelObserver;
+        }
 
-        audioLevelObserver.on('@close', () =>
-		{
-
-            this._rtpObservers.delete(audioLevelObserver.id);
-
-        });
-
-        // Emit observer event.
-        this._observer.safeEmit('newrtpobserver', audioLevelObserver);
-
-		return audioLevelObserver;
-}
-
-/// <summary>
-/// Check whether the given RTP capabilities can consume the given Producer.
-/// </summary>
-canConsume(
-
+        /// <summary>
+        /// Check whether the given RTP capabilities can consume the given Producer.
+        /// </summary>
+        public bool CanConsume(string producerId, RtpCapabilities rtpCapabilities)
         {
-    producerId,
-			rtpCapabilities
+            var producer = _producers[producerId];
+            if (producer == null)
+            {
+                _logger.LogError($"canConsume() | Producer with id {producerId} not found");
+                return false;
+            }
 
-        }:
-		{
-			producerId: string;
-			rtpCapabilities: RtpCapabilities;
-		}
-	): boolean
-	{
-		const producer = this._producers.get(producerId);
-
-		if (!producer)
-		{
-			logger.error(
-				'canConsume() | Producer with id "%s" not found', producerId);
-
-			return false;
-		}
-
-		try
-		{
-			return ortc.canConsume(producer.consumableRtpParameters, rtpCapabilities);
-		}
-		catch (error)
-		{
-			logger.error('canConsume() | unexpected error: %s', String(error));
-
-			return false;
-		}
-	}
+            try
+            {
+                return ORTC.CanConsume(producer.ConsumableRtpParameters, rtpCapabilities);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "canConsume() | unexpected error");
+                return false;
+            }
+        }
     }
 }

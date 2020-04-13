@@ -14,18 +14,23 @@ namespace TubumuMeeting.Mediasoup
         private readonly ILogger<AudioLevelObserver> _logger;
 
         /// <summary>
-        /// Observer instance.
+        /// <para>@emits volumes - (volumes: AudioLevelObserverVolume[])</para>
+        /// <para>@emits silence</para>
+        /// <para>Observer:</para>
+        /// <para>@emits close</para>
+        /// <para>@emits pause</para>
+        /// <para>@emits resume</para>
+        /// <para>@emits addproducer - (producer: Producer)</para>
+        /// <para>@emits removeproducer - (producer: Producer)</para>
+        /// <para>@emits volumes - (volumes: AudioLevelObserverVolume[])</para>
+        /// <para>@emits silence</para>
         /// </summary>
-        public AudioLevelObserverObserver Observer { get; } = new AudioLevelObserverObserver();
-
-        #region Events
-
-        public event Action<AudioLevelObserverVolume[]>? VolumesEvent;
-
-        public event Action? SilenceEvent;
-
-        #endregion
-
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="rtpObserverId"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        /// <param name="getProducerById"></param>
         public AudioLevelObserver(ILoggerFactory loggerFactory,
                     string routerId,
                     string rtpObserverId,
@@ -46,7 +51,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != RtpObserverId) return;
+            if (targetId != Id) return;
             switch (@event)
             {
                 case "volumes":
@@ -60,20 +65,20 @@ namespace TubumuMeeting.Mediasoup
 
                         if (volumes.Length > 0)
                         {
-                            VolumesEvent?.Invoke(volumes);
+                            Emit("volumes", volumes);
 
                             // Emit observer event.
-                            Observer.EmitVolumes(volumes);
+                            Observer.Emit("volumes", volumes);
                         }
 
                         break;
                     }
                 case "silence":
                     {
-                        SilenceEvent?.Invoke();
+                        Emit("silence");
 
                         // Emit observer event.
-                        Observer.EmitSilence();
+                        Observer.Emit("silence");
 
                         break;
                     }

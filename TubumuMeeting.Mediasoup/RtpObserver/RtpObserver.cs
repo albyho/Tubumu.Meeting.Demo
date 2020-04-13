@@ -8,7 +8,7 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class RtpObserver
+    public class RtpObserver : EventEmitter
     {
         // Logger
         private readonly ILoggerFactory _loggerFactory;
@@ -18,7 +18,7 @@ namespace TubumuMeeting.Mediasoup
 
         public string RouterId { get; }
 
-        public string RtpObserverId { get; }
+        public string Id { get; }
 
         private object _internal;
 
@@ -47,19 +47,24 @@ namespace TubumuMeeting.Mediasoup
         // Method to retrieve a Producer.
         protected readonly Func<string, Producer> GetProducerById;
 
+        public EventEmitter Observer { get; } = new EventEmitter();
+
         /// <summary>
-        /// Observer instance.
+        /// <para>@emits routerclose</para>
+        /// <para>@emits @close</para>
+        /// <para>Observer:</para>
+        /// <para>@emits close</para>
+        /// <para>@emits pause</para>
+        /// <para>@emits resume</para>
+        /// <para>@emits addproducer - (producer: Producer)</para>
+        /// <para>@emits removeproducer - (producer: Producer)</para>
         /// </summary>
-        public RtpObserverObserver Observer { get; } = new RtpObserverObserver();
-
-        #region Events
-
-        public event Action? CloseEvent;
-
-        public event Action? RouterCloseEvent;
-
-        #endregion
-
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="rtpObserverId"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        /// <param name="getProducerById"></param>
         public RtpObserver(ILoggerFactory loggerFactory,
                     string routerId,
                     string rtpObserverId,
@@ -70,11 +75,11 @@ namespace TubumuMeeting.Mediasoup
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<RtpObserver>();
             RouterId = routerId;
-            RtpObserverId = rtpObserverId;
+            Id = rtpObserverId;
             _internal = new
             {
                 RouterId,
-                RtpObserverId,
+                RtpObserverId = rtpObserverId,
             };
             Channel = channel;
             AppData = appData;
@@ -96,10 +101,10 @@ namespace TubumuMeeting.Mediasoup
             // Fire and forget.
             Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            CloseEvent?.Invoke();
+            Emit("@close");
 
             // Emit observer event.
-            //this._observer.safeEmit('close');
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -116,10 +121,10 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
-            RouterCloseEvent?.Invoke();
+            Emit("routerclose");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -138,7 +143,7 @@ namespace TubumuMeeting.Mediasoup
             // Emit observer event.
             if (!wasPaused)
             {
-                Observer.EmitPause();
+                Observer.Emit("pause");
             }
         }
 
@@ -158,7 +163,7 @@ namespace TubumuMeeting.Mediasoup
             // Emit observer event.
             if (wasPaused)
             {
-                Observer.EmitResume();
+                Observer.Emit("resume");
             }
         }
 
@@ -173,14 +178,14 @@ namespace TubumuMeeting.Mediasoup
             var @internal = new
             {
                 RouterId,
-                RtpObserverId,
+                RtpObserverId = Id,
                 ProducerId = producerId,
             };
 
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER.GetEnumStringValue(), _internal);
 
             // Emit observer event.
-            Observer.EmitAddProducer(producer);
+            Observer.Emit("addproducer", producer);
         }
 
         /// <summary>
@@ -194,13 +199,13 @@ namespace TubumuMeeting.Mediasoup
             var @internal = new
             {
                 RouterId,
-                RtpObserverId,
+                RtpObserverId = Id,
                 ProducerId = producerId,
             };
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER.GetEnumStringValue(), _internal);
 
             // Emit observer event.
-            Observer.EmitRemoveProducer(producer);
+            Observer.Emit("removeproducer", producer);
         }
     }
 }

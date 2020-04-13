@@ -175,14 +175,14 @@ namespace TubumuMeeting.Mediasoup
                     {
                         if (ex != null)
                         {
-                            _logger.LogError("_producerSocket.Write() Error:", ex);
+                            _logger.LogError(ex, "_producerSocket.Write() error");
                             tcs.TrySetException(ex);
                         }
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("_producerSocket.Write() Error:", ex);
+                    _logger.LogError(ex, "_producerSocket.Write() error");
                     tcs.TrySetException(ex);
                 }
             });

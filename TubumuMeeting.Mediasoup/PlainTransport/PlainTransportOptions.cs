@@ -20,7 +20,7 @@ namespace TubumuMeeting.Mediasoup
 		 /// SRTP is enabled. If so, it must be called with just remote SRTP parameters.
 		 /// Default false.
 		 /// </summary>
-		public bool? comedia { get; set; } = false;
+		public bool? Comedia { get; set; } = false;
 
 	/// <summary>
 	 /// Create a SCTP association. Default false.
