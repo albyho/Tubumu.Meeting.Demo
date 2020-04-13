@@ -14,18 +14,23 @@ namespace TubumuMeeting.Mediasoup
         private readonly ILogger<AudioLevelObserver> _logger;
 
         /// <summary>
-        /// Observer instance.
+        /// @emits volumes - (volumes: AudioLevelObserverVolume[])
+        /// @emits silence
+        /// Observer:
+        /// @emits close
+        /// @emits pause
+        /// @emits resume
+        /// @emits addproducer - (producer: Producer)
+        /// @emits removeproducer - (producer: Producer)
+        /// @emits volumes - (volumes: AudioLevelObserverVolume[])
+        /// @emits silence
         /// </summary>
-        public AudioLevelObserverObserver Observer { get; } = new AudioLevelObserverObserver();
-
-        #region Events
-
-        public event Action<AudioLevelObserverVolume[]>? VolumesEvent;
-
-        public event Action? SilenceEvent;
-
-        #endregion
-
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="rtpObserverId"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        /// <param name="getProducerById"></param>
         public AudioLevelObserver(ILoggerFactory loggerFactory,
                     string routerId,
                     string rtpObserverId,
@@ -60,20 +65,20 @@ namespace TubumuMeeting.Mediasoup
 
                         if (volumes.Length > 0)
                         {
-                            VolumesEvent?.Invoke(volumes);
+                            Emit("volumes", volumes);
 
                             // Emit observer event.
-                            Observer.EmitVolumes(volumes);
+                            Observer.Emit("volumes", volumes);
                         }
 
                         break;
                     }
                 case "silence":
                     {
-                        SilenceEvent?.Invoke();
+                        Emit("silence");
 
                         // Emit observer event.
-                        Observer.EmitSilence();
+                        Observer.Emit("silence");
 
                         break;
                     }

@@ -9,7 +9,7 @@ using Tubumu.Core.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class Consumer
+    public class Consumer : EventEmitter
     {
         // Logger
         private readonly ILoggerFactory _loggerFactory;
@@ -95,31 +95,40 @@ namespace TubumuMeeting.Mediasoup
         // Curent layers.
         public ConsumerLayers? CurrentLayers { get; private set; }
 
+        public EventEmitter Observer { get; } = new EventEmitter();
+
         /// <summary>
-        /// Observer instance.
+        /// @emits transportclose
+        /// @emits producerclose
+        /// @emits producerpause
+        /// @emits producerresume
+        /// @emits score - (score: ConsumerScore)
+        /// @emits layerschange - (layers: ConsumerLayers | null)
+        /// @emits trace - (trace: ConsumerTraceEventData)
+        /// @emits @close
+        /// @emits @producerclose
+        /// Observer:
+        /// @emits close
+        /// @emits pause
+        /// @emits resume
+        /// @emits score - (score: ConsumerScore)
+        /// @emits layerschange - (layers: ConsumerLayers | null)
+        /// @emits trace - (trace: ConsumerTraceEventData)
         /// </summary>
-        public ConsumerObserver Observer { get; } = new ConsumerObserver();
-
-        #region Events
-
-        public event Action? TransportCloseEvent;
-
-        public event Action? ProducerCloseEvent;
-
-        public event Action? ProducerPauseEvent;
-
-        public event Action? ProducerResumeEvent;
-
-        public event Action<ConsumerScore>? ScoreEvent;
-
-        public event Action<ConsumerLayers?>? LayerschangeEvent;
-
-        public event Action<TraceEventData>? TraceEvent;
-
-        public event Action? CloseEvent;
-
-        #endregion
-
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="transportId"></param>
+        /// <param name="consumerId"></param>
+        /// <param name="producerId"></param>
+        /// <param name="kind"></param>
+        /// <param name="rtpParameters"></param>
+        /// <param name="type"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        /// <param name="paused"></param>
+        /// <param name="producerPaused"></param>
+        /// <param name="score"></param>
+        /// <param name="preferredLayers"></param>
         public Consumer(ILoggerFactory loggerFactory,
                     string routerId,
                     string transportId,
@@ -177,10 +186,10 @@ namespace TubumuMeeting.Mediasoup
             // Fire and forget
             Channel.RequestAsync(MethodId.CONSUMER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            CloseEvent?.Invoke();
+            Emit("@close");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -195,10 +204,10 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
-            TransportCloseEvent?.Invoke();
+            Emit("transportclose");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -234,7 +243,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Emit observer event.
             if (!wasPaused)
-                Observer.EmitPause();
+                Observer.Emit("pause");
         }
 
         /// <summary>
@@ -252,7 +261,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Emit observer event.
             if (wasPaused)
-                Observer.EmitResume();
+                Observer.Emit("resume");
         }
 
         /// <summary>
@@ -334,10 +343,11 @@ namespace TubumuMeeting.Mediasoup
 
                         Closed = true;
 
-                        ProducerCloseEvent?.Invoke();
+                        Emit("@producerclose");
+                        Emit("producerclose");
 
                         // Emit observer event.
-                        Observer.EmitClose();
+                        Observer.Emit("close");
 
                         break;
                     }
@@ -350,11 +360,11 @@ namespace TubumuMeeting.Mediasoup
 
                         ProducerPaused = true;
 
-                        ProducerPauseEvent?.Invoke();
+                        Emit("producerpause");
 
                         // Emit observer event.
                         if (!wasPaused)
-                            Observer.EmitPause();
+                            Observer.Emit("pause");
 
                         break;
                     }
@@ -367,11 +377,11 @@ namespace TubumuMeeting.Mediasoup
 
                         ProducerPaused = false;
 
-                        ProducerResumeEvent?.Invoke();
+                        Emit("producerresume");
 
                         // Emit observer event.
                         if (wasPaused && !Paused)
-                            Observer.EmitResume();
+                            Observer.Emit("resume");
 
                         break;
                     }
@@ -380,10 +390,10 @@ namespace TubumuMeeting.Mediasoup
                         var score = JsonConvert.DeserializeObject<ConsumerScore>(data);
                         Score = score;
 
-                        ScoreEvent?.Invoke(score);
+                        Emit("score", score);
 
                         // Emit observer event.
-                        Observer.EmitScore(score);
+                        Observer.Emit("score", score);
 
                         break;
                     }
@@ -393,10 +403,10 @@ namespace TubumuMeeting.Mediasoup
 
                         CurrentLayers = layers;
 
-                        LayerschangeEvent?.Invoke(layers);
+                        Emit("layerschange", layers);
 
                         // Emit observer event.
-                        Observer.EmitLayersChange(layers);
+                        Observer.Emit("layersChange", layers);
 
                         break;
                     }
@@ -404,10 +414,10 @@ namespace TubumuMeeting.Mediasoup
                     {
                         var trace = JsonConvert.DeserializeObject<TraceEventData>(data);
 
-                        TraceEvent?.Invoke(trace);
+                        Emit("trace", trace);
 
                         // Emit observer event.
-                        Observer.EmitTrace(trace);
+                        Observer.Emit("trace", trace);
 
                         break;
                     }

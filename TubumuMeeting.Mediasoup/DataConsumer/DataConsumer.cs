@@ -10,7 +10,7 @@ using Tubumu.Core.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class DataConsumer
+    public class DataConsumer : EventEmitter
     {
         // Logger
         private readonly ILoggerFactory _loggerFactory;
@@ -73,18 +73,26 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Observer instance.
         /// </summary>
-        public DataConsumerObserver Observer { get; } = new DataConsumerObserver();
+        public EventEmitter Observer { get; } = new EventEmitter();
 
-        #region Events
-
-        public event Action? CloseEvent;
-
-        public event Action? DataProducerCloseEvent;
-
-        public event Action? TransportCloseEvent;
-
-        #endregion
-
+        /// <summary>
+        /// @emits transportclose
+        /// @emits dataproducerclose
+        /// @emits @close
+        /// @emits @dataproducerclose
+        /// Observer:
+        /// @emits close
+        /// </summary>
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="transportId"></param>
+        /// <param name="dataProducerId"></param>
+        /// <param name="dataConsumerId"></param>
+        /// <param name="sctpStreamParameters"></param>
+        /// <param name="label"></param>
+        /// <param name="protocol"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
         public DataConsumer(ILoggerFactory loggerFactory,
                             string routerId,
                             string transportId,
@@ -141,10 +149,10 @@ namespace TubumuMeeting.Mediasoup
                 DataConsumerId = Id,
             }).ContinueWithOnFaultedHandleLog(_logger);
 
-            CloseEvent?.Invoke();
+            Emit("@close");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -162,10 +170,10 @@ namespace TubumuMeeting.Mediasoup
             // Remove notification subscriptions.
             Channel.MessageEvent -= OnChannelMessage;
 
-            TransportCloseEvent?.Invoke();
+            Emit("transportclose");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -206,10 +214,11 @@ namespace TubumuMeeting.Mediasoup
 
                         Channel.MessageEvent -= OnChannelMessage;
 
-                        DataProducerCloseEvent?.Invoke();
+                        Emit("@dataproducerclose");
+                        Emit("dataproducerclose");
 
                         // Emit observer event.
-                        Observer.EmitClose();
+                        Observer.Emit("close");
 
                         break;
                     }

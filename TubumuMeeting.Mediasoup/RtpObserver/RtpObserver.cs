@@ -8,7 +8,7 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class RtpObserver
+    public class RtpObserver : EventEmitter
     {
         // Logger
         private readonly ILoggerFactory _loggerFactory;
@@ -47,19 +47,24 @@ namespace TubumuMeeting.Mediasoup
         // Method to retrieve a Producer.
         protected readonly Func<string, Producer> GetProducerById;
 
+        public EventEmitter Observer { get; } = new EventEmitter();
+
         /// <summary>
-        /// Observer instance.
+        /// @emits routerclose
+        /// @emits @close
+        /// Observer:
+        /// @emits close
+        /// @emits pause
+        /// @emits resume
+        /// @emits addproducer - (producer: Producer)
+        /// @emits removeproducer - (producer: Producer)
         /// </summary>
-        public RtpObserverObserver Observer { get; } = new RtpObserverObserver();
-
-        #region Events
-
-        public event Action? CloseEvent;
-
-        public event Action? RouterCloseEvent;
-
-        #endregion
-
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="rtpObserverId"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        /// <param name="getProducerById"></param>
         public RtpObserver(ILoggerFactory loggerFactory,
                     string routerId,
                     string rtpObserverId,
@@ -96,10 +101,10 @@ namespace TubumuMeeting.Mediasoup
             // Fire and forget.
             Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            CloseEvent?.Invoke();
+            Emit("@close");
 
             // Emit observer event.
-            //this._observer.safeEmit('close');
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -116,10 +121,10 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
-            RouterCloseEvent?.Invoke();
+            Emit("routerclose");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -138,7 +143,7 @@ namespace TubumuMeeting.Mediasoup
             // Emit observer event.
             if (!wasPaused)
             {
-                Observer.EmitPause();
+                Observer.Emit("pause");
             }
         }
 
@@ -158,7 +163,7 @@ namespace TubumuMeeting.Mediasoup
             // Emit observer event.
             if (wasPaused)
             {
-                Observer.EmitResume();
+                Observer.Emit("resume");
             }
         }
 
@@ -180,7 +185,7 @@ namespace TubumuMeeting.Mediasoup
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER.GetEnumStringValue(), _internal);
 
             // Emit observer event.
-            Observer.EmitAddProducer(producer);
+            Observer.Emit("addproducer", producer);
         }
 
         /// <summary>
@@ -200,7 +205,7 @@ namespace TubumuMeeting.Mediasoup
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER.GetEnumStringValue(), _internal);
 
             // Emit observer event.
-            Observer.EmitRemoveProducer(producer);
+            Observer.Emit("removeproducer", producer);
         }
     }
 }

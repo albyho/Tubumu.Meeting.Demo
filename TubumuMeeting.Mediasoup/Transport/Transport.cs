@@ -10,7 +10,7 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public abstract class Transport
+    public abstract class Transport : EventEmitter
     {
         // Logger
         private readonly ILoggerFactory _loggerFactory;
@@ -22,7 +22,7 @@ namespace TubumuMeeting.Mediasoup
 
         public string TransportId { get; }
 
-        private object _internal;
+        protected object _internal;
 
         #endregion
 
@@ -31,12 +31,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// SCTP parameters.
         /// </summary>
-        public SctpParameters? SctpParameters { get; }
+        public SctpParameters? SctpParameters { get; protected set; }
 
         /// <summary>
         /// Sctp state.
         /// </summary>
-        public SctpState? SctpState { get; }
+        public SctpState? SctpState { get; protected set; }
 
         #endregion
 
@@ -91,24 +91,32 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Observer instance.
         /// </summary>
-        public TransportObserver Observer { get; } = new TransportObserver();
+        public EventEmitter Observer { get; } = new EventEmitter();
 
-        #region Events
-
-        public event Action? RouterCloseEvent;
-
-        public event Action? CloseEvent;
-
-        public event Action<Producer>? NewProducerEvent;
-
-        public event Action<Producer>? ProducerCloseEvent;
-
-        public event Action<DataProducer>? NewDataProducerEvent;
-
-        public event Action<DataProducer>? DataProducerCloseEvent;
-
-        #endregion
-
+        /// <summary>
+        /// @emits routerclose
+        /// @emits @close
+        /// @emits @newproducer - (producer: Producer)
+        /// @emits @producerclose - (producer: Producer)
+        /// @emits @newdataproducer - (dataProducer: DataProducer)
+        /// @emits @dataproducerclose - (dataProducer: DataProducer)
+        /// Observer:
+        /// @emits close
+        /// @emits newproducer - (producer: Producer)
+        /// @emits newconsumer - (producer: Producer)
+        /// @emits newdataproducer - (dataProducer: DataProducer)
+        /// @emits newdataconsumer - (dataProducer: DataProducer)
+        /// </summary>
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="transportId"></param>
+        /// <param name="sctpParameters"></param>
+        /// <param name="sctpState"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        /// <param name="getRouterRtpCapabilities"></param>
+        /// <param name="getProducerById"></param>
+        /// <param name="getDataProducerById"></param>
         public Transport(ILoggerFactory loggerFactory,
             string routerId,
             string transportId,
@@ -141,7 +149,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the Transport.
         /// </summary>
-        public void Close()
+        public virtual void Close()
         {
             if (Closed)
                 return;
@@ -160,7 +168,7 @@ namespace TubumuMeeting.Mediasoup
                 producer.TransportClosed();
 
                 // Must tell the Router.
-                ProducerCloseEvent?.Invoke(producer);
+                Emit("@producerclose");
             }
             Producers.Clear();
 
@@ -177,7 +185,7 @@ namespace TubumuMeeting.Mediasoup
                 dataProducer.TransportClosed();
 
                 // Must tell the Router.
-                DataProducerCloseEvent?.Invoke(dataProducer);
+                Emit("@dataproducerclose", dataProducer);
             }
             DataProducers.Clear();
 
@@ -188,16 +196,16 @@ namespace TubumuMeeting.Mediasoup
             }
             DataConsumers.Clear();
 
-            CloseEvent?.Invoke();
+            Emit("@close");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public void RouterClosed()
+        public virtual void RouterClosed()
         {
             if (Closed)
                 return;
@@ -241,10 +249,10 @@ namespace TubumuMeeting.Mediasoup
             }
             DataConsumers.Clear();
 
-            RouterCloseEvent?.Invoke();
+            Emit("routerclose");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -259,7 +267,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Get Transport stats.
         /// </summary>
-        public Task<string?> GetStatsAsync()
+        public virtual Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
             return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS.GetEnumStringValue(), _internal);
@@ -270,7 +278,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         /// <param name="params"></param>
         /// <returns></returns>
-        public abstract Task ConnectAsync(object @params);
+        public abstract Task ConnectAsync(object parameters);
 
         /// <summary>
         /// Set maximum incoming bitrate for receiving media.
@@ -377,16 +385,16 @@ namespace TubumuMeeting.Mediasoup
 
             Producers[producer.Id] = producer;
 
-            producer.CloseEvent += () =>
+            producer.On("@close", _ =>
             {
                 Producers.Remove(producer.Id);
-                ProducerCloseEvent?.Invoke(producer);
-            };
+                Emit("@producerclose");
+            });
 
-            NewProducerEvent?.Invoke(producer);
+            Emit("@newproducer");
 
             // Emit observer event.
-            Observer.EmitNewProducer(producer);
+            Observer.Emit("newproducer");
 
             return producer;
         }
@@ -467,11 +475,11 @@ namespace TubumuMeeting.Mediasoup
 
             Consumers[consumer.Id] = consumer;
 
-            consumer.CloseEvent += () => Consumers.Remove(consumer.Id);
-            consumer.ProducerCloseEvent += () => Consumers.Remove(consumer.Id);
+            consumer.On("@close", _ => Consumers.Remove(consumer.Id));
+            consumer.On("@producerclose", _ => Consumers.Remove(consumer.Id));
 
             // Emit observer event.
-            Observer.EmitNewConsumer(consumer);
+            Observer.Emit("newconsumer", consumer);
 
             return consumer;
         }
@@ -518,16 +526,16 @@ namespace TubumuMeeting.Mediasoup
 
             DataProducers[dataProducer.Id] = dataProducer;
 
-            dataProducer.CloseEvent += () =>
+            dataProducer.On("@close", _ =>
             {
                 DataProducers.Remove(dataProducer.Id);
-                DataProducerCloseEvent?.Invoke(dataProducer);
-            };
+                Emit("@dataproducerclose");
+            });
 
-            NewDataProducerEvent?.Invoke(dataProducer);
+            Emit("@newdataproducer", dataProducer);
 
             // Emit observer event.
-            Observer.EmitNewDataProducer(dataProducer);
+            Observer.Emit("newdataproducer", dataProducer);
 
             return dataProducer;
         }
@@ -589,20 +597,20 @@ namespace TubumuMeeting.Mediasoup
 
             DataConsumers[dataConsumer.Id] = dataConsumer;
 
-            dataConsumer.CloseEvent += () =>
+            dataConsumer.On("@close", _ =>
             {
                 DataConsumers.Remove(dataConsumer.Id);
                 _sctpStreamIds[sctpStreamId] = 0;
-            };
+            });
 
-            dataConsumer.DataProducerCloseEvent += () =>
+            dataConsumer.On("@dataproducerclose", _ =>
             {
                 DataConsumers.Remove(dataConsumer.Id);
                 _sctpStreamIds[sctpStreamId] = 0;
-            };
+            });
 
             // Emit observer event.
-            Observer.EmitNewDataConsumer(dataConsumer);
+            Observer.Emit("newdataconsumer", dataConsumer);
 
             return dataConsumer;
         }

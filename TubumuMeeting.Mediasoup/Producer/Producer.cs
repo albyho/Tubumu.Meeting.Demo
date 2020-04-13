@@ -9,7 +9,7 @@ using Tubumu.Core.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class Producer
+    public class Producer : EventEmitter
     {
         // Logger
         private readonly ILoggerFactory _loggerFactory;
@@ -82,22 +82,33 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Observer instance.
         /// </summary>
-        public ProducerObserver Observer { get; } = new ProducerObserver();
+        public EventEmitter Observer { get; } = new EventEmitter();
 
-        #region Events
-
-        public event Action? TransportCloseEvent;
-
-        public event Action<ProducerScore[]>? ScoreEvent;
-
-        public event Action<ProducerVideoOrientation>? VideoOrientationChangeEvent;
-
-        public event Action<TraceEventData>? TraceEvent;
-
-        public event Action? CloseEvent;
-
-        #endregion
-
+        /// <summary>
+        /// @emits transportclose
+        /// @emits score - (score: ProducerScore[])
+        /// @emits videoorientationchange - (videoOrientation: ProducerVideoOrientation)
+        /// @emits trace - (trace: ProducerTraceEventData)
+        /// @emits @close
+        /// Observer:
+        /// @emits close
+        /// @emits pause
+        /// @emits resume
+        /// @emits score - (score: ProducerScore[])
+        /// @emits videoorientationchange - (videoOrientation: ProducerVideoOrientation)
+        /// @emits trace - (trace: ProducerTraceEventData)            
+        /// </summary>
+        /// <param name="loggerFactory"></param>
+        /// <param name="routerId"></param>
+        /// <param name="transportId"></param>
+        /// <param name="producerId"></param>
+        /// <param name="kind"></param>
+        /// <param name="rtpParameters"></param>
+        /// <param name="type"></param>
+        /// <param name="consumableRtpParameters"></param>
+        /// <param name="channel"></param>
+        /// <param name="appData"></param>
+        /// <param name="paused"></param>
         public Producer(ILoggerFactory loggerFactory,
                     string routerId,
                     string transportId,
@@ -147,10 +158,10 @@ namespace TubumuMeeting.Mediasoup
             // Fire and forget
             Channel.RequestAsync(MethodId.PRODUCER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            CloseEvent?.Invoke();
+            Emit("close");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -165,10 +176,10 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
-            TransportCloseEvent?.Invoke();
+            Emit("transportclose");
 
             // Emit observer event.
-            Observer.EmitClose();
+            Observer.Emit("close");
         }
 
         /// <summary>
@@ -204,7 +215,9 @@ namespace TubumuMeeting.Mediasoup
 
             // Emit observer event.
             if (!wasPaused)
-                Observer.EmitPause();
+            {
+                Observer.Emit("pause");
+            }
         }
 
         /// <summary>
@@ -222,7 +235,9 @@ namespace TubumuMeeting.Mediasoup
 
             // Emit observer event.
             if (wasPaused)
-                Observer.EmitResume();
+            {
+                Observer.Emit("resume");
+            }
         }
 
         /// <summary>
@@ -257,20 +272,21 @@ namespace TubumuMeeting.Mediasoup
                         var score = JsonConvert.DeserializeObject<ProducerScore[]>(data);
                         Score = score;
 
-                        ScoreEvent?.Invoke(score);
+                        Emit("score", score);
 
                         // Emit observer event.
-                        Observer.EmitScore(score);
+                        Observer.Emit("score", score);
 
                         break;
                     }
                 case "videoorientationchange":
                     {
                         var videoOrientation = JsonConvert.DeserializeObject<ProducerVideoOrientation>(data);
-                        VideoOrientationChangeEvent?.Invoke(videoOrientation);
+
+                        Emit("videoorientationchange", videoOrientation);
 
                         // Emit observer event.
-                        Observer.EmitVideoOrientationChange(videoOrientation);
+                        Observer.Emit("videoorientationchange", videoOrientation);
 
                         break;
                     }
@@ -278,10 +294,10 @@ namespace TubumuMeeting.Mediasoup
                     {
                         var trace = JsonConvert.DeserializeObject<TraceEventData>(data);
 
-                        TraceEvent?.Invoke(trace);
+                        Emit("trace", trace);
 
                         // Emit observer event.
-                        Observer.EmitTrace(trace);
+                        Observer.Emit("trace", trace);
 
                         break;
                     }
