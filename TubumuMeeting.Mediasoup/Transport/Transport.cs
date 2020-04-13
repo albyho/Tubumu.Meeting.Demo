@@ -160,7 +160,7 @@ namespace TubumuMeeting.Mediasoup
 
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.TRANSPORT_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.TRANSPORT_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             // Close every Producer.
             foreach (var producer in Producers.Values)
@@ -261,7 +261,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.TRANSPORT_DUMP.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.TRANSPORT_DUMP, _internal);
         }
 
         /// <summary>
@@ -270,7 +270,7 @@ namespace TubumuMeeting.Mediasoup
         public virtual Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -290,7 +290,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug($"setMaxIncomingBitrate() [bitrate:{bitrate}]");
 
             var reqData = new { Bitrate = bitrate };
-            return Channel.RequestAsync(MethodId.TRANSPORT_SET_MAX_INCOMING_BITRATE.GetEnumStringValue(), _internal, reqData);
+            return Channel.RequestAsync(MethodId.TRANSPORT_SET_MAX_INCOMING_BITRATE, _internal, reqData);
         }
 
         /// <summary>
@@ -361,7 +361,7 @@ namespace TubumuMeeting.Mediasoup
                 producerOptions.Paused,
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportProduceResponseData>(status);
             var data = new
             {
@@ -453,7 +453,7 @@ namespace TubumuMeeting.Mediasoup
                 consumerOptions.PreferredLayers
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status);
 
             var data = new
@@ -517,7 +517,7 @@ namespace TubumuMeeting.Mediasoup
                 dataProducerOptions.Protocol
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE_DATA.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE_DATA, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportDataProduceResponseData>(status);
             var dataProducer = new DataProducer(_loggerFactory,
                 @internal.RouterId,
@@ -586,7 +586,7 @@ namespace TubumuMeeting.Mediasoup
                 dataProducer.Protocol
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME_DATA.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME_DATA, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportDataConsumeResponseData>(status);
 
             var dataConsumer = new DataConsumer(_loggerFactory,
@@ -632,7 +632,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new { Types = types };
 
-            return Channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT.GetEnumStringValue(), _internal, reqData);
+            return Channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         private int GetNextSctpStreamId()

@@ -99,7 +99,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget.
-            Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -136,7 +136,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, _internal);
 
             Paused = true;
 
@@ -156,7 +156,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, _internal);
 
             Paused = false;
 
@@ -182,7 +182,7 @@ namespace TubumuMeeting.Mediasoup
                 ProducerId = producerId,
             };
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, _internal);
 
             // Emit observer event.
             Observer.Emit("addproducer", producer);
@@ -202,7 +202,7 @@ namespace TubumuMeeting.Mediasoup
                 RtpObserverId = Id,
                 ProducerId = producerId,
             };
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, _internal);
 
             // Emit observer event.
             Observer.Emit("removeproducer", producer);

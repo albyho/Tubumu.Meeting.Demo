@@ -119,7 +119,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.ROUTER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.ROUTER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             // Close every Transport.
             foreach (var transport in _transports.Values)
@@ -203,7 +203,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.ROUTER_DUMP.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.ROUTER_DUMP, _internal);
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace TubumuMeeting.Mediasoup
                 IsDataChannel = true
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_WEBRTC_TRANSPORT.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_WEBRTC_TRANSPORT, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<RouterCreateWebRtcTransportResponseData>(status);
 
             var transport = new WebRtcTransport(_loggerFactory,
@@ -310,7 +310,7 @@ namespace TubumuMeeting.Mediasoup
                 plainTransportOptions.SrtpCryptoSuite
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PLAIN_TRANSPORT.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PLAIN_TRANSPORT, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status);
 
             var transport = new PlainTransport(_loggerFactory,
@@ -382,7 +382,7 @@ namespace TubumuMeeting.Mediasoup
                 pipeTransportOptions.EnableSrtp,
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PIPE_TRANSPORT.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PIPE_TRANSPORT, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
 
             var transport = new PipeTransport(_loggerFactory,
@@ -689,7 +689,7 @@ namespace TubumuMeeting.Mediasoup
                 audioLevelObserverOptions.Interval
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_AUDIO_LEVEL_OBSERVER.GetEnumStringValue(), @internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_AUDIO_LEVEL_OBSERVER, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
 
             var audioLevelObserver = new AudioLevelObserver(_loggerFactory,

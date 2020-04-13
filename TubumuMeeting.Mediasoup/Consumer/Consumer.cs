@@ -184,7 +184,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.CONSUMER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -216,7 +216,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.CONSUMER_DUMP.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.CONSUMER_DUMP, _internal);
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.CONSUMER_GET_STATS.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.CONSUMER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -237,7 +237,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.CONSUMER_PAUSE.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.CONSUMER_PAUSE, _internal);
 
             Paused = true;
 
@@ -255,7 +255,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.CONSUMER_RESUME.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.CONSUMER_RESUME, _internal);
 
             Paused = false;
 
@@ -272,7 +272,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("SetPreferredLayersAsync()");
 
             var reqData = consumerLayers;
-            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS.GetEnumStringValue(), _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetPreferredLayersResponseData>(status);
             PreferredLayers = responseData;
         }
@@ -285,7 +285,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("SetPriorityAsync()");
 
             var reqData = new { Priority = priority };
-            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY.GetEnumStringValue(), _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status);
             Priority = responseData.Priority;
         }
@@ -298,7 +298,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("UnsetPriorityAsync()");
 
             var reqData = new { Priority = 1 };
-            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY.GetEnumStringValue(), _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status);
 
             Priority = responseData.Priority;
@@ -310,7 +310,7 @@ namespace TubumuMeeting.Mediasoup
         public Task RequestKeyFrameAsync()
         {
             _logger.LogDebug("RequestKeyFrameAsync()");
-            return Channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, _internal);
         }
 
         /// <summary>
@@ -323,7 +323,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 Types = types ?? new TraceEventType[0]
             };
-            return Channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT.GetEnumStringValue(), _internal, reqData);
+            return Channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         #region Event Handlers

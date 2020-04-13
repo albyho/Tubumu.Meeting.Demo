@@ -156,7 +156,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.PRODUCER_CLOSE.GetEnumStringValue(), _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.PRODUCER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("close");
 
@@ -188,7 +188,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.PRODUCER_DUMP.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.PRODUCER_DUMP, _internal);
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.PRODUCER_GET_STATS.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.PRODUCER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -209,7 +209,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.PRODUCER_PAUSE.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.PRODUCER_PAUSE, _internal);
 
             Paused = true;
 
@@ -229,7 +229,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.PRODUCER_RESUME.GetEnumStringValue(), _internal);
+            await Channel.RequestAsync(MethodId.PRODUCER_RESUME, _internal);
 
             Paused = false;
 
@@ -252,7 +252,7 @@ namespace TubumuMeeting.Mediasoup
                 Types = types ?? new TraceEventType[0]
             };
 
-            return Channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT.GetEnumStringValue(), _internal, reqData);
+            return Channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         #region Event Handlers

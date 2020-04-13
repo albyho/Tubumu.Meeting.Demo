@@ -125,7 +125,7 @@ namespace TubumuMeeting.Mediasoup
         {
             var reqData = plainTransportConnectParameters;
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT.GetEnumStringValue(), _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<PlainTransportConnectResponseData>(status);
 
             // Update data.

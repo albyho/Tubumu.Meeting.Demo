@@ -62,7 +62,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // Just override kind with media component in mimeType.
-            codec.Kind = mimeType.StartsWith("Video") ? MediaKind.Video : MediaKind.Audio;
+            codec.Kind = mimeType.ToLower().StartsWith("video") ? MediaKind.Video : MediaKind.Audio;
 
             // preferredPayloadType is optional.
 
@@ -514,7 +514,7 @@ namespace TubumuMeeting.Mediasoup
                     var rtxCodec = new RtpCodecCapability
                     {
                         Kind = codec.Kind,
-                        MimeType = $"{ codec.Kind.GetEnumStringValue()}/rtx",
+                        MimeType = $"{codec.Kind.GetEnumStringValue()}/rtx",
                         PreferredPayloadType = pt,
                         ClockRate = codec.ClockRate,
                         Parameters = new Dictionary<string, object>
@@ -910,7 +910,7 @@ namespace TubumuMeeting.Mediasoup
                     continue;
 
                 codec.RtcpFeedback = codec.RtcpFeedback
-                    .Where(fb => 
+                    .Where(fb =>
                         (fb.Type == "nack" && fb.Parameter == "pli") ||
                         (fb.Type == "ccm" && fb.Parameter == "fir") ||
                         (enableRtx && fb.Type == "nack" && fb.Parameter.IsNullOrWhiteSpace())

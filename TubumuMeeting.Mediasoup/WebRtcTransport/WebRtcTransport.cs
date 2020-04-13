@@ -152,7 +152,7 @@ namespace TubumuMeeting.Mediasoup
         {
             var reqData = new { DtlsParameters = dtlsParameters };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT.GetEnumStringValue(), _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<WebRtcTransportConnectResponseData>(status);
 
             // Update data.
@@ -168,7 +168,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new { IceParameters = iceParameters };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE.GetEnumStringValue(), _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<WebRtcTransportRestartIceResponseData>(status);
 
             // Update data.

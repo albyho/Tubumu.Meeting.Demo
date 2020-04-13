@@ -128,7 +128,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.DATA_PRODUCER_CLOSE.GetEnumStringValue(), new
+            Channel.RequestAsync(MethodId.DATA_PRODUCER_CLOSE, new
             {
                 RouterId,
                 TransportId,
@@ -165,7 +165,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP, _internal);
         }
 
         /// <summary>
@@ -174,7 +174,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS.GetEnumStringValue(), _internal);
+            return Channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, _internal);
         }
 
         #region Event Handlers

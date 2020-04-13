@@ -186,7 +186,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return _channel.RequestAsync(MethodId.WORKER_DUMP.GetEnumStringValue());
+            return _channel.RequestAsync(MethodId.WORKER_DUMP);
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> GetResourceUsageAsync()
         {
             _logger.LogDebug("GetResourceUsageAsync()");
-            return _channel.RequestAsync(MethodId.WORKER_GET_RESOURCE_USAGE.GetEnumStringValue());
+            return _channel.RequestAsync(MethodId.WORKER_GET_RESOURCE_USAGE);
         }
 
         /// <summary>
@@ -204,8 +204,8 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> UpdateSettingsAsync(WorkerLogLevel logLevel, IEnumerable<string> logTags)
         {
             _logger.LogDebug("UpdateSettingsAsync()");
-            var reqData = new { logLevel = logLevel.GetEnumStringValue(), logTags };
-            return _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS.GetEnumStringValue(), null, reqData);
+            var reqData = new { logLevel = logLevel, logTags };
+            return _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS, null, reqData);
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace TubumuMeeting.Mediasoup
 
             var @internal = new { RouterId = Guid.NewGuid().ToString() };
 
-            await _channel.RequestAsync(MethodId.WORKER_CREATE_ROUTER.GetEnumStringValue(), @internal);
+            await _channel.RequestAsync(MethodId.WORKER_CREATE_ROUTER, @internal);
 
             var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, AppData);
 
