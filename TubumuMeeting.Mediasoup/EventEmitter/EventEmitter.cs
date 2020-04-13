@@ -23,7 +23,7 @@ namespace TubumuMeeting.Mediasoup
         }
         */
 
-        private Dictionary<string, List<Action<object?>>> _events;
+        private readonly Dictionary<string, List<Action<object?>>> _events;
 
         /// <summary>
         /// The EventEmitter object to subscribe to events with
@@ -40,8 +40,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="method">Method to add to the event</param>
         public void On(string eventName, Action<object?> method)
         {
-            List<Action<object?>> subscribedMethods;
-            if (_events.TryGetValue(eventName, out subscribedMethods))
+            if (_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
             {
                 subscribedMethods.Add(method);
             }
@@ -58,8 +57,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="data">Data to call the attached methods with</param>
         public void Emit(string eventName, object? data = null)
         {
-            List<Action<object?>> subscribedMethods;
-            if (!_events.TryGetValue(eventName, out subscribedMethods))
+            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
             {
                 throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
             }
@@ -79,8 +77,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="method">Method to remove from eventName</param>
         public void RemoveListener(string eventName, Action<object?> method)
         {
-            List<Action<object?>> subscribedMethods;
-            if (!_events.TryGetValue(eventName, out subscribedMethods))
+            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
             {
                 throw new DoesNotExistException(string.Format("Event [{0}] does not exist to have listeners removed.", eventName));
             }
@@ -104,8 +101,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="eventName">Event name to remove methods from</param>
         public void RemoveAllListeners(string eventName)
         {
-            List<Action<object?>> subscribedMethods;
-            if (!_events.TryGetValue(eventName, out subscribedMethods))
+            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
             {
                 throw new DoesNotExistException(string.Format("Event [{0}] does not exist to have methods removed.", eventName));
             }
@@ -122,8 +118,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="data">The data to call all the methods with</param>
         public void EmitAsync(string eventName, object? data = null)
         {
-            List<Action<object?>> subscribedMethods;
-            if (!_events.TryGetValue(eventName, out subscribedMethods))
+            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
             {
                 throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
             }

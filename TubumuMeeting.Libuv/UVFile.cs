@@ -58,8 +58,10 @@ namespace TubumuMeeting.Libuv
 
 		public void Close(Loop loop, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_close(loop.NativeHandle, fsr.Handle, FileDescriptor, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -431,8 +433,10 @@ namespace TubumuMeeting.Libuv
 
 		public void Sync(Loop loop, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_fsync(loop.NativeHandle, fsr.Handle, FileDescriptor, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -454,8 +458,10 @@ namespace TubumuMeeting.Libuv
 
 		public void DataSync(Loop loop, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_fdatasync(loop.NativeHandle, fsr.Handle, FileDescriptor, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -477,8 +483,10 @@ namespace TubumuMeeting.Libuv
 
 		public void Truncate(Loop loop, int offset, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_ftruncate(loop.NativeHandle, fsr.Handle, FileDescriptor, offset, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -500,8 +508,10 @@ namespace TubumuMeeting.Libuv
 
 		public void Chmod(Loop loop, int mode, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_fchmod(loop.NativeHandle, fsr.Handle, FileDescriptor, mode, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -523,8 +533,10 @@ namespace TubumuMeeting.Libuv
 
 		public static void Chmod(Loop loop, string path, int mode, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_chmod(loop.NativeHandle, fsr.Handle, path, mode, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -546,8 +558,10 @@ namespace TubumuMeeting.Libuv
 
 		public static void Chown(Loop loop, string path, int uid, int gid, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_chown(loop.NativeHandle, fsr.Handle, path, uid, gid, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -569,8 +583,10 @@ namespace TubumuMeeting.Libuv
 
 		public void Chown(Loop loop, int uid, int gid, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_fchown(loop.NativeHandle, fsr.Handle, FileDescriptor, uid, gid, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -592,8 +608,10 @@ namespace TubumuMeeting.Libuv
 
 		public static void Unlink(Loop loop, string path, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_unlink(loop.NativeHandle, fsr.Handle, path, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -615,8 +633,10 @@ namespace TubumuMeeting.Libuv
 
 		public static void Link(Loop loop, string path, string newPath, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_link(loop.NativeHandle, fsr.Handle, path, newPath, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}
@@ -638,8 +658,10 @@ namespace TubumuMeeting.Libuv
 
 		public static void Symlink(Loop loop, string path, string newPath, Action<Exception> callback)
 		{
-			var fsr = new FileSystemRequest();
-			fsr.Callback = callback;
+			var fsr = new FileSystemRequest
+			{
+				Callback = callback
+			};
 			int r = uv_fs_symlink(loop.NativeHandle, fsr.Handle, path, newPath, 0, FileSystemRequest.CallbackDelegate);
 			Ensure.Success(r);
 		}

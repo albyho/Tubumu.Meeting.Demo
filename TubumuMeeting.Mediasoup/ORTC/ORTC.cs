@@ -33,7 +33,7 @@ namespace TubumuMeeting.Mediasoup
             // headerExtensions is optional. If unset, fill with an empty array.
             if (caps.HeaderExtensions == null)
             {
-                caps.HeaderExtensions = new RtpHeaderExtension[0];
+                caps.HeaderExtensions = Array.Empty<RtpHeaderExtension>();
             }
 
             foreach (var ext in caps.HeaderExtensions)
@@ -257,7 +257,7 @@ namespace TubumuMeeting.Mediasoup
             // rtcpFeedback is optional. If unset, set it to an empty array.
             if (codec.RtcpFeedback == null)
             {
-                codec.RtcpFeedback = new RtcpFeedback[0];
+                codec.RtcpFeedback = Array.Empty<RtcpFeedback>();
             }
 
             foreach (var fb in codec.RtcpFeedback)
@@ -521,7 +521,7 @@ namespace TubumuMeeting.Mediasoup
                         {
                             { "apt",codec.PreferredPayloadType}
                         },
-                        RtcpFeedback = new RtcpFeedback[0],
+                        RtcpFeedback = Array.Empty<RtcpFeedback>(),
 
                     };
 
@@ -559,12 +559,7 @@ namespace TubumuMeeting.Mediasoup
                 var matchedCapCodec = caps.Codecs
                     .Where(capCodec => MatchCodecs(codec, capCodec, true, true))
                     .FirstOrDefault();
-
-                if (matchedCapCodec == null)
-                {
-                    throw new Exception($"unsupported codec[mimeType:{ codec.MimeType }, payloadType:{ codec.PayloadType }]");
-                }
-                codecToCapCodec[codec] = matchedCapCodec;
+                codecToCapCodec[codec] = matchedCapCodec ?? throw new Exception($"unsupported codec[mimeType:{ codec.MimeType }, payloadType:{ codec.PayloadType }]");
             }
 
             // Match parameters RTX codecs to capabilities RTX codecs.
@@ -589,13 +584,7 @@ namespace TubumuMeeting.Mediasoup
                 var associatedCapRtxCodec = caps.Codecs
                     .Where(capCodec => IsRtxMimeType(capCodec.MimeType) && MatchCodecsWithPayloadTypeAndApt(capMediaCodec.PreferredPayloadType.Value, capCodec.Parameters))
                     .FirstOrDefault();
-
-                if (associatedCapRtxCodec == null)
-                {
-                    throw new Exception($"no RTX codec for capability codec PT { capMediaCodec.PreferredPayloadType}");
-                }
-
-                codecToCapCodec[codec] = associatedCapRtxCodec;
+                codecToCapCodec[codec] = associatedCapRtxCodec ?? throw new Exception($"no RTX codec for capability codec PT { capMediaCodec.PreferredPayloadType}");
             }
 
             // Generate codecs mapping.
@@ -860,9 +849,7 @@ namespace TubumuMeeting.Mediasoup
             // (assume all encodings have the same value).
             var encodingWithScalabilityMode = consumableParams.Encodings.Where(encoding => !encoding.ScalabilityMode.IsNullOrWhiteSpace()).FirstOrDefault();
 
-            var scalabilityMode = encodingWithScalabilityMode != null
-                ? encodingWithScalabilityMode.ScalabilityMode
-                : null;
+            var scalabilityMode = encodingWithScalabilityMode?.ScalabilityMode;
 
             // If there is simulast, mangle spatial layers in scalabilityMode.
             if (consumableParams.Encodings.Count > 1)

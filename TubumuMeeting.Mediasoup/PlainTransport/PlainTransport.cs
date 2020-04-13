@@ -11,7 +11,6 @@ namespace TubumuMeeting.Mediasoup
     public class PlainTransport : Transport
     {
         // Logger
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<PlainTransport> _logger;
 
         public bool? RtcpMux { get; set; }
@@ -67,7 +66,6 @@ namespace TubumuMeeting.Mediasoup
             SrtpParameters? srtpParameters
             ) : base(loggerFactory, routerId, transportId, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<PlainTransport>();
             RtcpMux = rtcpMux;
             Comedia = comedia;
@@ -113,8 +111,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("ConnectAsync()");
 
-            var connectParameters = parameters as PlainTransportConnectParameters;
-            if (connectParameters == null)
+            if (!(parameters is PlainTransportConnectParameters connectParameters))
             {
                 throw new Exception($"{nameof(parameters)} type is not PipTransportConnectParameters");
             }

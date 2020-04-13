@@ -101,8 +101,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("ConnectAsync()");
 
-            var connectParameters = parameters as PipeTransportConnectParameters;
-            if (connectParameters == null)
+            if (!(parameters is PipeTransportConnectParameters connectParameters))
             {
                 throw new Exception($"{nameof(parameters)} type is not PipTransportConnectParameters");
             }

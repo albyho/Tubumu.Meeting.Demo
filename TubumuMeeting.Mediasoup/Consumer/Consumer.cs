@@ -12,7 +12,6 @@ namespace TubumuMeeting.Mediasoup
     public class Consumer : EventEmitter
     {
         // Logger
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<Consumer> _logger;
 
         #region Internal data.
@@ -31,7 +30,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string ProducerId { get; }
 
-        private object _internal;
+        private readonly object _internal;
 
         #endregion
 
@@ -145,7 +144,6 @@ namespace TubumuMeeting.Mediasoup
                     ConsumerLayers? preferredLayers
                     )
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Consumer>();
             RouterId = routerId;
             TransportId = transportId;
@@ -321,7 +319,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("EnableTraceEventAsync()");
             var reqData = new
             {
-                Types = types ?? new TraceEventType[0]
+                Types = types ?? Array.Empty<TraceEventType>()
             };
             return Channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, _internal, reqData);
         }

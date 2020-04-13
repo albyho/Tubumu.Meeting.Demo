@@ -216,80 +216,78 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
             _logger.LogError(buffer);
-            using (var nsReader = new NetstringReader(message))
+            using var nsReader = new NetstringReader(message);
+            try
             {
-                try
+                var nsPayloadLength = 0;
+                foreach (var nsPayload in nsReader)
                 {
-                    var nsPayloadLength = 0;
-                    foreach (var nsPayload in nsReader)
+                    nsPayloadLength += nsPayload.Length.ToString().Length + 1 + nsPayload.Length + 1;
+                    try
                     {
-                        nsPayloadLength += nsPayload.Length.ToString().Length + 1 + nsPayload.Length + 1;
-                        try
+                        // We can receive JSON messages (Channel messages) or log strings.
+                        switch (nsPayload[0])
                         {
-                            // We can receive JSON messages (Channel messages) or log strings.
-                            switch (nsPayload[0])
-                            {
-                                // 123 = '{' (a Channel JSON messsage).
-                                case '{':
-                                    ProcessMessage(nsPayload);
-                                    break;
+                            // 123 = '{' (a Channel JSON messsage).
+                            case '{':
+                                ProcessMessage(nsPayload);
+                                break;
 
-                                // 68 = 'D' (a debug log).
-                                case 'D':
-                                    if (!nsPayload.Contains("(trace)"))
-                                        _logger.LogDebug($"{ nsPayload }");
-                                    break;
-
-                                // 87 = 'W' (a warn log).
-                                case 'W':
-                                    _logger.LogWarning($"{ nsPayload }");
-                                    break;
-
-                                // 69 = 'E' (an error log).
-                                case 'E':
-                                    _logger.LogError($"{ nsPayload }");
-                                    break;
-
-                                // 88 = 'X' (a dump log).
-                                case 'X':
-                                    // eslint-disable-next-line no-console
+                            // 68 = 'D' (a debug log).
+                            case 'D':
+                                if (!nsPayload.Contains("(trace)"))
                                     _logger.LogDebug($"{ nsPayload }");
-                                    break;
-                                default:
-                                    // eslint-disable-next-line no-console
-                                    _logger.LogWarning($"unexpected data:{ nsPayload }");
-                                    break;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError($"received invalid message from the worker process:{ex}");
-                            // Reset the buffer and exit.
-                            _recvBuffer = null;
-                            return;
-                        }
-                    }
+                                break;
 
-                    if (nsPayloadLength > 0)
-                    {
-                        if (nsPayloadLength == message.Length)
-                        {
-                            // Reset the buffer.
-                            _recvBuffer = null;
-                        }
-                        else
-                        {
-                            _recvBuffer = new StringBuilder(message.Substring(nsPayloadLength, message.Length - nsPayloadLength));
+                            // 87 = 'W' (a warn log).
+                            case 'W':
+                                _logger.LogWarning($"{ nsPayload }");
+                                break;
+
+                            // 69 = 'E' (an error log).
+                            case 'E':
+                                _logger.LogError($"{ nsPayload }");
+                                break;
+
+                            // 88 = 'X' (a dump log).
+                            case 'X':
+                                // eslint-disable-next-line no-console
+                                _logger.LogDebug($"{ nsPayload }");
+                                break;
+                            default:
+                                // eslint-disable-next-line no-console
+                                _logger.LogWarning($"unexpected data:{ nsPayload }");
+                                break;
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"received invalid message from the worker process:{ex}");
+                        // Reset the buffer and exit.
+                        _recvBuffer = null;
+                        return;
+                    }
                 }
-                catch (Exception ex)
+
+                if (nsPayloadLength > 0)
                 {
-                    _logger.LogError($"invalid netstring data received from the worker process:{ex}");
-                    // Reset the buffer and exit.
-                    _recvBuffer = null;
-                    return;
+                    if (nsPayloadLength == message.Length)
+                    {
+                        // Reset the buffer.
+                        _recvBuffer = null;
+                    }
+                    else
+                    {
+                        _recvBuffer = new StringBuilder(message.Substring(nsPayloadLength, message.Length - nsPayloadLength));
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"invalid netstring data received from the worker process:{ex}");
+                // Reset the buffer and exit.
+                _recvBuffer = null;
+                return;
             }
         }
 

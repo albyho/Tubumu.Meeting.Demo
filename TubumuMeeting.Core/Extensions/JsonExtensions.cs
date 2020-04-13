@@ -48,7 +48,7 @@ namespace Tubumu.Core.Extensions
             return (token == null) ||
                    (token.Type == JTokenType.Array && !token.HasValues) ||
                    (token.Type == JTokenType.Object && !token.HasValues) ||
-                   (token.Type == JTokenType.String && token.ToString() == String.Empty) ||
+                   (token.Type == JTokenType.String && string.IsNullOrEmpty(token.ToString())) ||
                    (token.Type == JTokenType.Null);
         }
     }

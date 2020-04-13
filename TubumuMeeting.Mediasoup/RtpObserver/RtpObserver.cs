@@ -11,7 +11,6 @@ namespace TubumuMeeting.Mediasoup
     public class RtpObserver : EventEmitter
     {
         // Logger
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<RtpObserver> _logger;
 
         #region Internal data.
@@ -20,7 +19,7 @@ namespace TubumuMeeting.Mediasoup
 
         public string Id { get; }
 
-        private object _internal;
+        private readonly object _internal;
 
         #endregion
 
@@ -72,7 +71,6 @@ namespace TubumuMeeting.Mediasoup
                     object? appData,
                     Func<string, Producer> getProducerById)
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<RtpObserver>();
             RouterId = routerId;
             Id = rtpObserverId;
@@ -182,7 +180,7 @@ namespace TubumuMeeting.Mediasoup
                 ProducerId = producerId,
             };
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, @internal);
 
             // Emit observer event.
             Observer.Emit("addproducer", producer);
@@ -202,7 +200,7 @@ namespace TubumuMeeting.Mediasoup
                 RtpObserverId = Id,
                 ProducerId = producerId,
             };
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);
 
             // Emit observer event.
             Observer.Emit("removeproducer", producer);

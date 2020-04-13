@@ -11,7 +11,6 @@ namespace TubumuMeeting.Mediasoup
     public class WebRtcTransport : Transport
     {
         // Logger
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<WebRtcTransport> _logger;
 
         public string IceRole { get; private set; } = "controlled";
@@ -84,7 +83,6 @@ namespace TubumuMeeting.Mediasoup
             string? dtlsRemoteCert
             ) : base(loggerFactory, routerId, transportId, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<WebRtcTransport>();
             IceRole = iceRole;
             IceParameters = iceParameters;
@@ -140,8 +138,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("ConnectAsync()");
 
-            var dtlsParameters = parameters as DtlsParameters;
-            if (dtlsParameters == null)
+            if (!(parameters is DtlsParameters dtlsParameters))
             {
                 throw new Exception($"{nameof(parameters)} type is not DtlsParameters");
             }

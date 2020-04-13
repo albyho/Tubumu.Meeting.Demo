@@ -10,7 +10,6 @@ namespace TubumuMeeting.Mediasoup
     public class AudioLevelObserver : RtpObserver
     {
         // Logger
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<AudioLevelObserver> _logger;
 
         /// <summary>
@@ -38,7 +37,6 @@ namespace TubumuMeeting.Mediasoup
                     object? appData,
                     Func<string, Producer> getProducerById) : base(loggerFactory, routerId, rtpObserverId, channel, appData, getProducerById)
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<AudioLevelObserver>();
 
             HandleWorkerNotifications();

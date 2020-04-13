@@ -12,7 +12,6 @@ namespace TubumuMeeting.Mediasoup
     public class Producer : EventEmitter
     {
         // Logger
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<Producer> _logger;
 
         #region Internal data.
@@ -26,7 +25,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string Id { get; }
 
-        private object _internal;
+        private readonly object _internal;
 
         #endregion
 
@@ -77,7 +76,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Current score.
         /// </summary>
-        public ProducerScore[] Score = new ProducerScore[0];
+        public ProducerScore[] Score = Array.Empty<ProducerScore>();
 
         /// <summary>
         /// Observer instance.
@@ -121,7 +120,6 @@ namespace TubumuMeeting.Mediasoup
                     object? appData,
                     bool paused)
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Producer>();
             RouterId = routerId;
             TransportId = transportId;

@@ -30,10 +30,10 @@ namespace TubumuMeeting.Mediasoup
         #region Private Fields
 
         // Logger factory for create Channel logger.
-        private ILoggerFactory _loggerFactory;
+        private readonly ILoggerFactory _loggerFactory;
 
         // Logger
-        private ILogger<Worker> _logger;
+        private readonly ILogger<Worker> _logger;
 
         // mediasoup-worker child process.
         private TubumuMeeting.Libuv.Process? _child;
@@ -41,7 +41,7 @@ namespace TubumuMeeting.Mediasoup
         // Is spawn done?
         private bool _spawnDone;
 
-        private Channel _channel;
+        private readonly Channel _channel;
 
         private readonly IPCPipe[] _pipes;
 
@@ -83,8 +83,10 @@ namespace TubumuMeeting.Mediasoup
 
             var env = new[] { $"MEDIASOUP_VERSION={mediasoupOptions.MediasoupVersion}" };
 
-            var args = new List<String>();
-            args.Add(mediasoupOptions.WorkerPath);
+            var args = new List<string>
+            {
+                mediasoupOptions.WorkerPath
+            };
             if (workerSettings.LogLevel.HasValue)
             {
                 args.Add($"--logLevel={Enum.GetName(typeof(WorkerLogLevel), workerSettings.LogLevel).ToLowerInvariant()}");
@@ -204,7 +206,11 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> UpdateSettingsAsync(WorkerLogLevel logLevel, IEnumerable<string> logTags)
         {
             _logger.LogDebug("UpdateSettingsAsync()");
-            var reqData = new { logLevel = logLevel, logTags };
+            var reqData = new
+            {
+                LogLevel = logLevel,
+                LogTags = logTags
+            };
             return _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS, null, reqData);
         }
 

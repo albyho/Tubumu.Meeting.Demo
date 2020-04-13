@@ -13,7 +13,6 @@ namespace TubumuMeeting.Mediasoup
     public class DataProducer : EventEmitter
     {
         // Logger
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<DataProducer> _logger;
 
         #region Internal data.
@@ -27,7 +26,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string Id { get; }
 
-        private object _internal;
+        private readonly object _internal;
 
         #endregion
 
@@ -95,7 +94,6 @@ namespace TubumuMeeting.Mediasoup
                             Channel channel,
                             object? appData)
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<DataProducer>(); RouterId = routerId;
             RouterId = routerId;
             TransportId = transportId;

@@ -19,15 +19,13 @@ namespace TubumuMeeting.Mediasoup
 
         public string RouterId { get; }
 
-        private object _internal;
+        private readonly object _internal;
 
         #endregion
 
         #region Router data.
 
         public RtpCapabilities RtpCapabilities { get; }
-
-        private object _data;
 
         #endregion
 
@@ -97,11 +95,6 @@ namespace TubumuMeeting.Mediasoup
                 RouterId,
             };
             RtpCapabilities = rtpCapabilities;
-            _data = new
-            {
-                RtpCapabilities,
-            };
-
             Channel = channel;
             AppData = appData;
         }
