@@ -29,7 +29,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Channel instance.
         /// </summary>
-        private readonly Channel _channel;
+        protected readonly Channel Channel;
 
         /// <summary>
         /// App custom data.
@@ -88,7 +88,7 @@ namespace TubumuMeeting.Mediasoup
                 RouterId,
                 RtpObserverId = rtpObserverId,
             };
-            _channel = channel;
+            Channel = channel;
             AppData = appData;
             GetProducerById = getProducerById;
         }
@@ -106,7 +106,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget.
-            _channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -141,7 +141,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await _channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, _internal);
 
             Paused = true;
 
@@ -161,7 +161,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await _channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, _internal);
 
             Paused = false;
 
@@ -187,7 +187,7 @@ namespace TubumuMeeting.Mediasoup
                 ProducerId = producerId,
             };
 
-            await _channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, @internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, @internal);
 
             // Emit observer event.
             Observer.Emit("addproducer", producer);
@@ -207,7 +207,7 @@ namespace TubumuMeeting.Mediasoup
                 RtpObserverId = Id,
                 ProducerId = producerId,
             };
-            await _channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);
 
             // Emit observer event.
             Observer.Emit("removeproducer", producer);

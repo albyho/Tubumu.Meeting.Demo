@@ -12,7 +12,7 @@ namespace TubumuMeeting.Mediasoup
         private static readonly Regex MimeTypeRegex = new Regex(@"^(audio|video)/(.+)");
         private static readonly Regex RtxMimeTypeRegex = new Regex(@"^.+/rtx$");
 
-        public static readonly int[] DynamicPayloadTypes = new [] {
+        public static readonly int[] DynamicPayloadTypes = new[] {
             100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
             111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121,
             122, 123, 124, 125, 126, 127, 96, 97, 98, 99 };
@@ -24,7 +24,16 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtpCapabilities(RtpCapabilities caps)
         {
-            foreach (var codec in caps.Codecs!)
+            if (caps == null)
+            {
+                throw new ArgumentNullException(nameof(caps));
+            }
+            if (caps.Codecs == null)
+            {
+                throw new ArgumentNullException(nameof(caps.Codecs));
+            }
+
+            foreach (var codec in caps.Codecs)
             {
                 ValidateRtpCodecCapability(codec);
             }
@@ -64,8 +73,10 @@ namespace TubumuMeeting.Mediasoup
             codec.Kind = mimeType.ToLower().StartsWith("video") ? MediaKind.Video : MediaKind.Audio;
 
             // preferredPayloadType is optional.
+            // 在 Node.js 实现在，判断了 preferredPayloadType 在有值的情况下的数据类型。在强类型语言中不需要。
 
             // clockRate is mandatory.
+            // 在 Node.js 实现在，判断了 mandatory 的数据类型。在强类型语言中不需要。
 
             // channels is optional. If unset, set it to 1 (just if audio).
             if (codec.Kind == MediaKind.Audio && (!codec.Channels.HasValue || codec.Channels < 1))
@@ -74,7 +85,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // parameters is optional. If unset, set it to an empty object.
-            // TODO: (alby)强类型无法转空对象
+            // TODO: (alby)强类型无法转 Empty 对象
             if (codec.Parameters == null)
             {
                 codec.Parameters = new Dictionary<string, object>();
@@ -92,7 +103,7 @@ namespace TubumuMeeting.Mediasoup
 
                 if (!value.IsStringType() && !value.IsNumericType())
                 {
-                    throw new ArgumentOutOfRangeException($"invalid codec parameter[key:${ key }, value:${ value}]");
+                    throw new ArgumentOutOfRangeException($"invalid codec parameter[key:${ key }, value:${ value }]");
                 }
                 if (key == "apt" && !value.IsNumericType())
                 {
@@ -103,7 +114,7 @@ namespace TubumuMeeting.Mediasoup
             // rtcpFeedback is optional. If unset, set it to an empty array.
             if (codec.RtcpFeedback == null)
             {
-                codec.RtcpFeedback = new RtcpFeedback[0];
+                codec.RtcpFeedback = Array.Empty<RtcpFeedback>();
             }
 
             foreach (var fb in codec.RtcpFeedback)
@@ -119,6 +130,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtcpFeedback(RtcpFeedback fb)
         {
+            if (fb == null)
+            {
+                throw new ArgumentNullException(nameof(fb));
+            }
             // type is mandatory.
             if (fb.Type.IsNullOrWhiteSpace())
                 throw new ArgumentException(nameof(fb.Type));
@@ -135,20 +150,32 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtpHeaderExtension(RtpHeaderExtension ext)
         {
+            if (ext == null)
+            {
+                throw new ArgumentNullException(nameof(ext));
+            }
+
             // kind is optional. If unset set it to an empty string.
-            // TODO: (alby)枚举null但非空字符串
+            // 在 Node.js 实现在，判断了 kind 的数据类型。在强类型语言中不需要。但是将 kind 设置为了 Empty 字符串。
+            // TODO: (alby)或许 kind 没有设置为 Empty 字符串会有问题。
 
             // uri is mandatory.
             if (ext.Uri.IsNullOrEmpty())
                 throw new ArgumentException(nameof(ext.Uri));
 
             // preferredId is mandatory.
+            // 在 Node.js 实现在，判断了 preferredId 的数据类型。在强类型语言中不需要。
 
             // preferredEncrypt is optional. If unset set it to false.
-
+            if (!ext.PreferredEncrypt.HasValue)
+            {
+                ext.PreferredEncrypt = false;
+            }
             // direction is optional. If unset set it to sendrecv.
             if (!ext.Direction.HasValue)
+            {
                 ext.Direction = RtpHeaderExtensionDirection.SendReceive;
+            }
         }
 
         /// <summary>
@@ -158,9 +185,18 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtpParameters(RtpParameters parameters)
         {
+            if (parameters == null)
+            {
+                throw new ArgumentNullException(nameof(parameters));
+            }
             // mid is optional.
+            // 在 Node.js 实现在，判断了 mid 的数据类型。在强类型语言中不需要。
 
             // codecs is mandatory.
+            if (parameters.Codecs == null)
+            {
+                throw new ArgumentException(nameof(parameters.Codecs));
+            }
 
             foreach (var codec in parameters.Codecs)
             {
@@ -190,8 +226,8 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // rtcp is optional. If unset, fill with an empty object.
-            // TODO: (alby)强类型无法转空对象
-            if (parameters != null)
+            // TODO: (alby)强类型无法转 Empty 对象
+            if (parameters.Rtcp != null)
             {
                 ValidateRtcpParameters(parameters.Rtcp);
             }
@@ -204,6 +240,11 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtpCodecParameters(RtpCodecParameters codec)
         {
+            if (codec == null)
+            {
+                throw new ArgumentNullException(nameof(codec));
+            }
+
             // mimeType is mandatory.
             if (codec.MimeType.IsNullOrWhiteSpace())
             {
@@ -217,17 +258,20 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // payloadType is mandatory.
+            // 在 Node.js 实现在，判断了 payloadType 的数据类型。在强类型语言中不需要。
 
             // clockRate is mandatory.
+            // 在 Node.js 实现在，判断了 clockRate 的数据类型。在强类型语言中不需要。
 
             // channels is optional. If unset, set it to 1 (just if audio).
-            if (mimeType.StartsWith("Video"))
+            // 在 Node.js 实现在，如果是音频会 delete 掉 Channels 。
+            if (mimeType.StartsWith("audio"))
             {
                 codec.Channels = 1;
             }
 
             // parameters is optional. If unset, set it to an empty object.
-            // TODO: (alby)强类型无法转空对象
+            // TODO: (alby)强类型无法转 Empty 对象。
             if (codec.Parameters == null)
             {
                 codec.Parameters = new Dictionary<string, object>();
@@ -245,7 +289,7 @@ namespace TubumuMeeting.Mediasoup
 
                 if (!value.IsStringType() && !value.IsNumericType())
                 {
-                    throw new ArgumentOutOfRangeException($"invalid codec parameter[key:${ key }, value:${ value}]");
+                    throw new ArgumentOutOfRangeException($"invalid codec parameter[key:${ key }, value:${ value }]");
                 }
                 if (key == "apt" && !value.IsNumericType())
                 {
@@ -272,11 +316,17 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtpHeaderExtensionParameters(RtpHeaderExtensionParameters ext)
         {
+            if (ext == null)
+            {
+                throw new ArgumentNullException(nameof(ext));
+            }
+
             // uri is mandatory.
             if (ext.Uri.IsNullOrEmpty())
                 throw new ArgumentException(nameof(ext.Uri));
 
             // id is mandatory.
+            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
 
             // encrypt is optional. If unset set it to false.
             if (!ext.Encrypt.HasValue)
@@ -285,7 +335,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // parameters is optional. If unset, set it to an empty object.
-            // TODO: (alby)强类型无法转空对象
+            // TODO: (alby)强类型无法转 Empty 对象。
             if (ext.Parameters == null)
             {
                 ext.Parameters = new Dictionary<string, object>();
@@ -304,7 +354,7 @@ namespace TubumuMeeting.Mediasoup
 
                 if (!value.IsStringType() && !value.IsNumericType())
                 {
-                    throw new ArgumentOutOfRangeException($"invalid codec parameter[key:${ key }, value:${ value}]");
+                    throw new ArgumentOutOfRangeException($"invalid codec parameter[key:${ key }, value:${ value }]");
                 }
             }
         }
@@ -316,11 +366,24 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtpEncodingParameters(RtpEncodingParameters encoding)
         {
+            if (encoding == null)
+            {
+                throw new ArgumentNullException(nameof(encoding));
+            }
+
             // ssrc is optional.
+            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
 
             // rid is optional.
+            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
 
             // rtx is optional.
+            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
+            if (encoding.Rtx != null)
+            {
+                // RTX ssrc is mandatory if rtx is present.
+                // 在 Node.js 实现在，判断了 rtx.ssrc 的数据类型。在强类型语言中不需要。
+            }
 
             // dtx is optional. If unset set it to false.
             if (!encoding.Dtx.HasValue)
@@ -329,6 +392,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // scalabilityMode is optional.
+            // 在 Node.js 实现在，判断了 scalabilityMode 的数据类型。在强类型语言中不需要。
         }
 
         /// <summary>
@@ -338,11 +402,19 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateRtcpParameters(RtcpParameters rtcp)
         {
+            if (rtcp == null)
+            {
+                throw new ArgumentNullException(nameof(rtcp));
+            }
+
             // cname is optional.
+            // 在 Node.js 实现在，判断了 cname 的数据类型。在强类型语言中不需要。
 
             // reducedSize is optional. If unset set it to true.
             if (!rtcp.ReducedSize.HasValue)
+            {
                 rtcp.ReducedSize = true;
+            }
         }
 
         /// <summary>
@@ -352,12 +424,16 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateSctpCapabilities(SctpCapabilities caps)
         {
+            if (caps == null)
+            {
+                throw new ArgumentNullException(nameof(caps));
+            }
+
             // numStreams is mandatory.
             if (caps.NumStreams == null)
             {
                 throw new ArgumentException(nameof(caps.NumStreams));
             }
-
 
             ValidateNumSctpStreams(caps.NumStreams);
         }
@@ -370,8 +446,10 @@ namespace TubumuMeeting.Mediasoup
         public static void ValidateNumSctpStreams(NumSctpStreams numStreams)
         {
             // OS is mandatory.
+            // 在 Node.js 实现在，判断了 OS 的数据类型。在强类型语言中不需要。
 
             // MIS is mandatory.
+            // 在 Node.js 实现在，判断了 MIS 的数据类型。在强类型语言中不需要。
         }
 
         /// <summary>
@@ -382,12 +460,16 @@ namespace TubumuMeeting.Mediasoup
         public static void ValidateSctpParameters(SctpParameters parameters)
         {
             // port is mandatory.
+            // 在 Node.js 实现在，判断了 port 的数据类型。在强类型语言中不需要。
 
             // OS is mandatory.
+            // 在 Node.js 实现在，判断了 OS 的数据类型。在强类型语言中不需要。
 
             // MIS is mandatory.
+            // 在 Node.js 实现在，判断了 MIS 的数据类型。在强类型语言中不需要。
 
             // maxMessageSize is mandatory.
+            // 在 Node.js 实现在，判断了 maxMessageSize 的数据类型。在强类型语言中不需要。
         }
 
         /// <summary>
@@ -397,19 +479,27 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static void ValidateSctpStreamParameters(SctpStreamParameters parameters)
         {
+            if (parameters == null)
+            {
+                throw new ArgumentNullException(nameof(parameters));
+            }
+
             // streamId is mandatory.
+            // 在 Node.js 实现在，判断了 streamId 的数据类型。在强类型语言中不需要。
 
             // ordered is optional.
             var orderedGiven = true;
             if (!parameters.Ordered.HasValue)
             {
-                parameters.Ordered = true;
                 orderedGiven = false;
+                parameters.Ordered = true;
             }
 
             // maxPacketLifeTime is optional.
+            // 在 Node.js 实现在，判断了 maxPacketLifeTime 的数据类型。在强类型语言中不需要。
 
             // maxRetransmits is optional.
+            // 在 Node.js 实现在，判断了 maxRetransmits 的数据类型。在强类型语言中不需要。
 
             if (parameters.MaxPacketLifeTime.HasValue && parameters.MaxRetransmits.HasValue)
             {
@@ -433,8 +523,13 @@ namespace TubumuMeeting.Mediasoup
         /// Generate RTP capabilities for the Router based on the given media codecs and
         /// mediasoup supported RTP capabilities.
         /// </summary>
-        public static RtpCapabilities GenerateRouterRtpCapabilities(params RtpCodecCapability[] mediaCodecs)
+        public static RtpCapabilities GenerateRouterRtpCapabilities(RtpCodecCapability[] mediaCodecs)
         {
+            if (mediaCodecs == null)
+            {
+                throw new ArgumentNullException(nameof(mediaCodecs));
+            }
+
             // Normalize supported RTP capabilities.
             ValidateRtpCapabilities(RtpCapabilities.SupportedRtpCapabilities);
 
@@ -451,8 +546,9 @@ namespace TubumuMeeting.Mediasoup
                 // This may throw.
                 ValidateRtpCodecCapability(mediaCodec);
 
-                var matchedSupportedCodec = clonedSupportedRtpCapabilities.Codecs
-                    .Where(supportedCodec => true /*MatchCodecs(mediaCodec, supportedCodec, { strict: false })*/).ToArray();
+                var matchedSupportedCodec = clonedSupportedRtpCapabilities
+                    .Codecs
+                    .Where(supportedCodec => MatchCodecs(mediaCodec, supportedCodec, false)).ToArray();
 
                 if (matchedSupportedCodec.IsNullOrEmpty())
                 {
@@ -490,7 +586,7 @@ namespace TubumuMeeting.Mediasoup
                 }
 
                 // Ensure there is not duplicated preferredPayloadType values.
-                if (caps.Codecs.Count(c => c.PreferredPayloadType == codec.PreferredPayloadType) > 2)
+                if (caps.Codecs.Any(c => c.PreferredPayloadType == codec.PreferredPayloadType))
                     throw new Exception("duplicated codec.preferredPayloadType");
 
                 // Merge the media codec parameters.
@@ -518,7 +614,7 @@ namespace TubumuMeeting.Mediasoup
                         ClockRate = codec.ClockRate,
                         Parameters = new Dictionary<string, object>
                         {
-                            { "apt",codec.PreferredPayloadType}
+                            { "apt", codec.PreferredPayloadType}
                         },
                         RtcpFeedback = Array.Empty<RtcpFeedback>(),
 
@@ -581,7 +677,7 @@ namespace TubumuMeeting.Mediasoup
 
                 // Ensure that the capabilities media codec has a RTX codec.
                 var associatedCapRtxCodec = caps.Codecs
-                    .Where(capCodec => IsRtxMimeType(capCodec.MimeType) && MatchCodecsWithPayloadTypeAndApt(capMediaCodec.PreferredPayloadType.Value, capCodec.Parameters))
+                    .Where(capCodec => IsRtxMimeType(capCodec.MimeType) && MatchCodecsWithPayloadTypeAndApt(capMediaCodec.PreferredPayloadType, capCodec.Parameters))
                     .FirstOrDefault();
                 codecToCapCodec[codec] = associatedCapRtxCodec ?? throw new Exception($"no RTX codec for capability codec PT { capMediaCodec.PreferredPayloadType}");
             }
@@ -592,14 +688,14 @@ namespace TubumuMeeting.Mediasoup
                 rtpMapping.Codecs.Add(new RtpMappingCodec
                 {
                     PayloadType = item.Key.PayloadType,
-                    MappedPayloadType = item.Value.PreferredPayloadType.Value,
+                    MappedPayloadType = item.Value.PreferredPayloadType.Value, // TODO: (alby)注意可空类型赋值
                 });
             };
 
             // Generate encodings mapping.
             var mappedSsrc = Utils.GenerateRandomNumber();
 
-            foreach (var encoding in parameters.Encodings)
+            foreach (var encoding in parameters.Encodings) // TODO: (alby)注意 null 引用
             {
                 var mappedEncoding = new RtpMappingEncoding
                 {
@@ -646,7 +742,7 @@ namespace TubumuMeeting.Mediasoup
                 var consumableCodec = new RtpCodecParameters
                 {
                     MimeType = matchedCapCodec.MimeType,
-                    PayloadType = matchedCapCodec.PreferredPayloadType.Value,
+                    PayloadType = matchedCapCodec.PreferredPayloadType.Value, // TODO: (alby)注意 null 引用
                     ClockRate = matchedCapCodec.ClockRate,
                     Channels = matchedCapCodec.Channels,
                     Parameters = codec.Parameters, // Keep the Producer codec parameters.
@@ -664,7 +760,7 @@ namespace TubumuMeeting.Mediasoup
                     var consumableRtxCodec = new RtpCodecParameters
                     {
                         MimeType = consumableCapRtxCodec.MimeType,
-                        PayloadType = consumableCapRtxCodec.PreferredPayloadType.Value,
+                        PayloadType = consumableCapRtxCodec.PreferredPayloadType.Value, // TODO: (alby)注意 null 引用
                         ClockRate = consumableCapRtxCodec.ClockRate,
                         Channels = consumableCapRtxCodec.Channels,
                         Parameters = consumableCapRtxCodec.Parameters, // Keep the Producer codec parameters.
@@ -675,7 +771,7 @@ namespace TubumuMeeting.Mediasoup
                 }
             }
 
-            foreach (var capExt in caps.HeaderExtensions)
+            foreach (var capExt in caps.HeaderExtensions) // TODO: (alby)注意 null 引用
             {
 
                 // Just take RTP header extension that can be used in Consumers.
@@ -698,15 +794,13 @@ namespace TubumuMeeting.Mediasoup
             // Clone Producer encodings since we'll mangle them.
             var consumableEncodings = parameters.Encodings.DeepClone<List<RtpEncodingParameters>>();
 
-            foreach (var consumableEncoding in consumableEncodings)
-            {
-            }
             for (var i = 0; i < consumableEncodings.Count; ++i)
             {
                 var consumableEncoding = consumableEncodings[i];
                 var mappedSsrc = rtpMapping.Encodings[i].MappedSsrc;
 
                 // Remove useless fields.
+                // 在 Node.js 实现中，rid, rtx, codecPayloadType 被 delete 了。
                 consumableEncoding.Rid = null;
                 consumableEncoding.Rtx = null;
                 consumableEncoding.CodecPayloadType = null;
@@ -719,7 +813,7 @@ namespace TubumuMeeting.Mediasoup
 
             consumableParams.Rtcp = new RtcpParameters
             {
-                CNAME = parameters.Rtcp.CNAME,
+                CNAME = parameters.Rtcp.CNAME, // TODO: (alby)注意 null 引用
                 ReducedSize = true,
                 Mux = true,
             };
@@ -773,7 +867,7 @@ namespace TubumuMeeting.Mediasoup
                 Rtcp = consumableParams.Rtcp
             };
 
-            foreach (var capCodec in caps.Codecs)
+            foreach (var capCodec in caps.Codecs) // TODO: (alby)注意 null 引用
             {
                 ValidateRtpCodecCapability(capCodec);
             }
@@ -851,11 +945,11 @@ namespace TubumuMeeting.Mediasoup
             var scalabilityMode = encodingWithScalabilityMode?.ScalabilityMode;
 
             // If there is simulast, mangle spatial layers in scalabilityMode.
-            if (consumableParams.Encodings.Count > 1)
+            if (consumableParams.Encodings.Count > 1) // TODO: (alby)注意 null 引用
             {
-                var scalabilityModeObject = ScalabilityMode.Parse(scalabilityMode);
+                var scalabilityModeObject = ScalabilityMode.Parse(scalabilityMode); // TODO: (alby)注意 null 引用
 
-                scalabilityMode = $"S{ consumableParams.Encodings.Count}T{ scalabilityModeObject.TemporalLayers }";
+                scalabilityMode = $"S{ consumableParams.Encodings.Count }T{ scalabilityModeObject.TemporalLayers }";
             }
 
             if (!scalabilityMode.IsNullOrWhiteSpace())
@@ -907,18 +1001,20 @@ namespace TubumuMeeting.Mediasoup
 
             // Reduce RTP extensions by disabling transport MID and BWE related ones.
             consumerParams.HeaderExtensions = consumableParams.HeaderExtensions
-                .Where(ext => (
-                    ext.Uri != "urn:ietf:parameters:rtp-hdrext:sdes:mid" &&
-                        ext.Uri != "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" &&
-                        ext.Uri != "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
-                    )).ToList();
+                .Where(ext => (ext.Uri != "urn:ietf:parameters:rtp-hdrext:sdes:mid" &&
+                                ext.Uri != "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" &&
+                                ext.Uri != "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
+                                )).ToList();
 
             var consumableEncodings = consumableParams.Encodings.DeepClone<List<RtpEncodingParameters>>();
 
             foreach (var encoding in consumableEncodings)
             {
                 if (!enableRtx)
+                {
+                    // 在 Node.js 实现中，delete 了 rtx 。
                     encoding.Rtx = null;
+                }
 
                 consumerParams.Encodings.Add(encoding);
             }
@@ -928,7 +1024,7 @@ namespace TubumuMeeting.Mediasoup
 
         public static bool IsRtxMimeType(string mimeType)
         {
-            return RtxMimeTypeRegex.IsMatch(mimeType);
+            return RtxMimeTypeRegex.IsMatch(mimeType.ToLower());
         }
 
         private static bool CheckDirectoryValueEquals(IDictionary<string, object> a, IDictionary<string, object> b, string key)
@@ -1036,8 +1132,9 @@ namespace TubumuMeeting.Mediasoup
             return true;
         }
 
-        public static bool MatchCodecsWithPayloadTypeAndApt(int payloadType, IDictionary<string, object> parameters)
+        public static bool MatchCodecsWithPayloadTypeAndApt(int? payloadType, IDictionary<string, object> parameters)
         {
+            if (payloadType == null && parameters == null) return true;
             if (parameters == null) return false;
             if (!parameters.TryGetValue("apt", out var apt))
             {

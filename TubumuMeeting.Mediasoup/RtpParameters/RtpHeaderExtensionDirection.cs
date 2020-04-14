@@ -7,7 +7,6 @@ namespace TubumuMeeting.Mediasoup
     /// </summary>
     public enum RtpHeaderExtensionDirection
     {
-
         [EnumStringValue("sendrecv")]
         SendReceive,
 

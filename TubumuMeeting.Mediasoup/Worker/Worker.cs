@@ -36,6 +36,9 @@ namespace TubumuMeeting.Mediasoup
         // mediasoup-worker child process.
         private TubumuMeeting.Libuv.Process? _child;
 
+        // Worker process PID.
+        public int ProcessId { get; private set; }
+
         // Is spawn done?
         private bool _spawnDone;
 
@@ -131,6 +134,8 @@ namespace TubumuMeeting.Mediasoup
                     Detached = false,
                     Streams = _pipes,
                 }, OnExit);
+
+                ProcessId = _child.ID;
             }
             catch (Exception ex)
             {
@@ -140,18 +145,18 @@ namespace TubumuMeeting.Mediasoup
                 if (!_spawnDone)
                 {
                     _spawnDone = true;
-                    _logger.LogError($"worker process failed: {ex.Message}");
+                    _logger.LogError($"worker process failed [pid:{ProcessId}]: {ex.Message}");
                     Emit("@failure", ex);
                 }
                 else
                 {
                     // 执行到这里的可能性？
-                    _logger.LogError($"worker process error: {ex.Message}");
+                    _logger.LogError($"worker process error [pid:{ProcessId}]: {ex.Message}");
                     Emit("died", ex);
                 }
             }
 
-            _channel = new Channel(_loggerFactory.CreateLogger<Channel>(), _pipes[3], _pipes[4]);
+            _channel = new Channel(_loggerFactory.CreateLogger<Channel>(), _pipes[3], _pipes[4], ProcessId);
             _channel.RunningEvent += OnChannelRunning;
 
             _pipes.ForEach(m => m?.Resume());
@@ -274,19 +279,20 @@ namespace TubumuMeeting.Mediasoup
 
                 if (process.ExitCode == 42)
                 {
-                    _logger.LogError("worker process failed due to wrong settings");
+                    _logger.LogError($"worker process failed due to wrong settings [pid:{ProcessId}]");
                     Emit("@failure", new Exception("wrong settings"));
                 }
                 else
                 {
-                    _logger.LogError($"worker process failed unexpectedly [code:{process.ExitCode}, signal:{process.TermSignal}]");
-                    Emit("@failure", new Exception($"[code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
+                    _logger.LogError($"worker process failed unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
+                    Emit("@failure", new Exception($"[pid:{ProcessId}, code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
 
                 }
             }
             else
             {
-                _logger.LogError($"worker process died unexpectedly [code:{process.ExitCode}, signal:{process.TermSignal}]");
+                _logger.LogError($"[pid:{ProcessId}] worker process died unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
+                Emit("died", new Exception($"[pid:{ProcessId}, code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
             }
         }
 

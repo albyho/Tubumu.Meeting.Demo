@@ -102,7 +102,7 @@ namespace TubumuMeeting.Mediasoup
             if (SctpState.HasValue)
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
 
-            base.Close();
+            base.RouterClosed();
         }
 
         /// <summary>
@@ -178,6 +178,7 @@ namespace TubumuMeeting.Mediasoup
                 Type = ConsumerType.Pipe,
             };
 
+            // 在 Node.js 实现中， 创建 Consumer 对象时没提供 score 和 preferredLayers 参数，且 score = { score: 10, producerScore: 10 }。
             var consumer = new Consumer(_loggerFactory,
                 @internal.RouterId,
                 @internal.TransportId,

@@ -33,7 +33,7 @@
         /// If true, it is preferred that the value in the header be encrypted as per
         /// RFC 6904. Default false.
         /// </summary>
-        public bool PreferredEncrypt { get; set; } = false;
+        public bool? PreferredEncrypt { get; set; } = false;
 
         /// <summary>
         /// If 'sendrecv', mediasoup supports sending and receiving this RTP extension.

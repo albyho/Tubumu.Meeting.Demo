@@ -102,11 +102,11 @@ namespace Tubumu.Core.Extensions
             var result = new Dictionary<TKey, TValue>();
             foreach (var key in first.Keys)
             {
-                first.Add(key, first[key]);
+                first[key] = first[key];
             }
             foreach (var key in second.Keys)
             {
-                first.Add(key, second[key]);
+                first[key] = second[key];
             }
             return result;
         }
@@ -130,11 +130,11 @@ namespace Tubumu.Core.Extensions
         {
             if (x == null)
             {
-                throw new ArgumentNullException("x");
+                throw new ArgumentNullException(nameof(x));
             }
             if (y == null)
             {
-                throw new ArgumentNullException("y");
+                throw new ArgumentNullException(nameof(y));
             }
             if (x.Count != y.Count)
             {
@@ -159,7 +159,7 @@ namespace Tubumu.Core.Extensions
         {
             if (obj == null)
             {
-                throw new ArgumentNullException("obj");
+                throw new ArgumentNullException(nameof(obj));
             }
             int hash = 0;
             foreach (var kvp in obj)

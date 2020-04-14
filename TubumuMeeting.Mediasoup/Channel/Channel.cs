@@ -28,14 +28,17 @@ namespace TubumuMeeting.Mediasoup
         // Logger
         private readonly ILogger<Channel> _logger;
 
-        // Closed flag.
-        private bool _closed = false;
-
         // Unix Socket instance for sending messages to the worker process.
         private readonly IPCPipe _producerSocket;
 
         // Unix Socket instance for receiving messages to the worker process.
         private readonly IPCPipe _consumerSocket;
+
+        // Worker process PID.
+        private readonly int _processId;
+
+        // Closed flag.
+        private bool _closed = false;
 
         // Next id for messages sent to the worker process.
         private int _nextId = 0;
@@ -56,7 +59,7 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
-        public Channel(ILogger<Channel> logger, IPCPipe producerSocket, IPCPipe consumerSocket)
+        public Channel(ILogger<Channel> logger, IPCPipe producerSocket, IPCPipe consumerSocket, int processId)
         {
             _logger = logger;
 
@@ -64,6 +67,7 @@ namespace TubumuMeeting.Mediasoup
 
             _producerSocket = producerSocket;
             _consumerSocket = consumerSocket;
+            _processId = processId;
 
             _consumerSocket.Data += ConsumerSocketOnData;
             _consumerSocket.Closed += ConsumerSocketOnClosed;
@@ -239,17 +243,17 @@ namespace TubumuMeeting.Mediasoup
                             // 68 = 'D' (a debug log).
                             case 'D':
                                 if (!nsPayload.Contains("(trace)"))
-                                    _logger.LogDebug($"{ nsPayload }");
+                                    _logger.LogDebug($"[pid:${_processId}] { nsPayload }");
                                 break;
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                _logger.LogWarning($"{ nsPayload }");
+                                _logger.LogWarning($"[pid:${_processId}] { nsPayload }");
                                 break;
 
                             // 69 = 'E' (an error log).
                             case 'E':
-                                _logger.LogError($"{ nsPayload }");
+                                _logger.LogError($"[pid:${_processId}] { nsPayload }");
                                 break;
 
                             // 88 = 'X' (a dump log).
@@ -259,7 +263,7 @@ namespace TubumuMeeting.Mediasoup
                                 break;
                             default:
                                 // eslint-disable-next-line no-console
-                                _logger.LogWarning($"unexpected data:{ nsPayload }");
+                                _logger.LogWarning($"worker[pid:${_processId}] unexpected data:{ nsPayload }");
                                 break;
                         }
                     }

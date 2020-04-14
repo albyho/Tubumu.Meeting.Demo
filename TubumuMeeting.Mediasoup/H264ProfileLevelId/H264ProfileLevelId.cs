@@ -73,7 +73,7 @@ namespace TubumuMeeting.Mediasoup
         public static ProfileLevelId? ParseProfileLevelId(string str)
         {
             // The string should consist of 3 bytes in hexadecimal format.
-            if (str.Length != 6)
+            if (str == null || str.Length != 6)
                 return null;
 
             var profile_level_id_numeric = Convert.ToInt32(str, 16);
@@ -213,9 +213,9 @@ namespace TubumuMeeting.Mediasoup
             var levelStr = Convert.ToString(profileLevelId.Level, 16);
 
             if (levelStr.Length == 1)
-                levelStr = $"0{ levelStr}";
+                levelStr = $"0{levelStr}";
 
-            return $"${ profile_idc_iop_string}{ levelStr}";
+            return $"${profile_idc_iop_string}{levelStr}";
         }
 
         /// <summary>
@@ -230,8 +230,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static ProfileLevelId? ParseSdpProfileLevelId(IDictionary<string, object> parameters)
         {
-            if (!parameters.TryGetValue("profile-level-id", out var profile_level_id)) return null;
+            if (!parameters.TryGetValue("profile-level-id", out var profile_level_id)) return DefaultProfileLevelId;
 
+            // TODO: (alby)如果 ParseProfileLevelId 返回 null，ParseSdpProfileLevelId 是否应该返回 DefaultProfileLevelId ？
             return ParseProfileLevelId(profile_level_id.ToString());
         }
 
@@ -281,17 +282,18 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static string? GenerateProfileLevelIdForAnswer(IDictionary<string, object> local_supported_params, IDictionary<string, object> remote_offered_params)
         {
-            // Parse profile-level-ids.
-            var local_profile_level_id = ParseSdpProfileLevelId(local_supported_params);
-            var remote_profile_level_id = ParseSdpProfileLevelId(remote_offered_params);
-
             // If both local and remote params do not contain profile-level-id, they are
             // both using the default profile. In this case, don"t return anything.
-            if (local_profile_level_id == null && remote_profile_level_id == null)
+            if (!local_supported_params.TryGetValue("profile-level-id", out _) && !remote_offered_params.TryGetValue("profile-level-id", out _))
             {
                 //debug("generateProfileLevelIdForAnswer() | no profile-level-id in local and remote params");
                 return null;
             }
+
+            // Parse profile-level-ids.
+            var local_profile_level_id = ParseSdpProfileLevelId(local_supported_params);
+            var remote_profile_level_id = ParseSdpProfileLevelId(remote_offered_params);
+
 
             // The local and remote codec must have valid and equal H264 Profiles.
             if (local_profile_level_id == null)

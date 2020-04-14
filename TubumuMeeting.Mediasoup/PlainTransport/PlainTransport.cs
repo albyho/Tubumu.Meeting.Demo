@@ -71,6 +71,7 @@ namespace TubumuMeeting.Mediasoup
             ) : base(loggerFactory, routerId, transportId, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _logger = loggerFactory.CreateLogger<PlainTransport>();
+            // Data
             RtcpMux = rtcpMux;
             Comedia = comedia;
             Tuple = tuple;
@@ -105,7 +106,7 @@ namespace TubumuMeeting.Mediasoup
             if (SctpState.HasValue)
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
 
-            base.Close();
+            base.RouterClosed();
         }
 
         /// <summary>
@@ -130,10 +131,15 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<PlainTransportConnectResponseData>(status);
 
             // Update data.
-            Tuple = responseData.Tuple;
+            if (responseData.Tuple != null)
+            {
+                Tuple = responseData.Tuple;
+            }
 
             if (responseData.RtcpTuple != null)
+            {
                 RtcpTuple = responseData.RtcpTuple;
+            }
 
             SrtpParameters = responseData.SrtpParameters;
         }
@@ -151,6 +157,7 @@ namespace TubumuMeeting.Mediasoup
                 case "tuple":
                     {
                         var notification = JsonConvert.DeserializeObject<PlainTransportTupleNotificationData>(data);
+
                         Tuple = notification.Tuple;
 
                         Emit("tuple", Tuple);
@@ -164,12 +171,13 @@ namespace TubumuMeeting.Mediasoup
                 case "rtcptuple":
                     {
                         var notification = JsonConvert.DeserializeObject<PlainTransportRtcpTupleNotificationData>(data);
+
                         RtcpTuple = notification.RtcpTuple;
 
-                        Emit("rtcptuple", Tuple);
+                        Emit("rtcptuple", RtcpTuple);
 
                         // Emit observer event.
-                        Observer.Emit("rtcptuple", Tuple);
+                        Observer.Emit("rtcptuple", RtcpTuple);
 
                         break;
                     }
@@ -177,6 +185,7 @@ namespace TubumuMeeting.Mediasoup
                 case "sctpstatechange":
                     {
                         var notification = JsonConvert.DeserializeObject<TransportSctpStateChangeNotificationData>(data);
+
                         SctpState = notification.SctpState;
 
                         Emit("sctpstatechange", SctpState);

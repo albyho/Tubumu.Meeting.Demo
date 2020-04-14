@@ -132,7 +132,7 @@ namespace TubumuMeeting.Mediasoup
             if (SctpState.HasValue)
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
 
-            base.Close();
+            base.RouterClosed();
         }
 
         /// <summary>

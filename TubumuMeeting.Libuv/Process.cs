@@ -111,7 +111,7 @@ namespace TubumuMeeting.Libuv
 			get {
 				CheckDisposed();
 
-				return (uv_process_t*)(NativeHandle.ToInt32() + Handle.Size(HandleType.UV_HANDLE));
+				return (uv_process_t*)(NativeHandle.ToInt64() + Handle.Size(HandleType.UV_HANDLE));
 			}
 		}
 
