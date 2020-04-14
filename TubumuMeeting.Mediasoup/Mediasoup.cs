@@ -5,7 +5,7 @@ namespace TubumuMeeting.Mediasoup
 {
     public class Mediasoup
     {
-        public List<IWorker> Workers { get; set; } = new List<IWorker>();
+        public List<Worker> Workers { get; set; } = new List<Worker>();
 
         /// <summary>
         /// Get a cloned copy of the mediasoup supported RTP capabilities.

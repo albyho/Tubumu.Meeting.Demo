@@ -688,7 +688,7 @@ namespace TubumuMeeting.Mediasoup
                 rtpMapping.Codecs.Add(new RtpMappingCodec
                 {
                     PayloadType = item.Key.PayloadType,
-                    MappedPayloadType = item.Value.PreferredPayloadType.Value, // TODO: (alby)注意可空类型赋值
+                    MappedPayloadType = item.Value.PreferredPayloadType.Value, // TODO: (alby)注意 null 引用
                 });
             };
 

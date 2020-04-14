@@ -202,7 +202,6 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnData(ArraySegment<byte> data)
         {
-            _logger.LogError($"ConsumerSocketOnData - ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
             var buffer = Encoding.UTF8.GetString(data.Array, data.Offset, data.Count);
 
             if (_recvBuffer == null)
@@ -222,7 +221,7 @@ namespace TubumuMeeting.Mediasoup
                 _recvBuffer = null;
                 return;
             }
-            _logger.LogError(buffer);
+            _logger.LogError($"ConsumerSocketOnData: {buffer}");
             using var nsReader = new NetstringReader(message);
             try
             {

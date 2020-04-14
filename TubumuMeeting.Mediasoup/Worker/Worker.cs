@@ -7,17 +7,7 @@ using TubumuMeeting.Libuv;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public interface IWorker : IDisposable
-    {
-        bool Closed { get; }
-
-        // Custom app data.
-        object? AppData { get; }
-
-        void Close();
-    }
-
-    public class Worker : EventEmitter, IWorker
+    public class Worker : EventEmitter
     {
         #region Constants
 
@@ -121,6 +111,7 @@ namespace TubumuMeeting.Mediasoup
             for (var i = 1; i < StdioCount; i++)
             {
                 _pipes[i] = new IPCPipe() { Writeable = true, Readable = true };
+                _logger.LogDebug($"Pipe[{i}].NativeHandle: {_pipes[i].NativeHandle}");
             }
 
             try
