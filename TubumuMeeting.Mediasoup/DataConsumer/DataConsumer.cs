@@ -6,13 +6,21 @@ namespace TubumuMeeting.Mediasoup
 {
     public class DataConsumer : EventEmitter
     {
-        // Logger
+        /// <summary>
+        /// Logger
+        /// </summary>
         private readonly ILogger<DataConsumer> _logger;
 
         #region Internal data.
 
+        /// <summary>
+        /// Router id.
+        /// </summary>
         public string RouterId { get; }
 
+        /// <summary>
+        /// Transport id.
+        /// </summary>
         public string TransportId { get; }
 
         /// <summary>
@@ -51,7 +59,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Channel instance.
         /// </summary>
-        public Channel Channel { get; private set; }
+        private readonly Channel _channel;
 
         /// <summary>
         /// App custom data.
@@ -69,11 +77,12 @@ namespace TubumuMeeting.Mediasoup
         public EventEmitter Observer { get; } = new EventEmitter();
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits transportclose</para>
         /// <para>@emits dataproducerclose</para>
         /// <para>@emits @close</para>
         /// <para>@emits @dataproducerclose</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
@@ -98,6 +107,7 @@ namespace TubumuMeeting.Mediasoup
                             object? appData)
         {
             _logger = loggerFactory.CreateLogger<DataConsumer>(); RouterId = routerId;
+            // Internal
             TransportId = transportId;
             DataProducerId = dataProducerId;
             Id = dataConsumerId;
@@ -108,10 +118,12 @@ namespace TubumuMeeting.Mediasoup
                 DataProducerId,
                 DataConsumerId = Id,
             };
+            // Data
             SctpStreamParameters = sctpStreamParameters;
             Label = label;
             Protocol = protocol;
-            Channel = channel;
+
+            _channel = channel;
             AppData = appData;
 
             HandleWorkerNotifications();
@@ -130,16 +142,10 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Remove notification subscriptions.
-            Channel.MessageEvent -= OnChannelMessage;
+            _channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.DATA_CONSUMER_CLOSE, new
-            {
-                RouterId,
-                TransportId,
-                DataProducerId,
-                DataConsumerId = Id,
-            }).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.DATA_CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -160,7 +166,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Remove notification subscriptions.
-            Channel.MessageEvent -= OnChannelMessage;
+            _channel.MessageEvent -= OnChannelMessage;
 
             Emit("transportclose");
 
@@ -174,23 +180,23 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, _internal);
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, _internal);
         }
 
         /// <summary>
-        /// Get DataConsumer stats.
+        /// Get DataConsumer stats. Return: DataConsumerStat[]
         /// </summary>
         public Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, _internal);
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, _internal);
         }
 
         #region Event Handlers
 
         private void HandleWorkerNotifications()
         {
-            Channel.MessageEvent += OnChannelMessage;
+            _channel.MessageEvent += OnChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -204,7 +210,8 @@ namespace TubumuMeeting.Mediasoup
                             break;
                         Closed = true;
 
-                        Channel.MessageEvent -= OnChannelMessage;
+                        // Remove notification subscriptions.
+                        _channel.MessageEvent -= OnChannelMessage;
 
                         Emit("@dataproducerclose");
                         Emit("dataproducerclose");

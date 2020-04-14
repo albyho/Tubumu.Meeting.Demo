@@ -12,8 +12,14 @@ namespace TubumuMeeting.Mediasoup
 
         #region Internal data.
 
+        /// <summary>
+        /// Router id.
+        /// </summary>
         public string RouterId { get; }
 
+        /// <summary>
+        /// RtpObserver id.
+        /// </summary>
         public string Id { get; }
 
         private readonly object _internal;
@@ -23,7 +29,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Channel instance.
         /// </summary>
-        public Channel Channel { get; private set; }
+        private readonly Channel _channel;
 
         /// <summary>
         /// App custom data.
@@ -40,15 +46,21 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public bool Paused { get; private set; }
 
-        // Method to retrieve a Producer.
+        /// <summary>
+        /// Method to retrieve a Producer.
+        /// </summary>
         protected readonly Func<string, Producer> GetProducerById;
 
+        /// <summary>
+        /// Observer instance.
+        /// </summary>
         public EventEmitter Observer { get; } = new EventEmitter();
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits routerclose</para>
         /// <para>@emits @close</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits pause</para>
         /// <para>@emits resume</para>
@@ -76,7 +88,7 @@ namespace TubumuMeeting.Mediasoup
                 RouterId,
                 RtpObserverId = rtpObserverId,
             };
-            Channel = channel;
+            _channel = channel;
             AppData = appData;
             GetProducerById = getProducerById;
         }
@@ -94,7 +106,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget.
-            Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -104,8 +116,6 @@ namespace TubumuMeeting.Mediasoup
 
         /// <summary>
         /// Router was closed.
-        ///
-        /// @private
         /// </summary>
         public void RouterClosed()
         {
@@ -131,7 +141,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, _internal);
+            await _channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, _internal);
 
             Paused = true;
 
@@ -151,7 +161,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, _internal);
+            await _channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, _internal);
 
             Paused = false;
 
@@ -177,7 +187,7 @@ namespace TubumuMeeting.Mediasoup
                 ProducerId = producerId,
             };
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, @internal);
+            await _channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, @internal);
 
             // Emit observer event.
             Observer.Emit("addproducer", producer);
@@ -188,7 +198,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task RemoveProducerAsync(string producerId)
         {
-            _logger.LogDebug("AddProducerAsync()");
+            _logger.LogDebug("RemoveProducerAsync()");
 
             var producer = GetProducerById(producerId);
             var @internal = new
@@ -197,7 +207,7 @@ namespace TubumuMeeting.Mediasoup
                 RtpObserverId = Id,
                 ProducerId = producerId,
             };
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);
+            await _channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);
 
             // Emit observer event.
             Observer.Emit("removeproducer", producer);

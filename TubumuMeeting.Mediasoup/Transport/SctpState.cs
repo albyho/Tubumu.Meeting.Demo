@@ -2,6 +2,9 @@
 
 namespace TubumuMeeting.Mediasoup
 {
+    /// <summary>
+    /// SCTP state.
+    /// </summary>
     public enum SctpState
     {
         [EnumStringValue("new")]

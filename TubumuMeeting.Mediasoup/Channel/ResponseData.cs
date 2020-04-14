@@ -95,12 +95,12 @@
         /// <summary>
         /// A label which can be used to distinguish this DataChannel from others.
         /// </summary>
-        public string? Label { get; set; }
+        public string Label { get; set; }
 
         /// <summary>
         /// Name of the sub-protocol used by this DataChannel.
         /// </summary>
-        public string? Protocol { get; set; }
+        public string Protocol { get; set; }
     }
 
     public class ConsumerSetPreferredLayersResponseData: ConsumerLayers

@@ -7,8 +7,12 @@ namespace TubumuMeeting.Mediasoup
 {
     public class WebRtcTransport : Transport
     {
-        // Logger
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<WebRtcTransport> _logger;
+
+        #region Producer data.
 
         public string IceRole { get; private set; } = "controlled";
 
@@ -26,13 +30,16 @@ namespace TubumuMeeting.Mediasoup
 
         public string? DtlsRemoteCert { get; private set; }
 
+        #endregion
+
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits icestatechange - (iceState: IceState)</para>
         /// <para>@emits iceselectedtuplechange - (iceSelectedTuple: TransportTuple)</para>
         /// <para>@emits dtlsstatechange - (dtlsState: DtlsState)</para>
         /// <para>@emits sctpstatechange - (sctpState: SctpState)</para>
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
         /// <para>@emits newconsumer - (producer: Producer)</para>
@@ -240,12 +247,12 @@ namespace TubumuMeeting.Mediasoup
 
                 case "trace":
                     {
-                        var notification = JsonConvert.DeserializeObject<TraceEventData>(data);
+                        var trace = JsonConvert.DeserializeObject<TransportTraceEventData>(data);
 
-                        Emit("trace", notification);
+                        Emit("trace", trace);
 
                         // Emit observer event.
-                        Observer.Emit("trace", notification);
+                        Observer.Emit("trace", trace);
 
                         break;
                     }

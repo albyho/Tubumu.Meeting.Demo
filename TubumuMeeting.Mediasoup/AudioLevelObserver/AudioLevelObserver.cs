@@ -11,9 +11,10 @@ namespace TubumuMeeting.Mediasoup
         private readonly ILogger<AudioLevelObserver> _logger;
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits volumes - (volumes: AudioLevelObserverVolume[])</para>
         /// <para>@emits silence</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits pause</para>
         /// <para>@emits resume</para>

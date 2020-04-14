@@ -8,13 +8,21 @@ namespace TubumuMeeting.Mediasoup
 {
     public class Producer : EventEmitter
     {
-        // Logger
+        /// <summary>
+        /// Logger
+        /// </summary>
         private readonly ILogger<Producer> _logger;
 
         #region Internal data.
 
+        /// <summary>
+        /// Router id.
+        /// </summary>
         public string RouterId { get; }
 
+        /// <summary>
+        /// Transport id.
+        /// </summary>
         public string TransportId { get; }
 
         /// <summary>
@@ -53,7 +61,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Channel instance.
         /// </summary>
-        public Channel Channel { get; private set; }
+        private readonly Channel _channel;
 
         /// <summary>
         /// App custom data.
@@ -81,12 +89,13 @@ namespace TubumuMeeting.Mediasoup
         public EventEmitter Observer { get; } = new EventEmitter();
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits transportclose</para></para>
         /// <para>@emits score - (score: ProducerScore[])</para>
         /// <para>@emits videoorientationchange - (videoOrientation: ProducerVideoOrientation)</para>
         /// <para>@emits trace - (trace: ProducerTraceEventData)</para>
         /// <para>@emits @close</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits pause</para>
         /// <para>@emits resume</para>
@@ -118,6 +127,7 @@ namespace TubumuMeeting.Mediasoup
                     bool paused)
         {
             _logger = loggerFactory.CreateLogger<Producer>();
+            // Internal
             RouterId = routerId;
             TransportId = transportId;
             Id = producerId;
@@ -127,11 +137,13 @@ namespace TubumuMeeting.Mediasoup
                 TransportId,
                 DataProducerId = Id,
             };
+            // Data
             Kind = kind;
             RtpParameters = rtpParameters;
             Type = type;
             ConsumableRtpParameters = consumableRtpParameters;
-            Channel = channel;
+
+            _channel = channel;
             AppData = appData;
             Paused = paused;
 
@@ -150,8 +162,11 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
+            // Remove notification subscriptions.
+            _channel.MessageEvent -= OnChannelMessage;
+
             // Fire and forget
-            Channel.RequestAsync(MethodId.PRODUCER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.PRODUCER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("close");
 
@@ -171,6 +186,9 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
+            // Remove notification subscriptions.
+            _channel.MessageEvent -= OnChannelMessage;
+
             Emit("transportclose");
 
             // Emit observer event.
@@ -183,7 +201,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.PRODUCER_DUMP, _internal);
+            return _channel.RequestAsync(MethodId.PRODUCER_DUMP, _internal);
         }
 
         /// <summary>
@@ -192,7 +210,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.PRODUCER_GET_STATS, _internal);
+            return _channel.RequestAsync(MethodId.PRODUCER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -204,7 +222,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.PRODUCER_PAUSE, _internal);
+            await _channel.RequestAsync(MethodId.PRODUCER_PAUSE, _internal);
 
             Paused = true;
 
@@ -224,7 +242,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.PRODUCER_RESUME, _internal);
+            await _channel.RequestAsync(MethodId.PRODUCER_RESUME, _internal);
 
             Paused = false;
 
@@ -247,14 +265,14 @@ namespace TubumuMeeting.Mediasoup
                 Types = types ?? new TraceEventType[0]
             };
 
-            return Channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, _internal, reqData);
+            return _channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         #region Event Handlers
 
         private void HandleWorkerNotifications()
         {
-            Channel.MessageEvent += OnChannelMessage;
+            _channel.MessageEvent += OnChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -287,7 +305,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 case "trace":
                     {
-                        var trace = JsonConvert.DeserializeObject<TraceEventData>(data);
+                        var trace = JsonConvert.DeserializeObject<TransportTraceEventData>(data);
 
                         Emit("trace", trace);
 

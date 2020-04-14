@@ -28,20 +28,20 @@ namespace TubumuMeeting.Mediasoup
         // Logger
         private readonly ILogger<Channel> _logger;
 
+        // Closed flag.
+        private bool _closed = false;
+
         // Unix Socket instance for sending messages to the worker process.
         private readonly IPCPipe _producerSocket;
 
         // Unix Socket instance for receiving messages to the worker process.
         private readonly IPCPipe _consumerSocket;
 
-        // Map of pending sent requests.
-        private readonly Dictionary<int, Sent> _sents;
-
         // Next id for messages sent to the worker process.
         private int _nextId = 0;
 
-        // Closed flag.
-        private bool _closed = false;
+        // Map of pending sent requests.
+        private readonly Dictionary<int, Sent> _sents = new Dictionary<int, Sent>();
 
         // Buffer for reading messages from the worker.
         private StringBuilder? _recvBuffer;
@@ -59,9 +59,12 @@ namespace TubumuMeeting.Mediasoup
         public Channel(ILogger<Channel> logger, IPCPipe producerSocket, IPCPipe consumerSocket)
         {
             _logger = logger;
+
+            _logger.LogDebug("constructor()");
+
             _producerSocket = producerSocket;
             _consumerSocket = consumerSocket;
-            _sents = new Dictionary<int, Sent>();
+
             _consumerSocket.Data += ConsumerSocketOnData;
             _consumerSocket.Closed += ConsumerSocketOnClosed;
             _consumerSocket.Error += ConsumerSocketOnError;
@@ -90,6 +93,7 @@ namespace TubumuMeeting.Mediasoup
             _producerSocket.Error -= ProducerSocketOnError;
 
             // Destroy the socket after a while to allow pending incoming messages.
+            // 在 Node.js 实现中，延迟了 200 ms。
             try
             {
                 _producerSocket.Close();
@@ -111,8 +115,8 @@ namespace TubumuMeeting.Mediasoup
 
         public Task<string?> RequestAsync(MethodId methodId, object? @internal = null, object? data = null)
         {
-            int id = _nextId < Int32.MaxValue - 1 ? ++_nextId : (_nextId = 1);
             var method = methodId.GetEnumStringValue();
+            var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1);
             _logger.LogDebug($"RequestAsync() [method:{method}, id:{id}]");
 
             if (_closed)
@@ -316,7 +320,6 @@ namespace TubumuMeeting.Mediasoup
 
         private void ProcessMessage(string nsPayload)
         {
-            //var msg = JsonConvert.DeserializeObject<ResponseMessage>(nsPayload);
             var msg = JObject.Parse(nsPayload);
             var id = msg["id"].Value(0);
             var accepted = msg["accepted"].Value(false);
@@ -331,18 +334,21 @@ namespace TubumuMeeting.Mediasoup
                 if (!_sents.TryGetValue(id, out Sent sent))
                 {
                     _logger.LogError($"received response does not match any sent request [id:{id}]");
+
                     return;
                 }
 
                 if (accepted)
                 {
                     _logger.LogDebug($"request succeeded [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+
                     sent.Resolve?.Invoke(data);
                 }
                 else if (!error.IsNullOrWhiteSpace())
                 {
-                    // Error 的值可能是 "Error" 或 "TypeError"
+                    // 在 Node.js 实现中，error 的值可能是 "Error" 或 "TypeError"。
                     _logger.LogWarning($"request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}");
+
                     sent.Reject?.Invoke(new Exception(reason));
                 }
                 else

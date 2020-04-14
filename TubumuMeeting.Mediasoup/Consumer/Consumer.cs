@@ -9,13 +9,21 @@ namespace TubumuMeeting.Mediasoup
 {
     public class Consumer : EventEmitter
     {
-        // Logger
+        /// <summary>
+        /// Logger
+        /// </summary>
         private readonly ILogger<Consumer> _logger;
 
         #region Internal data.
 
+        /// <summary>
+        /// Router id.
+        /// </summary>
         public string RouterId { get; }
 
+        /// <summary>
+        /// Transport id.
+        /// </summary>
         public string TransportId { get; }
 
         /// <summary>
@@ -54,7 +62,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Channel instance.
         /// </summary>
-        public Channel Channel { get; private set; }
+        private readonly Channel _channel;
 
         /// <summary>
         /// App custom data.
@@ -92,9 +100,13 @@ namespace TubumuMeeting.Mediasoup
         // Curent layers.
         public ConsumerLayers? CurrentLayers { get; private set; }
 
+        /// <summary>
+        /// Observer instance.
+        /// </summary>
         public EventEmitter Observer { get; } = new EventEmitter();
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits transportclose</para>
         /// <para>@emits producerclose</para>
         /// <para>@emits producerpause</para>
@@ -104,7 +116,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits trace - (trace: ConsumerTraceEventData)</para>
         /// <para>@emits @close</para>
         /// <para>@emits @producerclose</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits pause</para>
         /// <para>@emits resume</para>
@@ -143,6 +155,7 @@ namespace TubumuMeeting.Mediasoup
                     )
         {
             _logger = loggerFactory.CreateLogger<Consumer>();
+            // Internal
             RouterId = routerId;
             TransportId = transportId;
             Id = consumerId;
@@ -154,10 +167,12 @@ namespace TubumuMeeting.Mediasoup
                 ConsumerId = Id,
                 ProducerId
             };
+            // Data
             Kind = kind;
             RtpParameters = rtpParameters;
             Type = type;
-            Channel = channel;
+
+            _channel = channel;
             AppData = appData;
             Paused = paused;
             ProducerPaused = producerPaused;
@@ -179,8 +194,11 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
+            // Remove notification subscriptions.
+            _channel.MessageEvent -= OnChannelMessage;
+
             // Fire and forget
-            Channel.RequestAsync(MethodId.CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -200,6 +218,9 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
+            // Remove notification subscriptions.
+            _channel.MessageEvent -= OnChannelMessage;
+
             Emit("transportclose");
 
             // Emit observer event.
@@ -212,7 +233,8 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.CONSUMER_DUMP, _internal);
+
+            return _channel.RequestAsync(MethodId.CONSUMER_DUMP, _internal);
         }
 
         /// <summary>
@@ -221,7 +243,8 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.CONSUMER_GET_STATS, _internal);
+
+            return _channel.RequestAsync(MethodId.CONSUMER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -231,9 +254,9 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("PauseAsync()");
 
-            var wasPaused = Paused;
+            var wasPaused = Paused || ProducerPaused;
 
-            await Channel.RequestAsync(MethodId.CONSUMER_PAUSE, _internal);
+            await _channel.RequestAsync(MethodId.CONSUMER_PAUSE, _internal);
 
             Paused = true;
 
@@ -249,14 +272,14 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("ResumeAsync()");
 
-            var wasPaused = Paused;
+            var wasPaused = Paused || ProducerPaused;
 
-            await Channel.RequestAsync(MethodId.CONSUMER_RESUME, _internal);
+            await _channel.RequestAsync(MethodId.CONSUMER_RESUME, _internal);
 
             Paused = false;
 
             // Emit observer event.
-            if (wasPaused)
+            if (wasPaused && !ProducerPaused)
                 Observer.Emit("resume");
         }
 
@@ -268,7 +291,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("SetPreferredLayersAsync()");
 
             var reqData = consumerLayers;
-            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, _internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetPreferredLayersResponseData>(status);
             PreferredLayers = responseData;
         }
@@ -281,7 +304,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("SetPriorityAsync()");
 
             var reqData = new { Priority = priority };
-            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status);
             Priority = responseData.Priority;
         }
@@ -294,7 +317,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("UnsetPriorityAsync()");
 
             var reqData = new { Priority = 1 };
-            var status = await Channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status);
 
             Priority = responseData.Priority;
@@ -306,7 +329,7 @@ namespace TubumuMeeting.Mediasoup
         public Task RequestKeyFrameAsync()
         {
             _logger.LogDebug("RequestKeyFrameAsync()");
-            return Channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, _internal);
+            return _channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, _internal);
         }
 
         /// <summary>
@@ -319,14 +342,14 @@ namespace TubumuMeeting.Mediasoup
             {
                 Types = types ?? Array.Empty<TraceEventType>()
             };
-            return Channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, _internal, reqData);
+            return _channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         #region Event Handlers
 
         private void HandleWorkerNotifications()
         {
-            Channel.MessageEvent += OnChannelMessage;
+            _channel.MessageEvent += OnChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -340,6 +363,9 @@ namespace TubumuMeeting.Mediasoup
                             break;
 
                         Closed = true;
+
+                        // Remove notification subscriptions.
+                        _channel.MessageEvent -= OnChannelMessage;
 
                         Emit("@producerclose");
                         Emit("producerclose");
@@ -410,7 +436,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 case "trace":
                     {
-                        var trace = JsonConvert.DeserializeObject<TraceEventData>(data);
+                        var trace = JsonConvert.DeserializeObject<TransportTraceEventData>(data);
 
                         Emit("trace", trace);
 

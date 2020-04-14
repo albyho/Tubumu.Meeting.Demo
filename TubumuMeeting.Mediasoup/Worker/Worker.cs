@@ -61,10 +61,11 @@ namespace TubumuMeeting.Mediasoup
         public EventEmitter Observer { get; } = new EventEmitter();
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits died - (error: Error)</para>
         /// <para>@emits @success</para>
         /// <para>@emits @failure - (error: Error)</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newrouter - (router: Router)</para>
         /// </summary>

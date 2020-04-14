@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using Newtonsoft.Json;
+
+namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Provides information on RTCP settings within the RTP parameters.
@@ -14,6 +16,7 @@
         /// <summary>
         /// The Canonical Name (CNAME) used by RTCP (e.g. in SDES messages).
         /// </summary>
+        [JsonProperty("cname")]
         public string? CNAME { get; set; }
 
         /// <summary>

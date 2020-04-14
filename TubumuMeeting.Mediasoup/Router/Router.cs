@@ -31,7 +31,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Channel instance.
         /// </summary>
-        public Channel Channel { get; private set; }
+        private readonly Channel _channel;
 
         /// <summary>
         /// App custom data.
@@ -68,9 +68,10 @@ namespace TubumuMeeting.Mediasoup
         public EventEmitter Observer { get; } = new EventEmitter();
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits workerclose</para>
         /// <para>@emits @close</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newtransport - (transport: Transport)</para>
         /// <para>@emits newrtpobserver - (rtpObserver: RtpObserver)</para>  
@@ -94,7 +95,7 @@ namespace TubumuMeeting.Mediasoup
                 RouterId,
             };
             RtpCapabilities = rtpCapabilities;
-            Channel = channel;
+            _channel = channel;
             AppData = appData;
         }
 
@@ -111,7 +112,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.ROUTER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.ROUTER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             // Close every Transport.
             foreach (var transport in _transports.Values)
@@ -195,7 +196,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.ROUTER_DUMP, _internal);
+            return _channel.RequestAsync(MethodId.ROUTER_DUMP, _internal);
         }
 
         /// <summary>
@@ -224,7 +225,7 @@ namespace TubumuMeeting.Mediasoup
                 IsDataChannel = true
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_WEBRTC_TRANSPORT, @internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.ROUTER_CREATE_WEBRTC_TRANSPORT, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<RouterCreateWebRtcTransportResponseData>(status);
 
             var transport = new WebRtcTransport(_loggerFactory,
@@ -232,7 +233,7 @@ namespace TubumuMeeting.Mediasoup
                 @internal.TransportId,
                 sctpParameters: null,
                 sctpState: null,
-                Channel, AppData,
+                _channel, AppData,
                 () => RtpCapabilities,
                 m => _producers[m],
                 m => _dataProducers[m],
@@ -302,7 +303,7 @@ namespace TubumuMeeting.Mediasoup
                 plainTransportOptions.SrtpCryptoSuite
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PLAIN_TRANSPORT, @internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.ROUTER_CREATE_PLAIN_TRANSPORT, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status);
 
             var transport = new PlainTransport(_loggerFactory,
@@ -310,7 +311,7 @@ namespace TubumuMeeting.Mediasoup
                             @internal.TransportId,
                             sctpParameters: null,
                             sctpState: null,
-                            Channel, AppData,
+                            _channel, AppData,
                             () => RtpCapabilities,
                             m => _producers[m],
                             m => _dataProducers[m],
@@ -374,7 +375,7 @@ namespace TubumuMeeting.Mediasoup
                 pipeTransportOptions.EnableSrtp,
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_PIPE_TRANSPORT, @internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.ROUTER_CREATE_PIPE_TRANSPORT, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
 
             var transport = new PipeTransport(_loggerFactory,
@@ -382,7 +383,7 @@ namespace TubumuMeeting.Mediasoup
                             @internal.TransportId,
                             sctpParameters: null,
                             sctpState: null,
-                            Channel, AppData,
+                            _channel, AppData,
                             () => RtpCapabilities,
                             m => _producers[m],
                             m => _dataProducers[m],
@@ -681,18 +682,16 @@ namespace TubumuMeeting.Mediasoup
                 audioLevelObserverOptions.Interval
             };
 
-            var status = await Channel.RequestAsync(MethodId.ROUTER_CREATE_AUDIO_LEVEL_OBSERVER, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
+            await _channel.RequestAsync(MethodId.ROUTER_CREATE_AUDIO_LEVEL_OBSERVER, @internal, reqData);
 
             var audioLevelObserver = new AudioLevelObserver(_loggerFactory,
                 @internal.RouterId,
                 @internal.RtpObserverId,
-                Channel,
+                _channel,
                 AppData,
                 m => _producers[m]);
 
             _rtpObservers[audioLevelObserver.Id] = audioLevelObserver;
-
             audioLevelObserver.On("@close", _ => _rtpObservers.Remove(audioLevelObserver.Id));
 
             // Emit observer event.
@@ -706,10 +705,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public bool CanConsume(string producerId, RtpCapabilities rtpCapabilities)
         {
-            var producer = _producers[producerId];
-            if (producer == null)
+            if (!_producers.TryGetValue(producerId, out Producer producer))
             {
                 _logger.LogError($"canConsume() | Producer with id {producerId} not found");
+
                 return false;
             }
 
@@ -720,6 +719,7 @@ namespace TubumuMeeting.Mediasoup
             catch (Exception ex)
             {
                 _logger.LogError(ex, "canConsume() | unexpected error");
+
                 return false;
             }
         }

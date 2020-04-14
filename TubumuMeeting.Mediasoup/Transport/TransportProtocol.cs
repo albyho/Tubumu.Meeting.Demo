@@ -11,6 +11,6 @@ namespace TubumuMeeting.Mediasoup
         UDP,
 
         [EnumStringValue("tcp")]
-        TCP,
+        TCP
     }
 }

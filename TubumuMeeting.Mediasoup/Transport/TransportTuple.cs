@@ -1,5 +1,8 @@
 ﻿namespace TubumuMeeting.Mediasoup
 {
+    /// <summary>
+    /// Transport protocol.
+    /// </summary>
     public class TransportTuple
     {
         public string LocalIp { get; set; }

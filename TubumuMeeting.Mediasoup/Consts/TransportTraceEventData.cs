@@ -1,9 +1,11 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System.Collections.Generic;
+
+namespace TubumuMeeting.Mediasoup
 {
 	/// <summary>
 	/// 'trace' event data.
 	/// </summary>
-	public class TraceEventData
+	public class TransportTraceEventData
 	{
 		/// <summary>
 		/// Trace type.
@@ -23,6 +25,6 @@
 		/// <summary>
 		/// Per type information.
 		/// </summary>
-		public object Info { get; set; }
+		public Dictionary<string, object> Info { get; set; }
 	}
 }

@@ -30,7 +30,8 @@ namespace Tubumu.Core.Extensions.Object
         }
 
         /// <summary>
-        /// ToCamelCaseJson。Key 使用 CamelCase 命名风格，并且日期格式为：yyyy-MM-dd HH:mm:ss 。
+        /// <para>1、Key 使用 CamelCase 命名风格；</para>
+        /// <para>2、日期格式为：yyyy-MM-dd HH:mm:ss 。</para>
         /// </summary>
         /// <param name="source"></param>
         /// <returns></returns>

@@ -8,9 +8,17 @@ namespace TubumuMeeting.Mediasoup
 {
     public class PipeTransport : Transport
     {
-        // Logger
+        /// <summary>
+        /// Logger factory.
+        /// </summary>
         private readonly ILoggerFactory _loggerFactory;
+
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<PipeTransport> _logger;
+
+        #region Producer data.
 
         public TransportTuple Tuple { get; private set; }
 
@@ -18,10 +26,13 @@ namespace TubumuMeeting.Mediasoup
 
         public SrtpParameters? SrtpParameters { get; private set; }
 
+        #endregion
+
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits sctpstatechange - (sctpState: SctpState)</para>
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
         /// <para>@emits newconsumer - (producer: Producer)</para>
@@ -57,6 +68,8 @@ namespace TubumuMeeting.Mediasoup
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<PipeTransport>();
+
+            // Data
             Tuple = tuple;
             Rtx = rtx;
             SrtpParameters = srtpParameters;
@@ -216,12 +229,12 @@ namespace TubumuMeeting.Mediasoup
 
                 case "trace":
                     {
-                        var notification = JsonConvert.DeserializeObject<TraceEventData>(data);
+                        var trace = JsonConvert.DeserializeObject<TransportTraceEventData>(data);
 
-                        Emit("trace", notification);
+                        Emit("trace", trace);
 
                         // Emit observer event.
-                        Observer.Emit("trace", notification);
+                        Observer.Emit("trace", trace);
 
                         break;
                     }

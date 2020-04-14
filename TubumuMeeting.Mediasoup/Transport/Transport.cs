@@ -11,14 +11,26 @@ namespace TubumuMeeting.Mediasoup
 {
     public abstract class Transport : EventEmitter
     {
-        // Logger
+        /// <summary>
+        /// Logger factory.
+        /// </summary>
         private readonly ILoggerFactory _loggerFactory;
+
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<Transport> _logger;
 
         #region Internal data.
 
+        /// <summary>
+        /// Router id.
+        /// </summary>
         public string RouterId { get; }
 
+        /// <summary>
+        /// Trannsport id.
+        /// </summary>
         public string Id { get; }
 
         protected object _internal;
@@ -42,7 +54,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Channel instance.
         /// </summary>
-        public Channel Channel { get; private set; }
+        private readonly Channel _channel;
 
         /// <summary>
         /// App custom data.
@@ -93,13 +105,14 @@ namespace TubumuMeeting.Mediasoup
         public EventEmitter Observer { get; } = new EventEmitter();
 
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits routerclose</para>
         /// <para>@emits @close</para>
         /// <para>@emits @newproducer - (producer: Producer)</para>
         /// <para>@emits @producerclose - (producer: Producer)</para>
         /// <para>@emits @newdataproducer - (dataProducer: DataProducer)</para>
         /// <para>@emits @dataproducerclose - (dataProducer: DataProducer)</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
         /// <para>@emits newconsumer - (producer: Producer)</para>
@@ -129,6 +142,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Transport>();
+            // Internal
             RouterId = routerId;
             Id = transportId;
             _internal = new
@@ -136,9 +150,11 @@ namespace TubumuMeeting.Mediasoup
                 RouterId,
                 TransportId = transportId,
             };
+            // Data
             SctpParameters = sctpParameters;
             SctpState = sctpState;
-            Channel = channel;
+
+            _channel = channel;
             AppData = appData;
             GetRouterRtpCapabilities = getRouterRtpCapabilities;
             GetProducerById = getProducerById;
@@ -157,9 +173,11 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
+            // Remove notification subscriptions.
+            //_channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.TRANSPORT_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.TRANSPORT_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             // Close every Producer.
             foreach (var producer in Producers.Values)
@@ -213,6 +231,9 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
+            // Remove notification subscriptions.
+            //_channel.MessageEvent -= OnChannelMessage;
+
             // Close every Producer.
             foreach (var producer in Producers.Values)
             {
@@ -260,7 +281,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
-            return Channel.RequestAsync(MethodId.TRANSPORT_DUMP, _internal);
+            return _channel.RequestAsync(MethodId.TRANSPORT_DUMP, _internal);
         }
 
         /// <summary>
@@ -268,8 +289,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public virtual Task<string?> GetStatsAsync()
         {
+            // 在 Node.js 实现中，Transport 类没有实现 getState 方法。
             _logger.LogDebug("GetStatsAsync()");
-            return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS, _internal);
+            return _channel.RequestAsync(MethodId.TRANSPORT_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -286,10 +308,10 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Task<string?> SetMaxIncomingBitrateAsync(int bitrate)
         {
-            _logger.LogDebug($"setMaxIncomingBitrate() [bitrate:{bitrate}]");
+            _logger.LogDebug($"SetMaxIncomingBitrateAsync() [bitrate:{bitrate}]");
 
             var reqData = new { Bitrate = bitrate };
-            return Channel.RequestAsync(MethodId.TRANSPORT_SET_MAX_INCOMING_BITRATE, _internal, reqData);
+            return _channel.RequestAsync(MethodId.TRANSPORT_SET_MAX_INCOMING_BITRATE, _internal, reqData);
         }
 
         /// <summary>
@@ -309,9 +331,13 @@ namespace TubumuMeeting.Mediasoup
 
             // If missing or empty encodings, add one.
             // TODO: (alby)注意检查这样做是否合适
+            // 在 mediasoup-worker 中，要求 Encodings 至少要有一个元素。
             if (producerOptions.RtpParameters.Encodings.IsNullOrEmpty())
             {
-                producerOptions.RtpParameters.Encodings = new List<RtpEncodingParameters>();
+                producerOptions.RtpParameters.Encodings = new List<RtpEncodingParameters>
+                {
+                    new RtpEncodingParameters()
+                };
             }
 
             // Don't do this in PipeTransports since there we must keep CNAME value in
@@ -360,7 +386,7 @@ namespace TubumuMeeting.Mediasoup
                 producerOptions.Paused,
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE, @internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.TRANSPORT_PRODUCE, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportProduceResponseData>(status);
             var data = new
             {
@@ -378,9 +404,9 @@ namespace TubumuMeeting.Mediasoup
                 data.RtpParameters,
                 data.Type,
                 data.ConsumableRtpParameters,
-                Channel,
+                _channel,
                 AppData,
-                producerOptions.Paused.Value);
+                producerOptions.Paused!.Value);
 
             Producers[producer.Id] = producer;
 
@@ -409,7 +435,17 @@ namespace TubumuMeeting.Mediasoup
 
             if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
             {
-                throw new Exception("missing producerId");
+                throw new NullReferenceException("missing producerId");
+            }
+
+            if (consumerOptions.RtpCapabilities == null)
+            {
+                throw new ArgumentNullException(nameof(consumerOptions.RtpCapabilities));
+            }
+
+            if (!consumerOptions.Paused.HasValue)
+            {
+                consumerOptions.Paused = false;
             }
 
             // This may throw.
@@ -418,7 +454,7 @@ namespace TubumuMeeting.Mediasoup
             var producer = GetProducerById(consumerOptions.ProducerId);
 
             if (producer == null)
-                throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
+                throw new NullReferenceException($"Producer with id {consumerOptions.ProducerId} not found");
 
             // This may throw.
             var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities);
@@ -428,7 +464,6 @@ namespace TubumuMeeting.Mediasoup
 
             // We use up to 8 bytes for MID (string).
             if (_nextMidForConsumers == 100000000)
-
             {
                 _logger.LogDebug($"consume() | reaching max MID value {_nextMidForConsumers}");
                 _nextMidForConsumers = 0;
@@ -452,7 +487,7 @@ namespace TubumuMeeting.Mediasoup
                 consumerOptions.PreferredLayers
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status);
 
             var data = new
@@ -470,7 +505,7 @@ namespace TubumuMeeting.Mediasoup
                 data.Kind,
                 data.RtpParameters,
                 data.Type,
-                Channel,
+                _channel,
                 AppData,
                 responseData.Paused,
                 responseData.ProducerPaused,
@@ -496,8 +531,17 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("ProduceDataAsync()");
 
-            if (!dataProducerOptions.Id.IsNullOrWhiteSpace() && DataProducers.ContainsKey(dataProducerOptions.Id))
+            if (!dataProducerOptions.Id.IsNullOrWhiteSpace() && DataProducers.ContainsKey(dataProducerOptions.Id!))
                 throw new Exception($"a DataProducer with same id {dataProducerOptions.Id} already exists");
+
+            if (dataProducerOptions.Label.IsNullOrWhiteSpace())
+            {
+                dataProducerOptions.Label = string.Empty;
+            }
+            if (dataProducerOptions.Protocol.IsNullOrWhiteSpace())
+            {
+                dataProducerOptions.Protocol = string.Empty;
+            }
 
             // This may throw.
             ORTC.ValidateSctpStreamParameters(dataProducerOptions.SctpStreamParameters);
@@ -512,11 +556,11 @@ namespace TubumuMeeting.Mediasoup
             var reqData = new
             {
                 dataProducerOptions.SctpStreamParameters,
-                dataProducerOptions.Label,
-                dataProducerOptions.Protocol
+                Label = dataProducerOptions.Label!,
+                Protocol = dataProducerOptions.Protocol!
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE_DATA, @internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.TRANSPORT_PRODUCE_DATA, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportDataProduceResponseData>(status);
             var dataProducer = new DataProducer(_loggerFactory,
                 @internal.RouterId,
@@ -525,7 +569,7 @@ namespace TubumuMeeting.Mediasoup
                 responseData.SctpStreamParameters,
                 responseData.Label,
                 responseData.Protocol,
-                Channel,
+                _channel,
                 AppData);
 
             DataProducers[dataProducer.Id] = dataProducer;
@@ -566,8 +610,11 @@ namespace TubumuMeeting.Mediasoup
             // This may throw.
             var sctpStreamId = GetNextSctpStreamId();
 
+            if (_sctpStreamIds == null || sctpStreamId > _sctpStreamIds.Length - 1)
+            {
+                throw new IndexOutOfRangeException(nameof(_sctpStreamIds));
+            }
             _sctpStreamIds[sctpStreamId] = 1;
-
             sctpStreamParameters.StreamId = sctpStreamId;
 
             var @internal = new
@@ -585,7 +632,7 @@ namespace TubumuMeeting.Mediasoup
                 dataProducer.Protocol
             };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME_DATA, @internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.TRANSPORT_CONSUME_DATA, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportDataConsumeResponseData>(status);
 
             var dataConsumer = new DataConsumer(_loggerFactory,
@@ -596,7 +643,7 @@ namespace TubumuMeeting.Mediasoup
                 responseData.SctpStreamParameters,
                 responseData.Label,
                 responseData.Protocol,
-                Channel,
+                _channel,
                 AppData);
 
             DataConsumers[dataConsumer.Id] = dataConsumer;
@@ -631,7 +678,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new { Types = types };
 
-            return Channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT, _internal, reqData);
+            return _channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         private int GetNextSctpStreamId()
@@ -640,22 +687,28 @@ namespace TubumuMeeting.Mediasoup
             {
                 throw new Exception("missing data.sctpParameters.MIS");
             }
+            if (_sctpStreamIds == null)
+            {
+                throw new IndexOutOfRangeException(nameof(_sctpStreamIds));
+            }
 
             var numStreams = SctpParameters.MIS;
 
             if (_sctpStreamIds.IsNullOrEmpty())
+            {
                 _sctpStreamIds = new int[numStreams];
+            }
 
             int sctpStreamId;
 
             for (var idx = 0; idx < _sctpStreamIds.Length; ++idx)
-
             {
                 sctpStreamId = (_nextSctpStreamId + idx) % _sctpStreamIds.Length;
 
                 if (_sctpStreamIds[sctpStreamId] == 0)
                 {
                     _nextSctpStreamId = sctpStreamId + 1;
+
                     return sctpStreamId;
                 }
             }

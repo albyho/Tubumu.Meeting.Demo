@@ -7,8 +7,12 @@ namespace TubumuMeeting.Mediasoup
 {
     public class PlainTransport : Transport
     {
-        // Logger
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<PlainTransport> _logger;
+
+        #region Producer data.
 
         public bool? RtcpMux { get; set; }
 
@@ -20,12 +24,15 @@ namespace TubumuMeeting.Mediasoup
 
         public SrtpParameters? SrtpParameters { get; private set; }
 
+        #endregion
+
         /// <summary>
+        /// <para>Events:</para>
         /// <para>@emits tuple - (tuple: TransportTuple)</para>
         /// <para>@emits rtcptuple - (rtcpTuple: TransportTuple)</para>
         /// <para>@emits sctpstatechange - (sctpState: SctpState)</para>
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>
-        /// <para>Observer:</para>
+        /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
         /// <para>@emits newconsumer - (producer: Producer)</para>
@@ -182,12 +189,12 @@ namespace TubumuMeeting.Mediasoup
 
                 case "trace":
                     {
-                        var notification = JsonConvert.DeserializeObject<TraceEventData>(data);
+                        var trace = JsonConvert.DeserializeObject<TransportTraceEventData>(data);
 
-                        Emit("trace", notification);
+                        Emit("trace", trace);
 
                         // Emit observer event.
-                        Observer.Emit("trace", notification);
+                        Observer.Emit("trace", trace);
 
                         break;
                     }
