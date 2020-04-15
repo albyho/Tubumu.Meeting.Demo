@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DependencyInjection
             var mediasoupOptions = MediasoupOptions.Default;
             configure?.Invoke(mediasoupOptions);
             services.AddSingleton(mediasoupOptions);
-            services.AddSingleton<Mediasoup>();
+            services.AddSingleton<MediasoupWorkerManager>();
             services.AddTransient<Worker>();
             return services;
         }

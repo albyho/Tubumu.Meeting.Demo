@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Libuv", "Tubu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.AspNetCore.Mediasoup", "TubumuMeeting.AspNetCore.Mediasoup\TubumuMeeting.AspNetCore.Mediasoup.csproj", "{A1626688-249E-4C64-9CCC-94742E852B41}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Meeting", "TubumuMeeting.Meeting\TubumuMeeting.Meeting.csproj", "{92365A0C-4BE4-442B-835F-BB0803D62DB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{A1626688-249E-4C64-9CCC-94742E852B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1626688-249E-4C64-9CCC-94742E852B41}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1626688-249E-4C64-9CCC-94742E852B41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92365A0C-4BE4-442B-835F-BB0803D62DB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92365A0C-4BE4-442B-835F-BB0803D62DB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92365A0C-4BE4-442B-835F-BB0803D62DB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92365A0C-4BE4-442B-835F-BB0803D62DB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

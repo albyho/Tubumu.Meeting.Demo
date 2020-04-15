@@ -9,8 +9,8 @@ namespace TubumuMeeting.Mediasoup
 {
     public static class ORTC
     {
-        private static readonly Regex MimeTypeRegex = new Regex(@"^(audio|video)/(.+)");
-        private static readonly Regex RtxMimeTypeRegex = new Regex(@"^.+/rtx$");
+        private static readonly Regex MimeTypeRegex = new Regex(@"^(audio|video)/(.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex RtxMimeTypeRegex = new Regex(@"^.+/rtx$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public static readonly int[] DynamicPayloadTypes = new[] {
             100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
@@ -1024,7 +1024,7 @@ namespace TubumuMeeting.Mediasoup
 
         public static bool IsRtxMimeType(string mimeType)
         {
-            return RtxMimeTypeRegex.IsMatch(mimeType.ToLower());
+            return RtxMimeTypeRegex.IsMatch(mimeType);
         }
 
         private static bool CheckDirectoryValueEquals(IDictionary<string, object> a, IDictionary<string, object> b, string key)

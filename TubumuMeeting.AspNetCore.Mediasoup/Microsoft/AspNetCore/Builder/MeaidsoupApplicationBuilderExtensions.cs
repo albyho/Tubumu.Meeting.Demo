@@ -16,15 +16,15 @@ namespace Microsoft.Extensions.DependencyInjection
                 Loop.Default.Run(() =>
                 {
                     var loggerFactory = app.ApplicationServices.GetRequiredService<ILoggerFactory>();
-                    var logger = loggerFactory.CreateLogger<Mediasoup>();
-                    var mediasoup = app.ApplicationServices.GetRequiredService<Mediasoup>();
+                    var logger = loggerFactory.CreateLogger<MediasoupWorkerManager>();
+                    var mediasoupWorkerManager = app.ApplicationServices.GetRequiredService<MediasoupWorkerManager>();
                     var mediasoupOptions = app.ApplicationServices.GetRequiredService<MediasoupOptions>();
                     for (var c = 0; c < mediasoupOptions.NumberOfWorkers; c++)
                     {
                         var worker = app.ApplicationServices.GetRequiredService<Worker>();
-                        mediasoup.Workers.Add(worker);
                         worker.On("@success", _ =>
                         {
+                            mediasoupWorkerManager.AddWorker(worker);
                             logger.LogInformation($"worker[pid:{worker.ProcessId}] create success.");
                         });
                     }

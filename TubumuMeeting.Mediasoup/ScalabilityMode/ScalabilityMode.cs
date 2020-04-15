@@ -4,7 +4,7 @@ namespace TubumuMeeting.Mediasoup
 {
     public class ScalabilityMode
     {
-        private static readonly Regex ScalabilityModeRegex = new Regex("^[LS]([1-9]\\d{0,1})T([1-9]\\d{0,1})(_KEY)?");
+        private static readonly Regex ScalabilityModeRegex = new Regex("^[LS]([1-9]\\d{0,1})T([1-9]\\d{0,1})(_KEY)?", RegexOptions.Compiled);
 
         public int SpatialLayers { get; set; }
 
@@ -21,7 +21,7 @@ namespace TubumuMeeting.Mediasoup
                 result.SpatialLayers = int.Parse(match.Groups[0].Value);
                 result.TemporalLayers = int.Parse(match.Groups[1].Value);
                 // TODO: (alby)bool值转换需要修改
-                result.Ksvc = bool.Parse(match.Groups[2].Value);
+                result.Ksvc = match.Groups.Count > 2 && match.Groups[2].Value == "_KEY";
             }
             else
             {
