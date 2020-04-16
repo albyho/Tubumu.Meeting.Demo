@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
@@ -10,6 +11,10 @@ namespace TubumuMeeting.Meeting
     public class Room : EventEmitter, IEquatable<Room>
     {
         private readonly object _locker = new object();
+
+        private readonly ILoggerFactory _loggerFactory;
+
+        private readonly ILogger<Room> _logger;
 
         public Guid RoomId { get; }
 
@@ -23,55 +28,69 @@ namespace TubumuMeeting.Meeting
         [JsonIgnore]
         public Dictionary<int, Peer> Peers { get; } = new Dictionary<int, Peer>();
 
-        public Room(Guid roomId, string name)
+        public Room(ILoggerFactory loggerFactory, Guid roomId, string name)
         {
+            _loggerFactory = loggerFactory;
+            _logger = _loggerFactory.CreateLogger<Room>();
+
             RoomId = roomId;
             Name = name.IsNullOrWhiteSpace() ? "Meeting" : name;
             Closed = false;
         }
 
-        public bool HandlePeer(int peerId, string name)
+        public bool AddPeer(Peer peer)
         {
-            var peer = new Peer(peerId, name);
-
             lock (_locker)
             {
-                if (Peers.ContainsKey(peer.PeerId))
+                if(Closed)
                 {
-                    Emit("peerexists", peer);
                     return false;
                 }
-
-                peer.JoinRoom(this);
-                Emit("peerjoined", peer);
+                if (Peers.ContainsKey(peer.PeerId))
+                {
+                    _logger.LogError($"Peer[{peer.PeerId}] is exists.");
+                    return false;
+                }
             }
 
-            peer.On("joinedroom", m =>
-            {
-                lock (_locker)
-                {
-                    Peers[peer.PeerId] = peer;
-                }
-            });
-
-            peer.On("leftroom", m =>
-            {
-                lock (_locker)
-                {
-                    Peers.Remove(peer.PeerId);
-                }
-            });
+            Peers[peer.PeerId] = peer;
+            Emit("PeerJoined", peer);
 
             return true;
         }
 
-        public bool Close()
+        public bool RemovePeer(int peerId)
         {
-            Closed = true;
+            Peer peer;
+            lock (_locker)
+            {
+                if (Closed)
+                {
+                    return false;
+                }
+                if (!Peers.TryGetValue(peerId, out peer))
+                {
+                    _logger.LogError($"Peer[{peerId}] is not exists.");
+                    return false;
+                }
+            }
 
-            Emit("closed", this);
+            Peers.Remove(peerId);
+            Emit("PeerLeft", peer);
 
             return true;
+        }
+
+        public void Close()
+        {
+            if (Closed)
+            {
+                return;
+            }
+
+            Closed = true;
+            Peers.Clear();
+            Emit("Closed", this);
         }
 
         public bool Equals(Room other)

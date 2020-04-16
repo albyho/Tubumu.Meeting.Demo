@@ -59,7 +59,7 @@ namespace TubumuMeeting.Demo.Client
             try
             {
                 #region snippet_InvokeAsync
-                await connection.InvokeAsync("SendMessage", messageTextBox.Text);
+                await connection.InvokeAsync("JoinRoom", Guid.Empty);
                 #endregion
             }
             catch (Exception ex)

@@ -57,7 +57,7 @@ namespace TubumuMeeting.Mediasoup
         {
             if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
             {
-                throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
+                //throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
             }
             else
             {

@@ -22,17 +22,26 @@ namespace TubumuMeeting.Meeting
         {
             PeerId = peerId;
             Name = name.IsNullOrWhiteSpace() ? "Guest" : name;
+            Closed = false;
         }
 
         public bool JoinRoom(Room room)
         {
-            if (Room != null)
+            if (Joined)
             {
-                throw new Exception($"Peer:{PeerId} 已经在房间");
+                return false;
             }
-
+            if(room == null)
+            {
+                return false;
+            }
+            if (room.Closed)
+            {
+                return false;
+            }
             Room = room;
-            Emit("joinedroom", new RoomPeer(room, this));
+            room.AddPeer(this);
+            Emit("JoinedRoom", new RoomPeer(room, this));
 
             return true;
         }
@@ -41,26 +50,31 @@ namespace TubumuMeeting.Meeting
         {
             if(Room == null)
             {
-                throw new Exception($"Peer:{PeerId} 没在任何房间");
+                return false;
             }
 
             var tempRoom = Room;
             Room = null;
-            Emit("leftroom", new RoomPeer(tempRoom, this));
+            tempRoom.RemovePeer(this.PeerId);
+            Emit("LeftRoom", new RoomPeer(tempRoom, this));
 
             return true;
         }
 
-        public bool Close()
+        public void Close()
         {
             if (Room != null)
             {
                 LeaveRoom();
             }
 
-            Emit("closed", this);
+            if (Closed)
+            {
+                return;
+            }
 
-            return true;
+            Closed = true;
+            Emit("Closed", this);
         }
 
         public bool Equals(Peer other)

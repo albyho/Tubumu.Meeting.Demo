@@ -14,8 +14,8 @@ namespace Microsoft.Extensions.DependencyInjection
             configure?.Invoke(mediasoupOptions);
             services.AddSingleton(mediasoupOptions);
             services.AddSingleton<MediasoupServer>();
-            services.AddSingleton<RoomManager>();
             services.AddTransient<Worker>();
+            services.AddSingleton<MeetingManager>();
             return services;
         }
     }

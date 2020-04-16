@@ -11,7 +11,7 @@ using TubumuMeeting.Mediasoup.Extensions;
 namespace TubumuMeeting.Meeting
 {
     /// <summary>
-    /// MeetingMessage (错误码：200 连接通知成功 400 连接通知失败等错误)
+    /// MeetingMessage (错误码：200 普通消息 201 连接通知成功 202 加入房间成功 203 加入房间失败 400 连接通知失败等错误)
     /// </summary>
     public class MeetingMessage
     {
@@ -32,21 +32,23 @@ namespace TubumuMeeting.Meeting
     public partial class MeetingHub : Hub<IPeer>
     {
         private readonly ILogger<MeetingHub> _logger;
+        private readonly MeetingManager _meetingManager;
 
-        public MeetingHub(ILogger<MeetingHub> logger)
+        public MeetingHub(ILogger<MeetingHub> logger, MeetingManager meetingManager)
         {
             _logger = logger;
+            _meetingManager = meetingManager;
         }
 
         public override Task OnConnectedAsync()
         {
-            // return SendMessageToCaller(new ApiResultNotification { Code = 200, Message = "连接通知成功" });
             var userId = int.Parse(Context.User.Identity.Name);
-            return SendMessageByUserIdAsync(userId, new MeetingMessage
+            var handleResult = _meetingManager.HandlePeer(userId, "Guest");
+            if (handleResult)
             {
-                Code = 200,
-                Message = "welcome",
-            });
+                return SendMessageToCaller(new MeetingMessage { Code = 201, Message = "连接成功" });
+            }
+            return Task.CompletedTask;
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
@@ -82,13 +84,20 @@ namespace TubumuMeeting.Meeting
 
     public partial class MeetingHub
     {
-        public Task SendMessage(string roomId)
+        public async Task JoinRoom(Guid roomId)
         {
-            return BroadcastMessageAsync(new MeetingMessage
+            var room = _meetingManager.GetOrCreateRoom(roomId, "Meeting");
+            var relateRessult = await _meetingManager.RoomRelateRouter(room.RoomId);
+
+            var peerId = int.Parse(Context.User.Identity.Name);
+            var joinRessult = _meetingManager.PeerJoinRoom(peerId, roomId);
+            if (joinRessult)
             {
-                Code = 200,
-                Message = "new user joined.",
-            });
+                await SendMessageToCaller(new MeetingMessage { Code = 202, Message = "加入房间成功" });
+                return;
+            }
+
+            await SendMessageToCaller(new MeetingMessage { Code = 203, Message = "加入房间失败" });
         }
     }
 }

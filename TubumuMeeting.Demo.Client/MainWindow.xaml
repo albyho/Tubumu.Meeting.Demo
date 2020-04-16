@@ -15,9 +15,7 @@
         <Button x:Name="sendButton" Content="Send Message" HorizontalAlignment="Left" Margin="275.333,113,0,0" VerticalAlignment="Top" Width="95" Click="sendButton_Click" Height="41" Grid.Column="1" IsEnabled="False"/>
         <TextBox x:Name="messageTextBox" HorizontalAlignment="Left" Height="41" Margin="82,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311" Grid.ColumnSpan="2"/>
         <ListBox x:Name="messagesList" HorizontalAlignment="Left" Height="141" Margin="82,170,0,0" VerticalAlignment="Top" Width="311" RenderTransformOrigin="-0.304,0.109" BorderThickness="1" Grid.ColumnSpan="2" BorderBrush="Gainsboro"/>
-        <TextBox x:Name="userTextBox" HorizontalAlignment="Left" Height="41" Margin="82,57,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311" Grid.ColumnSpan="2"/>
-        <Label Content="User" HorizontalAlignment="Left" Height="31" Margin="39,63,0,0" VerticalAlignment="Top" Width="38"/>
-        <Label Content="Message" HorizontalAlignment="Left" Height="26" Margin="19,120,0,0" VerticalAlignment="Top" Width="58"/>
+        <Label Content="RoomId" HorizontalAlignment="Left" Height="26" Margin="19,120,0,0" VerticalAlignment="Top" Width="58"/>
 
     </Grid>
 </Window>

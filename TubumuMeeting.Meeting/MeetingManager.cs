@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using TubumuMeeting.Mediasoup;
 
@@ -10,6 +11,10 @@ namespace TubumuMeeting.Meeting
 {
     public partial class MeetingManager : EventEmitter
     {
+        private readonly ILoggerFactory _loggerFactory;
+
+        private readonly ILogger<MeetingManager> _logger;
+
         private readonly MediasoupServer _mediasoupServer;
 
         private readonly object _locker = new object();
@@ -20,27 +25,33 @@ namespace TubumuMeeting.Meeting
 
         public List<RoomPeer> RoomPeerList = new List<RoomPeer>();
 
-        public MeetingManager(MediasoupServer mediasoupServer)
+        public MeetingManager(ILoggerFactory loggerFactory, MediasoupServer mediasoupServer)
         {
+            _loggerFactory = loggerFactory;
+            _logger = _loggerFactory.CreateLogger<MeetingManager>();
             _mediasoupServer = mediasoupServer;
         }
 
         public Room GetOrCreateRoom(Guid roomId, string name)
         {
+            Room room;
             lock (_locker)
             {
-                if (Rooms.TryGetValue(roomId, out var room))
+                if (Rooms.TryGetValue(roomId, out room))
                 {
                     return room;
                 }
 
-                room = new Room(roomId, name);
+                room = new Room(_loggerFactory, roomId, name);
                 Rooms[roomId] = room;
-
-                // Room 不会主动关闭，所以这里不需要监听 Room 的 closed 事件来清理数据。
-
-                return room;
             }
+
+            // Room 不会主动关闭，所以这里不需要通过监听 Room 的 closed 事件来清理数据。也避免了死锁。
+            room.On("PeerJoined", _ => { });
+            room.On("PeerLeft", _ => { });
+            room.On("Closed", _ => { });
+
+            return room;
         }
 
         public Room? RemoveRoom(Guid roomId)
@@ -50,7 +61,6 @@ namespace TubumuMeeting.Meeting
                 if (Rooms.TryGetValue(roomId, out var room))
                 {
                     room.Close();
-
                     Rooms.Remove(roomId);
 
                     var roomPeerToRemove = RoomPeerList.Where(m => m.Room == room).ToArray();
@@ -75,13 +85,13 @@ namespace TubumuMeeting.Meeting
             {
                 if (Peers.ContainsKey(peer.PeerId))
                 {
-                    Emit("peerexists", peer);
+                    _logger.LogError($"Peer[{peerId}] is exists.");
                     return false;
                 }
                 Peers[peerId] = peer;
             }
 
-            peer.On("closed", m =>
+            peer.On("Closed", m =>
             {
                 lock (_locker)
                 {
@@ -92,22 +102,22 @@ namespace TubumuMeeting.Meeting
                         RoomPeerList.Remove(item);
                     }
                 }
-                Emit("peerclosed", m);
+                Emit("PeerClosed", m);
             });
 
             return true;
         }
 
-        public bool ClosePeer(int peerId)
+        public void ClosePeer(int peerId)
         {
             lock (_locker)
             {
                 if (Peers.TryGetValue(peerId, out var peer))
                 {
-                    return peer.Close();
+                    peer.Close();
+                    // Peer 可能会主动关闭，所以这里不需要清理数据，而是通过 Peer 的 Closed 事件处理函数来清理。
                 }
             }
-            return false;
         }
     }
 
@@ -118,14 +128,15 @@ namespace TubumuMeeting.Meeting
             Room room;
             lock (_locker)
             {
-                if (Rooms.TryGetValue(roomId, out room))
+                if (!Rooms.TryGetValue(roomId, out room))
                 {
+                    _logger.LogError($"Room[{roomId}] is not exists.");
                     return false;
                 }
 
                 if (room.Router != null)
                 {
-                    // 重复关联
+                    _logger.LogError($"Room[{roomId}] is related.");
                     return false;
                 }
             }
@@ -135,9 +146,27 @@ namespace TubumuMeeting.Meeting
 
             return true;
         }
+    }
 
-        public bool PeerJoinRoom(Peer peer, Room room)
+    public partial class MeetingManager
+    {
+        public bool PeerJoinRoom(int peerId, Guid roomId)
         {
+            Room room;
+            Peer peer;
+            lock (_locker)
+            {
+                if (!Peers.TryGetValue(peerId, out peer))
+                {
+                    _logger.LogError($"Peer[{peerId}] is not exists.");
+                    return false;
+                }
+                if (!Rooms.TryGetValue(roomId, out room))
+                {
+                    _logger.LogError($"Room[{roomId}] is not exists.");
+                    return false;
+                }
+            }
             return peer.JoinRoom(room);
         }
     }
