@@ -84,13 +84,18 @@ namespace TubumuMeeting.Meeting
 
     public partial class MeetingHub
     {
+        public void GetRouterRtpCapabilities()
+        {
+
+        }
+
         public async Task JoinRoom(Guid roomId)
         {
             var room = _meetingManager.GetOrCreateRoom(roomId, "Meeting");
             var relateRessult = await _meetingManager.RoomRelateRouter(room.RoomId);
 
-            var peerId = int.Parse(Context.User.Identity.Name);
-            var joinRessult = _meetingManager.PeerJoinRoom(peerId, roomId);
+            var userId = int.Parse(Context.User.Identity.Name);
+            var joinRessult = _meetingManager.PeerJoinRoom(userId, roomId);
             if (joinRessult)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 202, Message = "加入房间成功" });
@@ -98,6 +103,81 @@ namespace TubumuMeeting.Meeting
             }
 
             await SendMessageToCaller(new MeetingMessage { Code = 203, Message = "加入房间失败" });
+        }
+
+        public void CreateWebRtcTransport()
+        {
+
+        }
+
+        public void ConnectWebRtcTransport()
+        {
+
+        }
+
+        public void RestartIce()
+        {
+
+        }
+
+        public void Produce()
+        {
+
+        }
+
+        public void CloseProducer()
+        {
+
+        }
+
+        public void PauseProducer()
+        {
+
+        }
+
+        public void ResumeProducer()
+        {
+
+        }
+
+        public void PauseConsumer()
+        {
+
+        }
+
+        public void ResumeConsumer()
+        {
+
+        }
+
+        public void SetConsumerPreferedLayers()
+        {
+
+        }
+
+        public void SetConsumerPriority()
+        {
+
+        }
+
+        public void RequestConsumerKeyFrame()
+        {
+
+        }
+
+        public void GetTransportStats()
+        {
+
+        }
+
+        public void GetProducerStats()
+        {
+
+        }
+
+        public void GetConsumerStats()
+        {
+
         }
     }
 }
