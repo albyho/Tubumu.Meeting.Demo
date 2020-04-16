@@ -115,7 +115,7 @@ namespace TubumuMeeting.Libuv
 			}
 		}
 
-		public int ID {
+		public int Id {
 			get {
 				return process->pid;
 			}

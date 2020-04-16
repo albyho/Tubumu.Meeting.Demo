@@ -7,7 +7,7 @@ namespace TubumuMeeting.Libuv
     unsafe public abstract class UVStream : HandleBase, IUVStream<ArraySegment<byte>>, ITryWrite<ArraySegment<byte>>
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void read_callback(IntPtr stream, IntPtr size, uv_buf_t buf);
+        internal delegate void read_callback(IntPtr stream, IntPtr size, ref uv_buf_t buf);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_read_start(IntPtr stream, alloc_callback alloc_callback, read_callback rcallback);
@@ -99,7 +99,7 @@ namespace TubumuMeeting.Libuv
         }
 
         static read_callback read_cb = rcallback;
-        static void rcallback(IntPtr streamPointer, IntPtr size, uv_buf_t buf)
+        static void rcallback(IntPtr streamPointer, IntPtr size, ref uv_buf_t buf)
         {
             var stream = FromIntPtr<UVStream>(streamPointer);
             stream.rcallback(streamPointer, size);

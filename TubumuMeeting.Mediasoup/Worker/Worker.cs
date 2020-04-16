@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
@@ -126,7 +127,7 @@ namespace TubumuMeeting.Mediasoup
                     Streams = _pipes,
                 }, OnExit);
 
-                ProcessId = _child.ID;
+                ProcessId = _child.Id;
             }
             catch (Exception ex)
             {
