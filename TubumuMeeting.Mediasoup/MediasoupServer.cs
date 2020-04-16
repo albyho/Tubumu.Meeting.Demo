@@ -4,7 +4,7 @@ using Tubumu.Core.Extensions.Object;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class MediasoupWorkerManager
+    public class MediasoupServer
     {
         private int _nextMediasoupWorkerIndex = 0;
 
@@ -41,6 +41,10 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
+        /// <summary>
+        /// Add worker.
+        /// </summary>
+        /// <param name="worker"></param>
         public void AddWorker(Worker worker)
         {
             if (worker == null)
@@ -52,7 +56,6 @@ namespace TubumuMeeting.Mediasoup
             {
                 _workers.Add(worker);
             }
-
         }
     }
 }

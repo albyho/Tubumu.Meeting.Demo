@@ -88,7 +88,7 @@ namespace TubumuMeeting.Web
                             }
                             return Task.CompletedTask;
                         },
-                        OnChallenge = context =>
+                        OnChallenge = async context =>
                         {
                             //_logger.LogError($"Authentication Challenge(OnChallenge): {context.Request.Path}");
 
@@ -96,9 +96,8 @@ namespace TubumuMeeting.Web
                             var body = Encoding.UTF8.GetBytes("{\"code\": 400, \"message\": \"Authentication Challenge\"}");
                             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                             context.Response.ContentType = "application/json";
-                            context.Response.Body.Write(body, 0, body.Length);
+                            await context.Response.Body.WriteAsync(body, 0, body.Length);
                             context.HandleResponse();
-                            return Task.CompletedTask;
                         }
                     };
                 });
