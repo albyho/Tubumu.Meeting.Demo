@@ -323,7 +323,7 @@ namespace Tubumu.Core.Extensions
         {
             var type = typeof(T);
             var propertyInfo = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.Public);
-            if(propertyInfo == null)
+            if (propertyInfo == null)
             {
                 throw new ArgumentOutOfRangeException(nameof(propertyName));
             }
@@ -366,7 +366,7 @@ namespace Tubumu.Core.Extensions
         {
             IOrderedQueryable<T> result = null;
             var isFirst = true;
-            foreach(var sortInfo in sortInfos)
+            foreach (var sortInfo in sortInfos)
             {
                 result = Order(source, sortInfo, !isFirst);
                 isFirst = false;

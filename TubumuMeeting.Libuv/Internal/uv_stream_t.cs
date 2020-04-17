@@ -3,13 +3,13 @@ using System.Runtime.InteropServices;
 
 namespace TubumuMeeting.Libuv
 {
-	[StructLayout(LayoutKind.Sequential)]
-	struct uv_stream_t
-	{
-		public IntPtr write_queue_size;
-		public IntPtr alloc_cb;
-		public IntPtr read_cb;
-		public IntPtr read2_cb;
-	}
+    [StructLayout(LayoutKind.Sequential)]
+    struct uv_stream_t
+    {
+        public IntPtr write_queue_size;
+        public IntPtr alloc_cb;
+        public IntPtr read_cb;
+        public IntPtr read2_cb;
+    }
 }
 

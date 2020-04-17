@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class EventEmitter: IEventEmitter
+    public class EventEmitter : IEventEmitter
     {
         /*
         {

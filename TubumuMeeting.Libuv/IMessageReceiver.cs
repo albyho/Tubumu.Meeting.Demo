@@ -2,9 +2,9 @@
 
 namespace TubumuMeeting.Libuv
 {
-	public interface IMessageReceiver<TMessage>
-	{
-		event Action<TMessage> Message;
-	}
+    public interface IMessageReceiver<TMessage>
+    {
+        event Action<TMessage> Message;
+    }
 }
 

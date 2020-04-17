@@ -2,18 +2,18 @@
 
 namespace TubumuMeeting.Mediasoup
 {
-	/// <summary>
-	/// Producer type.
-	/// </summary>
-	public enum ProducerType
-	{
-		[EnumStringValue("simple")]
-		Simple,
+    /// <summary>
+    /// Producer type.
+    /// </summary>
+    public enum ProducerType
+    {
+        [EnumStringValue("simple")]
+        Simple,
 
-		[EnumStringValue("simulcast")]
-		Simulcast,
+        [EnumStringValue("simulcast")]
+        Simulcast,
 
-		[EnumStringValue("svc")]
-		Svc
-	}
+        [EnumStringValue("svc")]
+        Svc
+    }
 }

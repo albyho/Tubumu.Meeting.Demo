@@ -43,6 +43,7 @@ namespace TubumuMeeting.Libuv
         {
             get
             {
+
                 return allocator ?? Loop.ByteBufferAllocator;
             }
             set

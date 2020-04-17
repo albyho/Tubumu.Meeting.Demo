@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace TubumuMeeting.Libuv
+﻿namespace TubumuMeeting.Libuv
 {
-	public interface IMessage<TEndPoint, TMessage>
-	{
-		TEndPoint EndPoint { get; set; }
-		TMessage Payload { get; set; }
-	}
+    public interface IMessage<TEndPoint, TMessage>
+    {
+        TEndPoint EndPoint { get; set; }
+        TMessage Payload { get; set; }
+    }
 }
 

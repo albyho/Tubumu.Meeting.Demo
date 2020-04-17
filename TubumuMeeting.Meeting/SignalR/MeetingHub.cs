@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Meeting
 {
@@ -91,6 +88,7 @@ namespace TubumuMeeting.Meeting
 
         public async Task JoinRoom(Guid roomId)
         {
+            // TODO: (alby)代码清理
             var room = _meetingManager.GetOrCreateRoom(roomId, "Meeting");
             var relateRessult = await _meetingManager.RoomRelateRouter(room.RoomId);
 

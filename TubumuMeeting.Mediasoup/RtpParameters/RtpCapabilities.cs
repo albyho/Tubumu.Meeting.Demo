@@ -205,13 +205,13 @@ namespace TubumuMeeting.Mediasoup
                             },
                             new RtcpFeedback {
                                 Type = "nack", Parameter = "pli",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "ccm", Parameter = "fir",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "goog-remb",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "transport-cc",
                             },
@@ -228,13 +228,13 @@ namespace TubumuMeeting.Mediasoup
                             },
                             new RtcpFeedback {
                                 Type = "nack", Parameter = "pli",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "ccm", Parameter = "fir",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "goog-remb",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "transport-cc",
                             },
@@ -282,13 +282,13 @@ namespace TubumuMeeting.Mediasoup
                             },
                             new RtcpFeedback {
                                 Type = "nack", Parameter = "pli",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "ccm", Parameter = "fir",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "goog-remb",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "transport-cc",
                             },
@@ -309,13 +309,13 @@ namespace TubumuMeeting.Mediasoup
                             },
                             new RtcpFeedback {
                                 Type = "nack", Parameter = "pli",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "ccm", Parameter = "fir",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "goog-remb",
-                            },              
+                            },
                             new RtcpFeedback {
                                 Type = "transport-cc",
                             },
@@ -336,13 +336,13 @@ namespace TubumuMeeting.Mediasoup
                             },
                             new RtcpFeedback {
                                 Type = "nack", Parameter = "pli",
-                            },             
+                            },
                             new RtcpFeedback {
                                 Type = "ccm", Parameter = "fir",
-                            },             
+                            },
                             new RtcpFeedback {
                                 Type = "goog-remb",
-                            },            
+                            },
                             new RtcpFeedback {
                                 Type = "transport-cc",
                             },

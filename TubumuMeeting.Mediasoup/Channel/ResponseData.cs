@@ -103,7 +103,7 @@
         public string Protocol { get; set; }
     }
 
-    public class ConsumerSetPreferredLayersResponseData: ConsumerLayers
+    public class ConsumerSetPreferredLayersResponseData : ConsumerLayers
     {
 
     }

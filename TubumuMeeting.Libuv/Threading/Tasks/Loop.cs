@@ -5,77 +5,93 @@ using TubumuMeeting.Libuv.Threading.Tasks;
 
 namespace TubumuMeeting.Libuv
 {
-	public partial class Loop
-	{
-		TaskFactory taskfactory = null;
-		public TaskFactory TaskFactory {
-			get {
-				if (taskfactory == null) {
-					taskfactory = new TaskFactory(Scheduler);
-				}
-				return taskfactory;
-			}
-		}
+    public partial class Loop
+    {
+        TaskFactory taskfactory = null;
+        public TaskFactory TaskFactory
+        {
+            get
+            {
+                if (taskfactory == null)
+                {
+                    taskfactory = new TaskFactory(Scheduler);
+                }
+                return taskfactory;
+            }
+        }
 
-		public TaskScheduler Scheduler {
-			get {
-				return LoopTaskScheduler.Instance;
-			}
-		}
+        public TaskScheduler Scheduler
+        {
+            get
+            {
+                return LoopTaskScheduler.Instance;
+            }
+        }
 
-		public bool Run(Func<Task> asyncMethod)
-		{
-			var previousContext = SynchronizationContext.Current;
-			try {
-				var loop = this;
-				SynchronizationContext.SetSynchronizationContext(new LoopSynchronizationContext(loop));
-				var task = asyncMethod();
-				#if TASK_STATUS
+        public bool Run(Func<Task> asyncMethod)
+        {
+            var previousContext = SynchronizationContext.Current;
+            try
+            {
+                var loop = this;
+                SynchronizationContext.SetSynchronizationContext(new LoopSynchronizationContext(loop));
+                var task = asyncMethod();
+#if TASK_STATUS
 				HelperFunctions.SetStatus(task, TaskStatus.Running);
-				#endif
-				task.ContinueWith((t) => {
-					loop.Unref();
-					loop.Sync(() => { });
-				});
-				loop.Ref();
+#endif
+                task.ContinueWith((t) =>
+                {
+                    loop.Unref();
+                    loop.Sync(() => { });
+                });
+                loop.Ref();
 
-				var returnValue = loop.Run();
+                var returnValue = loop.Run();
 
-				if (task.Exception != null) {
-					throw task.Exception;
-				}
+                if (task.Exception != null)
+                {
+                    throw task.Exception;
+                }
 
-				return returnValue;
-			} finally {
-				SynchronizationContext.SetSynchronizationContext(previousContext);
-			}
-		}
+                return returnValue;
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+        }
 
-		public static Loop Current {
-			get {
-				if (currentLoop != null) {
-					return currentLoop;
-				}
+        public static Loop Current
+        {
+            get
+            {
+                if (currentLoop != null)
+                {
+                    return currentLoop;
+                }
 
-				var current = SynchronizationContext.Current;
-				if (current is LoopSynchronizationContext) {
-					return (current as LoopSynchronizationContext).Loop;
-				}
+                var current = SynchronizationContext.Current;
+                if (current is LoopSynchronizationContext)
+                {
+                    return (current as LoopSynchronizationContext).Loop;
+                }
 
-				// TODO: Think about returning exception
-				return null;
-			}
-		}
+                // TODO: Think about returning exception
+                return null;
+            }
+        }
 
-		/// <summary>
-		/// Returns Default Loop value when creating TubumuMeeting.Libuv objects.
-		/// </summary>
-		/// <value>A loop.</value>
-		internal static Loop Constructor {
-			get {
-				return Loop.Current ?? Loop.Default;
-			}
-		}
-	}
+        /// <summary>
+        /// Returns Default Loop value when creating TubumuMeeting.Libuv objects.
+        /// </summary>
+        /// <value>A loop.</value>
+        internal static Loop Constructor
+        {
+            get
+            {
+                return Loop.Current ?? Loop.Default;
+            }
+        }
+    }
 }
 

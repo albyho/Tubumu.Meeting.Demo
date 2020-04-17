@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
@@ -42,7 +41,7 @@ namespace TubumuMeeting.Meeting
         {
             lock (_locker)
             {
-                if(Closed)
+                if (Closed)
                 {
                     return false;
                 }

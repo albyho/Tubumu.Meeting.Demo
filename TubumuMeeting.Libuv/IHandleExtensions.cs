@@ -1,13 +1,11 @@
-﻿using System;
-
-namespace TubumuMeeting.Libuv
+﻿namespace TubumuMeeting.Libuv
 {
-	public static class IHandleExtensions
-	{
-		public static void Close(this IHandle handle)
-		{
-			handle.Close(null);
-		}
-	}
+    public static class IHandleExtensions
+    {
+        public static void Close(this IHandle handle)
+        {
+            handle.Close(null);
+        }
+    }
 }
 

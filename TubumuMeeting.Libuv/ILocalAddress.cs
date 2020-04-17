@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace TubumuMeeting.Libuv
+﻿namespace TubumuMeeting.Libuv
 {
-	public interface ILocalAddress<T>
-	{
-		T LocalAddress { get; }
-	}
+    public interface ILocalAddress<T>
+    {
+        T LocalAddress { get; }
+    }
 }
 

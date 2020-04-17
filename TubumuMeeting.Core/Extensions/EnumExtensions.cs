@@ -110,7 +110,7 @@ namespace Tubumu.Core.Extensions
 
             var fields = enumType.GetFields();
             var result = new List<string>();
-            foreach(var field in fields)
+            foreach (var field in fields)
             {
                 var attribute = field.GetCustomAttributes(typeof(EnumStringValueAttribute), false).FirstOrDefault();
                 if (attribute != null)
@@ -129,7 +129,7 @@ namespace Tubumu.Core.Extensions
 
             var values = Enum.GetValues(enumType).Cast<T>();
             var result = new Dictionary<string, T>();
-            foreach(var value in values)
+            foreach (var value in values)
             {
                 var field = enumType.GetField(Enum.GetName(enumType, value));
                 var attribute = field.GetCustomAttributes(typeof(EnumStringValueAttribute), false).FirstOrDefault();
@@ -164,7 +164,7 @@ namespace Tubumu.Core.Extensions
         #endregion
     }
 
-    public class EnumStringValueAttribute: Attribute
+    public class EnumStringValueAttribute : Attribute
     {
         public string Value { get; set; }
         public EnumStringValueAttribute(string value)

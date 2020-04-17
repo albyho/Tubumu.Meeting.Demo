@@ -64,7 +64,7 @@ namespace TubumuMeeting.Mediasoup
         public override int GetHashCode()
         {
             var result = MimeType.GetHashCode() ^ PayloadType.GetHashCode() ^ ClockRate.GetHashCode();
-            if(Parameters != null)
+            if (Parameters != null)
             {
                 result = Parameters.DeepGetHashCode() ^ result;
             }

@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace TubumuMeeting.Libuv
+﻿namespace TubumuMeeting.Libuv
 {
-	public interface ISendBufferSize
-	{
-		int SendBufferSize { get; set; }
-	}
+    public interface ISendBufferSize
+    {
+        int SendBufferSize { get; set; }
+    }
 }
 

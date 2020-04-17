@@ -1,10 +1,8 @@
-using System;
-
 namespace TubumuMeeting.Libuv
 {
-	struct uv_pipe_t
-	{
-		public int rpc;
-	}
+    struct uv_pipe_t
+    {
+        public int rpc;
+    }
 }
 

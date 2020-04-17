@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Tubumu.Core.Extensions
 {
@@ -23,7 +21,7 @@ namespace Tubumu.Core.Extensions
 
         public static DateTime EnsureLocal(this DateTime dateTime)
         {
-            if(dateTime.Kind == DateTimeKind.Utc)
+            if (dateTime.Kind == DateTimeKind.Utc)
             {
                 return dateTime.ToLocalTime();
             }

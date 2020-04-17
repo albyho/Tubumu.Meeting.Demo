@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace TubumuMeeting.Libuv
+﻿namespace TubumuMeeting.Libuv
 {
-	public interface ITrySend<TMessage>
-	{
-		int TrySend(TMessage message);
-	}
+    public interface ITrySend<TMessage>
+    {
+        int TrySend(TMessage message);
+    }
 }
 

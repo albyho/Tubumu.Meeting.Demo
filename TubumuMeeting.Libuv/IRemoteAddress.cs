@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace TubumuMeeting.Libuv
+﻿namespace TubumuMeeting.Libuv
 {
-	public interface IRemoteAddress<T>
-	{
-		T RemoteAddress { get; }
-	}
+    public interface IRemoteAddress<T>
+    {
+        T RemoteAddress { get; }
+    }
 }
 

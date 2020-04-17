@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace TubumuMeeting.Meeting.Authorization
+﻿namespace TubumuMeeting.Meeting.Authorization
 {
     /// <summary>
     /// TokenValidation settings

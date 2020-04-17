@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 
@@ -14,7 +12,7 @@ namespace TubumuMeeting.Meeting
 
         public bool Closed { get; private set; }
 
-		public bool Joined { get; private set; }
+        public bool Joined { get; private set; }
 
         public Room? Room { get; private set; }
 
@@ -31,7 +29,7 @@ namespace TubumuMeeting.Meeting
             {
                 return false;
             }
-            if(room == null)
+            if (room == null)
             {
                 return false;
             }
@@ -48,7 +46,7 @@ namespace TubumuMeeting.Meeting
 
         public bool LeaveRoom()
         {
-            if(Room == null)
+            if (Room == null)
             {
                 return false;
             }

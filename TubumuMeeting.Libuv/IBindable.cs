@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TubumuMeeting.Libuv
+﻿namespace TubumuMeeting.Libuv
 {
     public interface IBindable<TType, TEndPoint>
     {

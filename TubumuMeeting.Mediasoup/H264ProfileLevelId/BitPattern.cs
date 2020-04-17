@@ -9,7 +9,7 @@
         private readonly int _mask;
         private readonly int _maskedValue;
 
-        public  BitPattern(string str)
+        public BitPattern(string str)
         {
             _mask = ~ByteMaskString('x', str);
             _maskedValue = ByteMaskString('1', str);
@@ -23,7 +23,7 @@
         private int ByteMaskString(char c, string str)
         {
             return (
-                ((str[0] == c) ? 1 << 7 : 0) | 
+                ((str[0] == c) ? 1 << 7 : 0) |
                 ((str[1] == c) ? 1 << 6 : 0) |
                 ((str[2] == c) ? 1 << 5 : 0) |
                 ((str[3] == c) ? 1 << 4 : 0) |

@@ -36,9 +36,12 @@ namespace TubumuMeeting.Libuv
 
 		static Loop @default;
 
-		public static Loop Default {
-			get {
-				if (@default == null) {
+		public static Loop Default
+		{
+			get
+			{
+				if (@default == null)
+				{
 					@default = new Loop(uv_default_loop(), new CopyingByteBufferAllocator());
 				}
 				return @default;
@@ -92,23 +95,30 @@ namespace TubumuMeeting.Libuv
 			return ptr;
 		}
 
-		unsafe uv_loop_t* loop_t {
-			get {
+		unsafe uv_loop_t* loop_t
+		{
+			get
+			{
 				return (uv_loop_t*)NativeHandle;
 			}
 		}
 
-		unsafe public uint ActiveHandlesCount {
-			get {
+		unsafe public uint ActiveHandlesCount
+		{
+			get
+			{
 				return loop_t->active_handles;
 			}
 		}
 
-		unsafe public IntPtr Data {
-			get {
+		unsafe public IntPtr Data
+		{
+			get
+			{
 				return loop_t->data;
 			}
-			set {
+			set
+			{
 				loop_t->data = value;
 			}
 		}
@@ -117,7 +127,8 @@ namespace TubumuMeeting.Libuv
 
 		private bool RunGuard(Action action)
 		{
-			if (IsRunning) {
+			if (IsRunning)
+			{
 				return false;
 			}
 
@@ -137,7 +148,8 @@ namespace TubumuMeeting.Libuv
 
 		private bool RunGuard(Action context, Func<bool> func)
 		{
-			if (!RunGuard(context)) {
+			if (!RunGuard(context))
+			{
 				return false;
 			}
 			return func();
@@ -178,8 +190,10 @@ namespace TubumuMeeting.Libuv
 			uv_update_time(NativeHandle);
 		}
 
-		public ulong Now {
-			get {
+		public ulong Now
+		{
+			get
+			{
 				return uv_now(NativeHandle);
 			}
 		}
@@ -189,7 +203,7 @@ namespace TubumuMeeting.Libuv
 			callback.Send(cb);
 		}
 
-		public void Sync(System.Collections.Generic.IEnumerable<Action> callbacks)
+		public void Sync(IEnumerable<Action> callbacks)
 		{
 			callback.Send(callbacks);
 		}
@@ -208,9 +222,11 @@ namespace TubumuMeeting.Libuv
 		protected virtual void Dispose(bool disposing)
 		{
 			// close all active handles
-			foreach (var kvp in handles) {
+			foreach (var kvp in handles)
+			{
 				var handle = kvp.Value;
-				if (!handle.IsClosing) {
+				if (!handle.IsClosing)
+				{
 					handle.Dispose();
 				}
 			}
@@ -218,8 +234,10 @@ namespace TubumuMeeting.Libuv
 			// make sure the callbacks of close are called
 			RunOnce();
 
-			if (disposing) {
-				if (ByteBufferAllocator != null) {
+			if (disposing)
+			{
+				if (ByteBufferAllocator != null)
+				{
 					ByteBufferAllocator.Dispose();
 					ByteBufferAllocator = null;
 				}
@@ -249,8 +267,10 @@ namespace TubumuMeeting.Libuv
 			gchandle.Free();
 		}
 
-		public IntPtr[] Handles {
-			get {
+		public IntPtr[] Handles
+		{
+			get
+			{
 				var list = new List<IntPtr>();
 				Walk((handle) => list.Add(handle));
 				return list.ToArray();
@@ -262,18 +282,24 @@ namespace TubumuMeeting.Libuv
 		public Handle GetHandle(IntPtr ptr)
 		{
 			Handle handle;
-			if (handles.TryGetValue(ptr, out handle)) {
+			if (handles.TryGetValue(ptr, out handle))
+			{
 				return handle;
-			} else {
+			}
+			else
+			{
 				return null;
 			}
 		}
 
-		public Handle[] ActiveHandles {
-			get {
+		public Handle[] ActiveHandles
+		{
+			get
+			{
 				var tmp = Handles;
 				Handle[] handles = new Handle[tmp.Length];
-				for (var i = 0; i < tmp.Length; i++) {
+				for (var i = 0; i < tmp.Length; i++)
+				{
 					handles[i] = GetHandle(tmp[i]);
 				}
 				return handles;
@@ -282,27 +308,35 @@ namespace TubumuMeeting.Libuv
 
 		public int RefCount { get; private set; }
 
-		public void Ref() {
-			if (RefCount == 0) {
+		public void Ref()
+		{
+			if (RefCount == 0)
+			{
 				async.Ref();
 			}
 			RefCount++;
 		}
 
-		public void Unref() {
-			if (RefCount <= 0) {
+		public void Unref()
+		{
+			if (RefCount <= 0)
+			{
 				return;
 			}
-			if (RefCount == 1) {
+			if (RefCount == 1)
+			{
 				async.Unref();
 			}
 			RefCount--;
 		}
 
 		LoopBackend loopBackend;
-		public LoopBackend Backend {
-			get {
-				if (loopBackend == null) {
+		public LoopBackend Backend
+		{
+			get
+			{
+				if (loopBackend == null)
+				{
 					loopBackend = new LoopBackend(this);
 				}
 				return loopBackend;
@@ -320,8 +354,10 @@ namespace TubumuMeeting.Libuv
 		[DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
 		static extern int uv_loop_alive(IntPtr loop);
 
-		public bool IsAlive {
-			get {
+		public bool IsAlive
+		{
+			get
+			{
 				return uv_loop_alive(NativeHandle) != 0;
 			}
 		}

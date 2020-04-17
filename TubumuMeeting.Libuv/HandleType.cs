@@ -1,5 +1,3 @@
-using System;
-
 namespace TubumuMeeting.Libuv
 {
     public enum HandleType : int

@@ -21,7 +21,7 @@ namespace TubumuMeeting.Demo.Client
             #region snippet_ClosedRestart
             connection.Closed += async (error) =>
             {
-                await Task.Delay(new Random().Next(0,5) * 1000);
+                await Task.Delay(new Random().Next(0, 5) * 1000);
                 await connection.StartAsync();
             };
             #endregion
@@ -34,8 +34,8 @@ namespace TubumuMeeting.Demo.Client
             {
                 this.Dispatcher.Invoke(() =>
                 {
-                   var newMessage = $"{message}";
-                   messagesList.Items.Add(newMessage);
+                    var newMessage = $"{message}";
+                    messagesList.Items.Add(newMessage);
                 });
             });
             #endregion
@@ -63,8 +63,8 @@ namespace TubumuMeeting.Demo.Client
                 #endregion
             }
             catch (Exception ex)
-            {                
-                messagesList.Items.Add(ex.Message);                
+            {
+                messagesList.Items.Add(ex.Message);
             }
             #endregion
         }

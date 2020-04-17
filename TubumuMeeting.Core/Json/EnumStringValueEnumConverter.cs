@@ -28,7 +28,7 @@ namespace Tubumu.Core.Json
             if (token.Type == JTokenType.String)
             {
                 var enumStringValues = enumType.GetEnumStringValueMap<Enum>();
-                token = (JValue)token.ToString().Split(',').Select(s => s.Trim()).Select(s => enumStringValues.TryGetValue(token.ToString(), out var v ) ? v.ToString() : s).Join(",");
+                token = (JValue)token.ToString().Split(',').Select(s => s.Trim()).Select(s => enumStringValues.TryGetValue(token.ToString(), out var v) ? v.ToString() : s).Join(",");
             }
 
             using (var subReader = token.CreateReader())
@@ -49,7 +49,7 @@ namespace Tubumu.Core.Json
             if (token.Type == JTokenType.String && value != null)
             {
                 var tempToken = token.ToString().Split(',').Select(s => s.Trim()).Select(s => value.GetEnumStringValue() ?? s);
-                if(!tempToken.IsNullOrEmpty())
+                if (!tempToken.IsNullOrEmpty())
                 {
                     token = tempToken.Join(",");
                 }

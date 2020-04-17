@@ -2,21 +2,21 @@
 
 namespace TubumuMeeting.Mediasoup
 {
-	public enum DtlsState
-	{
-		[EnumStringValue("new")]
-		New,
+    public enum DtlsState
+    {
+        [EnumStringValue("new")]
+        New,
 
-		[EnumStringValue("connecting")]
-		Connecting,
+        [EnumStringValue("connecting")]
+        Connecting,
 
-		[EnumStringValue("connected")]
-		Connected,
+        [EnumStringValue("connected")]
+        Connected,
 
-		[EnumStringValue("failed")]
-		Failed,
+        [EnumStringValue("failed")]
+        Failed,
 
-		[EnumStringValue("closed")]
-		Closed
-	}
+        [EnumStringValue("closed")]
+        Closed
+    }
 }

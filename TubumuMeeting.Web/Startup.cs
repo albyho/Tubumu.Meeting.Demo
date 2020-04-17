@@ -110,9 +110,9 @@ namespace TubumuMeeting.Web
             {
                 configure.MediasoupSettings.WorkerSettings.LogLevel = Mediasoup.WorkerLogLevel.Debug;
                 configure.NumberOfWorkers = 1;
-                configure.WorkerPath = Path.Combine((Environment.OSVersion.Platform == PlatformID.Unix) || (System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? 
-                    @"/Users/alby/Developer/OpenSource/Meeting/Lab/w" : 
-                    @"C:\Developer\OpenSource\Meeting\worker", 
+                configure.WorkerPath = Path.Combine((Environment.OSVersion.Platform == PlatformID.Unix) || (System.Environment.OSVersion.Platform == PlatformID.MacOSX) ?
+                    @"/Users/alby/Developer/OpenSource/Meeting/Lab/w" :
+                    @"C:\Developer\OpenSource\Meeting\worker",
                     "Release", "mediasoup-worker");
             });
         }
