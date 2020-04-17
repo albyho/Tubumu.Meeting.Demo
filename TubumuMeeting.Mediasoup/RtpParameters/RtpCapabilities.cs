@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -6,6 +7,7 @@ namespace TubumuMeeting.Mediasoup
     /// The RTP capabilities define what mediasoup or an endpoint can receive at
     /// media level.
     /// </summary>
+    [Serializable]
     public class RtpCapabilities
     {
         /// <summary>

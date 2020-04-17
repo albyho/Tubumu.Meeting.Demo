@@ -41,16 +41,16 @@ namespace TubumuMeeting.Mediasoup
                 },
                 RouteSettings = new RouteSettings
                 {
-                    MediaCodecSettings = new[]
+                    RtpCodecCapabilities = new[]
                     {
-                        new MediaCodecSettings
+                        new RtpCodecCapability
                         {
                             Kind      = MediaKind.Audio,
                             MimeType  = "audio/opus",
                             ClockRate = 48000,
                             Channels  = 2
                         },
-                        new MediaCodecSettings{
+                        new RtpCodecCapability{
                             Kind       = MediaKind.Video,
                             MimeType   = "video/VP8",
                             ClockRate  = 90000,
@@ -59,7 +59,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate" , 1000 }
                             }
                         },
-                        new MediaCodecSettings{
+                        new RtpCodecCapability{
                             Kind       = MediaKind.Video,
                             MimeType   = "video/VP9",
                             ClockRate  = 90000,
@@ -69,7 +69,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate" , 1000 }
                             }
                         },
-                        new MediaCodecSettings{
+                        new RtpCodecCapability{
                             Kind       = MediaKind.Video,
                             MimeType   = "video/h264",
                             ClockRate  = 90000,
@@ -81,7 +81,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate"  , 1000 }
                             }
                         },
-                        new MediaCodecSettings{
+                        new RtpCodecCapability{
                             Kind       = MediaKind.Video,
                             MimeType   = "video/h264",
                             ClockRate  = 90000,

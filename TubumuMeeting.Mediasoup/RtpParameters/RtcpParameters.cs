@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -11,6 +12,7 @@ namespace TubumuMeeting.Mediasoup
     ///
     /// mediasoup assumes reducedSize to always be true.
     /// </summary>
+    [Serializable]
     public class RtcpParameters
     {
         /// <summary>

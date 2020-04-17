@@ -1,9 +1,12 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System;
+
+namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Provides information relating to an encoding, which represents a media RTP
     /// stream and its associated RTX stream (if any).
     /// </summary>
+    [Serializable]
     public class RtpEncodingParameters
     {
         /// <summary>

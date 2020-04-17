@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System;
+
+namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Provides information on the capabilities of a codec within the RTP
@@ -17,6 +19,7 @@
     /// require preferredPayloadType field (if unset, mediasoup will choose a random
     /// one). If given, make sure it's in the 96-127 range.
     /// </summary>
+    [Serializable]
     public class RtpCodecCapability : RtpCodecBase
     {
         /// <summary>

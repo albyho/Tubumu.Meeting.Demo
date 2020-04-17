@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace TubumuMeeting.Mediasoup
 {
+    [Serializable]
     public class RtpCodecBase
     {
         /// <summary>

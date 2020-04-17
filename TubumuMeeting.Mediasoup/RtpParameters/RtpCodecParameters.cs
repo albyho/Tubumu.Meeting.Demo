@@ -8,6 +8,7 @@ namespace TubumuMeeting.Mediasoup
     /// of media codecs supported by mediasoup and their settings is defined in the
     /// supportedRtpCapabilities.ts file.
     /// </summary>
+    [Serializable]
     public class RtpCodecParameters : RtpCodecBase, IEquatable<RtpCodecParameters>
     {
         /// <summary>

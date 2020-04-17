@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -10,6 +11,7 @@ namespace TubumuMeeting.Mediasoup
     /// mediasoup does not currently support encrypted RTP header extensions and no
     /// parameters are currently considered.
     /// </summary>
+    [Serializable]
     public class RtpHeaderExtensionParameters
     {
         /// <summary>

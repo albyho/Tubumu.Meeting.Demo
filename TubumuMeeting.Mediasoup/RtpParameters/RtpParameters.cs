@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -33,6 +34,7 @@ namespace TubumuMeeting.Mediasoup
     /// the associated producer. This applies even if the producer's encodings have
     /// rid set.
     /// </summary>
+    [Serializable]
     public class RtpParameters
     {
         /// <summary>

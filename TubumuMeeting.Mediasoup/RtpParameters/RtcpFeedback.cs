@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System;
+
+namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Provides information on RTCP feedback messages for a specific codec. Those
@@ -6,6 +8,7 @@
     /// messages. The list of RTCP feedbacks supported by mediasoup is defined in the
     /// supportedRtpCapabilities.ts file.
     /// </summary>
+    [Serializable]
     public class RtcpFeedback
     {
         /// <summary>

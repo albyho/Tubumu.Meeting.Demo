@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System;
+
+namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// Provides information relating to supported header extensions. The list of
@@ -10,6 +12,7 @@
     /// router.rtpCapabilities or mediasoup.getSupportedRtpCapabilities()). It's
     /// ignored if present in endpoints' RTP capabilities.
     /// </summary>
+    [Serializable]
     public class RtpHeaderExtension
     {
         /// <summary>

@@ -13,6 +13,8 @@ namespace TubumuMeeting.Meeting
 
         private readonly ILogger<MeetingManager> _logger;
 
+        private readonly MediasoupOptions _mediasoupOptions;
+
         private readonly MediasoupServer _mediasoupServer;
 
         private readonly object _locker = new object();
@@ -23,10 +25,11 @@ namespace TubumuMeeting.Meeting
 
         public List<RoomPeer> RoomPeerList = new List<RoomPeer>();
 
-        public MeetingManager(ILoggerFactory loggerFactory, MediasoupServer mediasoupServer)
+        public MeetingManager(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<MeetingManager>();
+            _mediasoupOptions = mediasoupOptions;
             _mediasoupServer = mediasoupServer;
         }
 
@@ -140,7 +143,10 @@ namespace TubumuMeeting.Meeting
             }
 
             var worker = _mediasoupServer.GetWorker();
-            room.Router = await worker.CreateRouter(null);
+            room.Router = await worker.CreateRouter(new RouterOptions
+            {
+                MediaCodecs = _mediasoupOptions.MediasoupSettings.RouteSettings.RtpCodecCapabilities
+            });
 
             return true;
         }
