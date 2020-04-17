@@ -281,6 +281,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
+
             return Channel.RequestAsync(MethodId.TRANSPORT_DUMP, _internal);
         }
 
@@ -291,6 +292,7 @@ namespace TubumuMeeting.Mediasoup
         {
             // 在 Node.js 实现中，Transport 类没有实现 getState 方法。
             _logger.LogDebug("GetStatsAsync()");
+
             return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS, _internal);
         }
 
@@ -466,6 +468,7 @@ namespace TubumuMeeting.Mediasoup
             if (_nextMidForConsumers == 100000000)
             {
                 _logger.LogDebug($"consume() | reaching max MID value {_nextMidForConsumers}");
+
                 _nextMidForConsumers = 0;
             }
 

@@ -28,10 +28,10 @@ namespace TubumuMeeting.Mediasoup
         private readonly ILogger<Channel> _logger;
 
         // Unix Socket instance for sending messages to the worker process.
-        private readonly IPCPipe _producerSocket;
+        private readonly UVStream _producerSocket;
 
         // Unix Socket instance for receiving messages to the worker process.
-        private readonly IPCPipe _consumerSocket;
+        private readonly UVStream _consumerSocket;
 
         // Worker process PID.
         private readonly int _processId;
@@ -58,7 +58,7 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
-        public Channel(ILogger<Channel> logger, IPCPipe producerSocket, IPCPipe consumerSocket, int processId)
+        public Channel(ILogger<Channel> logger, UVStream producerSocket, UVStream consumerSocket, int processId)
         {
             _logger = logger;
 
@@ -120,6 +120,7 @@ namespace TubumuMeeting.Mediasoup
         {
             var method = methodId.GetEnumStringValue();
             var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1);
+
             _logger.LogDebug($"RequestAsync() [method:{method}, id:{id}]");
 
             if (_closed)
@@ -171,7 +172,7 @@ namespace TubumuMeeting.Mediasoup
             };
             _sents.Add(id, sent);
 
-            tcs.WithTimeout(TimeSpan.FromMilliseconds(15 + (0.1 * _sents.Count)), () => _sents.Remove(id));
+            tcs.WithTimeout(TimeSpan.FromSeconds(15 + (0.1 * _sents.Count)), () => _sents.Remove(id));
 
             Loop.Default.QueueUserWorkItem(() =>
             {
@@ -220,7 +221,8 @@ namespace TubumuMeeting.Mediasoup
                 _recvBuffer = null;
                 return;
             }
-            _logger.LogError($"ConsumerSocketOnData: {buffer}");
+
+            //_logger.LogError($"ConsumerSocketOnData: {buffer}");
             using var nsReader = new NetstringReader(message);
             try
             {
@@ -241,27 +243,27 @@ namespace TubumuMeeting.Mediasoup
                             // 68 = 'D' (a debug log).
                             case 'D':
                                 if (!nsPayload.Contains("(trace)"))
-                                    _logger.LogDebug($"[pid:${_processId}] { nsPayload }");
+                                    _logger.LogDebug($"[pid:{_processId}] { nsPayload }");
                                 break;
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                _logger.LogWarning($"[pid:${_processId}] { nsPayload }");
+                                _logger.LogWarning($"[pid:{_processId}] { nsPayload }");
                                 break;
 
                             // 69 = 'E' (an error log).
                             case 'E':
-                                _logger.LogError($"[pid:${_processId}] { nsPayload }");
+                                _logger.LogError($"[pid:{_processId}] { nsPayload }");
                                 break;
 
                             // 88 = 'X' (a dump log).
                             case 'X':
                                 // eslint-disable-next-line no-console
-                                _logger.LogDebug($"{ nsPayload }");
+                                _logger.LogDebug($"[pid:{_processId}] { nsPayload }");
                                 break;
                             default:
                                 // eslint-disable-next-line no-console
-                                _logger.LogWarning($"worker[pid:${_processId}] unexpected data:{ nsPayload }");
+                                _logger.LogWarning($"worker[pid:{_processId}] unexpected data:{ nsPayload }");
                                 break;
                         }
                     }

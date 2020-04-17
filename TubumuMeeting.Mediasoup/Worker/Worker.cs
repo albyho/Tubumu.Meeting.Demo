@@ -34,7 +34,7 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly Channel _channel;
 
-        private readonly IPCPipe[] _pipes;
+        private readonly UVStream[] _pipes;
 
         // Routers set.
         private readonly List<Router> _routers = new List<Router>();
@@ -106,12 +106,11 @@ namespace TubumuMeeting.Mediasoup
 
             _logger.LogDebug($"spawning worker process: {args.ToArray().Join(" ")}");
 
-            _pipes = new IPCPipe[StdioCount];
+            _pipes = new Pipe[StdioCount];
             // 备注：忽略标准输入
             for (var i = 1; i < StdioCount; i++)
             {
-                _pipes[i] = new IPCPipe() { Writeable = true, Readable = true };
-                _logger.LogDebug($"Pipe[{i}].NativeHandle: {_pipes[i].NativeHandle}");
+                _pipes[i] = new Pipe() { Writeable = true, Readable = true };
             }
 
             try

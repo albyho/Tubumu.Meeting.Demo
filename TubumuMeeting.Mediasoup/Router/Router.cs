@@ -196,6 +196,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
+
             return _channel.RequestAsync(MethodId.ROUTER_DUMP, _internal);
         }
 

@@ -170,6 +170,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> DumpAsync()
         {
             _logger.LogDebug("DumpAsync()");
+
             return _channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP, _internal);
         }
 
@@ -179,6 +180,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> GetStatsAsync()
         {
             _logger.LogDebug("GetStatsAsync()");
+
             return _channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, _internal);
         }
 

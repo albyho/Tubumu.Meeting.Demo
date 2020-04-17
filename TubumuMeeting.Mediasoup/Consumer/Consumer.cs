@@ -329,6 +329,7 @@ namespace TubumuMeeting.Mediasoup
         public Task RequestKeyFrameAsync()
         {
             _logger.LogDebug("RequestKeyFrameAsync()");
+
             return _channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, _internal);
         }
 
@@ -338,6 +339,7 @@ namespace TubumuMeeting.Mediasoup
         public Task EnableTraceEventAsync(TraceEventType[] types)
         {
             _logger.LogDebug("EnableTraceEventAsync()");
+
             var reqData = new
             {
                 Types = types ?? Array.Empty<TraceEventType>()
