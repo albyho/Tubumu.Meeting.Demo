@@ -46,7 +46,7 @@ namespace TubumuMeeting.Libuv
             Start(path, FileSystemEventFlags.Default);
         }
 
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         private static extern int uv_fs_event_start(IntPtr handle, uv_fs_event_cb callback, string filename, int flags);
 
         public void Start(string path, FileSystemEventFlags flags)

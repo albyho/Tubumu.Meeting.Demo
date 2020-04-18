@@ -91,7 +91,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         private static extern void uv_pipe_connect(IntPtr req, IntPtr handle, string name, callback connect_cb);
 
         public void Connect(string name, Action<Exception> callback)

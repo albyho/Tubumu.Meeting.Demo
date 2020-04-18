@@ -12,7 +12,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<WebRtcTransport> _logger;
 
-        #region Producer data.
+        #region WebRtcTransport data.
 
         public string IceRole { get; private set; } = "controlled";
 

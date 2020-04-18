@@ -1095,7 +1095,7 @@ namespace TubumuMeeting.Mediasoup
 
                             try
                             {
-                                selectedProfileLevelId = H264ProfileLevelId.GenerateProfileLevelIdForAnswer(aCodec.Parameters, bCodec.Parameters);
+                                selectedProfileLevelId = H264ProfileLevelId.GenerateProfileLevelIdForAnswer(aCodec.Parameters, bCodec.Parameters);  // TODO: (alby)注意 null 引用
                             }
                             catch (Exception)
                             {

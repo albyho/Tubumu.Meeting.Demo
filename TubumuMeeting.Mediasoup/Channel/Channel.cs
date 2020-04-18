@@ -344,7 +344,7 @@ namespace TubumuMeeting.Mediasoup
 
                 if (accepted)
                 {
-                    _logger.LogDebug($"request succeeded [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+                    _logger.LogDebug($"request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
 
                     sent.Resolve?.Invoke(data);
                 }
