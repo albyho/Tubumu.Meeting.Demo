@@ -160,14 +160,13 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport(NativeMethods.libuv, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_pipe_pending_count(IntPtr handle);
+        internal static extern int uv_pipe_pending_count(IntPtr handle);
 
         [DllImport(NativeMethods.libuv, CallingConvention = CallingConvention.Cdecl)]
-        public static extern HandleType uv_pipe_pending_type(IntPtr pipe);
+        internal static extern HandleType uv_pipe_pending_type(IntPtr pipe);
 
         protected override void OnData(ArraySegment<byte> data)
         {
-            var s = System.Text.Encoding.UTF8.GetString(data.Array, data.Offset, data.Count);
             var count = uv_pipe_pending_count(NativeHandle);
             if (count-- > 0)
             {

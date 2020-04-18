@@ -42,7 +42,8 @@ namespace TubumuMeeting.Demo.Client
                 await connection.StartAsync();
                 messagesList.Items.Add("Connection started");
                 ConnectButton.IsEnabled = false;
-                JoinRoomButton.IsEnabled = true;
+                JoinButton.IsEnabled = true;
+                EnterRoomButton.IsEnabled = true;
                 GetRouterRtpCapabilitiesButton.IsEnabled = true;
             }
             catch (Exception ex)
@@ -63,11 +64,11 @@ namespace TubumuMeeting.Demo.Client
             }
         }
 
-        private async void JoinRoomButton_Click(object sender, RoutedEventArgs e)
+        private async void EnterRoomButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                await connection.InvokeAsync("JoinRoom", Guid.Empty);
+                await connection.InvokeAsync("EnterRoom", Guid.Empty);
             }
             catch (Exception ex)
             {

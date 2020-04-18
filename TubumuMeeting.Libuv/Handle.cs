@@ -293,12 +293,6 @@ namespace TubumuMeeting.Libuv
             int r = function(NativeHandle);
             Ensure.Success(r);
         }
-        [DllImport(NativeMethods.libuv, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_pipe_pending_count(IntPtr handle);
-
-        [DllImport(NativeMethods.libuv, CallingConvention = CallingConvention.Cdecl)]
-        public static extern HandleType uv_pipe_pending_type(IntPtr pipe);
-
 
         protected void Invoke<T1>(Func<IntPtr, T1, int> function, T1 arg1)
         {
