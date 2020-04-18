@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 
@@ -12,9 +13,34 @@ namespace TubumuMeeting.Meeting
 
         public bool Closed { get; private set; }
 
-        public bool Joined { get; private set; }
+        public bool Joined { get; set; }
 
         public Room? Room { get; private set; }
+
+        public RtpCapabilities RtpCapabilities { get; set; }
+
+        public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();
+
+        public Dictionary<string, Producer> Producers { get; } = new Dictionary<string, Producer>();
+
+        public Dictionary<string, Consumer> Consumers { get; } = new Dictionary<string, Consumer>();
+
+        public Producer? Producer
+        {
+            get
+            {
+
+                return null;
+            }
+        }
+
+        public Consumer? Consumer
+        {
+            get
+            {
+                return null;
+            }
+        }
 
         public Peer(int peerId, string name)
         {
@@ -25,11 +51,11 @@ namespace TubumuMeeting.Meeting
 
         public bool JoinRoom(Room room)
         {
-            if (Joined)
+            if (room == null)
             {
                 return false;
             }
-            if (room == null)
+            if (!Joined)
             {
                 return false;
             }
@@ -72,6 +98,7 @@ namespace TubumuMeeting.Meeting
             }
 
             Closed = true;
+            Joined = false;
             Emit("Closed", this);
         }
 

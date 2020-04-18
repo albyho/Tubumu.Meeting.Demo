@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Nito.AsyncEx;
 using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting
@@ -36,6 +37,7 @@ namespace TubumuMeeting.Meeting
         public Room GetOrCreateRoom(Guid roomId, string name)
         {
             Room room;
+
             lock (_locker)
             {
                 if (Rooms.TryGetValue(roomId, out room))
@@ -124,7 +126,7 @@ namespace TubumuMeeting.Meeting
 
     public partial class MeetingManager
     {
-        public async Task<bool> RoomRelateRouter(Guid roomId)
+        private async Task<bool> EnsureRouterAsync(Guid roomId)
         {
             Room room;
             lock (_locker)
@@ -137,8 +139,7 @@ namespace TubumuMeeting.Meeting
 
                 if (room.Router != null)
                 {
-                    _logger.LogError($"Room[{roomId}] is related.");
-                    return false;
+                    return true;
                 }
             }
 
@@ -154,8 +155,10 @@ namespace TubumuMeeting.Meeting
 
     public partial class MeetingManager
     {
-        public bool PeerJoinRoom(int peerId, Guid roomId)
+        public async Task<bool> PeerEnterRoomAsync(int peerId, Guid roomId)
         {
+            await EnsureRouterAsync(roomId);
+
             Room room;
             Peer peer;
             lock (_locker)
@@ -171,7 +174,13 @@ namespace TubumuMeeting.Meeting
                     return false;
                 }
             }
-            return peer.JoinRoom(room);
+            var joinResult = peer.JoinRoom(room);
+            if(joinResult)
+            {
+                // Create Consumers for existing Producers.
+
+            }
+            return true;
         }
     }
 }

@@ -9,10 +9,10 @@ namespace TubumuMeeting.Libuv
         delegate int buffer_size_function(IntPtr handle, out int value);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_send_buffer_size(IntPtr handle, out int value);
+        private static extern int uv_send_buffer_size(IntPtr handle, out int value);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_recv_buffer_size(IntPtr handle, out int value);
+        private static extern int uv_recv_buffer_size(IntPtr handle, out int value);
 
         int Invoke(buffer_size_function function, int value)
         {

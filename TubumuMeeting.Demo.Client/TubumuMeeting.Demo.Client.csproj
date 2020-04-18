@@ -184,5 +184,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TubumuMeeting.Mediasoup.Client\TubumuMeeting.Mediasoup.Client.csproj">
+      <Project>{52ae3a5b-056d-4b28-a83c-14d050f84f09}</Project>
+      <Name>TubumuMeeting.Mediasoup.Client</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

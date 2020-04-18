@@ -13,7 +13,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_backend_fd(IntPtr loop);
+        private static extern int uv_backend_fd(IntPtr loop);
 
         public int FileDescriptor
         {
@@ -24,7 +24,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_backend_timeout(IntPtr loop);
+        private static extern int uv_backend_timeout(IntPtr loop);
 
         public int Timeout
         {

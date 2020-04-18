@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Meeting", "Tu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Demo.Client", "TubumuMeeting.Demo.Client\TubumuMeeting.Demo.Client.csproj", "{146751C8-38BC-4BE5-B4FE-A506856EF90B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Mediasoup.Client", "TubumuMeeting.Mediasoup.Client\TubumuMeeting.Mediasoup.Client.csproj", "{52AE3A5B-056D-4B28-A83C-14D050F84F09}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{E27ED1FF-9159-4BD2-BACD-623D65B51E82}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,9 +55,17 @@ Global
 		{146751C8-38BC-4BE5-B4FE-A506856EF90B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{146751C8-38BC-4BE5-B4FE-A506856EF90B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{146751C8-38BC-4BE5-B4FE-A506856EF90B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52AE3A5B-056D-4B28-A83C-14D050F84F09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52AE3A5B-056D-4B28-A83C-14D050F84F09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52AE3A5B-056D-4B28-A83C-14D050F84F09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52AE3A5B-056D-4B28-A83C-14D050F84F09}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{146751C8-38BC-4BE5-B4FE-A506856EF90B} = {E27ED1FF-9159-4BD2-BACD-623D65B51E82}
+		{52AE3A5B-056D-4B28-A83C-14D050F84F09} = {E27ED1FF-9159-4BD2-BACD-623D65B51E82}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3E07B1BF-B8B0-49F6-BF3E-61B245F7AB1D}

@@ -23,7 +23,7 @@ namespace TubumuMeeting.Libuv
         delegate void uv_fs_event_cb(IntPtr handle, string filename, int events, int status);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_fs_event_init(IntPtr loop, IntPtr handle);
+        private static extern int uv_fs_event_init(IntPtr loop, IntPtr handle);
 
         static uv_fs_event_cb fs_event_callback;
         static FileSystemWatcher()
@@ -47,7 +47,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_fs_event_start(IntPtr handle, uv_fs_event_cb callback, string filename, int flags);
+        private static extern int uv_fs_event_start(IntPtr handle, uv_fs_event_cb callback, string filename, int flags);
 
         public void Start(string path, FileSystemEventFlags flags)
         {
@@ -79,7 +79,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_fs_event_getpath(IntPtr handle, IntPtr buf, ref IntPtr len);
+        private static extern int uv_fs_event_getpath(IntPtr handle, IntPtr buf, ref IntPtr len);
 
         public string Path
         {
@@ -92,7 +92,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_fs_event_stop(IntPtr handle);
+        private static extern int uv_fs_event_stop(IntPtr handle);
 
         public void Stop()
         {

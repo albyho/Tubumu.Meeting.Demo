@@ -92,7 +92,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_pipe_connect(IntPtr req, IntPtr handle, string name, callback connect_cb);
+        private static extern void uv_pipe_connect(IntPtr req, IntPtr handle, string name, callback connect_cb);
 
         public void Connect(string name, Action<Exception> callback)
         {
@@ -110,7 +110,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_pipe_getpeername(IntPtr handle, IntPtr buf, ref IntPtr len);
+        private static extern int uv_pipe_getpeername(IntPtr handle, IntPtr buf, ref IntPtr len);
 
         public string RemoteAddress
         {
@@ -138,7 +138,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_write2(IntPtr req, IntPtr handle, uv_buf_t[] bufs, int bufcnt, IntPtr sendHandle, callback callback);
+        private static extern int uv_write2(IntPtr req, IntPtr handle, uv_buf_t[] bufs, int bufcnt, IntPtr sendHandle, callback callback);
 
         public void Write(Handle handle, ArraySegment<byte> segment, Action<Exception> callback)
         {

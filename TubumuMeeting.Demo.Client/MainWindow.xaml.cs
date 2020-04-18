@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.AspNetCore.SignalR.Client;
+using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Demo.Client
 {
@@ -18,18 +19,15 @@ namespace TubumuMeeting.Demo.Client
                 .WithUrl($"http://localhost:5000/hubs/meetingHub?roomid={Guid.NewGuid()}&access_token={accessToken}")
                 .Build();
 
-            #region snippet_ClosedRestart
             connection.Closed += async (error) =>
             {
                 await Task.Delay(new Random().Next(0, 5) * 1000);
                 await connection.StartAsync();
             };
-            #endregion
         }
 
-        private async void connectButton_Click(object sender, RoutedEventArgs e)
+        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
-            #region snippet_ConnectionOn
             connection.On<object>("ReceiveMessage", message =>
             {
                 this.Dispatcher.Invoke(() =>
@@ -38,14 +36,14 @@ namespace TubumuMeeting.Demo.Client
                     messagesList.Items.Add(newMessage);
                 });
             });
-            #endregion
 
             try
             {
                 await connection.StartAsync();
                 messagesList.Items.Add("Connection started");
-                connectButton.IsEnabled = false;
-                sendButton.IsEnabled = true;
+                ConnectButton.IsEnabled = false;
+                JoinRoomButton.IsEnabled = true;
+                GetRouterRtpCapabilitiesButton.IsEnabled = true;
             }
             catch (Exception ex)
             {
@@ -53,20 +51,52 @@ namespace TubumuMeeting.Demo.Client
             }
         }
 
-        private async void sendButton_Click(object sender, RoutedEventArgs e)
+        private async void JoinButton_Click(object sender, RoutedEventArgs e)
         {
-            #region snippet_ErrorHandling
             try
             {
-                #region snippet_InvokeAsync
-                await connection.InvokeAsync("JoinRoom", Guid.Empty);
-                #endregion
+                await connection.InvokeAsync("Join", new RtpCapabilities());
             }
             catch (Exception ex)
             {
                 messagesList.Items.Add(ex.Message);
             }
-            #endregion
+        }
+
+        private async void JoinRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await connection.InvokeAsync("JoinRoom", Guid.Empty);
+            }
+            catch (Exception ex)
+            {
+                messagesList.Items.Add(ex.Message);
+            }
+        }
+
+        private async void GetRouterRtpCapabilitiesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await connection.InvokeAsync("GetRouterRtpCapabilities");
+            }
+            catch (Exception ex)
+            {
+                messagesList.Items.Add(ex.Message);
+            }
+        }
+
+        private async void CreateWebRtcTransportButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await connection.InvokeAsync("CreateWebRtcTransport");
+            }
+            catch (Exception ex)
+            {
+                messagesList.Items.Add(ex.Message);
+            }
         }
     }
 }

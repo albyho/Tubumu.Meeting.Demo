@@ -6,7 +6,7 @@ namespace TubumuMeeting.Libuv
     public class Async : CallbackHandle
     {
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_async_init(IntPtr loop, IntPtr handle, uv_handle_cb callback);
+        private static extern int uv_async_init(IntPtr loop, IntPtr handle, uv_handle_cb callback);
 
         public Async()
             : this(Loop.Constructor)
@@ -21,7 +21,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_async_send(IntPtr handle);
+        private static extern int uv_async_send(IntPtr handle);
 
         public void Send()
         {

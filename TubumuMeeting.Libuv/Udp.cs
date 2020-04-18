@@ -10,13 +10,13 @@ namespace TubumuMeeting.Libuv
         delegate void recv_start_callback(IntPtr handle, IntPtr nread, ref uv_buf_t buf, IntPtr sockaddr, ushort flags);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_init(IntPtr loop, IntPtr handle);
+        private static extern int uv_udp_init(IntPtr loop, IntPtr handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_bind(IntPtr handle, ref sockaddr_in sockaddr, uint flags);
+        private static extern int uv_udp_bind(IntPtr handle, ref sockaddr_in sockaddr, uint flags);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_bind(IntPtr handle, ref sockaddr_in6 sockaddr, uint flags);
+        private static extern int uv_udp_bind(IntPtr handle, ref sockaddr_in6 sockaddr, uint flags);
 
         ByteBufferAllocatorBase allocator;
         public ByteBufferAllocatorBase ByteBufferAllocator
@@ -153,7 +153,7 @@ namespace TubumuMeeting.Libuv
         public event Action<UdpReceiveMessage> Message;
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_set_ttl(IntPtr handle, int ttl);
+        private static extern int uv_udp_set_ttl(IntPtr handle, int ttl);
 
         public byte TTL
         {
@@ -164,7 +164,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_set_broadcast(IntPtr handle, int on);
+        private static extern int uv_udp_set_broadcast(IntPtr handle, int on);
 
         public bool Broadcast
         {
@@ -175,7 +175,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_set_multicast_ttl(IntPtr handle, int ttl);
+        private static extern int uv_udp_set_multicast_ttl(IntPtr handle, int ttl);
 
         public byte MulticastTTL
         {
@@ -186,7 +186,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_set_multicast_loop(IntPtr handle, int on);
+        private static extern int uv_udp_set_multicast_loop(IntPtr handle, int on);
 
         public bool MulticastLoop
         {
@@ -198,7 +198,7 @@ namespace TubumuMeeting.Libuv
 
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_udp_getsockname(IntPtr handle, IntPtr addr, ref int length);
+        private static extern int uv_udp_getsockname(IntPtr handle, IntPtr addr, ref int length);
 
         public IPEndPoint LocalAddress
         {

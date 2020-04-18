@@ -43,7 +43,7 @@ namespace TubumuMeeting.Libuv
         internal static extern int uv_udp_open_windows(IntPtr handle, IntPtr sock);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_pipe_open(IntPtr handle, int fd);
+        private static extern int uv_pipe_open(IntPtr handle, int fd);
 
         public int Open(Func<IntPtr, int, int> unix, Func<IntPtr, IntPtr, int> windows, IntPtr handle, IntPtr fileDescriptor)
         {

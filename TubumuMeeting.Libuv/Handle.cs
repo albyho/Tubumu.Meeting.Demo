@@ -107,7 +107,7 @@ namespace TubumuMeeting.Libuv
         public event Action Closed;
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_close(IntPtr handle, close_callback cb);
+        private static extern void uv_close(IntPtr handle, close_callback cb);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void close_callback(IntPtr handle);
@@ -224,13 +224,13 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_ref(IntPtr handle);
+        private static extern void uv_ref(IntPtr handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_unref(IntPtr handle);
+        private static extern void uv_unref(IntPtr handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_has_ref(IntPtr handle);
+        private static extern int uv_has_ref(IntPtr handle);
 
         public void Ref()
         {
@@ -271,7 +271,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern HandleType uv_guess_handle(int fd);
+        private static extern HandleType uv_guess_handle(int fd);
 
         public static HandleType Guess(int fd)
         {

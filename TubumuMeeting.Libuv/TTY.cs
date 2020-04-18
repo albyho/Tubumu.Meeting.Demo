@@ -12,7 +12,7 @@ namespace TubumuMeeting.Libuv
     public class TTY : UVStream
     {
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_tty_init(IntPtr loop, IntPtr tty, int fd, int readable);
+        private static extern int uv_tty_init(IntPtr loop, IntPtr tty, int fd, int readable);
 
         public TTY(int fd)
             : this(Loop.Constructor, fd)
@@ -35,7 +35,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_tty_set_mode(IntPtr tty, int mode);
+        private static extern int uv_tty_set_mode(IntPtr tty, int mode);
 
         public TTYMode Mode
         {
@@ -46,7 +46,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_tty_reset_mode();
+        private static extern void uv_tty_reset_mode();
 
         static public void ResetMode()
         {
@@ -54,7 +54,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_tty_get_winsize(IntPtr tty, out int width, out int height);
+        private static extern int uv_tty_get_winsize(IntPtr tty, out int width, out int height);
 
         public bool GetWindowSize(out int width, out int height)
         {

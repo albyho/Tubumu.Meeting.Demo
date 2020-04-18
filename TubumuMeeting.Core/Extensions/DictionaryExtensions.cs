@@ -102,11 +102,11 @@ namespace Tubumu.Core.Extensions
             var result = new Dictionary<TKey, TValue>();
             foreach (var key in first.Keys)
             {
-                first[key] = first[key];
+                result[key] = first[key];
             }
             foreach (var key in second.Keys)
             {
-                first[key] = second[key];
+                result[key] = second[key];
             }
             return result;
         }

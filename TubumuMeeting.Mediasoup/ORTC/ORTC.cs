@@ -548,11 +548,11 @@ namespace TubumuMeeting.Mediasoup
 
                 var matchedSupportedCodec = clonedSupportedRtpCapabilities
                     .Codecs
-                    .Where(supportedCodec => MatchCodecs(mediaCodec, supportedCodec, false)).ToArray();
+                    .Where(supportedCodec => MatchCodecs(mediaCodec, supportedCodec, false)).FirstOrDefault();
 
-                if (matchedSupportedCodec.IsNullOrEmpty())
+                if (matchedSupportedCodec == null)
                 {
-                    throw new Exception($"media codec not supported[mimeType:${ mediaCodec.MimeType }]");
+                    throw new Exception($"media codec not supported[mimeType:{ mediaCodec.MimeType }]");
                 }
 
                 // Clone the supported codec.
@@ -1035,7 +1035,7 @@ namespace TubumuMeeting.Mediasoup
                 var got2 = b.TryGetValue(key, out var bPacketizationMode);
                 if (got1 && got2)
                 {
-                    if (aPacketizationMode.Equals(bPacketizationMode))
+                    if (!aPacketizationMode.Equals(bPacketizationMode))
                         return false;
                 }
                 else if ((got1 && !got2) || (!got1 && got2))

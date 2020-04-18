@@ -6,13 +6,13 @@ namespace TubumuMeeting.Libuv
     public class Check : StartableCallbackHandle
     {
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_check_init(IntPtr loop, IntPtr idle);
+        private static extern int uv_check_init(IntPtr loop, IntPtr idle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_check_start(IntPtr check, uv_handle_cb callback);
+        private static extern int uv_check_start(IntPtr check, uv_handle_cb callback);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_check_stop(IntPtr check);
+        private static extern int uv_check_stop(IntPtr check);
 
         public Check()
             : this(Loop.Constructor)

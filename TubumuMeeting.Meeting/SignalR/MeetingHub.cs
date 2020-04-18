@@ -4,11 +4,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting
 {
     /// <summary>
-    /// MeetingMessage (错误码：200 普通消息 201 连接通知成功 202 加入房间成功 203 加入房间失败 400 连接通知失败等错误)
+    /// MeetingMessage (错误码：200 普通消息 201 连接通知成功  202 进入房间成功 203 进入房间失败 400 连接通知失败等错误)
     /// </summary>
     public class MeetingMessage
     {
@@ -39,8 +40,7 @@ namespace TubumuMeeting.Meeting
 
         public override Task OnConnectedAsync()
         {
-            var userId = int.Parse(Context.User.Identity.Name);
-            var handleResult = _meetingManager.HandlePeer(userId, "Guest");
+            var handleResult = _meetingManager.HandlePeer(UserId, "Guest");
             if (handleResult)
             {
                 return SendMessageToCaller(new MeetingMessage { Code = 201, Message = "连接成功" });
@@ -52,6 +52,8 @@ namespace TubumuMeeting.Meeting
         {
             return base.OnDisconnectedAsync(exception);
         }
+
+        public int UserId => int.Parse(Context.User.Identity.Name);
     }
 
     public partial class MeetingHub
@@ -81,26 +83,46 @@ namespace TubumuMeeting.Meeting
 
     public partial class MeetingHub
     {
-        public void GetRouterRtpCapabilities()
+        public Task GetRouterRtpCapabilities()
         {
+            var room = _meetingManager.Peers[UserId]?.Room;
+            if (room != null)
+            {
+                var rtpCapabilities = room.Router.RtpCapabilities;
+                return SendMessageToCaller(new MeetingMessage { Code = 203, Message = "Success", Data = rtpCapabilities });
+            }
 
+            return SendMessageToCaller(new MeetingMessage { Code = 204, Message = "Failure" });
         }
 
-        public async Task JoinRoom(Guid roomId)
+        public Task Join(RtpCapabilities rtpCapabilities)
+        {
+            var peer = _meetingManager.Peers[UserId];
+            if (!peer.Joined)
+            {
+                _meetingManager.Peers[UserId].RtpCapabilities = rtpCapabilities;
+                _meetingManager.Peers[UserId].Joined = true;
+
+                return SendMessageToCaller(new MeetingMessage { Code = 205, Message = "Success" });
+            }
+
+            return SendMessageToCaller(new MeetingMessage { Code = 206, Message = "Failure" });
+        }
+
+        public async Task EnterRoom(Guid roomId)
         {
             // TODO: (alby)代码清理
             var room = _meetingManager.GetOrCreateRoom(roomId, "Meeting");
-            var relateRessult = await _meetingManager.RoomRelateRouter(room.RoomId);
-
-            var userId = int.Parse(Context.User.Identity.Name);
-            var joinRessult = _meetingManager.PeerJoinRoom(userId, roomId);
+            var joinRessult = await _meetingManager.PeerEnterRoomAsync(UserId, roomId);
             if (joinRessult)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 202, Message = "加入房间成功" });
+                await SendMessageToCaller(new MeetingMessage { Code = 207, Message = "Success" });
                 return;
             }
 
-            await SendMessageToCaller(new MeetingMessage { Code = 203, Message = "加入房间失败" });
+            await SendMessageToCaller(new MeetingMessage { Code = 208, Message = "Failure" });
+
+            // Notify the new Peer to all other Peers.
         }
 
         public void CreateWebRtcTransport()

@@ -6,13 +6,13 @@ namespace TubumuMeeting.Libuv
     public class Prepare : StartableCallbackHandle
     {
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_prepare_init(IntPtr loop, IntPtr prepare);
+        private static extern int uv_prepare_init(IntPtr loop, IntPtr prepare);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_prepare_start(IntPtr prepare, uv_handle_cb callback);
+        private static extern int uv_prepare_start(IntPtr prepare, uv_handle_cb callback);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_prepare_stop(IntPtr prepare);
+        private static extern int uv_prepare_stop(IntPtr prepare);
 
         public Prepare()
             : this(Loop.Constructor)
