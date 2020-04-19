@@ -11,10 +11,12 @@
             <ColumnDefinition Width="109*"/>
             <ColumnDefinition Width="288*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="ConnectButton" Content="Connect" Click="ConnectButton_Click" HorizontalAlignment="Left" Margin="280,60,0,0" VerticalAlignment="Top" Width="95" Height="30" Grid.Column="1" />
-        <Button x:Name="JoinButton" Content="Join" Click="JoinButton_Click" HorizontalAlignment="Left" Margin="280,100,0,0" VerticalAlignment="Top" Width="95" Height="30" Grid.Column="1" IsEnabled="False"/>
-        <Button x:Name="EnterRoomButton" Content="Enter Room" Click="EnterRoomButton_Click" HorizontalAlignment="Left" Margin="280,140,0,0" VerticalAlignment="Top" Width="95" Height="30" Grid.Column="1" IsEnabled="False"/>
-        <Button x:Name="GetRouterRtpCapabilitiesButton" Content="Get Router RtpCapabilities" Click="GetRouterRtpCapabilitiesButton_Click" HorizontalAlignment="Left" Margin="280,180,0,0" VerticalAlignment="Top" Width="95" Height="36" Grid.Column="1" IsEnabled="False"/>
+        <Button x:Name="ConnectButton" Content="Connect" Click="ConnectButton_Click" HorizontalAlignment="Left" Margin="280,60,0,0" VerticalAlignment="Top" Width="160" Height="30" Grid.Column="1" />
+        <Button x:Name="JoinButton" Content="Join" Click="JoinButton_Click" HorizontalAlignment="Left" Margin="280,100,0,0" VerticalAlignment="Top" Width="160" Height="30" Grid.Column="1" IsEnabled="False"/>
+        <Button x:Name="EnterRoomButton" Content="Enter Room" Click="EnterRoomButton_Click" HorizontalAlignment="Left" Margin="280,140,0,0" VerticalAlignment="Top" Width="160" Height="30" Grid.Column="1" IsEnabled="False"/>
+        <Button x:Name="GetRouterRtpCapabilitiesButton" Content="Get Router RtpCapabilities" Click="GetRouterRtpCapabilitiesButton_Click" HorizontalAlignment="Left" Margin="280,180,0,0" VerticalAlignment="Top" Width="160" Height="36" Grid.Column="1" IsEnabled="False"/>
+        <Button x:Name="CreateWebRtcTransportButton" Content="Create WebRtcTransport" Click="CreateWebRtcTransportButton_Click" HorizontalAlignment="Left" Margin="280,220,0,0" VerticalAlignment="Top" Width="160" Height="36" Grid.Column="1" IsEnabled="False"/>
+        <Button x:Name="ConnectWebRtcTransportButton" Content="Connect WebRtcTransport" Click="ConnectWebRtcTransportButton_Click" HorizontalAlignment="Left" Margin="280,260,0,0" VerticalAlignment="Top" Width="160" Height="36" Grid.Column="1" IsEnabled="False"/>
         <TextBox x:Name="messageTextBox" HorizontalAlignment="Left" Height="41" Margin="82,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311" Grid.ColumnSpan="2"/>
         <ListBox x:Name="messagesList" HorizontalAlignment="Left" Height="141" Margin="82,170,0,0" VerticalAlignment="Top" Width="311" RenderTransformOrigin="-0.304,0.109" BorderThickness="1" Grid.ColumnSpan="2" BorderBrush="Gainsboro"/>
         <Label Content="RoomId" HorizontalAlignment="Left" Height="26" Margin="19,120,0,0" VerticalAlignment="Top" Width="58"/>

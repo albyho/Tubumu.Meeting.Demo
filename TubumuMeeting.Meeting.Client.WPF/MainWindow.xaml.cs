@@ -44,6 +44,8 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 JoinButton.IsEnabled = true;
                 EnterRoomButton.IsEnabled = true;
                 GetRouterRtpCapabilitiesButton.IsEnabled = true;
+                CreateWebRtcTransportButton.IsEnabled = true;
+                ConnectWebRtcTransportButton.IsEnabled = true;
             }
             catch (Exception ex)
             {
@@ -91,12 +93,35 @@ namespace TubumuMeeting.Meeting.Client.WPF
         {
             try
             {
-                await connection.InvokeAsync("CreateWebRtcTransport");
+                await connection.InvokeAsync("CreateWebRtcTransport", new CreateWebRtcTransportParameters
+                {
+                    ForceTcp = false,
+                    Consuming = true,
+                    Producing = true,
+                });
             }
             catch (Exception ex)
             {
                 messagesList.Items.Add(ex.Message);
             }
         }
+
+        private async void ConnectWebRtcTransportButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await connection.InvokeAsync("ConnectWebRtcTransport", new CreateWebRtcTransportParameters
+                {
+                    ForceTcp = false,
+                    Consuming = true,
+                    Producing = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                messagesList.Items.Add(ex.Message);
+            }
+        }
+
     }
 }

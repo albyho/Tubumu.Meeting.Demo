@@ -17,10 +17,7 @@ namespace TubumuMeeting.Libuv
 		{
 			Close((ex) =>
 			{
-				if (callback != null)
-				{
-					callback();
-				}
+				callback?.Invoke();
 			});
 		}
 
@@ -89,10 +86,7 @@ namespace TubumuMeeting.Libuv
 			UVFile.Open(Loop, path, access, (ex, file) =>
 			{
 				uvfile = file;
-				if (callback != null)
-				{
-					callback(ex);
-				}
+				callback?.Invoke(ex);
 			});
 		}
 
@@ -165,10 +159,7 @@ namespace TubumuMeeting.Libuv
 
 		void OnData(ArraySegment<byte> data)
 		{
-			if (Data != null)
-			{
-				Data(data);
-			}
+			Data?.Invoke(data);
 		}
 		public event Action<ArraySegment<byte>> Data;
 
@@ -181,11 +172,7 @@ namespace TubumuMeeting.Libuv
 
 			WriteQueueSize -= tuple.Item1.Count;
 
-			var cb = tuple.Item2;
-			if (cb != null)
-			{
-				cb(ex);
-			}
+			tuple.Item2?.Invoke(ex);
 
 			writeoffset += size;
 			WorkWrite();
@@ -216,19 +203,13 @@ namespace TubumuMeeting.Libuv
 			{
 				uvfile = null;
 				IsClosing = false;
-				if (shutdownCallback != null)
-				{
-					shutdownCallback(ex ?? ex2);
-				}
+				shutdownCallback?.Invoke(ex ?? ex2);
 			});
 		}
 
 		void OnDrain()
 		{
-			if (Drain != null)
-			{
-				Drain();
-			}
+			Drain?.Invoke();
 		}
 
 		public event Action Drain;

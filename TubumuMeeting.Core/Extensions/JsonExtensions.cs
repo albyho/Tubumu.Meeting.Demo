@@ -35,6 +35,12 @@ namespace Tubumu.Core.Extensions
             return jToken.Value<T>();
         }
 
+        public static string Value(this JToken jToken, string defaultValue)
+        {
+            if (jToken == null) return defaultValue;
+            return jToken.ToString();
+        }
+
         public static T ToObject<T>(this JToken jToken, T defaultValue)
         {
             if (jToken == null) return defaultValue;
