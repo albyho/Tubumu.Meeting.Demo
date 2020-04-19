@@ -8,7 +8,9 @@ namespace TubumuMeeting.Meeting.Client.WPF
 {
     public partial class MainWindow : Window
     {
-        HubConnection connection;
+        private HubConnection connection;
+        private string transportId;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -110,12 +112,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
         {
             try
             {
-                await connection.InvokeAsync("ConnectWebRtcTransport", new CreateWebRtcTransportParameters
-                {
-                    ForceTcp = false,
-                    Consuming = true,
-                    Producing = true,
-                });
+                await connection.InvokeAsync("ConnectWebRtcTransport", new ConnectWebRtcTransportRequest());
             }
             catch (Exception ex)
             {

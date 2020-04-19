@@ -204,9 +204,23 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public void ConnectWebRtcTransport()
+        public async Task ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
+            var peer = _meetingManager.Peers[UserId];
+            if (!peer.Joined || peer.Room == null)
+            {
+                await SendMessageToCaller(new MeetingMessage { Code = 212, Message = "Failure" });
+                return;
+            }
 
+            if(!peer.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
+            {
+                await SendMessageToCaller(new MeetingMessage { Code = 212, Message = "Failure" });
+                return;
+            }
+
+            await transport.ConnectAsync(connectWebRtcTransportRequest.DtlsParameters);
+            await SendMessageToCaller(new MeetingMessage { Code = 211, Message = "Success" });
         }
 
         public void RestartIce()

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:TubumuMeeting.Meeting.Client.WPF"
         mc:Ignorable="d"
         Title="MainWindow" Height="480" Width="800">
-    <Grid Margin="0,0,193.333,50.667">
+    <Grid Margin="0,0,20,20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="109*"/>
             <ColumnDefinition Width="288*"/>
@@ -20,6 +20,5 @@
         <TextBox x:Name="messageTextBox" HorizontalAlignment="Left" Height="41" Margin="82,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311" Grid.ColumnSpan="2"/>
         <ListBox x:Name="messagesList" HorizontalAlignment="Left" Height="141" Margin="82,170,0,0" VerticalAlignment="Top" Width="311" RenderTransformOrigin="-0.304,0.109" BorderThickness="1" Grid.ColumnSpan="2" BorderBrush="Gainsboro"/>
         <Label Content="RoomId" HorizontalAlignment="Left" Height="26" Margin="19,120,0,0" VerticalAlignment="Top" Width="58"/>
-
     </Grid>
 </Window>
