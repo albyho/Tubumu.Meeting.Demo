@@ -174,11 +174,11 @@ namespace TubumuMeeting.Mediasoup
 
             tcs.WithTimeout(TimeSpan.FromSeconds(15 + (0.1 * _sents.Count)), () => _sents.Remove(id));
 
-            Loop.Default.QueueUserWorkItem(() =>
+            Loop.Default.Sync(() =>
             {
-                // This may throw if closed or remote side ended.
                 try
                 {
+                    // This may throw if closed or remote side ended.
                     _producerSocket.Write(ns, ex =>
                     {
                         if (ex != null)

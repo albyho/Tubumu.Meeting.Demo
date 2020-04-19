@@ -246,16 +246,6 @@ namespace TubumuMeeting.Mediasoup
                 _spawnDone = true;
                 _logger.LogDebug($"worker process running [pid:{processId}]");
                 Emit("@success");
-                // TODO: (alby)代码清理
-                //Loop.Default.QueueUserWorkItem(async () =>
-                //{
-                //    //var ttt = await UpdateSettingsAsync(WorkerLogLevel.Debug, new[] { "info" });
-                //    var ttt = await GetResourceUsageAsync();
-                //    ;
-                //});
-                //var ttt = UpdateSettingsAsync(WorkerLogLevel.Debug, new[] { "info" }).GetAwaiter().GetResult();
-                UpdateSettingsAsync(WorkerLogLevel.Debug, new[] { "info" });
-                ;
             }
         }
 
