@@ -59,7 +59,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// App custom data.
         /// </summary>
-        public object? AppData { get; private set; }
+        public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
         /// Whether the Transport is closed.
@@ -135,7 +135,7 @@ namespace TubumuMeeting.Mediasoup
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
-            object? appData,
+            Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
             Func<string, Producer> getProducerById,
             Func<string, DataProducer> getDataProducerById)

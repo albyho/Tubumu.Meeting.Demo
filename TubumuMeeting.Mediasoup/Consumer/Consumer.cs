@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -67,7 +68,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// App custom data.
         /// </summary>
-        public object? AppData { get; private set; }
+        public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
         /// Whether the Consumer is closed.
@@ -147,7 +148,7 @@ namespace TubumuMeeting.Mediasoup
                     RtpParameters rtpParameters,
                     ConsumerType type,
                     Channel channel,
-                    object? appData,
+                    Dictionary<string, object>? appData,
                     bool paused,
                     bool producerPaused,
                     ConsumerScore? score,

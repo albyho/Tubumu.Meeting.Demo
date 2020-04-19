@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -63,6 +64,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="getDataProducerById"></param>
         /// <param name="iceRole"></param>
         /// <param name="iceParameters"></param>
+        /// <param name="iceCandidates"></param>
         /// <param name="iceState"></param>
         /// <param name="iceSelectedTuple"></param>
         /// <param name="dtlsParameters"></param>
@@ -74,12 +76,13 @@ namespace TubumuMeeting.Mediasoup
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
-            object? appData,
+            Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
             Func<string, Producer> getProducerById,
             Func<string, DataProducer> getDataProducerById,
             string iceRole,
             IceParameters iceParameters,
+            IceCandidate[] iceCandidates,
             IceState iceState,
             TransportTuple? iceSelectedTuple,
             DtlsParameters dtlsParameters,
@@ -88,8 +91,11 @@ namespace TubumuMeeting.Mediasoup
             ) : base(loggerFactory, routerId, transportId, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _logger = loggerFactory.CreateLogger<WebRtcTransport>();
+
+            // Data
             IceRole = iceRole;
             IceParameters = iceParameters;
+            IceCandidates = iceCandidates;
             IceState = iceState;
             IceSelectedTuple = iceSelectedTuple;
             DtlsParameters = dtlsParameters;

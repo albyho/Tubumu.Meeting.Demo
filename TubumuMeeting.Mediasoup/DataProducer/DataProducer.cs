@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TubumuMeeting.Mediasoup.Extensions;
 
@@ -59,7 +60,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// App custom data.
         /// </summary>
-        public object? AppData { get; private set; }
+        public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
         /// Whether the DataProducer is closed.
@@ -95,7 +96,7 @@ namespace TubumuMeeting.Mediasoup
                             string label,
                             string protocol,
                             Channel channel,
-                            object? appData)
+                            Dictionary<string, object>? appData)
         {
             _logger = loggerFactory.CreateLogger<DataProducer>(); RouterId = routerId;
             // Internal

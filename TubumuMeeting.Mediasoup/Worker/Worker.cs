@@ -47,7 +47,7 @@ namespace TubumuMeeting.Mediasoup
         public bool Closed { get; private set; }
 
         // Custom app data.
-        public object? AppData { get; }
+        public Dictionary<string, object>? AppData { get; }
 
         #endregion
 

@@ -98,8 +98,14 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 await connection.InvokeAsync("CreateWebRtcTransport", new CreateWebRtcTransportParameters
                 {
                     ForceTcp = false,
-                    Consuming = true,
+                    Consuming = false,
                     Producing = true,
+                });
+                await connection.InvokeAsync("CreateWebRtcTransport", new CreateWebRtcTransportParameters
+                {
+                    ForceTcp = false,
+                    Consuming = true,
+                    Producing = false,
                 });
             }
             catch (Exception ex)

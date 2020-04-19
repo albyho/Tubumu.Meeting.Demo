@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -66,7 +67,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// App custom data.
         /// </summary>
-        public object? AppData { get; private set; }
+        public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
         /// Whether the Producer is closed.
@@ -123,7 +124,7 @@ namespace TubumuMeeting.Mediasoup
                     ProducerType type,
                     RtpParameters consumableRtpParameters,
                     Channel channel,
-                    object? appData,
+                    Dictionary<string, object>? appData,
                     bool paused)
         {
             _logger = loggerFactory.CreateLogger<Producer>();

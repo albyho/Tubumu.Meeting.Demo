@@ -36,7 +36,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// App custom data.
         /// </summary>
-        public object? AppData { get; private set; }
+        public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
         /// Whether the DataConsumer is closed.
@@ -85,7 +85,7 @@ namespace TubumuMeeting.Mediasoup
                     string routerId,
                     RtpCapabilities rtpCapabilities,
                     Channel channel,
-                    object? appData)
+                    Dictionary<string, object>? appData)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Router>();
@@ -240,6 +240,7 @@ namespace TubumuMeeting.Mediasoup
                 m => _dataProducers[m],
                 responseData.IceRole,
                 responseData.IceParameters,
+                responseData.IceCandidates,
                 responseData.IceState,
                 responseData.IceSelectedTuple,
                 responseData.DtlsParameters,

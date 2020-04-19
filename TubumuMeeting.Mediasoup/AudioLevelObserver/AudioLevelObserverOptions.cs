@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System.Collections.Generic;
+
+namespace TubumuMeeting.Mediasoup
 {
     public class AudioLevelObserverOptions
     {
@@ -21,6 +23,6 @@
         /// <summary>
         /// Custom application data.
         /// </summary>
-        public object? AppData { get; set; }
+        public Dictionary<string, object>? AppData { get; set; }
     }
 }

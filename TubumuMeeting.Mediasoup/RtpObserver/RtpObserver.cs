@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TubumuMeeting.Mediasoup.Extensions;
@@ -34,7 +35,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// App custom data.
         /// </summary>
-        public object? AppData { get; private set; }
+        public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
         /// Whether the Producer is closed.
@@ -77,7 +78,7 @@ namespace TubumuMeeting.Mediasoup
                     string routerId,
                     string rtpObserverId,
                     Channel channel,
-                    object? appData,
+                    Dictionary<string, object>? appData,
                     Func<string, Producer> getProducerById)
         {
             _logger = loggerFactory.CreateLogger<RtpObserver>();

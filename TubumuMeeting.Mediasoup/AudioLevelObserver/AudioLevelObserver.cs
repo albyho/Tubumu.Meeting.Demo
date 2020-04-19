@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -33,7 +34,7 @@ namespace TubumuMeeting.Mediasoup
                     string routerId,
                     string rtpObserverId,
                     Channel channel,
-                    object? appData,
+                    Dictionary<string, object>? appData,
                     Func<string, Producer> getProducerById) : base(loggerFactory, routerId, rtpObserverId, channel, appData, getProducerById)
         {
             _logger = loggerFactory.CreateLogger<AudioLevelObserver>();

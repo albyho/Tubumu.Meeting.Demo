@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System.Collections.Generic;
+
+namespace TubumuMeeting.Mediasoup
 {
     public class WorkerSettings
     {
@@ -40,6 +42,6 @@
         /// <summary>
         ///  Custom application data.
         /// </summary>
-        public object? AppData;
+        public Dictionary<string, object>? AppData { get; set; }
     }
 }
