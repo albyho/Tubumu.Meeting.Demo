@@ -7,7 +7,7 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public class Room : EventEmitter, IEquatable<Room>
+    public class Room : IEquatable<Room>
     {
         private readonly object _locker = new object();
 
@@ -24,9 +24,6 @@ namespace TubumuMeeting.Meeting.Server
         [JsonIgnore]
         public Router Router { get; set; }
 
-        [JsonIgnore]
-        public Dictionary<int, Peer> Peers { get; } = new Dictionary<int, Peer>();
-
         public Room(ILoggerFactory loggerFactory, Guid roomId, string name)
         {
             _loggerFactory = loggerFactory;
@@ -37,49 +34,6 @@ namespace TubumuMeeting.Meeting.Server
             Closed = false;
         }
 
-        public bool AddPeer(Peer peer)
-        {
-            lock (_locker)
-            {
-                if (Closed)
-                {
-                    return false;
-                }
-                if (Peers.ContainsKey(peer.PeerId))
-                {
-                    _logger.LogError($"Peer[{peer.PeerId}] is exists.");
-                    return false;
-                }
-            }
-
-            Peers[peer.PeerId] = peer;
-            Emit("PeerJoined", peer);
-
-            return true;
-        }
-
-        public bool RemovePeer(int peerId)
-        {
-            Peer peer;
-            lock (_locker)
-            {
-                if (Closed)
-                {
-                    return false;
-                }
-                if (!Peers.TryGetValue(peerId, out peer))
-                {
-                    _logger.LogError($"Peer[{peerId}] is not exists.");
-                    return false;
-                }
-            }
-
-            Peers.Remove(peerId);
-            Emit("PeerLeft", peer);
-
-            return true;
-        }
-
         public void Close()
         {
             if (Closed)
@@ -88,8 +42,6 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             Closed = true;
-            Peers.Clear();
-            Emit("Closed", this);
         }
 
         public bool Equals(Room other)

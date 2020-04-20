@@ -63,7 +63,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private int UserId => int.Parse(Context.User.Identity.Name);
 
-        private Peer Peer => _meetingManager.Peers[UserId];
+        private PeerRoom? PeerRoom => _meetingManager.GetPeerRoomWithPeerId(UserId);
     }
 
     public partial class MeetingHub
@@ -95,16 +95,12 @@ namespace TubumuMeeting.Meeting.Server
     {
         public Task Join(RtpCapabilities rtpCapabilities)
         {
-            var peer = Peer;
-            if (!peer.Joined)
+            if (!_meetingManager.JoinPeer(UserId, rtpCapabilities))
             {
-                peer.RtpCapabilities = rtpCapabilities;
-                peer.Joined = true;
-
-                return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10003, Message = "Success" });
+                return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10004, Message = "Failure" });
             }
 
-            return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10004, Message = "Failure" });
+            return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10003, Message = "Success" });
         }
 
         public async Task EnterRoom(Guid roomId)
@@ -112,15 +108,15 @@ namespace TubumuMeeting.Meeting.Server
             // TODO: (alby)代码清理
             var room = _meetingManager.GetOrCreateRoom(roomId, "Meeting");
 
-            var peer = Peer;
+            var peer = _meetingManager.Peers[UserId];
             if (!peer.Joined)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10006, Message = "Failure" });
                 return;
             }
 
-            var joinRessult = await _meetingManager.PeerEnterRoomAsync(UserId, roomId);
-            if (joinRessult)
+            var enterRessult = await _meetingManager.PeerEnterRoomAsync(UserId, roomId);
+            if (enterRessult)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10005, Message = "Success" });
                 return;
@@ -128,15 +124,39 @@ namespace TubumuMeeting.Meeting.Server
 
             await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10006, Message = "Failure" });
 
-            // Notify the new Peer to all other Peers.
+            foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom!.Room.RoomId))
+            {
+                if (otherPeer.PeerId != PeerRoom.Peer.PeerId)
+                {
+                    foreach (var producer in otherPeer.Producers.Values)
+                    {
+                        CreateConsumer(PeerRoom.Peer, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                    }
+
+                    // Notify the new Peer to all other Peers.
+                    // Message: newPeer
+                    SendMessageToCaller(new MeetingMessage
+                    {
+                        Code = 200,
+                        InternalCode = 20001,
+                        Message = "Success",
+                        Data = new
+                        {
+                            Id = PeerRoom.Peer.PeerId,
+                            PeerRoom.Peer.DisplayName,
+                        }
+                    })
+                    .ContinueWithOnFaultedHandleLog(_logger);
+
+                }
+            }
         }
 
         public Task GetRouterRtpCapabilities()
         {
-            var room = Peer.Room;
-            if (room != null)
+            if (PeerRoom != null)
             {
-                var rtpCapabilities = room.Router.RtpCapabilities;
+                var rtpCapabilities = PeerRoom.Room.Router.RtpCapabilities;
                 return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10007, Message = "Success", Data = rtpCapabilities });
             }
 
@@ -145,8 +165,8 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task CreateWebRtcTransport(CreateWebRtcTransportParameters createWebRtcTransportParameters)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            var peerRoom = _meetingManager.GetPeerRoomWithPeerId(UserId);
+            if (peerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, Message = "Failure" });
                 return;
@@ -170,7 +190,7 @@ namespace TubumuMeeting.Meeting.Server
                 webRtcTransportOptions.EnableTcp = true;
             }
 
-            var transport = await peer.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
+            var transport = await peerRoom.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
             if (transport == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, Message = "Failure" });
@@ -201,7 +221,7 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             // Store the WebRtcTransport into the Peer data Object.
-            peer.Transports[transport.Id] = transport;
+            peerRoom.Peer.Transports[transport.Id] = transport;
 
             // If set, apply max incoming bitrate limit.
             if (webRtcTransportSettings.MaximumIncomingBitrate.HasValue && webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
@@ -213,14 +233,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
+            if (!PeerRoom.Peer.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" });
                 return;
@@ -232,14 +251,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task RestartIce(string transportId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Transports.TryGetValue(transportId, out var transport))
+            if (!PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" });
                 return;
@@ -258,14 +276,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task Produce(ProduceRequest produceRequest)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10016, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Transports.TryGetValue(produceRequest.TransportId, out var transport))
+            if (!PeerRoom.Peer.Transports.TryGetValue(produceRequest.TransportId, out var transport))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10016, Message = "Failure" });
                 return;
@@ -273,7 +290,7 @@ namespace TubumuMeeting.Meeting.Server
 
             // Add peerId into appData to later get the associated Peer during
             // the 'loudest' event of the audioLevelObserver.
-            produceRequest.AppData["peerId"] = peer.PeerId;
+            produceRequest.AppData["peerId"] = PeerRoom.Peer.PeerId;
 
             var producer = await transport.ProduceAsync(new ProducerOptions
             {
@@ -283,7 +300,7 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             // Store the Producer into the Peer data Object.
-            peer.Producers[producer.Id] = producer;
+            PeerRoom.Peer.Producers[producer.Id] = producer;
 
             // Set Producer events.
             producer.On("score", score =>
@@ -291,7 +308,13 @@ namespace TubumuMeeting.Meeting.Server
                 // TODO: (alby)考虑不进行反序列化
                 var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
                 // Message: producerScore
-                SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 20001, Message = "Success", Data = new { ProducerId = producer.Id, Score = data } }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessageToCaller(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20002,
+                    Message = "Success",
+                    Data = new { ProducerId = producer.Id, Score = data }
+                }).ContinueWithOnFaultedHandleLog(_logger);
             });
             producer.On("videoorientationchange", videoOrientation =>
             {
@@ -300,13 +323,19 @@ namespace TubumuMeeting.Meeting.Server
                 _logger.LogDebug($"producer videoorientationchange event [producerId:\"{producer.Id}\", videoOrientation:\"{videoOrientation}\"]");
             });
 
-            await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10015, Message = "Failure", Data = new ProduceResult { Id = producer.Id } });
+            await SendMessageToCaller(new MeetingMessage
+            {
+                Code = 400,
+                InternalCode = 10015,
+                Message = "Failure",
+                Data = new ProduceResult { Id = producer.Id }
+            });
 
             // Optimization: Create a server-side Consumer for each Peer.
-            foreach (var otherPeer in _meetingManager.Peers.Values)
+            foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom.Room.RoomId))
             {
-                if (otherPeer.Joined || otherPeer.Room == null || otherPeer.PeerId == peer.PeerId) continue;
-                CreateConsumer(otherPeer, peer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                if (otherPeer.PeerId == PeerRoom.Peer.PeerId) continue;
+                CreateConsumer(otherPeer, PeerRoom.Peer, producer).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Add into the audioLevelObserver.
@@ -328,7 +357,7 @@ namespace TubumuMeeting.Meeting.Server
             //   server-side Consumer (when resuming it).
 
             // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
-            if (consumerPeer.RtpCapabilities == null || !Peer.Room.Router.CanConsume(producer.Id, consumerPeer.RtpCapabilities))
+            if (consumerPeer.RtpCapabilities == null || !PeerRoom!.Room.Router.CanConsume(producer.Id, consumerPeer.RtpCapabilities))
             {
                 return;
             }
@@ -368,7 +397,13 @@ namespace TubumuMeeting.Meeting.Server
                 // TODO: (alby)考虑不进行反序列化
                 var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
                 // Message: consumerScore
-                SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 20002, Message = "Success", Data = new { ConsumerId = consumer.Id, Score = data } }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessageToCaller(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20003,
+                    Message = "Success",
+                    Data = new { ConsumerId = consumer.Id, Score = data }
+                }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
             // Set Consumer events.
@@ -387,11 +422,10 @@ namespace TubumuMeeting.Meeting.Server
                 SendMessageToCaller(new MeetingMessage
                 {
                     Code = 200,
-                    InternalCode = 20003,
+                    InternalCode = 20004,
                     Message = "Success",
                     Data = new { ConsumerId = consumer.Id }
-                })
-                .ContinueWithOnFaultedHandleLog(_logger);
+                }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
             consumer.On("producerpause", _ =>
@@ -400,11 +434,10 @@ namespace TubumuMeeting.Meeting.Server
                 SendMessageToCaller(new MeetingMessage
                 {
                     Code = 200,
-                    InternalCode = 20004,
+                    InternalCode = 20005,
                     Message = "Success",
                     Data = new { ConsumerId = consumer.Id }
-                })
-                .ContinueWithOnFaultedHandleLog(_logger);
+                }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
             consumer.On("producerresume", _ =>
@@ -413,11 +446,10 @@ namespace TubumuMeeting.Meeting.Server
                 SendMessageToCaller(new MeetingMessage
                 {
                     Code = 200,
-                    InternalCode = 20005,
+                    InternalCode = 20006,
                     Message = "Success",
                     Data = new { ConsumerId = consumer.Id }
-                })
-                .ContinueWithOnFaultedHandleLog(_logger);
+                }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
             consumer.On("layerschange", layers =>
@@ -428,11 +460,10 @@ namespace TubumuMeeting.Meeting.Server
                 SendMessageToCaller(new MeetingMessage
                 {
                     Code = 200,
-                    InternalCode = 20006,
+                    InternalCode = 20007,
                     Message = "Success",
                     Data = new { ConsumerId = consumer.Id, SpatialLayer = data != null ? (int?)data.SpatialLayer : null, TemporalLayer = data != null ? (int?)data.TemporalLayer : null }
-                })
-                .ContinueWithOnFaultedHandleLog(_logger);
+                }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
             // Send a request to the remote Peer with Consumer parameters.
@@ -442,7 +473,7 @@ namespace TubumuMeeting.Meeting.Server
                 await SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
-                    InternalCode = 20007,
+                    InternalCode = 20008,
                     Message = "Success",
                     Data = new
                     {
@@ -464,15 +495,14 @@ namespace TubumuMeeting.Meeting.Server
                 SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
-                    InternalCode = 20008,
+                    InternalCode = 20009,
                     Message = "Success",
                     Data = new
                     {
                         ConsumerId = consumer.Id,
                         Score = consumer.Score,
                     }
-                })
-                .ContinueWithOnFaultedHandleLog(_logger);
+                }).ContinueWithOnFaultedHandleLog(_logger);
             }
             catch (Exception ex)
             {
@@ -482,34 +512,32 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task CloseProducer(string producerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10018, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Producers.TryGetValue(producerId, out var producer))
+            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10018, Message = "Failure" });
                 return;
             }
 
             producer.Close();
-            peer.Producers.Remove(producerId);
+            PeerRoom.Peer.Producers.Remove(producerId);
             await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10017, Message = "Success" });
         }
 
         public async Task PauseProducer(string producerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10020, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Producers.TryGetValue(producerId, out var producer))
+            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10020, Message = "Failure" });
                 return;
@@ -522,14 +550,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task ResumeProducer(string producerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10022, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Producers.TryGetValue(producerId, out var producer))
+            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10022, Message = "Failure" });
                 return;
@@ -542,14 +569,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task PauseConsumer(string consumerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10024, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10024, Message = "Failure" });
                 return;
@@ -562,14 +588,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task ResumeConsumer(string consumerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10026, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10026, Message = "Failure" });
                 return;
@@ -582,14 +607,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10028, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
+            if (!PeerRoom.Peer.Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10028, Message = "Failure" });
                 return;
@@ -602,14 +626,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task SetConsumerPriority(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10030, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
+            if (!PeerRoom.Peer.Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10030, Message = "Failure" });
                 return;
@@ -622,14 +645,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task RequestConsumerKeyFrame(string consumerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10032, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10032, Message = "Failure" });
                 return;
@@ -642,14 +664,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task GetTransportStats(string transportId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10034, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Transports.TryGetValue(transportId, out var transport))
+            if (!PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10034, Message = "Failure" });
                 return;
@@ -664,14 +685,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task GetProducerStats(string producerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10036, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Producers.TryGetValue(producerId, out var producer))
+            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10036, Message = "Failure" });
                 return;
@@ -686,14 +706,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task GetConsumerStats(string consumerId)
         {
-            var peer = Peer;
-            if (!peer.Joined || peer.Room == null)
+            if (PeerRoom == null)
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10038, Message = "Failure" });
                 return;
             }
 
-            if (!peer.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
             {
                 await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10038, Message = "Failure" });
                 return;

@@ -6,17 +6,15 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public class Peer : EventEmitter, IEquatable<Peer>
+    public class Peer : IEquatable<Peer>
     {
         public int PeerId { get; }
 
-        public string Name { get; }
+        public string DisplayName { get; }
 
         public bool Closed { get; private set; }
 
         public bool Joined { get; set; }
-
-        public Room? Room { get; private set; }
 
         public RtpCapabilities? RtpCapabilities { get; set; }
 
@@ -26,60 +24,15 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, Consumer> Consumers { get; } = new Dictionary<string, Consumer>();
 
-        public Peer(int peerId, string name)
+        public Peer(int peerId, string displayName)
         {
             PeerId = peerId;
-            Name = name.IsNullOrWhiteSpace() ? "Guest" : name;
+            DisplayName = displayName.IsNullOrWhiteSpace() ? "Guest" : displayName;
             Closed = false;
-        }
-
-        public bool JoinRoom(Room room)
-        {
-            if (room == null)
-            {
-                return false;
-            }
-            if (!Joined)
-            {
-                return false;
-            }
-            if (room.Closed)
-            {
-                return false;
-            }
-            Room = room;
-            var addResult = room.AddPeer(this);
-            if (addResult)
-            {
-                Emit("JoinedRoom", new RoomPeer(room, this));
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool LeaveRoom()
-        {
-            if (Room == null)
-            {
-                return false;
-            }
-
-            var tempRoom = Room;
-            Room = null;
-            tempRoom.RemovePeer(this.PeerId);
-            Emit("LeftRoom", new RoomPeer(tempRoom, this));
-
-            return true;
         }
 
         public void Close()
         {
-            if (Room != null)
-            {
-                LeaveRoom();
-            }
-
             if (Closed)
             {
                 return;
@@ -87,7 +40,6 @@ namespace TubumuMeeting.Meeting.Server
 
             Closed = true;
             Joined = false;
-            Emit("Closed", this);
         }
 
         public Transport GetConsumerTransport()
