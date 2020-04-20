@@ -17,7 +17,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
 
             var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMjkiLCJnIjoi5Yy76ZmiIiwibmJmIjoxNTg0MzQ5MDQ2LCJleHAiOjE1ODY5NDEwNDYsImlzcyI6Imlzc3VlciIsImF1ZCI6ImF1ZGllbmNlIn0._bGG1SOF9WqY8TIErRkxsh9_l_mFB_5JcGrKO1GyQ0E";
             connection = new HubConnectionBuilder()
-                .WithUrl($"http://localhost:5000/hubs/meetingHub?roomid={Guid.NewGuid()}&access_token={accessToken}")
+                .WithUrl($"http://localhost:5000/hubs/meetingHub?access_token={accessToken}")
                 .Build();
 
             connection.Closed += async (error) =>

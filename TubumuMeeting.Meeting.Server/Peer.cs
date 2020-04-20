@@ -25,23 +25,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, Consumer> Consumers { get; } = new Dictionary<string, Consumer>();
 
-        public Producer? Producer
-        {
-            get
-            {
-
-                return null;
-            }
-        }
-
-        public Consumer? Consumer
-        {
-            get
-            {
-                return null;
-            }
-        }
-
         public Peer(int peerId, string name)
         {
             PeerId = peerId;

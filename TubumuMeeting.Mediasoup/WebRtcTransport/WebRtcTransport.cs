@@ -157,6 +157,8 @@ namespace TubumuMeeting.Mediasoup
 
         private async Task ConnectAsync(DtlsParameters dtlsParameters)
         {
+            _logger.LogDebug("ConnectAsync()");
+
             var reqData = new { DtlsParameters = dtlsParameters };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, _internal, reqData);
@@ -169,13 +171,11 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Restart ICE.
         /// </summary>
-        public async Task<IceParameters> RestartIceAsync(IceParameters iceParameters)
+        public async Task<IceParameters> RestartIceAsync()
         {
             _logger.LogDebug("RestartIceAsync()");
 
-            var reqData = new { IceParameters = iceParameters };
-
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE, _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE, _internal);
             var responseData = JsonConvert.DeserializeObject<WebRtcTransportRestartIceResponseData>(status);
 
             // Update data.

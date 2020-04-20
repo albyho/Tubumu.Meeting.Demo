@@ -119,7 +119,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> RequestAsync(MethodId methodId, object? @internal = null, object? data = null)
         {
             var method = methodId.GetEnumStringValue();
-            var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1);
+            var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1); // TODO: (alby)线程同步
 
             _logger.LogDebug($"RequestAsync() [method:{method}, id:{id}]");
 

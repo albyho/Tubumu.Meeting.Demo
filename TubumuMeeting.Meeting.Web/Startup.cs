@@ -12,6 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Tubumu.Core.Json;
 using TubumuMeeting.Meeting.Server;
 using TubumuMeeting.Meeting.Server.Authorization;
 
@@ -30,6 +33,15 @@ namespace TubumuMeeting.Web
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc()
+                    .AddNewtonsoftJson(options =>
+                    {
+                        var settings = options.SerializerSettings;
+                        settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                        settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // 自定义日期格式。默认是 ISO8601 格式。
+                        settings.Converters = new JsonConverter[] { new EnumStringValueEnumConverter() };
+                    });
+
             // Cache
             services.AddDistributedRedisCache(options =>
             {
@@ -103,7 +115,14 @@ namespace TubumuMeeting.Web
                 });
 
             // SignalR
-            services.AddSignalR();
+            services.AddSignalR()
+                .AddNewtonsoftJsonProtocol(options =>
+                {
+                    var settings = options.PayloadSerializerSettings;
+                    settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // 自定义日期格式。默认是 ISO8601 格式。
+                    settings.Converters = new JsonConverter[] { new EnumStringValueEnumConverter() };
+                });
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
 
             services.AddMediasoup(configure =>

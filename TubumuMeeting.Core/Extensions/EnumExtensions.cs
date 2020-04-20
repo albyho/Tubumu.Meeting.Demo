@@ -138,6 +138,7 @@ namespace Tubumu.Core.Extensions
                     result.Add(((EnumStringValueAttribute)attribute).Value, value);
                 }
             }
+
             return result;
         }
 
@@ -167,6 +168,7 @@ namespace Tubumu.Core.Extensions
     public class EnumStringValueAttribute : Attribute
     {
         public string Value { get; set; }
+
         public EnumStringValueAttribute(string value)
         {
             Value = value;
