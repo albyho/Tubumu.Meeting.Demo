@@ -12,6 +12,6 @@ namespace TubumuMeeting.Mediasoup
 
         public RtpParameters RtpParameters { get; set; }
 
-        public Dictionary<string, object>? AppData { get; set; }
+        public Dictionary<string, object> AppData { get; set; }
     }
 }

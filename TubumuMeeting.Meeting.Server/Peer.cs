@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 
@@ -17,7 +18,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Room? Room { get; private set; }
 
-        public RtpCapabilities RtpCapabilities { get; set; }
+        public RtpCapabilities? RtpCapabilities { get; set; }
 
         public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();
 
@@ -48,7 +49,7 @@ namespace TubumuMeeting.Meeting.Server
             }
             Room = room;
             var addResult = room.AddPeer(this);
-            if(addResult)
+            if (addResult)
             {
                 Emit("JoinedRoom", new RoomPeer(room, this));
                 return true;
@@ -87,6 +88,11 @@ namespace TubumuMeeting.Meeting.Server
             Closed = true;
             Joined = false;
             Emit("Closed", this);
+        }
+
+        public Transport GetConsumerTransport()
+        {
+            return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
         }
 
         public bool Equals(Peer other)
