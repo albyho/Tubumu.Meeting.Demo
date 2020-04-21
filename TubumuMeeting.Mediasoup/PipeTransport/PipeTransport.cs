@@ -43,8 +43,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>   
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="routerId"></param>
-        /// <param name="transportId"></param>
+        /// <param name="transportInternalData"></param>
         /// <param name="sctpParameters"></param>
         /// <param name="sctpState"></param>
         /// <param name="channel"></param>
@@ -53,8 +52,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="getProducerById"></param>
         /// <param name="getDataProducerById"></param>
         public PipeTransport(ILoggerFactory loggerFactory,
-            string routerId,
-            string transportId,
+            TransportInternalData transportInternalData,
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
@@ -65,7 +63,7 @@ namespace TubumuMeeting.Mediasoup
             TransportTuple tuple,
             bool rtx,
             SrtpParameters? srtpParameters
-            ) : base(loggerFactory, routerId, transportId, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
+            ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<PipeTransport>();
@@ -124,7 +122,7 @@ namespace TubumuMeeting.Mediasoup
         {
             var reqData = pipeTransportConnectParameters;
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, Internal, reqData);
             var responseData = JsonConvert.DeserializeObject<PipeTransportConnectResponseData>(status);
 
             // Update data.
@@ -155,8 +153,8 @@ namespace TubumuMeeting.Mediasoup
 
             var @internal = new
             {
-                RouterId,
-                TransportId = Id,
+                Internal.RouterId,
+                TransportId = Internal.TransportId,
                 ConsumerId = Guid.NewGuid().ToString(),
                 consumerOptions.ProducerId,
             };
@@ -213,7 +211,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Id) return;
+            if (targetId != Internal.TransportId) return;
             switch (@event)
             {
                 case "sctpstatechange":

@@ -9,6 +9,25 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
+    public class TransportInternalData
+    {
+        /// <summary>
+        /// Router id.
+        /// </summary>
+        public string RouterId { get; }
+
+        /// <summary>
+        /// Trannsport id.
+        /// </summary>
+        public string TransportId { get; }
+
+        public TransportInternalData(string routerId, string transportId)
+        {
+            RouterId = routerId;
+            TransportId = transportId;
+        }
+    }
+
     public abstract class Transport : EventEmitter
     {
         /// <summary>
@@ -21,21 +40,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<Transport> _logger;
 
-        #region Internal data.
-
         /// <summary>
-        /// Router id.
+        /// Internal data.
         /// </summary>
-        public string RouterId { get; }
-
-        /// <summary>
-        /// Trannsport id.
-        /// </summary>
-        public string Id { get; }
-
-        protected object _internal;
-
-        #endregion
+        public TransportInternalData Internal { get; private set; }
 
         #region Transport data. This is set by the subclass.
 
@@ -120,8 +128,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits newdataconsumer - (dataProducer: DataProducer)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="routerId"></param>
-        /// <param name="transportId"></param>
+        /// <param name="transportInternalData"></param>
         /// <param name="sctpParameters"></param>
         /// <param name="sctpState"></param>
         /// <param name="channel"></param>
@@ -130,8 +137,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="getProducerById"></param>
         /// <param name="getDataProducerById"></param>
         public Transport(ILoggerFactory loggerFactory,
-            string routerId,
-            string transportId,
+            TransportInternalData transportInternalData,
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
@@ -142,14 +148,10 @@ namespace TubumuMeeting.Mediasoup
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Transport>();
+
             // Internal
-            RouterId = routerId;
-            Id = transportId;
-            _internal = new
-            {
-                RouterId,
-                TransportId = transportId,
-            };
+            Internal = transportInternalData;
+
             // Data
             SctpParameters = sctpParameters;
             SctpState = sctpState;
@@ -177,7 +179,7 @@ namespace TubumuMeeting.Mediasoup
             //_channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            Channel.RequestAsync(MethodId.TRANSPORT_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.TRANSPORT_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
 
             // Close every Producer.
             foreach (var producer in Producers.Values)
@@ -282,7 +284,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("DumpAsync()");
 
-            return Channel.RequestAsync(MethodId.TRANSPORT_DUMP, _internal);
+            return Channel.RequestAsync(MethodId.TRANSPORT_DUMP, Internal);
         }
 
         /// <summary>
@@ -293,7 +295,7 @@ namespace TubumuMeeting.Mediasoup
             // 在 Node.js 实现中，Transport 类没有实现 getState 方法。
             _logger.LogDebug("GetStatsAsync()");
 
-            return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS, _internal);
+            return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS, Internal);
         }
 
         /// <summary>
@@ -313,7 +315,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug($"SetMaxIncomingBitrateAsync() [bitrate:{bitrate}]");
 
             var reqData = new { Bitrate = bitrate };
-            return Channel.RequestAsync(MethodId.TRANSPORT_SET_MAX_INCOMING_BITRATE, _internal, reqData);
+            return Channel.RequestAsync(MethodId.TRANSPORT_SET_MAX_INCOMING_BITRATE, Internal, reqData);
         }
 
         /// <summary>
@@ -375,8 +377,8 @@ namespace TubumuMeeting.Mediasoup
 
             var @internal = new
             {
-                RouterId,
-                TransportId = Id,
+                Internal.RouterId,
+                TransportId = Internal.TransportId,
                 ProducerId = producerOptions.Id.IsNullOrWhiteSpace() ? Guid.NewGuid().ToString() : producerOptions.Id!,
             };
             var reqData = new
@@ -474,8 +476,8 @@ namespace TubumuMeeting.Mediasoup
 
             var @internal = new
             {
-                RouterId,
-                TransportId = Id,
+                Internal.RouterId,
+                TransportId = Internal.TransportId,
                 ConsumerId = Guid.NewGuid().ToString(),
                 consumerOptions.ProducerId,
             };
@@ -551,8 +553,8 @@ namespace TubumuMeeting.Mediasoup
 
             var @internal = new
             {
-                RouterId,
-                TransportId = Id,
+                Internal.RouterId,
+                TransportId = Internal.TransportId,
                 DataProducerId = !dataProducerOptions.Id.IsNullOrWhiteSpace() ? dataProducerOptions.Id : Guid.NewGuid().ToString(),
             };
 
@@ -622,8 +624,8 @@ namespace TubumuMeeting.Mediasoup
 
             var @internal = new
             {
-                RouterId,
-                TransportId = Id,
+                Internal.RouterId,
+                TransportId = Internal.TransportId,
                 DataConsumerId = Guid.NewGuid().ToString(),
                 dataConsumerOptions.DataProducerId,
             };
@@ -681,7 +683,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new { Types = types };
 
-            return Channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT, _internal, reqData);
+            return Channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT, Internal, reqData);
         }
 
         private int GetNextSctpStreamId()

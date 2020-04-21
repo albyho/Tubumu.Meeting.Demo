@@ -25,17 +25,15 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits silence</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="routerId"></param>
-        /// <param name="rtpObserverId"></param>
+        /// <param name="rtpObserverInternalData"></param>
         /// <param name="channel"></param>
         /// <param name="appData"></param>
         /// <param name="getProducerById"></param>
         public AudioLevelObserver(ILoggerFactory loggerFactory,
-                    string routerId,
-                    string rtpObserverId,
+                    RtpObserverInternalData rtpObserverInternalData,
                     Channel channel,
                     Dictionary<string, object>? appData,
-                    Func<string, Producer> getProducerById) : base(loggerFactory, routerId, rtpObserverId, channel, appData, getProducerById)
+                    Func<string, Producer> getProducerById) : base(loggerFactory, rtpObserverInternalData, channel, appData, getProducerById)
         {
             _logger = loggerFactory.CreateLogger<AudioLevelObserver>();
 
@@ -49,7 +47,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Id) return;
+            if (targetId != Internal.RtpObserverId) return;
             switch (@event)
             {
                 case "volumes":

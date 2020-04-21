@@ -230,8 +230,7 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<RouterCreateWebRtcTransportResponseData>(status);
 
             var transport = new WebRtcTransport(_loggerFactory,
-                @internal.RouterId,
-                @internal.TransportId,
+                new TransportInternalData(@internal.RouterId, @internal.TransportId),
                 sctpParameters: null,
                 sctpState: null,
                 _channel, AppData,
@@ -247,9 +246,9 @@ namespace TubumuMeeting.Mediasoup
                 responseData.DtlsState,
                 responseData.DtlsRemoteCert
                 );
-            _transports[transport.Id] = transport;
+            _transports[transport.Internal.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.Id));
+            transport.On("@close", _ => _transports.Remove(transport.Internal.TransportId));
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
@@ -309,8 +308,7 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status);
 
             var transport = new PlainTransport(_loggerFactory,
-                            @internal.RouterId,
-                            @internal.TransportId,
+                            new TransportInternalData(@internal.RouterId, @internal.TransportId),
                             sctpParameters: null,
                             sctpState: null,
                             _channel, AppData,
@@ -323,9 +321,9 @@ namespace TubumuMeeting.Mediasoup
                             responseData.RtcpTuple,
                             responseData.SrtpParameters
                             );
-            _transports[transport.Id] = transport;
+            _transports[transport.Internal.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.Id));
+            transport.On("@close", _ => _transports.Remove(transport.Internal.TransportId));
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
@@ -381,8 +379,7 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
 
             var transport = new PipeTransport(_loggerFactory,
-                            @internal.RouterId,
-                            @internal.TransportId,
+                            new TransportInternalData(@internal.RouterId, @internal.TransportId),
                             sctpParameters: null,
                             sctpState: null,
                             _channel, AppData,
@@ -394,9 +391,9 @@ namespace TubumuMeeting.Mediasoup
                             responseData.SrtpParameters
                             );
 
-            _transports[transport.Id] = transport;
+            _transports[transport.Internal.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.Id));
+            transport.On("@close", _ => _transports.Remove(transport.Internal.TransportId));
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
@@ -686,15 +683,14 @@ namespace TubumuMeeting.Mediasoup
 
             await _channel.RequestAsync(MethodId.ROUTER_CREATE_AUDIO_LEVEL_OBSERVER, @internal, reqData);
 
-            var audioLevelObserver = new AudioLevelObserver(_loggerFactory,
-                @internal.RouterId,
-                @internal.RtpObserverId,
+            var audioLevelObserver = new AudioLevelObserver(_loggerFactory, 
+                new RtpObserverInternalData(@internal.RouterId, @internal.RtpObserverId),
                 _channel,
                 AppData,
                 m => _producers[m]);
 
-            _rtpObservers[audioLevelObserver.Id] = audioLevelObserver;
-            audioLevelObserver.On("@close", _ => _rtpObservers.Remove(audioLevelObserver.Id));
+            _rtpObservers[audioLevelObserver.Internal.RtpObserverId] = audioLevelObserver;
+            audioLevelObserver.On("@close", _ => _rtpObservers.Remove(audioLevelObserver.Internal.RtpObserverId));
 
             // Emit observer event.
             Observer.Emit("newrtpobserver", audioLevelObserver);

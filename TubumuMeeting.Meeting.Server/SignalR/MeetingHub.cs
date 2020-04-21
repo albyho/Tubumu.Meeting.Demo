@@ -200,7 +200,7 @@ namespace TubumuMeeting.Meeting.Server
                 Message = "Success",
                 Data = new CreateWebRtcTransportResult
                 {
-                    Id = transport.Id,
+                    Id = transport.Internal.TransportId,
                     IceParameters = transport.IceParameters,
                     IceCandidates = transport.IceCandidates,
                     DtlsParameters = transport.DtlsParameters,
@@ -217,7 +217,7 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             // Store the WebRtcTransport into the Peer data Object.
-            peerRoom.Peer.Transports[transport.Id] = transport;
+            peerRoom.Peer.Transports[transport.Internal.TransportId] = transport;
 
             // If set, apply max incoming bitrate limit.
             if (webRtcTransportSettings.MaximumIncomingBitrate.HasValue && webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
