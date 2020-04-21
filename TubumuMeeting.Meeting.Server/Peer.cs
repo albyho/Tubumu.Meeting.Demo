@@ -40,6 +40,12 @@ namespace TubumuMeeting.Meeting.Server
 
             Closed = true;
             Joined = false;
+            RtpCapabilities = null;
+
+
+            // Iterate and close all mediasoup Transport associated to this Peer, so all
+            // its Producers and Consumers will also be closed.
+            Transports.Values.ForEach(m => m.Close());
         }
 
         public Transport GetConsumerTransport()

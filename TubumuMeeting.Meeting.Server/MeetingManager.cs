@@ -26,7 +26,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<int, Peer> Peers { get; } = new Dictionary<int, Peer>();
 
-        public List<PeerRoom> PeerRoomList = new List<PeerRoom>();
+        public HashSet<PeerRoom> PeerRoomList = new HashSet<PeerRoom>();
 
         public MeetingManager(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
         {
@@ -63,9 +63,9 @@ namespace TubumuMeeting.Meeting.Server
                     room.Close();
                     Rooms.Remove(roomId);
 
-                    var roomPeerToRemove = PeerRoomList.Where(m => m.Room == room).ToArray();
                     lock (_peerRoomLocker)
                     {
+                        var roomPeerToRemove = PeerRoomList.Where(m => m.Room == room).ToArray();
                         foreach (var item in roomPeerToRemove)
                         {
                             PeerRoomList.Remove(item);
@@ -124,8 +124,6 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 peer.Close();
-                peer.Joined = false;
-                peer.RtpCapabilities = null;
 
                 Peers.Remove(peerId);
                 var peerRoomToRemove = PeerRoomList.Where(m => m.Peer == peer).ToArray();

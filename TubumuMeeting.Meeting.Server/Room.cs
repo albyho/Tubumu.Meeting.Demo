@@ -9,11 +9,11 @@ namespace TubumuMeeting.Meeting.Server
 {
     public class Room : IEquatable<Room>
     {
-        private readonly object _locker = new object();
-
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly ILogger<Room> _logger;
+
+        private readonly object _locker = new object();
 
         public Guid RoomId { get; }
 
