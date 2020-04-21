@@ -61,6 +61,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
         {
             try
             {
+                // rtpCapabilities 参数：Device.Load 后，取其 RtpCapabilities 属性。
                 await connection.InvokeAsync("Join", new RtpCapabilities());
             }
             catch (Exception ex)

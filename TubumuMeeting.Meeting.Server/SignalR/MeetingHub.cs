@@ -142,8 +142,7 @@ namespace TubumuMeeting.Meeting.Server
                             Id = PeerRoom.Peer.PeerId,
                             PeerRoom.Peer.DisplayName,
                         }
-                    })
-                    .ContinueWithOnFaultedHandleLog(_logger);
+                    }).ContinueWithOnFaultedHandleLog(_logger);
 
                 }
             }

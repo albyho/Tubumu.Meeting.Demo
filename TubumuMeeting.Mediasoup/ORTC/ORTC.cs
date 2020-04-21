@@ -1105,7 +1105,7 @@ namespace TubumuMeeting.Mediasoup
                             if (modify)
                             {
                                 if (!selectedProfileLevelId.IsNullOrWhiteSpace())
-                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;
+                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;  // TODO: (alby)注意 null 引用
                                 else
                                     aCodec.Parameters.Remove("profile-level-id");
                             }
