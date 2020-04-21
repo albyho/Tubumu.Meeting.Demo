@@ -467,7 +467,7 @@ namespace TubumuMeeting.Mediasoup
             // We use up to 8 bytes for MID (string).
             if (_nextMidForConsumers == 100000000)
             {
-                _logger.LogDebug($"consume() | reaching max MID value {_nextMidForConsumers}");
+                _logger.LogDebug($"ConsumeAsync() | reaching max MID value {_nextMidForConsumers}");
 
                 _nextMidForConsumers = 0;
             }

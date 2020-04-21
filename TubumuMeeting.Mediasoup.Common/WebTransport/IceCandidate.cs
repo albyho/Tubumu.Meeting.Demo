@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using Newtonsoft.Json;
+
+namespace TubumuMeeting.Mediasoup
 {
     public class IceCandidate
     {
@@ -14,7 +16,7 @@
 
         public string Type { get; set; } = "host";
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? TcpType { get; set; } // passive
-
     }
 }

@@ -18,7 +18,9 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly MediasoupServer _mediasoupServer;
 
-        private readonly object _locker = new object();
+        private readonly object _roomLocker = new object();
+
+        private readonly object _peerLocker = new object();
 
         private readonly object _peerRoomLocker = new object();
 
@@ -40,7 +42,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             Room room;
 
-            lock (_locker)
+            lock (_roomLocker)
             {
                 if (Rooms.TryGetValue(roomId, out room))
                 {
@@ -56,7 +58,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Room? CloseRoom(Guid roomId)
         {
-            lock (_locker)
+            lock (_roomLocker)
             {
                 if (Rooms.TryGetValue(roomId, out var room))
                 {
@@ -81,13 +83,14 @@ namespace TubumuMeeting.Meeting.Server
         public bool HandlePeer(int peerId, string name)
         {
             var peer = new Peer(peerId, name);
-            lock (_locker)
+            lock (_peerLocker)
             {
                 if (Peers.ContainsKey(peer.PeerId))
                 {
-                    _logger.LogError($"Peer[{peerId}] is exists.");
+                    _logger.LogError($"HandlePeer() | Peer[{peerId}] is exists.");
                     return false;
                 }
+
                 Peers[peerId] = peer;
             }
 
@@ -96,18 +99,20 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool JoinPeer(int peerId, RtpCapabilities rtpCapabilities)
         {
-            lock (_locker)
+            lock (_peerLocker)
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
-                    _logger.LogError($"Peer[{peerId}] is not exists.");
+                    _logger.LogError($"JoinPeer() | Peer[{peerId}] is not exists.");
                     return false;
                 }
+
                 if (peer.Joined)
                 {
-                    _logger.LogError($"Peer[{peerId}] is joined.");
+                    _logger.LogError($"JoinPeer() | Peer[{peerId}] is joined.");
                     return false;
                 }
+
                 peer.RtpCapabilities = rtpCapabilities;
                 peer.Joined = true;
                 return true;
@@ -116,7 +121,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public void ClosePeer(int peerId)
         {
-            lock (_locker)
+            lock (_peerLocker)
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -124,11 +129,11 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 peer.Close();
-
                 Peers.Remove(peerId);
-                var peerRoomToRemove = PeerRoomList.Where(m => m.Peer == peer).ToArray();
+
                 lock (_peerRoomLocker)
                 {
+                    var peerRoomToRemove = PeerRoomList.Where(m => m.Peer == peer).ToArray();
                     foreach (var item in peerRoomToRemove)
                     {
                         PeerRoomList.Remove(item);
@@ -139,31 +144,38 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PeerEnterRoomAsync(int peerId, Guid roomId)
         {
+            // TODO: (alby)代码清理
+            GetOrCreateRoom(roomId, "Meeting");
+
             await EnsureRouterAsync(roomId);
 
-            lock (_locker)
+            lock(_peerLocker)
             {
                 if (!Peers.TryGetValue(peerId, out Peer peer))
                 {
-                    _logger.LogError($"Peer[{peerId}] is not exists.");
-                    return false;
-                }
-                if (!Rooms.TryGetValue(roomId, out Room room))
-                {
-                    _logger.LogError($"Room[{roomId}] is not exists.");
+                    _logger.LogError($"PeerEnterRoomAsync() | Peer[{peerId}] is not exists.");
                     return false;
                 }
 
-                lock (_peerRoomLocker)
+                lock (_roomLocker)
                 {
-                    var peerRoom = new PeerRoom(peer, room);
-                    // TODO: (alby)目前暂时只允许进入一个房间
-                    if (PeerRoomList.Any(m => m == peerRoom))
+                    if (!Rooms.TryGetValue(roomId, out Room room))
                     {
+                        _logger.LogError($"PeerEnterRoomAsync() | Room[{roomId}] is not exists.");
                         return false;
                     }
-                    PeerRoomList.Add(peerRoom);
-                    return true;
+
+                    lock (_peerRoomLocker)
+                    {
+                        var peerRoom = new PeerRoom(peer, room);
+                        // TODO: (alby)目前暂时只允许进入一个房间
+                        if (PeerRoomList.Contains(peerRoom))
+                        {
+                            return false;
+                        }
+                        PeerRoomList.Add(peerRoom);
+                        return true;
+                    }
                 }
             }
         }
@@ -207,11 +219,11 @@ namespace TubumuMeeting.Meeting.Server
         private async Task<bool> EnsureRouterAsync(Guid roomId)
         {
             Room room;
-            lock (_locker)
+            lock (_roomLocker)
             {
                 if (!Rooms.TryGetValue(roomId, out room))
                 {
-                    _logger.LogError($"Room[{roomId}] is not exists.");
+                    _logger.LogError($"EnsureRouterAsync() | Room[{roomId}] is not exists.");
                     return false;
                 }
 

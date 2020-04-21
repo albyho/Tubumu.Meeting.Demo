@@ -105,9 +105,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task EnterRoom(Guid roomId)
         {
-            // TODO: (alby)代码清理
-            var room = _meetingManager.GetOrCreateRoom(roomId, "Meeting");
-
             var peer = _meetingManager.Peers[UserId];
             if (!peer.Joined)
             {
@@ -320,7 +317,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 // TODO: (alby)考虑不进行反序列化
                 var data = JsonConvert.DeserializeObject<ProducerVideoOrientation>(videoOrientation!.ToString());
-                _logger.LogDebug($"producer videoorientationchange event [producerId:\"{producer.Id}\", videoOrientation:\"{videoOrientation}\"]");
+                _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.Id}\", videoOrientation:\"{videoOrientation}\"]");
             });
 
             await SendMessageToCaller(new MeetingMessage
@@ -347,7 +344,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
         {
-            _logger.LogDebug($"CreateConsumer() [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.Id}\"]");
+            _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.Id}\"]");
 
             // Optimization:
             // - Create the server-side Consumer. If video, do it paused.
