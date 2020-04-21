@@ -186,8 +186,8 @@ namespace TubumuMeeting.Mediasoup
             var producer = GetProducerById(producerId);
             var @internal = new
             {
-               Internal.RouterId,
-                RtpObserverId = Internal.RtpObserverId,
+                Internal.RouterId,
+                Internal.RtpObserverId,
                 ProducerId = producerId,
             };
 
@@ -208,7 +208,7 @@ namespace TubumuMeeting.Mediasoup
             var @internal = new
             {
                 Internal.RouterId,
-                RtpObserverId = Internal.RtpObserverId,
+                Internal.RtpObserverId,
                 ProducerId = producerId,
             };
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);

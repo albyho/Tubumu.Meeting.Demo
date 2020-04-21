@@ -154,7 +154,7 @@ namespace TubumuMeeting.Mediasoup
             var @internal = new
             {
                 Internal.RouterId,
-                TransportId = Internal.TransportId,
+                Internal.TransportId,
                 ConsumerId = Guid.NewGuid().ToString(),
                 consumerOptions.ProducerId,
             };
