@@ -11,7 +11,5 @@ namespace TubumuMeeting.Mediasoup
         public bool Producing { get; set; }
 
         public bool Consuming { get; set; }
-
-        public Dictionary<string, object>? UserData { get; set; }
     }
 }

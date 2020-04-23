@@ -47,139 +47,144 @@ export default {
             }
           })
           .build();
-        this.connection.on("ReceiveMessage", data => {
-          this.processMessage(data);
+
+        this.connection.on("PeerHandled", async data => {
+          await this.processPeerHandled(data);
+        });
+        this.connection.on("ReceiveMessage", async data => {
+          await this.processMessage(data);
         });
         this.connection.start().catch(err => console.error(err));
       } catch (e) {
         console.log(e.message);
       }
     },
-    processMessage(data) {
-      console.log(data);
-      if (data.code !== 200) {
+    async processPeerHandled(data) {
+      if (data.code !== 200 || data.internalCode !== 10001) {
         console.error(data.message);
         return;
       }
+
       // 连接成功
-      if (data.internalCode === 10001) {
-        this.connection
-          .invoke("EnterRoom", "00000000-0000-0000-0000-000000000000")
-          .catch(err => console.error(err));
+      let result = await this.connection
+        .invoke("EnterRoom", "00000000-0000-0000-0000-000000000000")
+        .catch(err => console.error(err));
+      if (result.code !== 200) {
+        console.error("processMessage() | EnterRoom failure.");
+        return;
       }
+
       // EnterRoom 成功
-      if (data.internalCode === 10003) {
-        this.connection
-          .invoke("GetRouterRtpCapabilities")
-          .catch(err => console.error(err));
+      result = await this.connection
+        .invoke("GetRouterRtpCapabilities")
+        .catch(err => console.error(err));
+      if (result.code !== 200) {
+        console.error("processMessage() | GetRouterRtpCapabilities failure.");
+        return;
       }
+
       // GetRouterRtpCapabilities 成功
-      if (data.internalCode === 10005) {
-        this.device = new mediasoupClient.Device();
-        const rtpCapabilities = this.device.load({
-          routerRtpCapabilities: data.data
-        });
-        this.connection
-          .invoke("Join", rtpCapabilities)
-          .catch(err => console.error(err));
+      this.device = new mediasoupClient.Device();
+      const rtpCapabilities = this.device.load({
+        routerRtpCapabilities: result.data
+      });
+
+      result = await this.connection
+        .invoke("CreateWebRtcTransport", {
+          forceTcp: false,
+          producing: true,
+          consuming: false
+        })
+        .catch(err => console.error(err));
+      if (result.code !== 200) {
+        console.error("processMessage() | CreateWebRtcTransport failure.");
+        return;
       }
-      // Join 成功
-      if (data.internalCode === 10007) {
-        this.connection
-          .invoke("CreateWebRtcTransport", {
-            forceTcp: false,
-            producing: true,
-            consuming: false,
-            userData: { direction: "send" }
-          })
-          .catch(err => console.error(err));
-        this.connection
-          .invoke("CreateWebRtcTransport", {
-            forceTcp: false,
-            producing: false,
-            consuming: true,
-            userData: { direction: "recv" }
-          })
-          .catch(err => console.error(err));
-      }
+
       // CreateWebRtcTransport 成功
-      if (data.internalCode === 10009) {
-        if (!data.data.userData || typeof data.data.userData !== "object")
-          throw new TypeError("appData must be an object");
+      const { id, iceParameters, iceCandidates, dtlsParameters } = result.data;
+      this.sendTransport = this.device.createSendTransport({
+        id,
+        iceParameters,
+        iceCandidates,
+        dtlsParameters
+        // 还可添加 iceServers 等参数
+      });
 
-        const { id, iceParameters, iceCandidates, dtlsParameters } = data.data;
-
-        if (data.data.userData.direction === "send") {
-          this.sendTransport = this._mediasoupDevice.createSendTransport({
-            id,
-            iceParameters,
-            iceCandidates,
-            dtlsParameters
-            // 还可添加 iceServers 等参数
-          });
-
-          this.sendTransport.on(
-            "connect",
-            (
-              { dtlsParameters },
-              callback,
-              errback // eslint-disable-line no-shadow
-            ) => {
-              this.connection
-                .invoke("ConnectWebRtcTransport", {
-                  transportId: this.sendTransport.id,
-                  dtlsParameters
-                })
-                .then(callback)
-                .catch(errback);
-            }
-          );
-
-          this.sendTransport.on(
-            "produce",
-            ({ kind, rtpParameters, appData }, callback, errback) => {
-              try {
-                // eslint-disable-next-line no-shadow
-                this.connection.invoke("Produce", {
-                  transportId: this.sendTransport.id,
-                  kind,
-                  rtpParameters,
-                  appData
-                });
-                callback({ id });
-              } catch (error) {
-                errback(error);
-              }
-            }
-          );
-        } else {
-          this.recvTransport = this._mediasoupDevice.createRecvTransport({
-            id,
-            iceParameters,
-            iceCandidates,
-            dtlsParameters
-            // 还可添加 iceServers 等参数
-          });
-
-          this.recvTransport.on(
-            "connect",
-            (
-              { dtlsParameters },
-              callback,
-              errback // eslint-disable-line no-shadow
-            ) => {
-              this.connection
-                .invoke("ConnectWebRtcTransport", {
-                  transportId: this.recvTransport.id,
-                  dtlsParameters
-                })
-                .then(callback)
-                .catch(errback);
-            }
-          );
+      this.sendTransport.on(
+        "connect",
+        ({ dtlsParameters }, callback, errback) => {
+          this.connection
+            .invoke("ConnectWebRtcTransport", {
+              transportId: this.sendTransport.id,
+              dtlsParameters
+            })
+            .then(callback)
+            .catch(errback);
         }
+      );
+
+      this.sendTransport.on(
+        "produce",
+        ({ kind, rtpParameters, appData }, callback, errback) => {
+          try {
+            const result = await this.connection.invoke("Produce", {
+              transportId: this.sendTransport.id,
+              kind,
+              rtpParameters,
+              appData
+            });
+            if (result.code !== 200) {
+              throw new Error(result.message);
+            }
+            callback({ id: result.data.id });
+          } catch (error) {
+            errback(error);
+          }
+        }
+      );
+      result = await this.connection
+        .invoke("CreateWebRtcTransport", {
+          forceTcp: false,
+          producing: false,
+          consuming: true
+        })
+        .catch(err => console.error(err));
+      // CreateWebRtcTransport 成功
+      this.recvTransport = this.device.createRecvTransport({
+        id,
+        iceParameters,
+        iceCandidates,
+        dtlsParameters
+        // 还可添加 iceServers 等参数
+      });
+
+      // CreateWebRtcTransport 成功
+      this.recvTransport.on(
+        "connect",
+        ({ dtlsParameters }, callback, errback) => {
+          this.connection
+            .invoke("ConnectWebRtcTransport", {
+              transportId: this.recvTransport.id,
+              dtlsParameters
+            })
+            .then(callback)
+            .catch(errback);
+        }
+      );
+
+      result = await this.connection
+        .invoke("Join", rtpCapabilities)
+        .catch(err => console.error(err));
+      if (result.code !== 200) {
+        console.error("processMessage() | Join failure.");
+        return;
       }
 
+      // Join 成功
+    },
+    async processMessage(data) {
+      console.log(data);
       if (data.internalCode === 10011) {
         //
       }

@@ -24,13 +24,12 @@ namespace TubumuMeeting.Meeting.Server
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public object? Data { get; set; }
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, object>? UserData { get; set; }
     }
 
     public interface IPeer
     {
+        Task PeerHandled(MeetingMessage message);
+
         Task ReceiveMessage(MeetingMessage message);
 
         Task ReceiveNotification(MeetingMessage message);
@@ -55,9 +54,9 @@ namespace TubumuMeeting.Meeting.Server
             var handleResult = _meetingManager.HandlePeer(UserId, "Guest");
             if (handleResult)
             {
-                return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10001, Message = "连接成功" });
+                return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, InternalCode = 10001, Message = "连接成功" });
             }
-            return Task.CompletedTask;
+            return Clients.Caller.PeerHandled(new MeetingMessage { Code = 400, InternalCode = 10002, Message = "连接失败" });
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
@@ -98,15 +97,12 @@ namespace TubumuMeeting.Meeting.Server
 
     public partial class MeetingHub
     {
-        public async Task EnterRoom(Guid roomId)
+        public async Task<MeetingMessage> EnterRoom(Guid roomId)
         {
             if (!await _meetingManager.PeerEnterRoomAsync(UserId, roomId))
             {
-                SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10004, Message = "Failure" }).ContinueWithOnFaultedHandleLog(_logger);
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10004, Message = "Failure" };
             }
-
-            SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10003, Message = "Success" }).ContinueWithOnFaultedHandleLog(_logger);
 
             foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom!.Room.RoomId))
             {
@@ -132,36 +128,27 @@ namespace TubumuMeeting.Meeting.Server
                     }).ContinueWithOnFaultedHandleLog(_logger);
                 }
             }
+
+            return new MeetingMessage { Code = 200, InternalCode = 10003, Message = "Success" };
         }
 
-        public Task GetRouterRtpCapabilities()
+        public Task<MeetingMessage> GetRouterRtpCapabilities()
         {
             if (PeerRoom != null)
             {
                 var rtpCapabilities = PeerRoom.Room.Router.RtpCapabilities;
-                return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10005, Message = "Success", Data = rtpCapabilities });
+                return Task.FromResult(new MeetingMessage { Code = 200, InternalCode = 10005, Message = "Success", Data = rtpCapabilities });
             }
 
-            return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10006, Message = "Failure" });
+            return Task.FromResult(new MeetingMessage { Code = 400, InternalCode = 10006, Message = "Failure" });
         }
 
-        public Task Join(RtpCapabilities rtpCapabilities)
-        {
-            if (!_meetingManager.JoinPeer(UserId, rtpCapabilities))
-            {
-                return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10008, Message = "Failure" });
-            }
-
-            return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10007, Message = "Success" });
-        }
-
-        public async Task CreateWebRtcTransport(CreateWebRtcTransportParameters createWebRtcTransportParameters)
+        public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportParameters createWebRtcTransportParameters)
         {
             var peerRoom = _meetingManager.GetPeerRoomWithPeerId(UserId);
             if (peerRoom == null)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, UserData = createWebRtcTransportParameters.UserData, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10010, Message = "Failure" };
             }
 
             var webRtcTransportSettings = _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings;
@@ -185,24 +172,8 @@ namespace TubumuMeeting.Meeting.Server
             var transport = await peerRoom.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
             if (transport == null)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, UserData = createWebRtcTransportParameters.UserData, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10010, Message = "Failure" };
             }
-
-            await SendMessageToCaller(new MeetingMessage
-            {
-                Code = 200,
-                InternalCode = 10009,
-                Message = "Success",
-                Data = new CreateWebRtcTransportResult
-                {
-                    Id = transport.Internal.TransportId,
-                    IceParameters = transport.IceParameters,
-                    IceCandidates = transport.IceCandidates,
-                    DtlsParameters = transport.DtlsParameters,
-                },
-                UserData = createWebRtcTransportParameters.UserData,
-            });
 
             transport.On("dtlsstatechange", value =>
             {
@@ -222,63 +193,43 @@ namespace TubumuMeeting.Meeting.Server
                 // Fire and forget
                 transport.SetMaxIncomingBitrateAsync(webRtcTransportSettings.MaximumIncomingBitrate.Value).ContinueWithOnFaultedHandleLog(_logger);
             }
+
+            return new MeetingMessage
+            {
+                Code = 200,
+                InternalCode = 10009,
+                Message = "Success",
+                Data = new CreateWebRtcTransportResult
+                {
+                    Id = transport.Internal.TransportId,
+                    IceParameters = transport.IceParameters,
+                    IceCandidates = transport.IceCandidates,
+                    DtlsParameters = transport.DtlsParameters,
+                }
+            };
         }
 
-        public async Task ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
+        public async Task<MeetingMessage> ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
             if (PeerRoom == null)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" };
             }
 
             if (!PeerRoom.Peer.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" };
             }
 
             await transport.ConnectAsync(connectWebRtcTransportRequest.DtlsParameters);
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10011, Message = "Success" });
+            return new MeetingMessage { Code = 400, InternalCode = 10011, Message = "Success" };
         }
 
-        public async Task RestartIce(string transportId)
+        public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
-            if (PeerRoom == null)
+            if (PeerRoom == null || !PeerRoom.Peer.Transports.TryGetValue(produceRequest.TransportId, out var transport))
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" });
-                return;
-            }
-
-            var webRtcTransport = transport as WebRtcTransport;
-            if (webRtcTransport == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" });
-                return;
-            }
-
-            var iceParameters = await webRtcTransport.RestartIceAsync();
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10013, Message = "Success", Data = iceParameters });
-        }
-
-        public async Task Produce(ProduceRequest produceRequest)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10016, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Transports.TryGetValue(produceRequest.TransportId, out var transport))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10016, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10016, Message = "Failure" };
             }
 
             // Add peerId into appData to later get the associated Peer during
@@ -301,7 +252,7 @@ namespace TubumuMeeting.Meeting.Server
                 // TODO: (alby)考虑不进行反序列化
                 var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
                 // Message: producerScore
-                SendMessageToCaller(new MeetingMessage
+                SendMessageByUserIdAsync(PeerRoom.Peer.PeerId, new MeetingMessage
                 {
                     Code = 200,
                     InternalCode = 20002,
@@ -316,14 +267,6 @@ namespace TubumuMeeting.Meeting.Server
                 _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.Id}\", videoOrientation:\"{videoOrientation}\"]");
             });
 
-            await SendMessageToCaller(new MeetingMessage
-            {
-                Code = 400,
-                InternalCode = 10015,
-                Message = "Failure",
-                Data = new ProduceResult { Id = producer.Id }
-            });
-
             // Optimization: Create a server-side Consumer for each Peer.
             foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom.Room.RoomId))
             {
@@ -336,6 +279,24 @@ namespace TubumuMeeting.Meeting.Server
             {
 
             }
+
+            return new MeetingMessage
+            {
+                Code = 400,
+                InternalCode = 10015,
+                Message = "Failure",
+                Data = new ProduceResult { Id = producer.Id }
+            };
+        }
+
+        public Task<MeetingMessage> Join(RtpCapabilities rtpCapabilities)
+        {
+            if (!_meetingManager.JoinPeer(UserId, rtpCapabilities))
+            {
+                return Task.FromResult(new MeetingMessage { Code = 400, InternalCode = 10008, Message = "Failure" });
+            }
+
+            return Task.FromResult(new MeetingMessage { Code = 200, InternalCode = 10007, Message = "Success" });
         }
 
         private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
@@ -390,7 +351,7 @@ namespace TubumuMeeting.Meeting.Server
                 // TODO: (alby)考虑不进行反序列化
                 var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
                 // Message: consumerScore
-                SendMessageToCaller(new MeetingMessage
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
                     InternalCode = 20003,
@@ -463,7 +424,7 @@ namespace TubumuMeeting.Meeting.Server
             try
             {
                 // Message: newConsumer
-                await SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
+                await SendMessageByUserIdAsync(producerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
                     InternalCode = 20008,
@@ -503,219 +464,168 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task CloseProducer(string producerId)
+        public Task<MeetingMessage> CloseProducer(string producerId)
         {
             if (PeerRoom == null)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10018, Message = "Failure" });
-                return;
+                return Task.FromResult(new MeetingMessage { Code = 400, InternalCode = 10018, Message = "Failure" });
             }
 
             if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10018, Message = "Failure" });
-                return;
+                return Task.FromResult(new MeetingMessage { Code = 400, InternalCode = 10018, Message = "Failure" });
             }
 
             producer.Close();
             PeerRoom.Peer.Producers.Remove(producerId);
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10017, Message = "Success" });
+            return Task.FromResult(new MeetingMessage { Code = 400, InternalCode = 10017, Message = "Success" });
         }
 
-        public async Task PauseProducer(string producerId)
+        public async Task<MeetingMessage> RestartIce(string transportId)
         {
             if (PeerRoom == null)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10020, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10020, Message = "Failure" });
-                return;
-            }
-
-            await producer.PauseAsync();
-
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10019, Message = "Success" });
-        }
-
-        public async Task ResumeProducer(string producerId)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10022, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10022, Message = "Failure" });
-                return;
-            }
-
-            await producer.ResumeAsync();
-
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10021, Message = "Success" });
-        }
-
-        public async Task PauseConsumer(string consumerId)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10024, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10024, Message = "Failure" });
-                return;
-            }
-
-            await consumer.PauseAsync();
-
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10023, Message = "Success" });
-        }
-
-        public async Task ResumeConsumer(string consumerId)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10026, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10026, Message = "Failure" });
-                return;
-            }
-
-            await consumer.ResumeAsync();
-
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10025, Message = "Success" });
-        }
-
-        public async Task SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10028, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10028, Message = "Failure" });
-                return;
-            }
-
-            await consumer.SetPreferredLayersAsync(setConsumerPreferedLayersRequest);
-
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10027, Message = "Success" });
-        }
-
-        public async Task SetConsumerPriority(SetConsumerPriorityRequest setConsumerPriorityRequest)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10030, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10030, Message = "Failure" });
-                return;
-            }
-
-            await consumer.SetPriorityAsync(setConsumerPriorityRequest.Priority);
-
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10029, Message = "Success" });
-        }
-
-        public async Task RequestConsumerKeyFrame(string consumerId)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10032, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10032, Message = "Failure" });
-                return;
-            }
-
-            await consumer.RequestKeyFrameAsync();
-
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10031, Message = "Success" });
-        }
-
-        public async Task GetTransportStats(string transportId)
-        {
-            if (PeerRoom == null)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10034, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" };
             }
 
             if (!PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10034, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" };
+            }
+
+            var webRtcTransport = transport as WebRtcTransport;
+            if (webRtcTransport == null)
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" };
+            }
+
+            var iceParameters = await webRtcTransport.RestartIceAsync();
+            return new MeetingMessage { Code = 200, InternalCode = 10013, Message = "Success", Data = iceParameters };
+        }
+
+        public async Task<MeetingMessage> PauseProducer(string producerId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10020, Message = "Failure" };
+            }
+
+            await producer.PauseAsync();
+
+            return new MeetingMessage { Code = 200, InternalCode = 10019, Message = "Success" };
+        }
+
+        public async Task<MeetingMessage> ResumeProducer(string producerId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10022, Message = "Failure" };
+            }
+
+            await producer.ResumeAsync();
+
+            return new MeetingMessage { Code = 200, InternalCode = 10021, Message = "Success" };
+        }
+
+        public async Task<MeetingMessage> PauseConsumer(string consumerId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10024, Message = "Failure" };
+            }
+
+            await consumer.PauseAsync();
+
+            return new MeetingMessage { Code = 200, InternalCode = 10023, Message = "Success" };
+        }
+
+        public async Task<MeetingMessage> ResumeConsumer(string consumerId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10026, Message = "Failure" };
+            }
+
+            await consumer.ResumeAsync();
+
+            return new MeetingMessage { Code = 200, InternalCode = 10025, Message = "Success" };
+        }
+
+        public async Task<MeetingMessage> SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10028, Message = "Failure" };
+            }
+
+            await consumer.SetPreferredLayersAsync(setConsumerPreferedLayersRequest);
+
+            return new MeetingMessage { Code = 200, InternalCode = 10027, Message = "Success" };
+        }
+
+        public async Task<MeetingMessage> SetConsumerPriority(SetConsumerPriorityRequest setConsumerPriorityRequest)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10030, Message = "Failure" };
+            }
+
+            await consumer.SetPriorityAsync(setConsumerPriorityRequest.Priority);
+
+            return new MeetingMessage { Code = 200, InternalCode = 10029, Message = "Success" };
+        }
+
+        public async Task<MeetingMessage> RequestConsumerKeyFrame(string consumerId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10032, Message = "Failure" };
+            }
+
+            await consumer.RequestKeyFrameAsync();
+
+            return new MeetingMessage { Code = 200, InternalCode = 10031, Message = "Success" };
+        }
+
+        public async Task<MeetingMessage> GetTransportStats(string transportId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 10034, Message = "Failure" };
             }
 
             var status = await transport.GetStatsAsync();
             // TODO: (alby)考虑不进行反序列化
             var data = JsonConvert.DeserializeObject<TransportStat>(status);
 
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10033, Message = "Success", Data = data });
+            return new MeetingMessage { Code = 200, InternalCode = 10033, Message = "Success", Data = data };
         }
 
-        public async Task GetProducerStats(string producerId)
+        public async Task<MeetingMessage> GetProducerStats(string producerId)
         {
-            if (PeerRoom == null)
+            if (PeerRoom == null || !PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10036, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10036, Message = "Failure" };
             }
-
-            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10036, Message = "Failure" });
-                return;
-            }
-
             var status = await producer.GetStatsAsync();
             // TODO: (alby)考虑不进行反序列化
             var data = JsonConvert.DeserializeObject<ProducerStat>(status);
 
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10035, Message = "Success", Data = data });
+            return new MeetingMessage { Code = 200, InternalCode = 10035, Message = "Success", Data = data };
         }
 
-        public async Task GetConsumerStats(string consumerId)
+        public async Task<MeetingMessage> GetConsumerStats(string consumerId)
         {
-            if (PeerRoom == null)
+            if (PeerRoom == null || !PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10038, Message = "Failure" });
-                return;
-            }
-
-            if (!PeerRoom.Peer.Consumers.TryGetValue(consumerId, out var consumer))
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10038, Message = "Failure" });
-                return;
+                return new MeetingMessage { Code = 400, InternalCode = 10038, Message = "Failure" };
             }
 
             var status = await consumer.GetStatsAsync();
             // TODO: (alby)考虑不进行反序列化
             var data = JsonConvert.DeserializeObject<ConsumerStat>(status);
 
-            await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10037, Message = "Success", Data = data });
+            return new MeetingMessage { Code = 200, InternalCode = 10037, Message = "Success", Data = data };
         }
     }
 }
