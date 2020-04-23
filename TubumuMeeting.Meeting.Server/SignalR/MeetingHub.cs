@@ -24,11 +24,16 @@ namespace TubumuMeeting.Meeting.Server
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public object? Data { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, object>? UserData { get; set; }
     }
 
     public interface IPeer
     {
         Task ReceiveMessage(MeetingMessage message);
+
+        Task ReceiveNotification(MeetingMessage message);
     }
 
     [Authorize]
@@ -93,33 +98,15 @@ namespace TubumuMeeting.Meeting.Server
 
     public partial class MeetingHub
     {
-        public Task Join(RtpCapabilities rtpCapabilities)
-        {
-            if (!_meetingManager.JoinPeer(UserId, rtpCapabilities))
-            {
-                return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10004, Message = "Failure" });
-            }
-
-            return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10003, Message = "Success" });
-        }
-
         public async Task EnterRoom(Guid roomId)
         {
-            var peer = _meetingManager.Peers[UserId];
-            if (!peer.Joined)
+            if (!await _meetingManager.PeerEnterRoomAsync(UserId, roomId))
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10006, Message = "Failure" });
+                SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10004, Message = "Failure" }).ContinueWithOnFaultedHandleLog(_logger);
                 return;
             }
 
-            var enterRessult = await _meetingManager.PeerEnterRoomAsync(UserId, roomId);
-            if (enterRessult)
-            {
-                await SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10005, Message = "Success" });
-                return;
-            }
-
-            await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10006, Message = "Failure" });
+            SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10003, Message = "Success" }).ContinueWithOnFaultedHandleLog(_logger);
 
             foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom!.Room.RoomId))
             {
@@ -132,7 +119,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     // Notify the new Peer to all other Peers.
                     // Message: newPeer
-                    SendMessageToCaller(new MeetingMessage
+                    SendMessageByUserIdAsync(otherPeer.PeerId, new MeetingMessage
                     {
                         Code = 200,
                         InternalCode = 20001,
@@ -143,7 +130,6 @@ namespace TubumuMeeting.Meeting.Server
                             PeerRoom.Peer.DisplayName,
                         }
                     }).ContinueWithOnFaultedHandleLog(_logger);
-
                 }
             }
         }
@@ -153,10 +139,20 @@ namespace TubumuMeeting.Meeting.Server
             if (PeerRoom != null)
             {
                 var rtpCapabilities = PeerRoom.Room.Router.RtpCapabilities;
-                return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10007, Message = "Success", Data = rtpCapabilities });
+                return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10005, Message = "Success", Data = rtpCapabilities });
             }
 
-            return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10008, Message = "Failure" });
+            return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10006, Message = "Failure" });
+        }
+
+        public Task Join(RtpCapabilities rtpCapabilities)
+        {
+            if (!_meetingManager.JoinPeer(UserId, rtpCapabilities))
+            {
+                return SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10008, Message = "Failure" });
+            }
+
+            return SendMessageToCaller(new MeetingMessage { Code = 200, InternalCode = 10007, Message = "Success" });
         }
 
         public async Task CreateWebRtcTransport(CreateWebRtcTransportParameters createWebRtcTransportParameters)
@@ -164,7 +160,7 @@ namespace TubumuMeeting.Meeting.Server
             var peerRoom = _meetingManager.GetPeerRoomWithPeerId(UserId);
             if (peerRoom == null)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, Message = "Failure" });
+                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, UserData = createWebRtcTransportParameters.UserData, Message = "Failure" });
                 return;
             }
 
@@ -189,7 +185,7 @@ namespace TubumuMeeting.Meeting.Server
             var transport = await peerRoom.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
             if (transport == null)
             {
-                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, Message = "Failure" });
+                await SendMessageToCaller(new MeetingMessage { Code = 400, InternalCode = 10010, UserData = createWebRtcTransportParameters.UserData, Message = "Failure" });
                 return;
             }
 
@@ -204,7 +200,8 @@ namespace TubumuMeeting.Meeting.Server
                     IceParameters = transport.IceParameters,
                     IceCandidates = transport.IceCandidates,
                     DtlsParameters = transport.DtlsParameters,
-                }
+                },
+                UserData = createWebRtcTransportParameters.UserData,
             });
 
             transport.On("dtlsstatechange", value =>
@@ -415,7 +412,7 @@ namespace TubumuMeeting.Meeting.Server
                 consumerPeer.Consumers.Remove(consumer.Id);
 
                 // Message: consumerClosed
-                SendMessageToCaller(new MeetingMessage
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
                     InternalCode = 20004,
@@ -427,7 +424,7 @@ namespace TubumuMeeting.Meeting.Server
             consumer.On("producerpause", _ =>
             {
                 // Message: consumerPaused
-                SendMessageToCaller(new MeetingMessage
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
                     InternalCode = 20005,
@@ -439,7 +436,7 @@ namespace TubumuMeeting.Meeting.Server
             consumer.On("producerresume", _ =>
             {
                 // Message: consumerResumed
-                SendMessageToCaller(new MeetingMessage
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
                     InternalCode = 20006,
@@ -453,7 +450,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 var data = JsonConvert.DeserializeObject<ConsumerLayers>(layers!.ToString());
                 // Message: consumerLayersChanged
-                SendMessageToCaller(new MeetingMessage
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
                 {
                     Code = 200,
                     InternalCode = 20007,

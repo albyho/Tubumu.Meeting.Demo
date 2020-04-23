@@ -82,15 +82,11 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool HandlePeer(int peerId, string name)
         {
+            ClosePeer(peerId);
+
             var peer = new Peer(peerId, name);
             lock (_peerLocker)
             {
-                if (Peers.ContainsKey(peer.PeerId))
-                {
-                    _logger.LogError($"HandlePeer() | Peer[{peerId}] is exists.");
-                    return false;
-                }
-
                 Peers[peerId] = peer;
             }
 

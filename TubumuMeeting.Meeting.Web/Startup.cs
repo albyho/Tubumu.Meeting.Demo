@@ -50,6 +50,12 @@ namespace TubumuMeeting.Web
             });
             services.AddMemoryCache();
 
+            // Cors
+            services.AddCors(options => options.AddPolicy("DefaultPolicy",
+                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
+                //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
+            );
+
             // Authentication
             services.AddSingleton<ITokenService, TokenService>();
             var tokenValidationSettings = Configuration.GetSection("TokenValidationSettings").Get<TokenValidationSettings>();
@@ -148,6 +154,8 @@ namespace TubumuMeeting.Web
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseCors("DefaultPolicy");
 
             app.UseEndpoints(endpoints =>
             {
