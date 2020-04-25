@@ -30,6 +30,8 @@ namespace TubumuMeeting.Meeting.Server
     {
         Task PeerHandled(MeetingMessage message);
 
+        Task NewConsumer(MeetingMessage message);
+
         Task ReceiveMessage(MeetingMessage message);
 
         Task ReceiveNotification(MeetingMessage message);
@@ -211,18 +213,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            if (PeerRoom == null)
-            {
-                return new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" };
-            }
-
-            if (!PeerRoom.Peer.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
+            if (PeerRoom == null || !PeerRoom.Peer.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
             {
                 return new MeetingMessage { Code = 400, InternalCode = 10012, Message = "Failure" };
             }
 
             await transport.ConnectAsync(connectWebRtcTransportRequest.DtlsParameters);
-            return new MeetingMessage { Code = 400, InternalCode = 10011, Message = "Success" };
+            return new MeetingMessage { Code = 200, InternalCode = 10011, Message = "Success" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
@@ -282,9 +279,9 @@ namespace TubumuMeeting.Meeting.Server
 
             return new MeetingMessage
             {
-                Code = 400,
+                Code = 200,
                 InternalCode = 10015,
-                Message = "Failure",
+                Message = "Success",
                 Data = new ProduceResult { Id = producer.Id }
             };
         }
@@ -297,171 +294,6 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             return Task.FromResult(new MeetingMessage { Code = 200, InternalCode = 10007, Message = "Success" });
-        }
-
-        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
-        {
-            _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.Id}\"]");
-
-            // Optimization:
-            // - Create the server-side Consumer. If video, do it paused.
-            // - Tell its Peer about it and wait for its response.
-            // - Upon receipt of the response, resume the server-side Consumer.
-            // - If video, this will mean a single key frame requested by the
-            //   server-side Consumer (when resuming it).
-
-            // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
-            if (consumerPeer.RtpCapabilities == null || !PeerRoom!.Room.Router.CanConsume(producer.Id, consumerPeer.RtpCapabilities))
-            {
-                return;
-            }
-
-            // Must take the Transport the remote Peer is using for consuming.
-            var transport = consumerPeer.GetConsumerTransport();
-            // This should not happen.
-            if (transport == null)
-            {
-                _logger.LogWarning("CreateConsumer() | Transport for consuming not found");
-                return;
-            }
-
-            // Create the Consumer in paused mode.
-            Consumer consumer;
-
-            try
-            {
-                consumer = await transport.ConsumeAsync(new ConsumerOptions
-                {
-                    ProducerId = producer.Id,
-                    RtpCapabilities = consumerPeer.RtpCapabilities,
-                    Paused = producer.Kind == MediaKind.Video
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
-                return;
-            }
-
-            // Store the Consumer into the consumerPeer data Object.
-            consumerPeer.Consumers[consumer.Id] = consumer;
-
-            consumer.On("score", (score) =>
-            {
-                // TODO: (alby)考虑不进行反序列化
-                var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
-                // Message: consumerScore
-                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = 20003,
-                    Message = "Success",
-                    Data = new { ConsumerId = consumer.Id, Score = data }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            });
-
-            // Set Consumer events.
-            consumer.On("transportclose", _ =>
-            {
-                // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.Id);
-            });
-
-            consumer.On("producerclose", _ =>
-            {
-                // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.Id);
-
-                // Message: consumerClosed
-                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = 20004,
-                    Message = "Success",
-                    Data = new { ConsumerId = consumer.Id }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            });
-
-            consumer.On("producerpause", _ =>
-            {
-                // Message: consumerPaused
-                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = 20005,
-                    Message = "Success",
-                    Data = new { ConsumerId = consumer.Id }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            });
-
-            consumer.On("producerresume", _ =>
-            {
-                // Message: consumerResumed
-                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = 20006,
-                    Message = "Success",
-                    Data = new { ConsumerId = consumer.Id }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            });
-
-            consumer.On("layerschange", layers =>
-            {
-
-                var data = JsonConvert.DeserializeObject<ConsumerLayers>(layers!.ToString());
-                // Message: consumerLayersChanged
-                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = 20007,
-                    Message = "Success",
-                    Data = new { ConsumerId = consumer.Id, SpatialLayer = data != null ? (int?)data.SpatialLayer : null, TemporalLayer = data != null ? (int?)data.TemporalLayer : null }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            });
-
-            // Send a request to the remote Peer with Consumer parameters.
-            try
-            {
-                // Message: newConsumer
-                await SendMessageByUserIdAsync(producerPeer.PeerId, new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = 20008,
-                    Message = "Success",
-                    Data = new
-                    {
-                        PeerId = consumer.Id,
-                        Kind = consumer.Kind,
-                        ProducerId = producer.Id,
-                        RtpParameters = consumer.RtpParameters,
-                        Type = consumer.Type,
-                        AppData = producer.AppData,
-                        ProducerPaused = consumer.ProducerPaused,
-                    }
-                });
-
-                // Now that we got the positive response from the remote Peer and, if
-                // video, resume the Consumer to ask for an efficient key frame.
-                await consumer.ResumeAsync();
-
-                // Message: consumerScore
-                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = 20009,
-                    Message = "Success",
-                    Data = new
-                    {
-                        ConsumerId = consumer.Id,
-                        Score = consumer.Score,
-                    }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
-            }
         }
 
         public Task<MeetingMessage> CloseProducer(string producerId)
@@ -478,17 +310,12 @@ namespace TubumuMeeting.Meeting.Server
 
             producer.Close();
             PeerRoom.Peer.Producers.Remove(producerId);
-            return Task.FromResult(new MeetingMessage { Code = 400, InternalCode = 10017, Message = "Success" });
+            return Task.FromResult(new MeetingMessage { Code = 200, InternalCode = 10017, Message = "Success" });
         }
 
         public async Task<MeetingMessage> RestartIce(string transportId)
         {
-            if (PeerRoom == null)
-            {
-                return new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" };
-            }
-
-            if (!PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
+            if (PeerRoom == null || !PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
             {
                 return new MeetingMessage { Code = 400, InternalCode = 10014, Message = "Failure" };
             }
@@ -627,5 +454,189 @@ namespace TubumuMeeting.Meeting.Server
 
             return new MeetingMessage { Code = 200, InternalCode = 10037, Message = "Success", Data = data };
         }
+
+        #region CreateConsumer
+
+        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
+        {
+            _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.Id}\"]");
+
+            // Optimization:
+            // - Create the server-side Consumer. If video, do it paused.
+            // - Tell its Peer about it and wait for its response.
+            // - Upon receipt of the response, resume the server-side Consumer.
+            // - If video, this will mean a single key frame requested by the
+            //   server-side Consumer (when resuming it).
+
+            // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
+            if (consumerPeer.RtpCapabilities == null || !PeerRoom!.Room.Router.CanConsume(producer.Id, consumerPeer.RtpCapabilities))
+            {
+                return;
+            }
+
+            // Must take the Transport the remote Peer is using for consuming.
+            var transport = consumerPeer.GetConsumerTransport();
+            // This should not happen.
+            if (transport == null)
+            {
+                _logger.LogWarning("CreateConsumer() | Transport for consuming not found");
+                return;
+            }
+
+            // Create the Consumer in paused mode.
+            Consumer consumer;
+
+            try
+            {
+                consumer = await transport.ConsumeAsync(new ConsumerOptions
+                {
+                    ProducerId = producer.Id,
+                    RtpCapabilities = consumerPeer.RtpCapabilities,
+                    Paused = producer.Kind == MediaKind.Video
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
+                return;
+            }
+
+            // Store the Consumer into the consumerPeer data Object.
+            consumerPeer.Consumers[consumer.Id] = consumer;
+
+            consumer.On("score", (score) =>
+            {
+                // TODO: (alby)考虑不进行反序列化
+                var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
+                // Message: consumerScore
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20003,
+                    Message = "Success",
+                    Data = new { ConsumerId = consumer.Id, Score = data }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+            });
+
+            // Set Consumer events.
+            consumer.On("transportclose", _ =>
+            {
+                // Remove from its map.
+                consumerPeer.Consumers.Remove(consumer.Id);
+            });
+
+            consumer.On("producerclose", _ =>
+            {
+                // Remove from its map.
+                consumerPeer.Consumers.Remove(consumer.Id);
+
+                // Message: consumerClosed
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20004,
+                    Message = "Success",
+                    Data = new { ConsumerId = consumer.Id }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+            });
+
+            consumer.On("producerpause", _ =>
+            {
+                // Message: consumerPaused
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20005,
+                    Message = "Success",
+                    Data = new { ConsumerId = consumer.Id }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+            });
+
+            consumer.On("producerresume", _ =>
+            {
+                // Message: consumerResumed
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20006,
+                    Message = "Success",
+                    Data = new { ConsumerId = consumer.Id }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+            });
+
+            consumer.On("layerschange", layers =>
+            {
+
+                var data = JsonConvert.DeserializeObject<ConsumerLayers>(layers!.ToString());
+                // Message: consumerLayersChanged
+                SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20007,
+                    Message = "Success",
+                    Data = new { ConsumerId = consumer.Id, SpatialLayer = data != null ? (int?)data.SpatialLayer : null, TemporalLayer = data != null ? (int?)data.TemporalLayer : null }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+            });
+
+            // Send a request to the remote Peer with Consumer parameters.
+            try
+            {
+                // Message: newConsumer
+                await Clients.Caller.NewConsumer(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = 20008,
+                    Message = "Success",
+                    Data = new
+                    {
+                        PeerId = consumer.Id,
+                        Kind = consumer.Kind,
+                        ProducerId = producer.Id,
+                        Id = consumer.Id,
+                        RtpParameters = consumer.RtpParameters,
+                        Type = consumer.Type,
+                        AppData = producer.AppData,
+                        ProducerPaused = consumer.ProducerPaused,
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
+            }
+        }
+
+        public async Task<MeetingMessage> NewConsumerReady(NewConsumerReadyRequest newConsumerReadyRequest)
+        {
+            if (PeerRoom == null || 
+                !_meetingManager.Peers.TryGetValue(newConsumerReadyRequest.PeerId, out var consumerPeer) ||
+                consumerPeer.Closed ||
+                !consumerPeer.Consumers.TryGetValue(newConsumerReadyRequest.ConsumerId, out var consumer) ||
+                consumer.Closed)
+            {
+                return new MeetingMessage { Code = 400, InternalCode = 100040, Message = "Failure" };
+            }
+
+            // Now that we got the positive response from the remote Peer and, if
+            // video, resume the Consumer to ask for an efficient key frame.
+            await consumer.ResumeAsync();
+
+            // Message: consumerScore
+            SendMessageByUserIdAsync(consumerPeer.PeerId, new MeetingMessage
+            {
+                Code = 200,
+                InternalCode = 20009,
+                Message = "Success",
+                Data = new
+                {
+                    ConsumerId = consumer.Id,
+                    Score = consumer.Score,
+                }
+            }).ContinueWithOnFaultedHandleLog(_logger);
+
+            return new MeetingMessage { Code = 200, InternalCode = 10039, Message = "Success" };
+        }
+
+        #endregion
     }
 }

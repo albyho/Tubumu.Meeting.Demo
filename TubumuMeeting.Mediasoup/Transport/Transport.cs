@@ -187,7 +187,7 @@ namespace TubumuMeeting.Mediasoup
                 producer.TransportClosed();
 
                 // Must tell the Router.
-                Emit("@producerclose");
+                Emit("@producerclose", producer);
             }
             Producers.Clear();
 
@@ -378,7 +378,7 @@ namespace TubumuMeeting.Mediasoup
             var @internal = new
             {
                 Internal.RouterId,
-                TransportId = Internal.TransportId,
+                Internal.TransportId,
                 ProducerId = producerOptions.Id.IsNullOrWhiteSpace() ? Guid.NewGuid().ToString() : producerOptions.Id!,
             };
             var reqData = new
@@ -417,13 +417,13 @@ namespace TubumuMeeting.Mediasoup
             producer.On("@close", _ =>
             {
                 Producers.Remove(producer.Id);
-                Emit("@producerclose");
+                Emit("@producerclose", producer);
             });
 
-            Emit("@newproducer");
+            Emit("@newproducer", producer);
 
             // Emit observer event.
-            Observer.Emit("newproducer");
+            Observer.Emit("newproducer", producer);
 
             return producer;
         }
@@ -582,7 +582,7 @@ namespace TubumuMeeting.Mediasoup
             dataProducer.On("@close", _ =>
             {
                 DataProducers.Remove(dataProducer.Id);
-                Emit("@dataproducerclose");
+                Emit("@dataproducerclose", dataProducer);
             });
 
             Emit("@newdataproducer", dataProducer);

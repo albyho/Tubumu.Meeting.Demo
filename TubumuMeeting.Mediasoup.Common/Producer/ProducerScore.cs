@@ -5,7 +5,7 @@
         /// <summary>
         /// SSRC of the RTP stream.
         /// </summary>
-        public int Ssrc { get; set; }
+        public long Ssrc { get; set; }
 
         /// <summary>
         /// RID of the RTP stream.

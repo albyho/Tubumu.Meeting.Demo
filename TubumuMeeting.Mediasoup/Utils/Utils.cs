@@ -6,7 +6,7 @@ namespace TubumuMeeting.Mediasoup
     {
         private static Random _random = new Random();
 
-        public static int GenerateRandomNumber()
+        public static long GenerateRandomNumber()
         {
             return _random.Next(100000000, 999999999);
         }
