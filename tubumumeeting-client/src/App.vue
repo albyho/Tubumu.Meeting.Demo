@@ -12,6 +12,7 @@
 
 <script>
 import Logger from "./lib/Logger";
+import querystring from 'querystring';
 import * as mediasoupClient from "mediasoup-client";
 import * as signalR from "@microsoft/signalr";
 
@@ -41,11 +42,16 @@ export default {
   methods: {
     run() {
       try {
-        const accessToken =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMjkiLCJnIjoi5Yy76ZmiIiwibmJmIjoxNTg0MzQ5MDQ2LCJleHAiOjE1ODY5NDEwNDYsImlzcyI6Imlzc3VlciIsImF1ZCI6ImF1ZGllbmNlIn0._bGG1SOF9WqY8TIErRkxsh9_l_mFB_5JcGrKO1GyQ0E";
+        const {peerId} = querystring.parse(location.search.replace('?',''))
+        const accessTokens = [
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMjkiLCJnIjoi5Yy76ZmiIiwibmJmIjoxNTg0MzQ5MDQ2LCJleHAiOjE1ODY5NDEwNDYsImlzcyI6Imlzc3VlciIsImF1ZCI6ImF1ZGllbmNlIn0._bGG1SOF9WqY8TIErRkxsh9_l_mFB_5JcGrKO1GyQ0E",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTg3IiwiZyI6IuWMu-mZoiIsIm5iZiI6MTU4NzcxNzU2NSwiZXhwIjoxNTkwMzA5NTY1LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.qjvvJB8EHaerbeKnrmfnN3BJ5jh4R_pG99oS1I7ZAvw"
+        ];
+        
+        const host = "https://192.168.1.124:5001"
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
-            `http://localhost:5000/hubs/meetingHub?access_token=${accessToken}`
+            `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
           )
           .withAutomaticReconnect({
             nextRetryDelayInMilliseconds: retryContext => {
@@ -76,7 +82,7 @@ export default {
       }
     },
     async processPeerHandled(data) {
-      if (data.code !== 200 || data.internalCode !== 10001) {
+      if (data.code !== 200) {
         logger.error(data.message);
         return;
       }
@@ -99,9 +105,10 @@ export default {
       }
 
       // GetRouterRtpCapabilities 成功
+      const routerRtpCapabilities = result.data;
       this.device = new mediasoupClient.Device();
-      const rtpCapabilities = this.device.load({
-        routerRtpCapabilities: result.data
+      await this.device.load({
+        routerRtpCapabilities
       });
 
       result = await this.connection.invoke("CreateWebRtcTransport", {
@@ -158,21 +165,22 @@ export default {
           }
         }
       );
+
       result = await this.connection.invoke("CreateWebRtcTransport", {
         forceTcp: false,
         producing: false,
         consuming: true
       });
+
       // CreateWebRtcTransport 成功
       this.recvTransport = this.device.createRecvTransport({
-        id,
-        iceParameters,
-        iceCandidates,
-        dtlsParameters
+        id: result.data.id,
+        iceParameters: result.data.iceParameters,
+        iceCandidates: result.data.iceCandidates,
+        dtlsParameters: result.data.dtlsParameters
         // 还可添加 iceServers 等参数
       });
 
-      // CreateWebRtcTransport 成功
       this.recvTransport.on(
         "connect",
         ({ dtlsParameters }, callback, errback) => {
@@ -186,7 +194,7 @@ export default {
         }
       );
 
-      result = await this.connection.invoke("Join", rtpCapabilities);
+      result = await this.connection.invoke("Join", routerRtpCapabilities);
       if (result.code !== 200) {
         logger.error("processMessage() | Join failure.");
         return;
@@ -194,7 +202,7 @@ export default {
 
       // Join 成功
       if (this.device.canProduce("audio")) {
-        this.enableMic();
+        //this.enableMic();
       }
 
       if (this.device.canProduce("video")) {
@@ -238,16 +246,17 @@ export default {
         spatialLayers,
         // eslint-disable-next-line no-unused-vars
         temporalLayers
-      } = this.mediasoupClient.parseScalabilityMode(
+      } = mediasoupClient.parseScalabilityMode(
         consumer.rtpParameters.encodings[0].scalabilityMode
       );
 
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
       const result = await this.connection.invoke("NewConsumerReady", {
-        peerId,
-        id
+        peerId: data.data.consumerPeerId,
+        consumerId: id
       });
+
       if (result.code !== 200) {
         logger.error("processNewConsumer() | NewConsumerReady.");
         return;
@@ -328,6 +337,7 @@ export default {
 
         this.micProducer.volume = 0;
       } catch (error) {
+        console.log("enableMic() failed:%o", error);
         logger.error("enableMic() failed:%o", error);
         if (track) track.stop();
       }
@@ -339,7 +349,7 @@ export default {
       this.micProducer.close();
 
       try {
-        await this.sendRequest("closeProducer", {
+        await this.connection.invoke("closeProducer", {
           producerId: this.micProducer.id
         });
       } catch (error) {
@@ -417,7 +427,7 @@ export default {
       this.webcamProducer.close();
 
       try {
-        await this.sendRequest("closeProducer", {
+        await this.connection.invoke("closeProducer", {
           producerId: this.webcamProducer.id
         });
       } catch (error) {
@@ -523,4 +533,9 @@ body {
 .el-main {
   line-height: 160px;
 }
+
+#localVideo {
+  display: none;
+}
+
 </style>
