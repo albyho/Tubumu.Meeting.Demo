@@ -73,31 +73,6 @@ namespace TubumuMeeting.Meeting.Server
         private PeerRoom? PeerRoom => _meetingManager.GetPeerRoomWithPeerId(UserId);
     }
 
-    //public partial class MeetingHub
-    //{
-    //    public Task SendMessageByUserIdAsync(int userId, MeetingMessage message)
-    //    {
-    //        var client = Clients.User(userId.ToString());
-    //        return client.ReceiveMessage(message);
-    //    }
-
-    //    public Task SendMessageAsync(string connectionId, MeetingMessage message)
-    //    {
-    //        var client = Clients.Client(connectionId);
-    //        return client.ReceiveMessage(message);
-    //    }
-
-    //    public Task SendMessageToCaller(MeetingMessage message)
-    //    {
-    //        return Clients.Caller.ReceiveMessage(message);
-    //    }
-
-    //    public Task BroadcastMessageAsync(MeetingMessage message)
-    //    {
-    //        return Clients.All.ReceiveMessage(message);
-    //    }
-    //}
-
     public partial class MeetingHub
     {
         public async Task<MeetingMessage> EnterRoom(Guid roomId)
@@ -616,7 +591,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             _logger.LogDebug($"NewConsumerReady() | [peerId:\"{newConsumerReadyRequest.PeerId}\", consumerId:\"{newConsumerReadyRequest.ConsumerId}\"]");
 
-            if (PeerRoom == null || 
+            if (PeerRoom == null ||
                 !_meetingManager.Peers.TryGetValue(newConsumerReadyRequest.PeerId, out var consumerPeer) ||
                 consumerPeer.Closed ||
                 !consumerPeer.Consumers.TryGetValue(newConsumerReadyRequest.ConsumerId, out var consumer) ||
