@@ -361,7 +361,7 @@ export default {
     async enableWebcam() {
       if (this.webcamProducer) return;
 
-      if (!this.device.canProduce("video")) {
+      if (this.device && !this.device.canProduce("video")) {
         logger.error("enableWebcam() | cannot produce video");
 
         return;

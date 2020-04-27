@@ -141,7 +141,7 @@ namespace TubumuMeeting.Web
                 configure.WorkerPath = Path.Combine((Environment.OSVersion.Platform == PlatformID.Unix) || (System.Environment.OSVersion.Platform == PlatformID.MacOSX) ?
                     @"/Users/alby/Developer/OpenSource/Meeting/Lab/w" :
                     @"C:\Developer\OpenSource\Meeting\worker",
-                    "Release", "mediasoup-worker");
+                    "Debug", "mediasoup-worker");
             });
         }
 
