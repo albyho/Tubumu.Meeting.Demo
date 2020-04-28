@@ -15,7 +15,7 @@ namespace TubumuMeeting.Netstrings
             return String.Format("{0}:{1},", value.Length, value);
         }
 
-        private TextWriter writer;
+        private readonly TextWriter writer;
 
         public NetstringWriter(TextWriter writer)
         {

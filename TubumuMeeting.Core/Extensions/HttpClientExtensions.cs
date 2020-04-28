@@ -9,7 +9,7 @@ namespace Tubumu.Core.Extensions
 {
     public static class HttpClientExtensions
     {
-        public async static Task<T> GetObjectAsync<T>(this HttpClient client, Uri requestUri)
+        public static async Task<T> GetObjectAsync<T>(this HttpClient client, Uri requestUri)
         {
             var json = await client.GetStringAsync(requestUri);
             return JsonConvert.DeserializeObject<T>(json);
@@ -20,7 +20,7 @@ namespace Tubumu.Core.Extensions
             return client.GetObjectAsync<T>(new Uri(requestUri));
         }
 
-        public async static Task<T> PostObjectAsync<T>(this HttpClient client, Uri requestUri, HttpContent content, CancellationToken cancellationToken)
+        public static async Task<T> PostObjectAsync<T>(this HttpClient client, Uri requestUri, HttpContent content, CancellationToken cancellationToken)
         {
             var message = await client.PostAsync(requestUri, content, cancellationToken);
             message.EnsureSuccessStatusCode();

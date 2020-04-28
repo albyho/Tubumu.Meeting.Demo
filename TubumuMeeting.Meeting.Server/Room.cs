@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
@@ -12,8 +11,6 @@ namespace TubumuMeeting.Meeting.Server
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly ILogger<Room> _logger;
-
-        private readonly object _locker = new object();
 
         public Guid RoomId { get; }
 

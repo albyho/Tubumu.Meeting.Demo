@@ -69,8 +69,7 @@ namespace Tubumu.Core.FastLambda
         {
             if (x == y) return 0;
 
-            int result;
-            if (CompareNull(x, y, out result)) return result;
+            if (CompareNull(x, y, out int result)) return result;
 
             result = x.GetHashCode() - y.GetHashCode();
             if (result != 0) return result;
@@ -95,8 +94,7 @@ namespace Tubumu.Core.FastLambda
         /// <returns></returns>
         public virtual int Compare(Expression x, Expression y)
         {
-            int result;
-            if (CompareNull(x, y, out result)) return result;
+            if (CompareNull(x, y, out int result)) return result;
 
             result = CompareType(x.GetType(), y.GetType());
             if (result != 0) return result;
@@ -301,8 +299,7 @@ namespace Tubumu.Core.FastLambda
         /// <returns></returns>
         protected virtual int CompareNew(NewExpression x, NewExpression y)
         {
-            int result;
-            if (CompareNull(x.Members, y.Members, out result)) return result;
+            if (CompareNull(x.Members, y.Members, out int result)) return result;
 
             result = CompareMemberInfo(x.Constructor, y.Constructor);
             if (result != 0) return result;

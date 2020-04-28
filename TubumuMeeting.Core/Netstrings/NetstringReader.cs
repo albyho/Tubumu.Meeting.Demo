@@ -9,7 +9,7 @@ namespace TubumuMeeting.Netstrings
 {
     public class NetstringReader : IEnumerator<string>, IEnumerable<string>, IDisposable
     {
-        static readonly Regex SizePattern = new Regex("^(?<size>[1-9]\\d*)(?<terminator>:)?", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex SizePattern = new Regex("^(?<size>[1-9]\\d*)(?<terminator>:)?", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// Decodes a single netstring and returns its payload. For streams of netstrings use the netstring object instead of multiple calls to this method.
@@ -74,9 +74,9 @@ namespace TubumuMeeting.Netstrings
         }
 
         private int? size;
-        private char[] buffer = new char[2048];
-        private TextReader reader;
-        private StringBuilder builder;
+        private readonly char[] buffer = new char[2048];
+        private readonly TextReader reader;
+        private readonly StringBuilder builder;
         private string current;
 
         /// <summary>

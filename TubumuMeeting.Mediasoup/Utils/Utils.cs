@@ -4,7 +4,7 @@ namespace TubumuMeeting.Mediasoup
 {
     public static class Utils
     {
-        private static Random _random = new Random();
+        private static readonly Random _random = new Random();
 
         public static long GenerateRandomNumber()
         {

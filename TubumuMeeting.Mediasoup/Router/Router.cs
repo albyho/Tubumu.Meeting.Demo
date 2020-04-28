@@ -684,7 +684,7 @@ namespace TubumuMeeting.Mediasoup
 
             await _channel.RequestAsync(MethodId.ROUTER_CREATE_AUDIO_LEVEL_OBSERVER, @internal, reqData);
 
-            var audioLevelObserver = new AudioLevelObserver(_loggerFactory, 
+            var audioLevelObserver = new AudioLevelObserver(_loggerFactory,
                 new RtpObserverInternalData(@internal.RouterId, @internal.RtpObserverId),
                 _channel,
                 AppData,

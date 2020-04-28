@@ -5,7 +5,7 @@ namespace Tubumu.Core.Extensions
     public static class NumericExtensions
     {
         private const double FileSizeMod = 1024.0;
-        private static string[] FileSizeUnits = new[] { "", "K", "M", "G", "T", "P" };
+        private static readonly string[] FileSizeUnits = new[] { "", "K", "M", "G", "T", "P" };
 
         public static string ToFloatFileSize(this int size)
         {

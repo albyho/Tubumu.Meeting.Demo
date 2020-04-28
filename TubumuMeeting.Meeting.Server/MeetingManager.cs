@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Nito.AsyncEx;
 using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
@@ -145,7 +144,7 @@ namespace TubumuMeeting.Meeting.Server
 
             await EnsureRouterAsync(roomId);
 
-            lock(_peerLocker)
+            lock (_peerLocker)
             {
                 if (!Peers.TryGetValue(peerId, out Peer peer))
                 {

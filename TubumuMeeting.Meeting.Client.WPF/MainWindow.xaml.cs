@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using Microsoft.AspNetCore.SignalR.Client;
 using TubumuMeeting.Mediasoup;
 
@@ -10,8 +8,8 @@ namespace TubumuMeeting.Meeting.Client.WPF
 {
     public partial class MainWindow : Window
     {
-        private HubConnection connection;
-        private string transportId;
+        private readonly HubConnection connection;
+        private readonly string transportId;
 
         public MainWindow()
         {

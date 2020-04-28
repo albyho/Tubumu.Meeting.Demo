@@ -70,7 +70,7 @@ namespace TubumuMeeting.Mediasoup
             ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _logger = loggerFactory.CreateLogger<PlainTransport>();
-            
+
             // Data
             RtcpMux = rtcpMux;
             Comedia = comedia;

@@ -187,7 +187,7 @@ namespace Tubumu.Core.Utilities.Cryptography
         }
     }
 
-    class ZeroStream : Stream
+    internal class ZeroStream : Stream
     {
         public override int Read(byte[] buffer, int offset, int count)
         {
