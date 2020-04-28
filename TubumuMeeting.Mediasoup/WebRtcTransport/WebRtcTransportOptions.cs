@@ -33,7 +33,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Initial available outgoing bitrate (in bps). Default 600000.
         /// </summary>
-        public int? InitialAvailableOutgoingBitrate { get; set; } = 6000000;
+        public int? InitialAvailableOutgoingBitrate { get; set; } = 600000;
 
         /// <summary>
         /// Create a SCTP association. Default false.
@@ -49,7 +49,7 @@ namespace TubumuMeeting.Mediasoup
         /// Maximum size of data that can be passed to DataProducer's send() method.
         /// Default 262144.
         /// </summary>
-        public int? MaxSctpMessageSize = 262144;
+        public int? MaxSctpMessageSize { get; set; } = 262144;
 
         /// <summary>
         /// Custom application data.

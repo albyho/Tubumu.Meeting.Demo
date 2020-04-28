@@ -240,9 +240,9 @@ namespace TubumuMeeting.Meeting.Server
             };
         }
 
-        public Task<MeetingMessage> Join(RtpCapabilities rtpCapabilities)
+        public Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!_meetingManager.JoinPeer(UserId, rtpCapabilities))
+            if (!_meetingManager.JoinPeer(UserId, joinRequest.RtpCapabilities))
             {
                 return Task.FromResult(new MeetingMessage { Code = 400, Message = "Join 失败" });
             }
