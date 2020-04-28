@@ -18,7 +18,7 @@
     "TubumuMeeting.Web": {
       "commandName": "Project",
       "launchBrowser": false,
-      "applicationUrl": "https://192.168.1.124:5001;http://192.168.1.124:5000",
+      "applicationUrl": "https://192.168.18.233:5001;http://192.168.18.233:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

@@ -109,6 +109,9 @@ namespace TubumuMeeting.Meeting.Server
             {
                 ListenIps = webRtcTransportSettings.ListenIps,
                 InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate,
+                MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize,
+                EnableSctp = createWebRtcTransportParameters.SctpCapabilities != null,
+                NumSctpStreams = createWebRtcTransportParameters.SctpCapabilities?.NumStreams,
                 AppData = new Dictionary<string, object>
                 {
                     { "Consuming", createWebRtcTransportParameters.Consuming },

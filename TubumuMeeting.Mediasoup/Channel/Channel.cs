@@ -243,7 +243,7 @@ namespace TubumuMeeting.Mediasoup
                             // 68 = 'D' (a debug log).
                             case 'D':
                                 if (!nsPayload.Contains("(trace)"))
-                                    _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
+                                    _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
 
                             // 87 = 'W' (a warn log).

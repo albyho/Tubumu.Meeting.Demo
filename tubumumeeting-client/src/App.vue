@@ -12,7 +12,7 @@
 
 <script>
 import Logger from "./lib/Logger";
-import querystring from 'querystring';
+import querystring from "querystring";
 import * as mediasoupClient from "mediasoup-client";
 import * as signalR from "@microsoft/signalr";
 
@@ -24,7 +24,7 @@ export default {
   data() {
     return {
       connection: null,
-      device: null,
+      mediasoupDevice: null,
       sendTransport: null,
       recvTransport: null,
       consumers: new Map(),
@@ -42,13 +42,13 @@ export default {
   methods: {
     run() {
       try {
-        const {peerId} = querystring.parse(location.search.replace('?',''))
+        const { peerId } = querystring.parse(location.search.replace("?", ""));
         const accessTokens = [
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMjkiLCJnIjoi5Yy76ZmiIiwibmJmIjoxNTg0MzQ5MDQ2LCJleHAiOjE1ODY5NDEwNDYsImlzcyI6Imlzc3VlciIsImF1ZCI6ImF1ZGllbmNlIn0._bGG1SOF9WqY8TIErRkxsh9_l_mFB_5JcGrKO1GyQ0E",
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTg3IiwiZyI6IuWMu-mZoiIsIm5iZiI6MTU4NzcxNzU2NSwiZXhwIjoxNTkwMzA5NTY1LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.qjvvJB8EHaerbeKnrmfnN3BJ5jh4R_pG99oS1I7ZAvw"
         ];
-        
-        const host = "https://192.168.1.124:5001"
+
+        const host = "https://192.168.18.233s:5001";
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
@@ -106,8 +106,8 @@ export default {
 
       // GetRouterRtpCapabilities 成功
       const routerRtpCapabilities = result.data;
-      this.device = new mediasoupClient.Device();
-      await this.device.load({
+      this.mediasoupDevice = new mediasoupClient.Device();
+      await this.mediasoupDevice.load({
         routerRtpCapabilities
       });
 
@@ -122,13 +122,15 @@ export default {
       }
 
       // CreateWebRtcTransport 成功
-      const { id, iceParameters, iceCandidates, dtlsParameters } = result.data;
-      this.sendTransport = this.device.createSendTransport({
-        id,
-        iceParameters,
-        iceCandidates,
-        dtlsParameters
-        // 还可添加 iceServers 等参数
+      this.sendTransport = this.mediasoupDevice.createSendTransport({
+        id: result.data.id,
+        iceParameters: result.data.iceParameters,
+        iceCandidates: result.data.iceCandidates,
+        dtlsParameters: result.data.dtlsParameters,
+        iceServers: [],
+        proprietaryConstraints: {
+          optional: [{ googDscp: true }]
+        }
       });
 
       this.sendTransport.on(
@@ -173,12 +175,12 @@ export default {
       });
 
       // CreateWebRtcTransport 成功
-      this.recvTransport = this.device.createRecvTransport({
+      this.recvTransport = this.mediasoupDevice.createRecvTransport({
         id: result.data.id,
         iceParameters: result.data.iceParameters,
         iceCandidates: result.data.iceCandidates,
-        dtlsParameters: result.data.dtlsParameters
-        // 还可添加 iceServers 等参数
+        dtlsParameters: result.data.dtlsParameters,
+        iceServers: []
       });
 
       this.recvTransport.on(
@@ -201,11 +203,11 @@ export default {
       }
 
       // Join 成功
-      if (this.device.canProduce("audio")) {
+      if (this.mediasoupDevice.canProduce("audio")) {
         //this.enableMic();
       }
 
-      if (this.device.canProduce("video")) {
+      if (this.mediasoupDevice.canProduce("video")) {
         this.enableWebcam();
       }
     },
@@ -250,6 +252,8 @@ export default {
         consumer.rtpParameters.encodings[0].scalabilityMode
       );
 
+      console.log(consumer);
+      
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
       const result = await this.connection.invoke("NewConsumerReady", {
@@ -287,7 +291,7 @@ export default {
       logger.debug("enableMic()");
 
       if (this.micProducer) return;
-      if (this.device && !this.device.canProduce("audio")) {
+      if (this.mediasoupDevice && !this.mediasoupDevice.canProduce("audio")) {
         logger.error("enableMic() | cannot produce audio");
         return;
       }
@@ -361,7 +365,7 @@ export default {
     async enableWebcam() {
       if (this.webcamProducer) return;
 
-      if (this.device && !this.device.canProduce("video")) {
+      if (this.mediasoupDevice && !this.mediasoupDevice.canProduce("video")) {
         logger.error("enableWebcam() | cannot produce video");
 
         return;
@@ -537,5 +541,4 @@ body {
 #localVideo {
   display: none;
 }
-
 </style>
