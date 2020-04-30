@@ -241,7 +241,7 @@ namespace TubumuMeeting.Mediasoup
 
                             // 68 = 'D' (a debug log).
                             case 'D':
-                                if (!nsPayload.Contains("(trace)"))
+                                if (nsPayload.Contains("(trace)"))
                                     _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
 
@@ -260,6 +260,7 @@ namespace TubumuMeeting.Mediasoup
                                 // eslint-disable-next-line no-console
                                 _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
+
                             default:
                                 // eslint-disable-next-line no-console
                                 _logger.LogWarning($"ConsumerSocketOnData() | worker[pid:{_processId}] unexpected data:{ nsPayload }");

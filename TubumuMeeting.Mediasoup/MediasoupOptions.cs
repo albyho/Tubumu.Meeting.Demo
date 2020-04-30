@@ -50,7 +50,7 @@ namespace TubumuMeeting.Mediasoup
                             ClockRate = 48000,
                             Channels  = 2
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/VP8",
                             ClockRate  = 90000,
@@ -59,7 +59,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate" , 1000 }
                             }
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/VP9",
                             ClockRate  = 90000,
@@ -69,7 +69,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate" , 1000 }
                             }
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/h264",
                             ClockRate  = 90000,
@@ -81,7 +81,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate"  , 1000 }
                             }
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/h264",
                             ClockRate  = 90000,
@@ -99,7 +99,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     ListenIps = new[]
                     {
-                        new TransportListenIp { Ip = "127.0.0.1",  AnnouncedIp = "192.168.18.233"}
+                        new TransportListenIp { Ip = "127.0.0.1",  AnnouncedIp = "192.168.1.124"}
                     },
                     InitialAvailableOutgoingBitrate = 1000000,
                     MinimumAvailableOutgoingBitrate = 600000,

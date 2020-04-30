@@ -18,6 +18,8 @@ import * as signalR from "@microsoft/signalr";
 
 const logger = new Logger("App");
 
+localStorage.setItem("debug", "mediasoup-client:* tubumumeeting-client:*");
+
 export default {
   name: "app",
   components: {},
@@ -48,7 +50,7 @@ export default {
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTg3IiwiZyI6IuWMu-mZoiIsIm5iZiI6MTU4NzcxNzU2NSwiZXhwIjoxNTkwMzA5NTY1LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.qjvvJB8EHaerbeKnrmfnN3BJ5jh4R_pG99oS1I7ZAvw"
         ];
 
-        const host = "https://192.168.18.233:5001";
+        const host = "https://192.168.1.124:5001";
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
@@ -136,6 +138,7 @@ export default {
       this.sendTransport.on(
         "connect",
         ({ dtlsParameters }, callback, errback) => {
+          logger.debug("sendTransport.on connect");
           this.connection
             .invoke("ConnectWebRtcTransport", {
               transportId: this.sendTransport.id,
@@ -149,6 +152,7 @@ export default {
       this.sendTransport.on(
         "produce",
         async ({ kind, rtpParameters, appData }, callback, errback) => {
+          logger.debug("sendTransport.on produce");
           try {
             const result = await this.connection.invoke("Produce", {
               transportId: this.sendTransport.id,
@@ -168,6 +172,10 @@ export default {
         }
       );
 
+      this.sendTransport.on("connectionstatechange", state => {
+        logger.debug(`connectionstatechange: ${state}`)
+      });
+
       result = await this.connection.invoke("CreateWebRtcTransport", {
         forceTcp: false,
         producing: false,
@@ -186,6 +194,7 @@ export default {
       this.recvTransport.on(
         "connect",
         ({ dtlsParameters }, callback, errback) => {
+          logger.debug("recvTransport.on connect");
           this.connection
             .invoke("ConnectWebRtcTransport", {
               transportId: this.recvTransport.id,
@@ -197,7 +206,7 @@ export default {
       );
 
       result = await this.connection.invoke("Join", {
-        routerRtpCapabilities,
+        rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
         sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
       });
       if (result.code !== 200) {
@@ -255,8 +264,6 @@ export default {
         consumer.rtpParameters.encodings[0].scalabilityMode
       );
 
-      console.log(consumer);
-
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
       const result = await this.connection.invoke("NewConsumerReady", {
@@ -288,7 +295,7 @@ export default {
       this.remoteStream = stream;
     },
     async processMessage(data) {
-      logger.debug(data);
+      logger.debug("processMessage() | %o", data);
     },
     async enableMic() {
       logger.debug("enableMic()");
@@ -366,8 +373,9 @@ export default {
       this.micProducer = null;
     },
     async enableWebcam() {
-      if (this.webcamProducer) return;
+      logger.debug("enableWebcam()");
 
+      if (this.webcamProducer) return;
       if (this.mediasoupDevice && !this.mediasoupDevice.canProduce("video")) {
         logger.error("enableWebcam() | cannot produce video");
 
@@ -541,7 +549,4 @@ body {
   line-height: 160px;
 }
 
-#localVideo {
-  display: none;
-}
 </style>

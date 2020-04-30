@@ -52,7 +52,7 @@ namespace TubumuMeeting.Web
 
             // Cors
             services.AddCors(options => options.AddPolicy("DefaultPolicy",
-                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://192.168.18.233:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
+                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://192.168.1.124:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
             //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
             );
 
