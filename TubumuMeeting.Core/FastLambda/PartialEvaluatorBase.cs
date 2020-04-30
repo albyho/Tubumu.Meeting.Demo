@@ -59,7 +59,7 @@ namespace Tubumu.Core.FastLambda
         /// </summary>
         private class Nominator : ExpressionVisitor
         {
-            private Func<Expression, bool> _fnCanBeEvaluated;
+            private readonly Func<Expression, bool> _fnCanBeEvaluated;
             private HashSet<Expression> _candidates;
             private bool _cannotBeEvaluated;
 

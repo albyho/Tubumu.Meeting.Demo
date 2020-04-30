@@ -10,8 +10,8 @@ namespace Tubumu.Core.Extensions
     /// </summary>
     public static class SkiaSharpExtensions
     {
-        const int Quality = 75;
-        const int WidthMax = 800;
+        private const int Quality = 75;
+        private const int WidthMax = 800;
 
         /// <summary>
         /// 保存图片

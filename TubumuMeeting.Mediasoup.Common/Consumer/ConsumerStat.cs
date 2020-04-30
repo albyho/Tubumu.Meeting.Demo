@@ -7,9 +7,9 @@
 
         public long Timestamp { get; set; }
 
-        public int Ssrc { get; set; }
+        public long Ssrc { get; set; }
 
-        public int? RtxSsrc { get; set; }
+        public long? RtxSsrc { get; set; }
 
         public MediaKind Kind { get; set; }
 

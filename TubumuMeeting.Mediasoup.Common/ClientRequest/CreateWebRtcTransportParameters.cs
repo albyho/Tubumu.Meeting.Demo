@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     public class CreateWebRtcTransportParameters
     {
@@ -11,5 +7,7 @@ namespace TubumuMeeting.Mediasoup
         public bool Producing { get; set; }
 
         public bool Consuming { get; set; }
+
+        public SctpCapabilities? SctpCapabilities { get; set; }
     }
 }

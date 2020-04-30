@@ -8,8 +8,8 @@ namespace TubumuMeeting.Meeting.Client.WPF
 {
     public partial class MainWindow : Window
     {
-        private HubConnection connection;
-        private string transportId;
+        private readonly HubConnection connection;
+        private readonly string transportId;
 
         public MainWindow()
         {
@@ -59,6 +59,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
         {
             try
             {
+                // rtpCapabilities 参数：Device.Load 后，取其 RtpCapabilities 属性。
                 await connection.InvokeAsync("Join", new RtpCapabilities());
             }
             catch (Exception ex)
@@ -125,6 +126,5 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 messagesList.Items.Add(ex.Message);
             }
         }
-
     }
 }

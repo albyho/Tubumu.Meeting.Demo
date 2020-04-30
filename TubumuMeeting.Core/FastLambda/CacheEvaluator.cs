@@ -8,13 +8,13 @@ namespace Tubumu.Core.FastLambda
     /// </summary>
     public class CacheEvaluator : IEvaluator
     {
-        private static IExpressionCache<Delegate> s_cache = new HashedListCache<Delegate>();
+        private static readonly IExpressionCache<Delegate> s_cache = new HashedListCache<Delegate>();
 
-        private WeakTypeDelegateGenerator _delegateGenerator = new WeakTypeDelegateGenerator();
-        private ConstantExtractor _constantExtrator = new ConstantExtractor();
+        private readonly WeakTypeDelegateGenerator _delegateGenerator = new WeakTypeDelegateGenerator();
+        private readonly ConstantExtractor _constantExtrator = new ConstantExtractor();
 
-        private IExpressionCache<Delegate> _cache;
-        private Func<Expression, Delegate> _creatorDelegate;
+        private readonly IExpressionCache<Delegate> _cache;
+        private readonly Func<Expression, Delegate> _creatorDelegate;
 
         /// <summary>
         /// Constructor

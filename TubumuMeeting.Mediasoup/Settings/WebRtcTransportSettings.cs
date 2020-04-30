@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     public class WebRtcTransportSettings
     {
@@ -8,8 +6,12 @@ namespace TubumuMeeting.Mediasoup
 
         public int InitialAvailableOutgoingBitrate { get; set; }
 
-        public int MinimumAvailableOutgoingBitrate { get; set; } // TODO: (alby)貌似没有地方使用该参数
+        // TODO: (alby)貌似没有地方使用该参数。见 mediasoup\WebRtcTransport.ts 的 WebRtcTransportOptions 和 mediasoup\worker\src\Transport.cpp
+        public int MinimumAvailableOutgoingBitrate { get; set; }
 
+        public int MaxSctpMessageSize { get; set; }
+
+        // Additional options that are not part of WebRtcTransportOptions.
         public int? MaximumIncomingBitrate { get; set; }
     }
 }

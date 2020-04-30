@@ -53,8 +53,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="routerId"></param>
-        /// <param name="transportId"></param>
+        /// <param name="transportInternalData"></param>
         /// <param name="sctpParameters"></param>
         /// <param name="sctpState"></param>
         /// <param name="channel"></param>
@@ -71,8 +70,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="dtlsState"></param>
         /// <param name="dtlsRemoteCert"></param>
         public WebRtcTransport(ILoggerFactory loggerFactory,
-            string routerId,
-            string transportId,
+            TransportInternalData transportInternalData,
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
@@ -88,7 +86,7 @@ namespace TubumuMeeting.Mediasoup
             DtlsParameters dtlsParameters,
             DtlsState dtlsState,
             string? dtlsRemoteCert
-            ) : base(loggerFactory, routerId, transportId, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
+            ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _logger = loggerFactory.CreateLogger<WebRtcTransport>();
 
@@ -161,7 +159,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new { DtlsParameters = dtlsParameters };
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, _internal, reqData);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, Internal, reqData);
             var responseData = JsonConvert.DeserializeObject<WebRtcTransportConnectResponseData>(status);
 
             // Update data.
@@ -175,7 +173,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("RestartIceAsync()");
 
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE, _internal);
+            var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE, Internal);
             var responseData = JsonConvert.DeserializeObject<WebRtcTransportRestartIceResponseData>(status);
 
             // Update data.
@@ -191,7 +189,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Id) return;
+            if (targetId != Internal.TransportId) return;
             switch (@event)
             {
                 case "icestatechange":
@@ -265,7 +263,7 @@ namespace TubumuMeeting.Mediasoup
 
                 default:
                     {
-                        _logger.LogError($"ignoring unknown event {@event}");
+                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
                         break;
                     }
             }

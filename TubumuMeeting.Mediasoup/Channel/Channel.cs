@@ -7,7 +7,6 @@ using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
 using TubumuMeeting.Libuv;
-using TubumuMeeting.Libuv.Threading;
 using TubumuMeeting.Netstrings;
 
 namespace TubumuMeeting.Mediasoup
@@ -62,7 +61,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger = logger;
 
-            _logger.LogDebug("constructor()");
+            _logger.LogDebug("Channel() | constructor");
 
             _producerSocket = producerSocket;
             _consumerSocket = consumerSocket;
@@ -121,7 +120,7 @@ namespace TubumuMeeting.Mediasoup
             var method = methodId.GetEnumStringValue();
             var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1); // TODO: (alby)线程同步
 
-            _logger.LogDebug($"RequestAsync() [method:{method}, id:{id}]");
+            _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
 
             if (_closed)
                 throw new InvalidStateException("Channel closed");
@@ -183,14 +182,14 @@ namespace TubumuMeeting.Mediasoup
                     {
                         if (ex != null)
                         {
-                            _logger.LogError(ex, "_producerSocket.Write() error");
+                            _logger.LogError(ex, "_producerSocket.Write() | error");
                             tcs.TrySetException(ex);
                         }
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "_producerSocket.Write() error");
+                    _logger.LogError(ex, "_producerSocket.Write() | error");
                     tcs.TrySetException(ex);
                 }
             });
@@ -216,7 +215,7 @@ namespace TubumuMeeting.Mediasoup
             var message = _recvBuffer.ToString();
             if (message.Length > NsPayloadMaxLen)
             {
-                _logger.LogError("receiving buffer is full, discarding all data into it");
+                _logger.LogError("ConsumerSocketOnData() | receiving buffer is full, discarding all data into it");
                 // Reset the buffer and exit.
                 _recvBuffer = null;
                 return;
@@ -242,34 +241,35 @@ namespace TubumuMeeting.Mediasoup
 
                             // 68 = 'D' (a debug log).
                             case 'D':
-                                if (!nsPayload.Contains("(trace)"))
-                                    _logger.LogDebug($"[pid:{_processId}] { nsPayload }");
+                                if (nsPayload.Contains("(trace)"))
+                                    _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                _logger.LogWarning($"[pid:{_processId}] { nsPayload }");
+                                _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
 
                             // 69 = 'E' (an error log).
                             case 'E':
-                                _logger.LogError($"[pid:{_processId}] { nsPayload }");
+                                _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
 
                             // 88 = 'X' (a dump log).
                             case 'X':
                                 // eslint-disable-next-line no-console
-                                _logger.LogDebug($"[pid:{_processId}] { nsPayload }");
+                                _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
+
                             default:
                                 // eslint-disable-next-line no-console
-                                _logger.LogWarning($"worker[pid:{_processId}] unexpected data:{ nsPayload }");
+                                _logger.LogWarning($"ConsumerSocketOnData() | worker[pid:{_processId}] unexpected data:{ nsPayload }");
                                 break;
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"received invalid message from the worker process:{ex}");
+                        _logger.LogError($"ConsumerSocketOnData() | received invalid message from the worker process:{ex}");
                         // Reset the buffer and exit.
                         _recvBuffer = null;
                         return;
@@ -291,7 +291,7 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception ex)
             {
-                _logger.LogError($"invalid netstring data received from the worker process:{ex}");
+                _logger.LogError($"ConsumerSocketOnData() | invalid netstring data received from the worker process:{ex}");
                 // Reset the buffer and exit.
                 _recvBuffer = null;
                 return;
@@ -300,22 +300,22 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnClosed()
         {
-            _logger.LogDebug("Consumer Channel ended by the worker process");
+            _logger.LogDebug("ConsumerSocketOnClosed() | Consumer Channel ended by the worker process");
         }
 
         private void ConsumerSocketOnError(Exception exception)
         {
-            _logger.LogDebug("Consumer Channel error", exception);
+            _logger.LogDebug("ConsumerSocketOnError() | Consumer Channel error", exception);
         }
 
         private void ProducerSocketOnClosed()
         {
-            _logger.LogDebug("Producer Channel ended by the worker process");
+            _logger.LogDebug("ProducerSocketOnClosed() | Producer Channel ended by the worker process");
         }
 
         private void ProducerSocketOnError(Exception exception)
         {
-            _logger.LogDebug("Producer Channel error", exception);
+            _logger.LogDebug("ProducerSocketOnError() | Producer Channel error", exception);
         }
 
         #endregion
@@ -337,27 +337,27 @@ namespace TubumuMeeting.Mediasoup
             {
                 if (!_sents.TryGetValue(id, out Sent sent))
                 {
-                    _logger.LogError($"received response does not match any sent request [id:{id}]");
+                    _logger.LogError($"ProcessMessage() | received response does not match any sent request [id:{id}]");
 
                     return;
                 }
 
                 if (accepted)
                 {
-                    _logger.LogDebug($"request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+                    _logger.LogDebug($"ProcessMessage() | request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
 
                     sent.Resolve?.Invoke(data);
                 }
                 else if (!error.IsNullOrWhiteSpace())
                 {
                     // 在 Node.js 实现中，error 的值可能是 "Error" 或 "TypeError"。
-                    _logger.LogWarning($"request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}");
+                    _logger.LogWarning($"ProcessMessage() | request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}");
 
                     sent.Reject?.Invoke(new Exception(reason));
                 }
                 else
                 {
-                    _logger.LogError($"received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+                    _logger.LogError($"ProcessMessage() | received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
                 }
             }
             // If a notification emit it to the corresponding entity.
@@ -372,7 +372,7 @@ namespace TubumuMeeting.Mediasoup
             // Otherwise unexpected message.
             else
             {
-                _logger.LogError($"received message is not a response nor a notification: {nsPayload}");
+                _logger.LogError($"ProcessMessage() | received message is not a response nor a notification: {nsPayload}");
             }
         }
 

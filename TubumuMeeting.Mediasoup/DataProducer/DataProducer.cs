@@ -15,7 +15,7 @@ namespace TubumuMeeting.Mediasoup
         #region Internal data.
 
         /// <summary>
-        /// RouterId id.
+        /// Router id.
         /// </summary>
         public string RouterId { get; }
 

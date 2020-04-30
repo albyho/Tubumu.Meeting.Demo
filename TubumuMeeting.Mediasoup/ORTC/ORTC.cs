@@ -265,7 +265,7 @@ namespace TubumuMeeting.Mediasoup
 
             // channels is optional. If unset, set it to 1 (just if audio).
             // 在 Node.js 实现在，如果是音频会 delete 掉 Channels 。
-            if (mimeType.StartsWith("audio"))
+            if (mimeType.StartsWith("audio") && (!codec.Channels.HasValue || codec.Channels < 1))
             {
                 codec.Channels = 1;
             }
@@ -654,7 +654,7 @@ namespace TubumuMeeting.Mediasoup
                 var matchedCapCodec = caps.Codecs
                     .Where(capCodec => MatchCodecs(codec, capCodec, true, true))
                     .FirstOrDefault();
-                codecToCapCodec[codec] = matchedCapCodec ?? throw new Exception($"unsupported codec[mimeType:{ codec.MimeType }, payloadType:{ codec.PayloadType }]");
+                codecToCapCodec[codec] = matchedCapCodec ?? throw new Exception($"unsupported codec[mimeType:{ codec.MimeType }, payloadType:{ codec.PayloadType }, Channels:{ codec.Channels }]");
             }
 
             // Match parameters RTX codecs to capabilities RTX codecs.
@@ -1105,7 +1105,7 @@ namespace TubumuMeeting.Mediasoup
                             if (modify)
                             {
                                 if (!selectedProfileLevelId.IsNullOrWhiteSpace())
-                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;
+                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;  // TODO: (alby)注意 null 引用
                                 else
                                     aCodec.Parameters.Remove("profile-level-id");
                             }
@@ -1140,7 +1140,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 return false;
             }
-            var apiInteger = (int)apt;
+            var apiInteger = Int32.Parse(apt.ToString());
             if (payloadType != apiInteger)
             {
                 return false;

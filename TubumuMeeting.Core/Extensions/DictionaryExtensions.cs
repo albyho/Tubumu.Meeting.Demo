@@ -142,8 +142,7 @@ namespace Tubumu.Core.Extensions
             }
             foreach (var kvp in x)
             {
-                TValue value;
-                if (!y.TryGetValue(kvp.Key, out value))
+                if (!y.TryGetValue(kvp.Key, out TValue value))
                 {
                     return false;
                 }

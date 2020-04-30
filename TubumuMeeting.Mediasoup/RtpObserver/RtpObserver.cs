@@ -6,13 +6,8 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class RtpObserver : EventEmitter
+    public class RtpObserverInternalData
     {
-        // Logger
-        private readonly ILogger<RtpObserver> _logger;
-
-        #region Internal data.
-
         /// <summary>
         /// Router id.
         /// </summary>
@@ -21,11 +16,24 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// RtpObserver id.
         /// </summary>
-        public string Id { get; }
+        public string RtpObserverId { get; }
 
-        private readonly object _internal;
+        public RtpObserverInternalData(string routerId, string rtpObserverId)
+        {
+            RouterId = routerId;
+            RtpObserverId = rtpObserverId;
+        }
+    }
 
-        #endregion
+    public class RtpObserver : EventEmitter
+    {
+        // Logger
+        private readonly ILogger<RtpObserver> _logger;
+
+        /// <summary>
+        /// Internal data.
+        /// </summary>
+        public RtpObserverInternalData Internal { get; private set; }
 
         /// <summary>
         /// Channel instance.
@@ -69,26 +77,21 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits removeproducer - (producer: Producer)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="routerId"></param>
-        /// <param name="rtpObserverId"></param>
+        /// <param name="rtpObserverInternalData"></param>
         /// <param name="channel"></param>
         /// <param name="appData"></param>
         /// <param name="getProducerById"></param>
         public RtpObserver(ILoggerFactory loggerFactory,
-                    string routerId,
-                    string rtpObserverId,
+                    RtpObserverInternalData rtpObserverInternalData,
                     Channel channel,
                     Dictionary<string, object>? appData,
                     Func<string, Producer> getProducerById)
         {
             _logger = loggerFactory.CreateLogger<RtpObserver>();
-            RouterId = routerId;
-            Id = rtpObserverId;
-            _internal = new
-            {
-                RouterId,
-                RtpObserverId = rtpObserverId,
-            };
+
+            // Internal
+            Internal = rtpObserverInternalData;
+
             Channel = channel;
             AppData = appData;
             GetProducerById = getProducerById;
@@ -107,7 +110,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = true;
 
             // Fire and forget.
-            Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -142,7 +145,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, Internal);
 
             Paused = true;
 
@@ -162,7 +165,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await Channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, _internal);
+            await Channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, Internal);
 
             Paused = false;
 
@@ -183,8 +186,8 @@ namespace TubumuMeeting.Mediasoup
             var producer = GetProducerById(producerId);
             var @internal = new
             {
-                RouterId,
-                RtpObserverId = Id,
+                Internal.RouterId,
+                Internal.RtpObserverId,
                 ProducerId = producerId,
             };
 
@@ -204,8 +207,8 @@ namespace TubumuMeeting.Mediasoup
             var producer = GetProducerById(producerId);
             var @internal = new
             {
-                RouterId,
-                RtpObserverId = Id,
+                Internal.RouterId,
+                Internal.RtpObserverId,
                 ProducerId = producerId,
             };
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);

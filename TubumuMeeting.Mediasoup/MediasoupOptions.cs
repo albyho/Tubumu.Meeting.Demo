@@ -29,12 +29,12 @@ namespace TubumuMeeting.Mediasoup
                         "rtp",
                         "srtp",
                         "rtcp",
-                        //"rtx",
-                        //"bwe",
-                        //"score",
-                        //"simulcast",
-                        //"svc",
-                        //"sctp",
+                        "rtx",
+                        "bwe",
+                        "score",
+                        "simulcast",
+                        "svc",
+                        "sctp",
                     },
                     RtcMinPort = 40000,
                     RtcMaxPort = 49999,
@@ -50,7 +50,7 @@ namespace TubumuMeeting.Mediasoup
                             ClockRate = 48000,
                             Channels  = 2
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/VP8",
                             ClockRate  = 90000,
@@ -59,7 +59,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate" , 1000 }
                             }
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/VP9",
                             ClockRate  = 90000,
@@ -69,7 +69,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate" , 1000 }
                             }
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/h264",
                             ClockRate  = 90000,
@@ -81,7 +81,7 @@ namespace TubumuMeeting.Mediasoup
                                 { "x-google-start-bitrate"  , 1000 }
                             }
                         },
-                        new RtpCodecCapability{
+                        new RtpCodecCapability {
                             Kind       = MediaKind.Video,
                             MimeType   = "video/h264",
                             ClockRate  = 90000,
@@ -99,10 +99,11 @@ namespace TubumuMeeting.Mediasoup
                 {
                     ListenIps = new[]
                     {
-                        new TransportListenIp { Ip = "0.0.0.0",  AnnouncedIp = "127.0.0.1"}
+                        new TransportListenIp { Ip = "127.0.0.1",  AnnouncedIp = "192.168.1.124"}
                     },
                     InitialAvailableOutgoingBitrate = 1000000,
                     MinimumAvailableOutgoingBitrate = 600000,
+                    MaxSctpMessageSize = 262144,
                     MaximumIncomingBitrate = 1500000,
                 }
             }

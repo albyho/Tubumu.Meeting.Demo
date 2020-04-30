@@ -24,7 +24,7 @@ namespace Tubumu.Core.FastReflection
     /// </summary>
     public class MethodInvoker : IMethodInvoker
     {
-        private Func<object, object[], object> _invoker;
+        private readonly Func<object, object[], object> _invoker;
 
         /// <summary>
         /// MethodInfo

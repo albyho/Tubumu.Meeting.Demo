@@ -50,6 +50,12 @@ namespace TubumuMeeting.Web
             });
             services.AddMemoryCache();
 
+            // Cors
+            services.AddCors(options => options.AddPolicy("DefaultPolicy",
+                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://192.168.1.124:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
+            //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
+            );
+
             // Authentication
             services.AddSingleton<ITokenService, TokenService>();
             var tokenValidationSettings = Configuration.GetSection("TokenValidationSettings").Get<TokenValidationSettings>();
@@ -115,7 +121,10 @@ namespace TubumuMeeting.Web
                 });
 
             // SignalR
-            services.AddSignalR()
+            services.AddSignalR(options =>
+                {
+                    options.EnableDetailedErrors = true;
+                })
                 .AddNewtonsoftJsonProtocol(options =>
                 {
                     var settings = options.PayloadSerializerSettings;
@@ -132,7 +141,7 @@ namespace TubumuMeeting.Web
                 configure.WorkerPath = Path.Combine((Environment.OSVersion.Platform == PlatformID.Unix) || (System.Environment.OSVersion.Platform == PlatformID.MacOSX) ?
                     @"/Users/alby/Developer/OpenSource/Meeting/Lab/w" :
                     @"C:\Developer\OpenSource\Meeting\worker",
-                    "Release", "mediasoup-worker");
+                    "Debug", "mediasoup-worker");
             });
         }
 
@@ -144,10 +153,13 @@ namespace TubumuMeeting.Web
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseHttpsRedirection();
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseCors("DefaultPolicy");
 
             app.UseEndpoints(endpoints =>
             {
