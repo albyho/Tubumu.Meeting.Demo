@@ -241,7 +241,7 @@ namespace TubumuMeeting.Mediasoup
 
                             // 68 = 'D' (a debug log).
                             case 'D':
-                                if (!nsPayload.Contains("(trace)"))
+                                //if (!nsPayload.Contains("(trace)"))
                                     _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
                                 break;
 

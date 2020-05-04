@@ -52,7 +52,7 @@ namespace TubumuMeeting.Web
 
             // Cors
             services.AddCors(options => options.AddPolicy("DefaultPolicy",
-                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://192.168.18.233:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
+                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://localhost:8080", "https://192.168.18.233:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
             //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
             );
 
@@ -141,7 +141,7 @@ namespace TubumuMeeting.Web
                 configure.WorkerPath = Path.Combine((Environment.OSVersion.Platform == PlatformID.Unix) || (System.Environment.OSVersion.Platform == PlatformID.MacOSX) ?
                     @"/Users/alby/Developer/OpenSource/Meeting/Lab/w" :
                     @"C:\Developer\OpenSource\Meeting\worker",
-                    "Debug", "mediasoup-worker");
+                    "Release", "mediasoup-worker");
             });
         }
 
