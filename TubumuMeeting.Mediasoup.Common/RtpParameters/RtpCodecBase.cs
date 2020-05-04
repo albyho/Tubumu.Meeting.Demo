@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -20,7 +21,8 @@ namespace TubumuMeeting.Mediasoup
         /// The number of channels supported (e.g. two for stereo). Just for audio.
         /// Default 1.
         /// </summary>
-        public int? Channels { get; set; } = 1;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? Channels { get; set; }
 
         /// <summary>
         /// Codec-specific parameters available for signaling. Some parameters (such

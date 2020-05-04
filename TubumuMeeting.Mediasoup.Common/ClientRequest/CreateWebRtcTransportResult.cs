@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using Newtonsoft.Json;
+
+namespace TubumuMeeting.Mediasoup
 {
     public class CreateWebRtcTransportResult
     {
@@ -9,5 +11,8 @@
         public IceCandidate[] IceCandidates { get; set; }
 
         public DtlsParameters DtlsParameters { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public SctpParameters? SctpParameters { get; set; }
     }
 }

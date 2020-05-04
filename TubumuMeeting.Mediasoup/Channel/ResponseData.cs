@@ -16,7 +16,7 @@
 
         public DtlsState DtlsState { get; set; }
 
-        public string? DtlsRemoteCert { get; private set; }
+        public string? DtlsRemoteCert { get; set; }
     }
 
     public class RouterCreatePlainTransportResponseData
@@ -25,20 +25,20 @@
 
         public bool? Comedia { get; set; }
 
-        public TransportTuple Tuple { get; private set; }
+        public TransportTuple Tuple { get; set; }
 
-        public TransportTuple? RtcpTuple { get; private set; }
+        public TransportTuple? RtcpTuple { get; set; }
 
-        public SrtpParameters? SrtpParameters { get; private set; }
+        public SrtpParameters? SrtpParameters { get; set; }
     }
 
     public class RouterCreatePipeTransportResponseData
     {
-        public TransportTuple Tuple { get; private set; }
+        public TransportTuple Tuple { get; set; }
 
-        public bool Rtx { get; private set; }
+        public bool Rtx { get; set; }
 
-        public SrtpParameters? SrtpParameters { get; private set; }
+        public SrtpParameters? SrtpParameters { get; set; }
     }
 
     public class TransportProduceResponseData

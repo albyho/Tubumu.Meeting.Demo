@@ -15,7 +15,7 @@ namespace TubumuMeeting.Mediasoup
 
         public static MediasoupOptions Default { get; } = new MediasoupOptions
         {
-            MediasoupVersion = "3.5.7",
+            MediasoupVersion = "3.5.9",
             NumberOfWorkers = Environment.ProcessorCount,
             MediasoupSettings = new MediasoupSettings
             {
@@ -99,7 +99,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     ListenIps = new[]
                     {
-                        new TransportListenIp { Ip = "127.0.0.1",  AnnouncedIp = "192.168.1.124"}
+                        new TransportListenIp { Ip = "127.0.0.1",  AnnouncedIp = "192.168.18.233" }
                     },
                     InitialAvailableOutgoingBitrate = 1000000,
                     MinimumAvailableOutgoingBitrate = 600000,
