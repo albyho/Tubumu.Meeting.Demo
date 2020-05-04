@@ -159,6 +159,7 @@ namespace TubumuMeeting.Meeting.Server
                     IceParameters = transport.IceParameters,
                     IceCandidates = transport.IceCandidates,
                     DtlsParameters = transport.DtlsParameters,
+                    SctpParameters = transport.SctpParameters,
                 }
             };
         }

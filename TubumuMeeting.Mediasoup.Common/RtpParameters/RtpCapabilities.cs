@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -23,6 +24,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Supported FEC mechanisms.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string[]? FecMechanisms { get; set; }
 
         public static RtpCapabilities SupportedRtpCapabilities { get; }
