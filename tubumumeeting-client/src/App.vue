@@ -216,13 +216,11 @@ export default {
 
       // Join 成功
       if (this.mediasoupDevice.canProduce("audio")) {
-        //this.enableMic();
+        this.enableMic();
       }
 
       if (this.mediasoupDevice.canProduce("video")) {
-        setTimeout(() => {
-          this.enableWebcam();
-        }, 1000 * 10)
+        this.enableWebcam();
       }
     },
     async processNewConsumer(data) {
