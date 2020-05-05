@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <el-container>
-      <el-header>Header</el-header>
+      <el-header>Tubumu Meeting</el-header>
       <el-main>
         <video id="localVideo" :srcObject.prop="localStream" autoplay="autoplay" />
         <video id="remoteVideo" :srcObject.prop="remoteStream" autoplay="autoplay" />
@@ -547,6 +547,10 @@ body {
 
 .el-main {
   line-height: 160px;
+}
+
+video {
+  width:320px;
 }
 
 </style>
