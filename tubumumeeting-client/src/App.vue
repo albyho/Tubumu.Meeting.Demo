@@ -316,6 +316,81 @@ export default {
     },
     async processMessage(data) {
       logger.debug("processMessage() | %o", data);
+      switch (data.internalCode)
+			{
+        case 'newPeer':
+				{
+					// eslint-disable-next-line no-unused-vars
+					const peer = data.data;
+
+					break;
+        }
+        
+				case 'consumerClosed':
+				{
+					const { consumerId } = data.data;
+					const consumer = this.consumers.get(consumerId);
+
+					if (!consumer)
+						break;
+
+					consumer.close();
+          this.consumers.delete(consumerId);
+          
+          break;
+				}
+
+				case 'consumerPaused':
+				{
+					const { consumerId } = data.data;
+					const consumer = this.consumers.get(consumerId);
+
+					if (!consumer)
+            break;
+            
+					break;
+				}
+
+				case 'consumerResumed':
+				{
+					const { consumerId } = data.data;
+          const consumer = this.consumers.get(consumerId);
+          
+					if (!consumer)
+						break;
+
+					break;
+				}
+
+				case 'consumerLayersChanged':
+				{
+					// eslint-disable-next-line no-unused-vars
+					const { consumerId, spatialLayer, temporalLayer } = data.data;
+					const consumer = this._consumers.get(consumerId);
+
+					if (!consumer)
+            break;
+            
+					break;
+        }
+        
+        case 'consumerScore':
+				{
+					const { consumerId } = data.data;
+          const consumer = this.consumers.get(consumerId);
+
+					if (!consumer)
+            break;
+
+					break;
+        }
+        
+				default:
+				{
+					logger.error(
+						'unknown protoo data.method "%s"', data.internalCode);
+				}
+      }
     },
     async enableMic() {
       logger.debug("enableMic()");
