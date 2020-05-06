@@ -375,12 +375,12 @@ namespace TubumuMeeting.Mediasoup
             // This may throw.
             var consumableRtpParameters = ORTC.GetConsumableRtpParameters(producerOptions.Kind, producerOptions.RtpParameters, routerRtpCapabilities, rtpMapping);
 
-            var @internal = new
-            {
+            var @internal = new ProducerInternalData
+            (
                 Internal.RouterId,
                 Internal.TransportId,
-                ProducerId = producerOptions.Id.IsNullOrWhiteSpace() ? Guid.NewGuid().ToString() : producerOptions.Id!,
-            };
+                producerOptions.Id.IsNullOrWhiteSpace() ? Guid.NewGuid().ToString() : producerOptions.Id!
+            );
             var reqData = new
             {
                 producerOptions.Kind,
@@ -401,9 +401,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var producer = new Producer(_loggerFactory,
-                @internal.RouterId,
-                @internal.TransportId,
-                @internal.ProducerId,
+                @internal,
                 data.Kind,
                 data.RtpParameters,
                 data.Type,
@@ -412,11 +410,11 @@ namespace TubumuMeeting.Mediasoup
                 AppData,
                 producerOptions.Paused!.Value);
 
-            Producers[producer.Id] = producer;
+            Producers[producer.Internal.ProducerId] = producer;
 
             producer.On("@close", _ =>
             {
-                Producers.Remove(producer.Id);
+                Producers.Remove(producer.Internal.ProducerId);
                 Emit("@producerclose", producer);
             });
 
@@ -474,13 +472,13 @@ namespace TubumuMeeting.Mediasoup
                 _nextMidForConsumers = 0;
             }
 
-            var @internal = new
-            {
+            var @internal = new ConsumerInternalData
+            (
                 Internal.RouterId,
-                TransportId = Internal.TransportId,
-                ConsumerId = Guid.NewGuid().ToString(),
+                Internal.TransportId,
                 consumerOptions.ProducerId,
-            };
+                Guid.NewGuid().ToString()
+            );
 
             var reqData = new
             {
@@ -502,11 +500,8 @@ namespace TubumuMeeting.Mediasoup
                 Type = (ConsumerType)producer.Type, // 注意：类型转换
             };
 
-            var consumer = new Consumer(_loggerFactory,
-                @internal.RouterId,
-                @internal.TransportId,
-                @internal.ConsumerId,
-                @internal.ProducerId,
+            var consumer = new Consumer(_loggerFactory, 
+                @internal,
                 data.Kind,
                 data.RtpParameters,
                 data.Type,
@@ -517,10 +512,10 @@ namespace TubumuMeeting.Mediasoup
                 responseData.Score,
                 responseData.PreferredLayers);
 
-            Consumers[consumer.Id] = consumer;
+            Consumers[consumer.Internal.ConsumerId] = consumer;
 
-            consumer.On("@close", _ => Consumers.Remove(consumer.Id));
-            consumer.On("@producerclose", _ => Consumers.Remove(consumer.Id));
+            consumer.On("@close", _ => Consumers.Remove(consumer.Internal.ConsumerId));
+            consumer.On("@producerclose", _ => Consumers.Remove(consumer.Internal.ConsumerId));
 
             // Emit observer event.
             Observer.Emit("newconsumer", consumer);
@@ -551,12 +546,12 @@ namespace TubumuMeeting.Mediasoup
             // This may throw.
             ORTC.ValidateSctpStreamParameters(dataProducerOptions.SctpStreamParameters);
 
-            var @internal = new
-            {
+            var @internal = new DataProducerInternalData
+            (
                 Internal.RouterId,
-                TransportId = Internal.TransportId,
-                DataProducerId = !dataProducerOptions.Id.IsNullOrWhiteSpace() ? dataProducerOptions.Id : Guid.NewGuid().ToString(),
-            };
+                Internal.TransportId,
+                !dataProducerOptions.Id.IsNullOrWhiteSpace() ? dataProducerOptions.Id : Guid.NewGuid().ToString()
+            );
 
             var reqData = new
             {
@@ -568,20 +563,18 @@ namespace TubumuMeeting.Mediasoup
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE_DATA, @internal, reqData);
             var responseData = JsonConvert.DeserializeObject<TransportDataProduceResponseData>(status);
             var dataProducer = new DataProducer(_loggerFactory,
-                @internal.RouterId,
-                @internal.TransportId,
-                @internal.DataProducerId,
+                @internal,
                 responseData.SctpStreamParameters,
                 responseData.Label,
                 responseData.Protocol,
                 Channel,
                 AppData);
 
-            DataProducers[dataProducer.Id] = dataProducer;
+            DataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
 
             dataProducer.On("@close", _ =>
             {
-                DataProducers.Remove(dataProducer.Id);
+                DataProducers.Remove(dataProducer.Internal.DataProducerId);
                 Emit("@dataproducerclose", dataProducer);
             });
 
@@ -622,13 +615,13 @@ namespace TubumuMeeting.Mediasoup
             _sctpStreamIds[sctpStreamId] = 1;
             sctpStreamParameters.StreamId = sctpStreamId;
 
-            var @internal = new
-            {
+            var @internal = new DataConsumerInternalData
+            (
                 Internal.RouterId,
-                TransportId = Internal.TransportId,
-                DataConsumerId = Guid.NewGuid().ToString(),
+                Internal.TransportId,
                 dataConsumerOptions.DataProducerId,
-            };
+                Guid.NewGuid().ToString()
+            );
 
             var reqData = new
             {
@@ -641,27 +634,24 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<TransportDataConsumeResponseData>(status);
 
             var dataConsumer = new DataConsumer(_loggerFactory,
-                @internal.RouterId,
-                @internal.TransportId,
-                @internal.DataProducerId,
-                @internal.DataConsumerId,
+                @internal,
                 responseData.SctpStreamParameters,
                 responseData.Label,
                 responseData.Protocol,
                 Channel,
                 AppData);
 
-            DataConsumers[dataConsumer.Id] = dataConsumer;
+            DataConsumers[dataConsumer.Internal.DataConsumerId] = dataConsumer;
 
             dataConsumer.On("@close", _ =>
             {
-                DataConsumers.Remove(dataConsumer.Id);
+                DataConsumers.Remove(dataConsumer.Internal.DataConsumerId);
                 _sctpStreamIds[sctpStreamId] = 0;
             });
 
             dataConsumer.On("@dataproducerclose", _ =>
             {
-                DataConsumers.Remove(dataConsumer.Id);
+                DataConsumers.Remove(dataConsumer.Internal.DataConsumerId);
                 _sctpStreamIds[sctpStreamId] = 0;
             });
 

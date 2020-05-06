@@ -5,15 +5,8 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class DataProducer : EventEmitter
+    public class DataProducerInternalData
     {
-        /// <summary>
-        /// Logger
-        /// </summary>
-        private readonly ILogger<DataProducer> _logger;
-
-        #region Internal data.
-
         /// <summary>
         /// Router id.
         /// </summary>
@@ -27,11 +20,27 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// DataProducer id.
         /// </summary>
-        public string Id { get; }
+        public string DataProducerId { get; }
 
-        private readonly object _internal;
+        public DataProducerInternalData(string routerId, string transportId, string dataProducerId)
+        {
+            RouterId = routerId;
+            TransportId = transportId;
+            DataProducerId = dataProducerId;
+        }
+    }
 
-        #endregion
+    public class DataProducer : EventEmitter
+    {
+        /// <summary>
+        /// Logger
+        /// </summary>
+        private readonly ILogger<DataProducer> _logger;
+
+        /// <summary>
+        /// Internal data.
+        /// </summary>
+        public DataProducerInternalData Internal { get; private set; }
 
         #region Producer data.
 
@@ -80,35 +89,25 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits close</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="routerId"></param>
-        /// <param name="transportId"></param>
-        /// <param name="dataProducerId"></param>
+        /// <param name="dataProducerInternalData"></param>
         /// <param name="sctpStreamParameters"></param>
         /// <param name="label"></param>
         /// <param name="protocol"></param>
         /// <param name="channel"></param>
         /// <param name="appData"></param>
         public DataProducer(ILoggerFactory loggerFactory,
-                            string routerId,
-                            string transportId,
-                            string dataProducerId,
+                            DataProducerInternalData dataProducerInternalData,
                             SctpStreamParameters sctpStreamParameters,
                             string label,
                             string protocol,
                             Channel channel,
                             Dictionary<string, object>? appData)
         {
-            _logger = loggerFactory.CreateLogger<DataProducer>(); RouterId = routerId;
+            _logger = loggerFactory.CreateLogger<DataProducer>(); 
+
             // Internal
-            RouterId = routerId;
-            TransportId = transportId;
-            Id = dataProducerId;
-            _internal = new
-            {
-                RouterId,
-                TransportId,
-                DataConsumerId = Id
-            };
+            Internal = dataProducerInternalData;
+
             // Data
             SctpStreamParameters = sctpStreamParameters;
             Label = label;
@@ -136,7 +135,7 @@ namespace TubumuMeeting.Mediasoup
             //_channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            _channel.RequestAsync(MethodId.DATA_PRODUCER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.DATA_PRODUCER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("close");
 
@@ -172,7 +171,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("DumpAsync()");
 
-            return _channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP, _internal);
+            return _channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP, Internal);
         }
 
         /// <summary>
@@ -182,7 +181,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("GetStatsAsync()");
 
-            return _channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, _internal);
+            return _channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, Internal);
         }
 
         #region Event Handlers

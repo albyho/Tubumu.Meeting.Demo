@@ -5,15 +5,8 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class DataConsumer : EventEmitter
+    public class DataConsumerInternalData
     {
-        /// <summary>
-        /// Logger
-        /// </summary>
-        private readonly ILogger<DataConsumer> _logger;
-
-        #region Internal data.
-
         /// <summary>
         /// Router id.
         /// </summary>
@@ -30,13 +23,30 @@ namespace TubumuMeeting.Mediasoup
         public string DataProducerId { get; }
 
         /// <summary>
-        /// DataConsumer id.
+        /// Consumer id.
         /// </summary>
-        public string Id { get; }
+        public string DataConsumerId { get; }
 
-        private readonly object _internal;
+        public DataConsumerInternalData(string routerId, string transportId, string dataProducerId, string dataConsumerId)
+        {
+            RouterId = routerId;
+            TransportId = transportId;
+            DataProducerId = dataProducerId;
+            DataConsumerId = dataConsumerId;
+        }
+    }
 
-        #endregion
+    public class DataConsumer : EventEmitter
+    {
+        /// <summary>
+        /// Logger
+        /// </summary>
+        private readonly ILogger<DataConsumer> _logger;
+
+        /// <summary>
+        /// Internal data.
+        /// </summary>
+        public DataConsumerInternalData Internal { get; private set; }
 
         #region DataConsumer data.
 
@@ -87,38 +97,25 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits close</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="routerId"></param>
-        /// <param name="transportId"></param>
-        /// <param name="dataProducerId"></param>
-        /// <param name="dataConsumerId"></param>
+        /// <param name="dataConsumerInternalData"></param>
         /// <param name="sctpStreamParameters"></param>
         /// <param name="label"></param>
         /// <param name="protocol"></param>
         /// <param name="channel"></param>
         /// <param name="appData"></param>
         public DataConsumer(ILoggerFactory loggerFactory,
-                            string routerId,
-                            string transportId,
-                            string dataProducerId,
-                            string dataConsumerId,
+                            DataConsumerInternalData dataConsumerInternalData,
                             SctpStreamParameters sctpStreamParameters,
                             string label,
                             string protocol,
                             Channel channel,
                             Dictionary<string, object>? appData)
         {
-            _logger = loggerFactory.CreateLogger<DataConsumer>(); RouterId = routerId;
+            _logger = loggerFactory.CreateLogger<DataConsumer>(); 
+
             // Internal
-            TransportId = transportId;
-            DataProducerId = dataProducerId;
-            Id = dataConsumerId;
-            _internal = new
-            {
-                RouterId,
-                TransportId,
-                DataProducerId,
-                DataConsumerId = Id,
-            };
+            Internal = dataConsumerInternalData;
+
             // Data
             SctpStreamParameters = sctpStreamParameters;
             Label = label;
@@ -146,7 +143,7 @@ namespace TubumuMeeting.Mediasoup
             _channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            _channel.RequestAsync(MethodId.DATA_CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.DATA_CONSUMER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -182,7 +179,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("DumpAsync()");
 
-            return _channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, _internal);
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, Internal);
         }
 
         /// <summary>
@@ -192,7 +189,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("GetStatsAsync()");
 
-            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, _internal);
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, Internal);
         }
 
         #region Event Handlers
@@ -204,7 +201,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Id) return;
+            if (targetId != Internal.DataConsumerId) return;
             switch (@event)
             {
                 case "dataproducerclose":

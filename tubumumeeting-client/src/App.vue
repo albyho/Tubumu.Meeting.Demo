@@ -16,6 +16,28 @@ import querystring from "querystring";
 import * as mediasoupClient from "mediasoup-client";
 import * as signalR from "@microsoft/signalr";
 
+const VIDEO_CONSTRAINS = {
+  qvga: { width: { ideal: 320 }, height: { ideal: 240 } },
+  vga: { width: { ideal: 640 }, height: { ideal: 480 } },
+  hd: { width: { ideal: 1280 }, height: { ideal: 720 } }
+};
+
+const PC_PROPRIETARY_CONSTRAINTS = {
+  optional: [{ googDscp: true }]
+};
+
+const VIDEO_SIMULCAST_ENCODINGS = [
+  { scaleResolutionDownBy: 4 },
+  { scaleResolutionDownBy: 2 },
+  { scaleResolutionDownBy: 1 }
+];
+
+// Used for VP9 webcam video.
+const VIDEO_KSVC_ENCODINGS = [{ scalabilityMode: "S3T3_KEY" }];
+
+// Used for VP9 desktop sharing.
+// const VIDEO_SVC_ENCODINGS = [{ scalabilityMode: "S3T3", dtx: true }];
+
 const logger = new Logger("App");
 
 localStorage.setItem("debug", "mediasoup-client:* tubumumeeting-client:*");
@@ -25,6 +47,7 @@ export default {
   components: {},
   data() {
     return {
+      useSimulcast: false,
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
@@ -130,9 +153,7 @@ export default {
         iceCandidates: result.data.iceCandidates,
         dtlsParameters: result.data.dtlsParameters,
         iceServers: [],
-        proprietaryConstraints: {
-          optional: [{ googDscp: true }]
-        }
+        proprietaryConstraints: PC_PROPRIETARY_CONSTRAINTS
       });
 
       this.sendTransport.on(
@@ -173,7 +194,7 @@ export default {
       );
 
       this.sendTransport.on("connectionstatechange", state => {
-        logger.debug(`connectionstatechange: ${state}`)
+        logger.debug(`connectionstatechange: ${state}`);
       });
 
       result = await this.connection.invoke("CreateWebRtcTransport", {
@@ -194,7 +215,6 @@ export default {
       this.recvTransport.on(
         "connect",
         ({ dtlsParameters }, callback, errback) => {
-          logger.debug("recvTransport.on connect");
           this.connection
             .invoke("ConnectWebRtcTransport", {
               transportId: this.recvTransport.id,
@@ -401,8 +421,7 @@ export default {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             deviceId: { ideal: deviceId },
-            width: { ideal: 640 },
-            aspectRatio: 1.334
+            ...VIDEO_CONSTRAINS.vga
           }
         });
 
@@ -410,13 +429,40 @@ export default {
 
         track = stream.getVideoTracks()[0];
 
-        this.webcamProducer = await this.sendTransport.produce({
-          track,
-          appData: {
-            source: "webcam"
-          }
-        });
+        if (this.useSimulcast) {
+          // If VP9 is the only available video codec then use SVC.
+          const firstVideoCodec = this.mediasoupDevice.rtpCapabilities.codecs.find(
+            c => c.kind === "video"
+          );
 
+          let encodings;
+
+          if (firstVideoCodec.mimeType.toLowerCase() === "video/vp9")
+            encodings = VIDEO_KSVC_ENCODINGS;
+          else encodings = VIDEO_SIMULCAST_ENCODINGS;
+
+          this.webcamProducer = await this.sendTransport.produce({
+            track,
+            encodings,
+            codecOptions: {
+              videoGoogleStartBitrate: 1000
+            },
+            // NOTE: for testing codec selection.
+            // codec : this.mediasoupDevice.rtpCapabilities.codecs
+            // 	.find((codec) => codec.mimeType.toLowerCase() === 'video/h264')
+            appData: {
+              source: "webcam"
+            }
+          });
+        } else {
+          this.webcamProducer = await this.sendTransport.produce({
+            track,
+            appData: {
+              source: "webcam"
+            }
+          });
+        }
+        
         await this._updateWebcams();
 
         this.webcamProducer.on("transportclose", () => {
@@ -550,7 +596,6 @@ body {
 }
 
 video {
-  width:320px;
+  width: 320px;
 }
-
 </style>
