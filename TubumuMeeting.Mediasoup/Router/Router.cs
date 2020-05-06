@@ -253,22 +253,22 @@ namespace TubumuMeeting.Mediasoup
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers[producer.Id] = producer;
+                _producers[producer.Internal.ProducerId] = producer;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.Id);
+                _producers.Remove(producer.Internal.ProducerId);
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers[dataProducer.Id] = dataProducer;
+                _dataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.Id);
+                _dataProducers.Remove(dataProducer.Internal.DataProducerId);
             });
 
             // Emit observer event.
@@ -328,22 +328,22 @@ namespace TubumuMeeting.Mediasoup
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers[producer.Id] = producer;
+                _producers[producer.Internal.ProducerId] = producer;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.Id);
+                _producers.Remove(producer.Internal.ProducerId);
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers[dataProducer.Id] = dataProducer;
+                _dataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.Id);
+                _dataProducers.Remove(dataProducer.Internal.DataProducerId);
             });
 
             // Emit observer event.
@@ -398,22 +398,22 @@ namespace TubumuMeeting.Mediasoup
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers[producer.Id] = producer;
+                _producers[producer.Internal.ProducerId] = producer;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.Id);
+                _producers.Remove(producer.Internal.ProducerId);
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers[dataProducer.Id] = dataProducer;
+                _dataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.Id);
+                _dataProducers.Remove(dataProducer.Internal.DataProducerId);
             });
 
             // Emit observer event.

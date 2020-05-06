@@ -151,13 +151,13 @@ namespace TubumuMeeting.Mediasoup
             // This may throw.
             var rtpParameters = ORTC.GetPipeConsumerRtpParameters(producer.ConsumableRtpParameters, Rtx);
 
-            var @internal = new
-            {
+            var @internal = new ConsumerInternalData
+            (
                 Internal.RouterId,
                 Internal.TransportId,
-                ConsumerId = Guid.NewGuid().ToString(),
                 consumerOptions.ProducerId,
-            };
+                Guid.NewGuid().ToString()
+            );
 
             var reqData = new
             {
@@ -179,10 +179,7 @@ namespace TubumuMeeting.Mediasoup
 
             // 在 Node.js 实现中， 创建 Consumer 对象时没提供 score 和 preferredLayers 参数，且 score = { score: 10, producerScore: 10 }。
             var consumer = new Consumer(_loggerFactory,
-                @internal.RouterId,
-                @internal.TransportId,
-                @internal.ConsumerId,
-                @internal.ProducerId,
+                @internal,
                 data.Kind,
                 data.RtpParameters,
                 data.Type,
@@ -193,10 +190,10 @@ namespace TubumuMeeting.Mediasoup
                 responseData.Score,
                 responseData.PreferredLayers);
 
-            Consumers[consumer.Id] = consumer;
+            Consumers[consumer.Internal.ConsumerId] = consumer;
 
-            consumer.On("@close", _ => Consumers.Remove(consumer.Id));
-            consumer.On("@producerclose", _ => Consumers.Remove(consumer.Id));
+            consumer.On("@close", _ => Consumers.Remove(consumer.Internal.ConsumerId));
+            consumer.On("@producerclose", _ => Consumers.Remove(consumer.Internal.ConsumerId));
 
             // Emit observer event.
             Observer.Emit("newconsumer", consumer);

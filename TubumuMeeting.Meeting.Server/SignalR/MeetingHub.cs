@@ -194,7 +194,7 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             // Store the Producer into the Peer data Object.
-            PeerRoom.Peer.Producers[producer.Id] = producer;
+            PeerRoom.Peer.Producers[producer.Internal.ProducerId] = producer;
 
             // Set Producer events.
             producer.On("score", score =>
@@ -208,14 +208,14 @@ namespace TubumuMeeting.Meeting.Server
                     Code = 200,
                     InternalCode = "producerScore",
                     Message = "producerScore",
-                    Data = new { ProducerId = producer.Id, Score = data }
+                    Data = new { ProducerId = producer.Internal.ProducerId, Score = data }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             });
             producer.On("videoorientationchange", videoOrientation =>
             {
                 // TODO: (alby)考虑不进行反序列化
                 var data = JsonConvert.DeserializeObject<ProducerVideoOrientation>(videoOrientation!.ToString());
-                _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.Id}\", videoOrientation:\"{videoOrientation}\"]");
+                _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.Internal.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
             });
 
             // Optimization: Create a server-side Consumer for each Peer.
@@ -236,7 +236,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 Code = 200,
                 Message = "Produce 成功",
-                Data = new ProduceResult { Id = producer.Id }
+                Data = new ProduceResult { Id = producer.Internal.ProducerId }
             };
         }
 
@@ -436,7 +436,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
         {
-            _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.Id}\"]");
+            _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.Internal.ProducerId}\"]");
 
             // Optimization:
             // - Create the server-side Consumer. If video, do it paused.
@@ -446,7 +446,7 @@ namespace TubumuMeeting.Meeting.Server
             //   server-side Consumer (when resuming it).
 
             // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
-            if (consumerPeer.RtpCapabilities == null || !PeerRoom!.Room.Router.CanConsume(producer.Id, consumerPeer.RtpCapabilities))
+            if (consumerPeer.RtpCapabilities == null || !PeerRoom!.Room.Router.CanConsume(producer.Internal.ProducerId, consumerPeer.RtpCapabilities))
             {
                 return;
             }
@@ -467,7 +467,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 consumer = await transport.ConsumeAsync(new ConsumerOptions
                 {
-                    ProducerId = producer.Id,
+                    ProducerId = producer.Internal.ProducerId,
                     RtpCapabilities = consumerPeer.RtpCapabilities,
                     Paused = producer.Kind == MediaKind.Video
                 });
@@ -479,7 +479,7 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             // Store the Consumer into the consumerPeer data Object.
-            consumerPeer.Consumers[consumer.Id] = consumer;
+            consumerPeer.Consumers[consumer.Internal.ConsumerId] = consumer;
 
             consumer.On("score", (score) =>
             {
@@ -493,7 +493,7 @@ namespace TubumuMeeting.Meeting.Server
                     Code = 200,
                     InternalCode = "consumerScore",
                     Message = "consumerScore",
-                    Data = new { ConsumerId = consumer.Id, Score = data }
+                    Data = new { ConsumerId = consumer.Internal.ConsumerId, Score = data }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
@@ -501,13 +501,13 @@ namespace TubumuMeeting.Meeting.Server
             consumer.On("transportclose", _ =>
             {
                 // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.Id);
+                consumerPeer.Consumers.Remove(consumer.Internal.ConsumerId);
             });
 
             consumer.On("producerclose", _ =>
             {
                 // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.Id);
+                consumerPeer.Consumers.Remove(consumer.Internal.ConsumerId);
 
                 // Message: consumerClosed
                 var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
@@ -516,7 +516,7 @@ namespace TubumuMeeting.Meeting.Server
                     Code = 200,
                     InternalCode = "consumerClosed",
                     Message = "consumerClosed",
-                    Data = new { ConsumerId = consumer.Id }
+                    Data = new { ConsumerId = consumer.Internal.ConsumerId }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
@@ -529,7 +529,7 @@ namespace TubumuMeeting.Meeting.Server
                     Code = 200,
                     InternalCode = "consumerPaused",
                     Message = "consumerPaused",
-                    Data = new { ConsumerId = consumer.Id }
+                    Data = new { ConsumerId = consumer.Internal.ConsumerId }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
@@ -542,7 +542,7 @@ namespace TubumuMeeting.Meeting.Server
                     Code = 200,
                     InternalCode = "consumerResumed",
                     Message = "consumerResumed",
-                    Data = new { ConsumerId = consumer.Id }
+                    Data = new { ConsumerId = consumer.Internal.ConsumerId }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
@@ -556,7 +556,7 @@ namespace TubumuMeeting.Meeting.Server
                     Code = 200,
                     InternalCode = "consumerLayersChanged",
                     Message = "consumerLayersChanged",
-                    Data = new { ConsumerId = consumer.Id, SpatialLayer = data != null ? (int?)data.SpatialLayer : null, TemporalLayer = data != null ? (int?)data.TemporalLayer : null }
+                    Data = new { ConsumerId = consumer.Internal.ConsumerId, SpatialLayer = data != null ? (int?)data.SpatialLayer : null, TemporalLayer = data != null ? (int?)data.TemporalLayer : null }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             });
 
@@ -574,8 +574,8 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         PeerId = producerPeer.PeerId,
                         Kind = consumer.Kind,
-                        ProducerId = producer.Id,
-                        Id = consumer.Id,
+                        ProducerId = producer.Internal.ProducerId,
+                        Id = consumer.Internal.ConsumerId,
                         ConsumerPeerId = consumerPeer.PeerId, // NewConsumerReady 使用
                         RtpParameters = consumer.RtpParameters,
                         Type = consumer.Type,
@@ -616,7 +616,7 @@ namespace TubumuMeeting.Meeting.Server
                 Message = "consumerScore",
                 Data = new
                 {
-                    ConsumerId = consumer.Id,
+                    ConsumerId = consumer.Internal.ConsumerId,
                     Score = consumer.Score,
                 }
             }).ContinueWithOnFaultedHandleLog(_logger);
