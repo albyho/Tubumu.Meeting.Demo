@@ -107,6 +107,8 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Provide the PipeTransport remote parameters.
         /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         public override Task ConnectAsync(object parameters)
         {
             _logger.LogDebug("ConnectAsync()");
@@ -118,7 +120,12 @@ namespace TubumuMeeting.Mediasoup
             return ConnectAsync(connectParameters);
         }
 
-        private async Task ConnectAsync(PipeTransportConnectParameters pipeTransportConnectParameters)
+        /// <summary>
+        /// Provide the PipeTransport remote parameters.
+        /// </summary>
+        /// <param name="pipeTransportConnectParameters"></param>
+        /// <returns></returns>
+        public async Task ConnectAsync(PipeTransportConnectParameters pipeTransportConnectParameters)
         {
             var reqData = pipeTransportConnectParameters;
 
