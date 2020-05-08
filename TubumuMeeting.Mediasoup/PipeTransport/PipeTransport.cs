@@ -130,7 +130,7 @@ namespace TubumuMeeting.Mediasoup
             var reqData = pipeTransportConnectParameters;
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, Internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<PipeTransportConnectResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<PipeTransportConnectResponseData>(status!);
 
             // Update data.
             Tuple = responseData.Tuple;
@@ -175,7 +175,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status!);
 
             var data = new
             {

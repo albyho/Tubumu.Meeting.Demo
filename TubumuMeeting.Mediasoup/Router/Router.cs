@@ -223,7 +223,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await _channel.RequestAsync(MethodId.ROUTER_CREATE_WEBRTC_TRANSPORT, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<RouterCreateWebRtcTransportResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<RouterCreateWebRtcTransportResponseData>(status!);
 
             var transport = new WebRtcTransport(_loggerFactory,
                 new TransportInternalData(@internal.RouterId, @internal.TransportId),
@@ -302,7 +302,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await _channel.RequestAsync(MethodId.ROUTER_CREATE_PLAIN_TRANSPORT, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status!);
 
             var transport = new PlainTransport(_loggerFactory,
                             new TransportInternalData(@internal.RouterId, @internal.TransportId),
@@ -373,7 +373,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await _channel.RequestAsync(MethodId.ROUTER_CREATE_PIPE_TRANSPORT, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status!);
 
             var transport = new PipeTransport(_loggerFactory,
                             new TransportInternalData(@internal.RouterId, @internal.TransportId),
