@@ -418,7 +418,6 @@ namespace TubumuMeeting.Mediasoup
             return transport;
         }
 
-        #region PipeToRouterAsync
         /// <summary>
         /// Pipes the given Producer or DataProducer into another Router in same host.
         /// </summary>
@@ -475,37 +474,40 @@ namespace TubumuMeeting.Mediasoup
                 try
                 {
                     // TODO: (alby)使用 Task.WhenAll 改写
-                    localPipeTransport = await CreatePipeTransportAsync(new PipeTransportOptions
-                    {
-                        ListenIp = pipeToRouterOptions.ListenIp,
-                        EnableSctp = pipeToRouterOptions.EnableSctp,
-                        NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
-                        EnableRtx = pipeToRouterOptions.EnableRtx,
-                        EnableSrtp = pipeToRouterOptions.EnableSrtp
-                    });
-                    remotePipeTransport = await pipeToRouterOptions.Router.CreatePipeTransportAsync(new PipeTransportOptions
-                    {
-                        ListenIp = pipeToRouterOptions.ListenIp,
-                        EnableSctp = pipeToRouterOptions.EnableSctp,
-                        NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
-                        EnableRtx = pipeToRouterOptions.EnableRtx,
-                        EnableSrtp = pipeToRouterOptions.EnableSrtp
-                    });
+                    var pipeTransports = await Task.WhenAll(CreatePipeTransportAsync(new PipeTransportOptions
+                        {
+                            ListenIp = pipeToRouterOptions.ListenIp,
+                            EnableSctp = pipeToRouterOptions.EnableSctp,
+                            NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
+                            EnableRtx = pipeToRouterOptions.EnableRtx,
+                            EnableSrtp = pipeToRouterOptions.EnableSrtp
+                        }),
+                        pipeToRouterOptions.Router.CreatePipeTransportAsync(new PipeTransportOptions
+                        {
+                            ListenIp = pipeToRouterOptions.ListenIp,
+                            EnableSctp = pipeToRouterOptions.EnableSctp,
+                            NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
+                            EnableRtx = pipeToRouterOptions.EnableRtx,
+                            EnableSrtp = pipeToRouterOptions.EnableSrtp
+                        })
+                    );
 
-                    // TODO: (alby)使用 Task.WhenAll 改写
-                    await localPipeTransport.ConnectAsync(new PipeTransportConnectParameters
-                    {
-                        Ip = remotePipeTransport.Tuple.LocalIp,
-                        Port = remotePipeTransport.Tuple.LocalPort,
-                        SrtpParameters = remotePipeTransport.SrtpParameters,
-                    });
+                    localPipeTransport = pipeTransports[0];
+                    remotePipeTransport = pipeTransports[1];
 
-                    await remotePipeTransport.ConnectAsync(new PipeTransportConnectParameters
-                    {
-                        Ip = localPipeTransport.Tuple.LocalIp,
-                        Port = localPipeTransport.Tuple.LocalPort,
-                        SrtpParameters = localPipeTransport.SrtpParameters,
-                    });
+                    await Task.WhenAll(localPipeTransport.ConnectAsync(new PipeTransportConnectParameters
+                        {
+                            Ip = remotePipeTransport.Tuple.LocalIp,
+                            Port = remotePipeTransport.Tuple.LocalPort,
+                            SrtpParameters = remotePipeTransport.SrtpParameters,
+                        }),
+                        remotePipeTransport.ConnectAsync(new PipeTransportConnectParameters
+                        {
+                            Ip = localPipeTransport.Tuple.LocalIp,
+                            Port = localPipeTransport.Tuple.LocalPort,
+                            SrtpParameters = localPipeTransport.SrtpParameters,
+                        })
+                    );
 
                     localPipeTransport.Observer.On("close", _ =>
                     {
@@ -628,8 +630,6 @@ namespace TubumuMeeting.Mediasoup
                 throw new Exception("internal error");
             }
         }
-
-        #endregion
 
         /// <summary>
         /// Create an AudioLevelObserver.
