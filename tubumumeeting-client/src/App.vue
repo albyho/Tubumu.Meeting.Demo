@@ -73,7 +73,7 @@ export default {
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTg3IiwiZyI6IuWMu-mZoiIsIm5iZiI6MTU4NzcxNzU2NSwiZXhwIjoxNTkwMzA5NTY1LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.qjvvJB8EHaerbeKnrmfnN3BJ5jh4R_pG99oS1I7ZAvw"
         ];
 
-        const host = "https://192.168.18.233:5001";
+        const host = "https://192.168.1.124:5001";
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
@@ -215,6 +215,7 @@ export default {
       this.recvTransport.on(
         "connect",
         ({ dtlsParameters }, callback, errback) => {
+          logger.debug("recvTransport.on connect dtls: %o", dtlsParameters);
           this.connection
             .invoke("ConnectWebRtcTransport", {
               transportId: this.recvTransport.id,
@@ -240,7 +241,7 @@ export default {
       }
 
       if (this.mediasoupDevice.canProduce("video")) {
-        this.enableWebcam();
+        //this.enableWebcam();
       }
     },
     async processNewConsumer(data) {
@@ -250,9 +251,9 @@ export default {
         id,
         kind,
         rtpParameters,
-        //type,
+        //type, // mediasoup-client 的 Transport.ts 不使用该参数
         appData
-        //producerPaused
+        //producerPaused // mediasoup-client 的 Transport.ts 不使用该参数
       } = data.data;
       let codecOptions;
 
@@ -296,6 +297,7 @@ export default {
         return;
       }
 
+      /*
       if (kind === "audio") {
         consumer.volume = 0;
 
@@ -309,87 +311,81 @@ export default {
           );
         }
       }
-
+      */
+     
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
       this.remoteStream = stream;
     },
     async processMessage(data) {
       logger.debug("processMessage() | %o", data);
-      switch (data.internalCode)
-			{
-        case 'newPeer':
-				{
-					// eslint-disable-next-line no-unused-vars
-					const peer = data.data;
+      switch (data.internalCode) {
+        case "producerScore": {
+          // eslint-disable-next-line no-unused-vars
+          const { producerId, score } = data.data;
 
-					break;
-        }
-        
-				case 'consumerClosed':
-				{
-					const { consumerId } = data.data;
-					const consumer = this.consumers.get(consumerId);
-
-					if (!consumer)
-						break;
-
-					consumer.close();
-          this.consumers.delete(consumerId);
-          
           break;
-				}
-
-				case 'consumerPaused':
-				{
-					const { consumerId } = data.data;
-					const consumer = this.consumers.get(consumerId);
-
-					if (!consumer)
-            break;
-            
-					break;
-				}
-
-				case 'consumerResumed':
-				{
-					const { consumerId } = data.data;
-          const consumer = this.consumers.get(consumerId);
-          
-					if (!consumer)
-						break;
-
-					break;
-				}
-
-				case 'consumerLayersChanged':
-				{
-					// eslint-disable-next-line no-unused-vars
-					const { consumerId, spatialLayer, temporalLayer } = data.data;
-					const consumer = this._consumers.get(consumerId);
-
-					if (!consumer)
-            break;
-            
-					break;
         }
-        
-        case 'consumerScore':
-				{
-					const { consumerId } = data.data;
+
+        case "newPeer": {
+          // eslint-disable-next-line no-unused-vars
+          const peer = data.data;
+
+          break;
+        }
+
+        case "consumerClosed": {
+          const { consumerId } = data.data;
           const consumer = this.consumers.get(consumerId);
 
-					if (!consumer)
-            break;
+          if (!consumer) break;
 
-					break;
+          consumer.close();
+          this.consumers.delete(consumerId);
+
+          break;
         }
-        
-				default:
-				{
-					logger.error(
-						'unknown protoo data.method "%s"', data.internalCode);
-				}
+
+        case "consumerPaused": {
+          const { consumerId } = data.data;
+          const consumer = this.consumers.get(consumerId);
+
+          if (!consumer) break;
+
+          break;
+        }
+
+        case "consumerResumed": {
+          const { consumerId } = data.data;
+          const consumer = this.consumers.get(consumerId);
+
+          if (!consumer) break;
+
+          break;
+        }
+
+        case "consumerLayersChanged": {
+          // eslint-disable-next-line no-unused-vars
+          const { consumerId, spatialLayer, temporalLayer } = data.data;
+          const consumer = this._consumers.get(consumerId);
+
+          if (!consumer) break;
+
+          break;
+        }
+
+        case "consumerScore": {
+          const { consumerId } = data.data;
+          const consumer = this.consumers.get(consumerId);
+
+          if (!consumer) break;
+
+          break;
+        }
+
+        default: {
+          logger.error('unknown protoo data.method "%s"', data.internalCode);
+        }
       }
     },
     async enableMic() {
@@ -537,7 +533,7 @@ export default {
             }
           });
         }
-        
+
         await this._updateWebcams();
 
         this.webcamProducer.on("transportclose", () => {

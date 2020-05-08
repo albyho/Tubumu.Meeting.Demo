@@ -197,12 +197,12 @@ namespace TubumuMeeting.Meeting.Server
             PeerRoom.Peer.Producers[producer.Internal.ProducerId] = producer;
 
             // Set Producer events.
+            var peerId = PeerRoom.Peer.PeerId;
             producer.On("score", score =>
             {
-                // TODO: (alby)考虑不进行反序列化
-                var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
+                var data = (ProducerScore[])score!;
                 // Message: producerScore
-                var client = _hubContext.Clients.User(PeerRoom.Peer.PeerId.ToString());
+                var client = _hubContext.Clients.User(peerId.ToString());
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -213,8 +213,7 @@ namespace TubumuMeeting.Meeting.Server
             });
             producer.On("videoorientationchange", videoOrientation =>
             {
-                // TODO: (alby)考虑不进行反序列化
-                var data = JsonConvert.DeserializeObject<ProducerVideoOrientation>(videoOrientation!.ToString());
+                var data = (ProducerVideoOrientation)videoOrientation!;
                 _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.Internal.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
             });
 
@@ -483,9 +482,7 @@ namespace TubumuMeeting.Meeting.Server
 
             consumer.On("score", (score) =>
             {
-                // TODO: (alby)考虑不进行反序列化
-                var data = JsonConvert.DeserializeObject<ProducerScore[]>(score!.ToString());
-
+                var data = (ConsumerScore)score!;
                 // Message: consumerScore
                 var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
                 client.ReceiveMessage(new MeetingMessage
@@ -576,7 +573,7 @@ namespace TubumuMeeting.Meeting.Server
                         Kind = consumer.Kind,
                         ProducerId = producer.Internal.ProducerId,
                         Id = consumer.Internal.ConsumerId,
-                        ConsumerPeerId = consumerPeer.PeerId, // NewConsumerReady 使用
+                        ConsumerPeerId = consumerPeer.PeerId, // 方便 NewConsumerReady 查找 Consumer
                         RtpParameters = consumer.RtpParameters,
                         Type = consumer.Type,
                         AppData = producer.AppData,
@@ -594,8 +591,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             _logger.LogDebug($"NewConsumerReady() | [peerId:\"{newConsumerReadyRequest.PeerId}\", consumerId:\"{newConsumerReadyRequest.ConsumerId}\"]");
 
-            if (PeerRoom == null ||
-                !_meetingManager.Peers.TryGetValue(newConsumerReadyRequest.PeerId, out var consumerPeer) ||
+            if (!_meetingManager.Peers.TryGetValue(newConsumerReadyRequest.PeerId, out var consumerPeer) ||
                 consumerPeer.Closed ||
                 !consumerPeer.Consumers.TryGetValue(newConsumerReadyRequest.ConsumerId, out var consumer) ||
                 consumer.Closed)

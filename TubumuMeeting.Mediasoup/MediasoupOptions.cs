@@ -99,7 +99,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     ListenIps = new[]
                     {
-                        new TransportListenIp { Ip = "0.0.0.0",  AnnouncedIp = "192.168.18.233" }
+                        new TransportListenIp { Ip = "0.0.0.0",  AnnouncedIp = "192.168.1.124" }
                     },
                     InitialAvailableOutgoingBitrate = 1000000,
                     MinimumAvailableOutgoingBitrate = 600000,

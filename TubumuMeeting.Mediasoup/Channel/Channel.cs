@@ -269,7 +269,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"ConsumerSocketOnData() | received invalid message from the worker process:{ex}");
+                        _logger.LogError($"ConsumerSocketOnData() | received invalid message from the worker process:{ex}\ndata: {nsPayload}");
                         // Reset the buffer and exit.
                         _recvBuffer = null;
                         return;
