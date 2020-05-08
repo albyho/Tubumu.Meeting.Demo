@@ -346,6 +346,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Don't do this in PipeTransports since there we must keep CNAME value in
             // each Producer.
+            // TODO: (alby)不好的模式
             if (GetType() != typeof(PipeTransport))
             {
                 // If CNAME is given and we don't have yet a CNAME for Producers in this

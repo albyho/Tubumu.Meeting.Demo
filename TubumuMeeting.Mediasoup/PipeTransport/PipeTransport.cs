@@ -19,7 +19,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<PipeTransport> _logger;
 
-        #region Producer data.
+        #region PipeTransport data.
 
         public TransportTuple Tuple { get; private set; }
 
@@ -85,7 +85,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
 
             if (SctpState.HasValue)
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                SctpState = Mediasoup.SctpState.Closed;
 
             base.Close();
         }
@@ -99,7 +99,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
 
             if (SctpState.HasValue)
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                SctpState = Mediasoup.SctpState.Closed;
 
             base.RouterClosed();
         }
