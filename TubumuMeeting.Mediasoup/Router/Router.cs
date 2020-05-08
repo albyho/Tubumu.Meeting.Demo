@@ -8,7 +8,7 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class Router : EventEmitter
+    public class Router : EventEmitter, IEquatable<Router>
     {
         // Logger
         private readonly ILoggerFactory _loggerFactory;
@@ -690,6 +690,16 @@ namespace TubumuMeeting.Mediasoup
 
                 return false;
             }
+        }
+
+        public bool Equals(Router other)
+        {
+            return RouterId == other.RouterId;
+        }
+
+        public override int GetHashCode()
+        {
+            return RouterId.GetHashCode();
         }
     }
 }
