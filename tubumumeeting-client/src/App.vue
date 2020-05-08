@@ -3,8 +3,13 @@
     <el-container>
       <el-header>Tubumu Meeting</el-header>
       <el-main>
-        <video id="localVideo" :srcObject.prop="localStream" autoplay="autoplay" />
-        <video id="remoteVideo" :srcObject.prop="remoteStream" autoplay="autoplay" />
+        <video id="localVideo" :srcObject.prop="localVideoStream" autoplay="autoplay" />
+        <video id="remoteVideo" :srcObject.prop="remoteVideoStream" autoplay="autoplay" />
+        <audio
+          id="remoteAudio"
+          :srcObject.prop="remoteAudioStream"
+          autoplay="autoplay"
+        />
       </el-main>
     </el-container>
   </div>
@@ -57,8 +62,9 @@ export default {
       audioDevices: {},
       webcamProducer: null,
       micProducer: null,
-      localStream: null,
-      remoteStream: null
+      localVideoStream: null,
+      remoteVideoStream: null,
+      remoteAudioStream: null
     };
   },
   mounted() {
@@ -73,7 +79,7 @@ export default {
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTg3IiwiZyI6IuWMu-mZoiIsIm5iZiI6MTU4NzcxNzU2NSwiZXhwIjoxNTkwMzA5NTY1LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.qjvvJB8EHaerbeKnrmfnN3BJ5jh4R_pG99oS1I7ZAvw"
         ];
 
-        const host = "https://192.168.1.124:5001";
+        const host = "https://192.168.18.233:5001";
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
@@ -241,7 +247,7 @@ export default {
       }
 
       if (this.mediasoupDevice.canProduce("video")) {
-        //this.enableWebcam();
+        this.enableWebcam();
       }
     },
     async processNewConsumer(data) {
@@ -312,10 +318,14 @@ export default {
         }
       }
       */
-     
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
-      this.remoteStream = stream;
+
+      if (kind === "video") {
+        this.remoteVideoStream = stream;
+      } else {
+        this.remoteAudioStream = stream;
+      }
     },
     async processMessage(data) {
       logger.debug("processMessage() | %o", data);
@@ -496,7 +506,7 @@ export default {
           }
         });
 
-        this.localStream = stream;
+        this.localVideoStream = stream;
 
         track = stream.getVideoTracks()[0];
 
