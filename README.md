@@ -1,5 +1,7 @@
 # TubumuMeeting
 
+![](http://blog.tubumu.com/postimages/mediasoup-01/004.jpg)
+
 对该项目实现上的介绍，见：[使用 ASP.NET Core 实现 mediasoup 的信令服务器](https://blog.tubumu.com/2020/05/05/mediasoup-01/)。
 
 `TubumuMeeting` 是基于 `mediasoup` 实现的视频会议系统，但将其服务端的 `Node.js` 模块使用 `ASP.NET Core` 重新进行了实现。对其 Web 客户端 Demo 也重新进行了实现。本项目应该是 Github 上能搜索到的唯一一个非 Node.js 实现，虽有诸多不完善但也算基本流程能够跑通，望与有兴趣者继续完善。
