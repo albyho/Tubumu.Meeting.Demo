@@ -52,7 +52,7 @@ namespace TubumuMeeting.Web
 
             // Cors
             services.AddCors(options => options.AddPolicy("DefaultPolicy",
-                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://localhost:8080", "https://192.168.18.233:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
+                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://localhost:8080", "https://192.168.1.124:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
             //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
             );
 
@@ -109,7 +109,6 @@ namespace TubumuMeeting.Web
                         OnChallenge = async context =>
                         {
                             //_logger.LogError($"Authentication Challenge(OnChallenge): {context.Request.Path}");
-
                             // TODO: (alby)为不同客户端返回不同的内容
                             var body = Encoding.UTF8.GetBytes("{\"code\": 400, \"message\": \"Authentication Challenge\"}");
                             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
