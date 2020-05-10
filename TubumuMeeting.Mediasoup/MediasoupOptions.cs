@@ -5,18 +5,18 @@ namespace TubumuMeeting.Mediasoup
 {
     public class MediasoupOptions
     {
-        public string MediasoupVersion { get; set; }
-
-        public string WorkerPath { get; set; }
-
-        public int NumberOfWorkers { get; set; }
+        public MediasoupStartupSettings MediasoupStartupSettings { get; set; }
 
         public MediasoupSettings MediasoupSettings { get; set; }
 
         public static MediasoupOptions Default { get; } = new MediasoupOptions
         {
-            MediasoupVersion = "3.5.9",
-            NumberOfWorkers = Environment.ProcessorCount,
+            MediasoupStartupSettings = new MediasoupStartupSettings
+            {
+                WorkerPath = "mediasoup-worker",
+                MediasoupVersion = "3.5.9",
+                NumberOfWorkers = Environment.ProcessorCount,
+            },
             MediasoupSettings = new MediasoupSettings
             {
                 WorkerSettings = new WorkerSettings
@@ -99,7 +99,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     ListenIps = new[]
                     {
-                        new TransportListenIp { Ip = "0.0.0.0",  AnnouncedIp = "192.168.1.124" }
+                        new TransportListenIp { Ip = "0.0.0.0",  AnnouncedIp = "192.168.18.233" }
                     },
                     InitialAvailableOutgoingBitrate = 1000000,
                     MinimumAvailableOutgoingBitrate = 600000,

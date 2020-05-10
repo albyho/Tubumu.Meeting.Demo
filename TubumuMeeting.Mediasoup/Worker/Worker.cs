@@ -73,11 +73,11 @@ namespace TubumuMeeting.Mediasoup
 
             AppData = workerSettings.AppData;
 
-            var env = new[] { $"MEDIASOUP_VERSION={mediasoupOptions.MediasoupVersion}" };
+            var env = new[] { $"MEDIASOUP_VERSION={mediasoupOptions.MediasoupStartupSettings.MediasoupVersion}" };
 
             var args = new List<string>
             {
-                mediasoupOptions.WorkerPath
+                mediasoupOptions.MediasoupStartupSettings.WorkerPath
             };
             if (workerSettings.LogLevel.HasValue)
             {
@@ -118,7 +118,7 @@ namespace TubumuMeeting.Mediasoup
                 // 备注：和 Node.js 不同，_child 没有 error 事件。不过，Process.Spawn 可抛出异常。
                 _child = Process.Spawn(new ProcessOptions()
                 {
-                    File = mediasoupOptions.WorkerPath,
+                    File = mediasoupOptions.MediasoupStartupSettings.WorkerPath,
                     Arguments = args.ToArray(),
                     Environment = env,
                     Detached = false,

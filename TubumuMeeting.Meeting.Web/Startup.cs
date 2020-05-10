@@ -15,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Tubumu.Core.Json;
+using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Meeting.Server;
 using TubumuMeeting.Meeting.Server.Authorization;
 
@@ -51,9 +52,10 @@ namespace TubumuMeeting.Web
             services.AddMemoryCache();
 
             // Cors
+            var corsSettings = Configuration.GetSection("CorsSettings").Get<CorsSettings>();
             services.AddCors(options => options.AddPolicy("DefaultPolicy",
-                builder => builder.WithOrigins("http://localhost:9090", "http://localhost:8080", "https://localhost:8080", "https://192.168.1.124:8080").AllowAnyMethod().AllowAnyHeader().AllowCredentials())
-            //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
+                builder => builder.WithOrigins(corsSettings.Origins).AllowAnyMethod().AllowAnyHeader().AllowCredentials())
+                //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
             );
 
             // Authentication
@@ -133,14 +135,22 @@ namespace TubumuMeeting.Web
                 });
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
 
-            services.AddMediasoup(configure =>
+            var mediasoupStartupSettings = Configuration.GetSection("MediasoupStartupSettings").Get<MediasoupStartupSettings>();
+            var webRtcTransportSettings = Configuration.GetSection("WebRtcTransportSettings").Get<WebRtcTransportSettings>();
+            services.AddMediasoup(options =>
             {
-                configure.MediasoupSettings.WorkerSettings.LogLevel = Mediasoup.WorkerLogLevel.Debug;
-                configure.NumberOfWorkers = 1;
-                configure.WorkerPath = Path.Combine((Environment.OSVersion.Platform == PlatformID.Unix) || (System.Environment.OSVersion.Platform == PlatformID.MacOSX) ?
-                    @"/Users/alby/Developer/OpenSource/Meeting/Lab/w" :
-                    @"C:\Developer\OpenSource\Meeting\worker",
-                    "Release", "mediasoup-worker");
+                options.MediasoupSettings.WorkerSettings.LogLevel = WorkerLogLevel.Debug;
+
+                // WebRtcTransportSettings
+                options.MediasoupSettings.WebRtcTransportSettings.ListenIps = webRtcTransportSettings.ListenIps;
+                options.MediasoupSettings.WebRtcTransportSettings.InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate;
+                options.MediasoupSettings.WebRtcTransportSettings.MinimumAvailableOutgoingBitrate = webRtcTransportSettings.MinimumAvailableOutgoingBitrate;
+                options.MediasoupSettings.WebRtcTransportSettings.MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize;
+
+                // MediasoupStartupSettings
+                options.MediasoupStartupSettings.MediasoupVersion = mediasoupStartupSettings.MediasoupVersion;
+                options.MediasoupStartupSettings.WorkerPath = mediasoupStartupSettings.WorkerPath;
+                options.MediasoupStartupSettings.NumberOfWorkers = mediasoupStartupSettings.NumberOfWorkers <= 0 ? Environment.ProcessorCount : mediasoupStartupSettings.NumberOfWorkers;
             });
         }
 
