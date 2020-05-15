@@ -243,28 +243,28 @@ namespace TubumuMeeting.Mediasoup
                 responseData.DtlsState,
                 responseData.DtlsRemoteCert
                 );
-            _transports[transport.Internal.TransportId] = transport;
+            _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.Internal.TransportId));
+            transport.On("@close", _ => _transports.Remove(transport.TransportId));
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers[producer.Internal.ProducerId] = producer;
+                _producers[producer.ProducerId] = producer;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.Internal.ProducerId);
+                _producers.Remove(producer.ProducerId);
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
+                _dataProducers[dataProducer.DataProducerId] = dataProducer;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.Internal.DataProducerId);
+                _dataProducers.Remove(dataProducer.DataProducerId);
             });
 
             // Emit observer event.
@@ -318,28 +318,28 @@ namespace TubumuMeeting.Mediasoup
                             responseData.RtcpTuple,
                             responseData.SrtpParameters
                             );
-            _transports[transport.Internal.TransportId] = transport;
+            _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.Internal.TransportId));
+            transport.On("@close", _ => _transports.Remove(transport.TransportId));
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers[producer.Internal.ProducerId] = producer;
+                _producers[producer.ProducerId] = producer;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.Internal.ProducerId);
+                _producers.Remove(producer.ProducerId);
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
+                _dataProducers[dataProducer.DataProducerId] = dataProducer;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.Internal.DataProducerId);
+                _dataProducers.Remove(dataProducer.DataProducerId);
             });
 
             // Emit observer event.
@@ -388,28 +388,28 @@ namespace TubumuMeeting.Mediasoup
                             responseData.SrtpParameters
                             );
 
-            _transports[transport.Internal.TransportId] = transport;
+            _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.Internal.TransportId));
+            transport.On("@close", _ => _transports.Remove(transport.TransportId));
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers[producer.Internal.ProducerId] = producer;
+                _producers[producer.ProducerId] = producer;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.Internal.ProducerId);
+                _producers.Remove(producer.ProducerId);
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
+                _dataProducers[dataProducer.DataProducerId] = dataProducer;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.Internal.DataProducerId);
+                _dataProducers.Remove(dataProducer.DataProducerId);
             });
 
             // Emit observer event.
@@ -551,7 +551,7 @@ namespace TubumuMeeting.Mediasoup
 
                     pipeProducer = await remotePipeTransport.ProduceAsync(new ProducerOptions
                     {
-                        Id = producer.Internal.ProducerId,
+                        Id = producer.ProducerId,
                         Kind = pipeConsumer.Kind,
                         RtpParameters = pipeConsumer.RtpParameters,
                         Paused = pipeConsumer.ProducerPaused,
@@ -595,7 +595,7 @@ namespace TubumuMeeting.Mediasoup
 
                     pipeDataProducer = await remotePipeTransport.ProduceDataAsync(new DataProducerOptions
                     {
-                        Id = dataProducer.Internal.DataProducerId,
+                        Id = dataProducer.DataProducerId,
                         SctpStreamParameters = pipeDataConsumer.SctpStreamParameters,
                         Label = pipeDataConsumer.Label,
                         Protocol = pipeDataConsumer.Protocol,

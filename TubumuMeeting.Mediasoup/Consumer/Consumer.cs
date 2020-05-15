@@ -49,7 +49,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        public ConsumerInternalData Internal { get; private set; }
+        private ConsumerInternalData Internal { get; set; }
+
+        /// <summary>
+        /// Consumer id.
+        /// </summary>
+        public string ConsumerId => Internal.ConsumerId;
 
         #region Consumer data.
 
@@ -353,7 +358,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Internal.ConsumerId) return;
+            if (targetId != ConsumerId) return;
             switch (@event)
             {
                 case "producerclose":

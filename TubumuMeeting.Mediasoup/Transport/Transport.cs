@@ -43,7 +43,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        public TransportInternalData Internal { get; private set; }
+        protected TransportInternalData Internal { get; set; }
+
+        /// <summary>
+        /// Trannsport id.
+        /// </summary>
+        public string TransportId => Internal.TransportId;
 
         #region Transport data. This is set by the subclass.
 
@@ -411,11 +416,11 @@ namespace TubumuMeeting.Mediasoup
                 AppData,
                 producerOptions.Paused!.Value);
 
-            Producers[producer.Internal.ProducerId] = producer;
+            Producers[producer.ProducerId] = producer;
 
             producer.On("@close", _ =>
             {
-                Producers.Remove(producer.Internal.ProducerId);
+                Producers.Remove(producer.ProducerId);
                 Emit("@producerclose", producer);
             });
 
@@ -513,10 +518,10 @@ namespace TubumuMeeting.Mediasoup
                 responseData.Score,
                 responseData.PreferredLayers);
 
-            Consumers[consumer.Internal.ConsumerId] = consumer;
+            Consumers[consumer.ConsumerId] = consumer;
 
-            consumer.On("@close", _ => Consumers.Remove(consumer.Internal.ConsumerId));
-            consumer.On("@producerclose", _ => Consumers.Remove(consumer.Internal.ConsumerId));
+            consumer.On("@close", _ => Consumers.Remove(consumer.ConsumerId));
+            consumer.On("@producerclose", _ => Consumers.Remove(consumer.ConsumerId));
 
             // Emit observer event.
             Observer.Emit("newconsumer", consumer);
@@ -571,11 +576,11 @@ namespace TubumuMeeting.Mediasoup
                 Channel,
                 AppData);
 
-            DataProducers[dataProducer.Internal.DataProducerId] = dataProducer;
+            DataProducers[dataProducer.DataProducerId] = dataProducer;
 
             dataProducer.On("@close", _ =>
             {
-                DataProducers.Remove(dataProducer.Internal.DataProducerId);
+                DataProducers.Remove(dataProducer.DataProducerId);
                 Emit("@dataproducerclose", dataProducer);
             });
 
@@ -642,17 +647,17 @@ namespace TubumuMeeting.Mediasoup
                 Channel,
                 AppData);
 
-            DataConsumers[dataConsumer.Internal.DataConsumerId] = dataConsumer;
+            DataConsumers[dataConsumer.DataConsumerId] = dataConsumer;
 
             dataConsumer.On("@close", _ =>
             {
-                DataConsumers.Remove(dataConsumer.Internal.DataConsumerId);
+                DataConsumers.Remove(dataConsumer.DataConsumerId);
                 _sctpStreamIds[sctpStreamId] = 0;
             });
 
             dataConsumer.On("@dataproducerclose", _ =>
             {
-                DataConsumers.Remove(dataConsumer.Internal.DataConsumerId);
+                DataConsumers.Remove(dataConsumer.DataConsumerId);
                 _sctpStreamIds[sctpStreamId] = 0;
             });
 

@@ -23,7 +23,7 @@ namespace TubumuMeeting.Mediasoup
         public string DataProducerId { get; }
 
         /// <summary>
-        /// Consumer id.
+        /// DataConsumer id.
         /// </summary>
         public string DataConsumerId { get; }
 
@@ -46,7 +46,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        public DataConsumerInternalData Internal { get; private set; }
+        private DataConsumerInternalData Internal { get; set; }
+
+        /// <summary>
+        /// DataConsumer id.
+        /// </summary>
+        public string DataConsumerId => Internal.DataConsumerId;
 
         #region DataConsumer data.
 
@@ -201,7 +206,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Internal.DataConsumerId) return;
+            if (targetId != DataConsumerId) return;
             switch (@event)
             {
                 case "dataproducerclose":

@@ -197,10 +197,10 @@ namespace TubumuMeeting.Mediasoup
                 responseData.Score,
                 responseData.PreferredLayers);
 
-            Consumers[consumer.Internal.ConsumerId] = consumer;
+            Consumers[consumer.ConsumerId] = consumer;
 
-            consumer.On("@close", _ => Consumers.Remove(consumer.Internal.ConsumerId));
-            consumer.On("@producerclose", _ => Consumers.Remove(consumer.Internal.ConsumerId));
+            consumer.On("@close", _ => Consumers.Remove(consumer.ConsumerId));
+            consumer.On("@producerclose", _ => Consumers.Remove(consumer.ConsumerId));
 
             // Emit observer event.
             Observer.Emit("newconsumer", consumer);

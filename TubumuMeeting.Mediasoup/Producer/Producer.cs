@@ -42,7 +42,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        public ProducerInternalData Internal { get; private set; }
+        private ProducerInternalData Internal { get; set; }
+
+        /// <summary>
+        /// Producer id.
+        /// </summary>
+        public string ProducerId => Internal.ProducerId;
 
         #region Producer data.
 
@@ -279,7 +284,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Internal.ProducerId) return;
+            if (targetId != ProducerId) return;
             switch (@event)
             {
                 case "score":

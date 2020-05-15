@@ -40,7 +40,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        public DataProducerInternalData Internal { get; private set; }
+        private DataProducerInternalData Internal { get; set; }
+
+        /// <summary>
+        /// DataProducer id.
+        /// </summary>
+        public string DataProducerId => Internal.DataProducerId;
 
         #region Producer data.
 
