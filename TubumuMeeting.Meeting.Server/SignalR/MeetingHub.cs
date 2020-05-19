@@ -228,7 +228,7 @@ namespace TubumuMeeting.Meeting.Server
             // Add into the audioLevelObserver.
             if (produceRequest.Kind == MediaKind.Audio)
             {
-
+                PeerRoom.Room.AudioLevelObserver.AddProducerAsync(producer.ProducerId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             return new MeetingMessage

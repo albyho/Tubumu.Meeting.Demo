@@ -9,6 +9,8 @@ namespace TubumuMeeting.Meeting.Server
 {
     public partial class MeetingManager
     {
+        #region Private Fields
+
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly ILogger<MeetingManager> _logger;
@@ -23,11 +25,13 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly object _peerRoomLocker = new object();
 
-        public Dictionary<Guid, Room> Rooms = new Dictionary<Guid, Room>();
+        #endregion
+
+        public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
 
         public Dictionary<int, Peer> Peers { get; } = new Dictionary<int, Peer>();
 
-        public HashSet<PeerRoom> PeerRoomList = new HashSet<PeerRoom>();
+        public HashSet<PeerRoom> PeerRoomList { get; } = new HashSet<PeerRoom>();
 
         public MeetingManager(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
         {
@@ -139,7 +143,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PeerEnterRoomAsync(int peerId, Guid roomId)
         {
-            // TODO: (alby)代码清理
+            // TODO: (alby)代码清理, Room 会预先创建好。
             GetOrCreateRoom(roomId, "Meeting");
 
             await EnsureRouterAsync(roomId);
@@ -228,11 +232,27 @@ namespace TubumuMeeting.Meeting.Server
                 }
             }
 
+            // TODO: (alby)线程安全处理
+
+            // Router media codecs.
+            var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouteSettings.RtpCodecCapabilities;
+
+            // Create a mediasoup Router.
             var worker = _mediasoupServer.GetWorker();
-            room.Router = await worker.CreateRouter(new RouterOptions
+            var router = await worker.CreateRouter(new RouterOptions
             {
-                MediaCodecs = _mediasoupOptions.MediasoupSettings.RouteSettings.RtpCodecCapabilities
+                MediaCodecs = mediaCodecs
             });
+
+            // Create a mediasoup AudioLevelObserver.
+            var audioLevelObserver = await router.CreateAudioLevelObserverAsync(new AudioLevelObserverOptions
+            {
+                MaxEntries = 1,
+                Threshold = -80,
+                Interval = 800,
+            });
+
+            room.Active(router, audioLevelObserver);
 
             return true;
         }
