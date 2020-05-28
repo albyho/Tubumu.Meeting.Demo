@@ -957,6 +957,15 @@ namespace TubumuMeeting.Mediasoup
                 consumerEncoding.ScalabilityMode = scalabilityMode;
             }
 
+            // Use the maximum maxBitrate in any encoding and honor it in the Consumer's
+            // encoding.
+            var maxEncodingMaxBitrate = consumableParams.Encodings.Max(m => m.MaxBitrate);
+
+            if (maxEncodingMaxBitrate.HasValue && maxEncodingMaxBitrate.Value > 0)
+            {
+                consumerEncoding.MaxBitrate = maxEncodingMaxBitrate;
+            }
+
             // Set a single encoding for the Consumer.
             consumerParams.Encodings.Add(consumerEncoding);
 

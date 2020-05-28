@@ -44,5 +44,12 @@ namespace TubumuMeeting.Mediasoup
         /// See webrtc-svc.
         /// </summary>
         public string? ScalabilityMode { get; set; }
+
+
+        /// <summary>
+        /// Others.
+        /// </summary>
+        public int? ScaleResolutionDownBy;
+        public int? MaxBitrate;
     }
 }
