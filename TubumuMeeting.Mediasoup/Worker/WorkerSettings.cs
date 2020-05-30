@@ -12,10 +12,10 @@ namespace TubumuMeeting.Mediasoup
         public WorkerLogLevel? LogLevel { get; set; } = WorkerLogLevel.Error;
 
         /// <summary>
-        ///  Log tags for debugging. Check the list of available tags in Debugging
-        ///  documentation.
+        ///  Log tags for debugging. Check the meaning of each available tag in the
+        ///  Debugging documentation.
         /// </summary>
-        public string[]? LogTags { get; set; }
+        public WorkerLogTag[]? LogTags { get; set; }
 
         /// <summary>
         ///  Minimun RTC port for ICE, DTLS, RTP, etc. Default 10000.

@@ -58,7 +58,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// SCTP stream parameters.
         /// </summary>
-        public SctpStreamParameters SctpStreamParameters { get; }
+        public SctpStreamParameters? SctpStreamParameters { get; }
 
         /// <summary>
         /// DataChannel label.

@@ -81,11 +81,11 @@ namespace TubumuMeeting.Mediasoup
             };
             if (workerSettings.LogLevel.HasValue)
             {
-                args.Add($"--logLevel={Enum.GetName(typeof(WorkerLogLevel), workerSettings.LogLevel).ToLowerInvariant()}");
+                args.Add($"--logLevel={workerSettings.LogLevel.GetEnumStringValue()}");
             }
             if (!workerSettings.LogTags.IsNullOrEmpty())
             {
-                workerSettings.LogTags.ForEach(m => args.Add($"--logTag={m}"));
+                workerSettings.LogTags.ForEach(m => args.Add($"--logTag={m.GetEnumStringValue()}"));
             }
             if (workerSettings.RtcMinPort.HasValue)
             {

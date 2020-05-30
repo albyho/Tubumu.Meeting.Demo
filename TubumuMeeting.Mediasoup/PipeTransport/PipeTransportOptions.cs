@@ -20,10 +20,10 @@ namespace TubumuMeeting.Mediasoup
         public NumSctpStreams? NumSctpStreams { get; set; }
 
         /// <summary>
-        /// Maximum size of data that can be passed to DataProducer's send() method.
-        /// Default 262144.
+        /// Maximum allowed size for SCTP messages sent by DataProducers.
+        /// Default 1073741823.
         /// </summary>
-        public int? MaxSctpMessageSize { get; set; } = 262144;
+        public int? MaxSctpMessageSize { get; set; } = 1073741823;
 
         /// <summary>
         /// Enable RTX and NACK for RTP retransmission. Useful if both Routers are
