@@ -197,7 +197,7 @@ namespace TubumuMeeting.Mediasoup
             return tcs.Task;
         }
 
-        #region Event handls
+        #region Event handles
 
         private void ConsumerSocketOnData(ArraySegment<byte> data)
         {

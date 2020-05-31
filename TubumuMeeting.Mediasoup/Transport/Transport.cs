@@ -315,7 +315,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         /// <param name="bitrate"></param>
         /// <returns></returns>
-        public Task<string?> SetMaxIncomingBitrateAsync(int bitrate)
+        public virtual Task<string?> SetMaxIncomingBitrateAsync(int bitrate)
         {
             _logger.LogDebug($"SetMaxIncomingBitrateAsync() [bitrate:{bitrate}]");
 
@@ -326,7 +326,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Create a Producer.
         /// </summary>
-        public async Task<Producer> ProduceAsync(ProducerOptions producerOptions)
+        public virtual async Task<Producer> ProduceAsync(ProducerOptions producerOptions)
         {
             _logger.LogDebug("ProduceAsync()");
 

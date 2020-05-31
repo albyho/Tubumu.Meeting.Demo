@@ -33,7 +33,7 @@ namespace TubumuMeeting.Mediasoup
         public NumSctpStreams? NumSctpStreams { get; set; }
 
         /// <summary>
-        /// Maximum size of data that can be passed to DataProducer's send() method.
+        /// Maximum allowed size for SCTP messages sent by DataProducers.
         /// Default 262144.
         /// </summary>
         public int? MaxSctpMessageSize { get; set; } = 262144;

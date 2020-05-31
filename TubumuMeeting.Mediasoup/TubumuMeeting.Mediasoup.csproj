@@ -24,4 +24,8 @@
     <ProjectReference Include="..\TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DirectTransport\" />
+    <Folder Include="PayloadChannel\" />
+  </ItemGroup>
 </Project>
