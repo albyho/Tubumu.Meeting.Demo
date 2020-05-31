@@ -6,7 +6,7 @@
 
 `TubumuMeeting` 是基于 `mediasoup` 实现的视频会议系统，但将其服务端的 `Node.js` 模块使用 `ASP.NET Core` 重新进行了实现。对其 Web 客户端 Demo 也重新进行了实现。本项目应该是 Github 上能搜索到的唯一一个非 Node.js 实现，虽有诸多不完善但也算基本流程能够跑通，望与有兴趣者继续完善。
 
-> 备注：搜索整个解决方案，将所有类似 `192.168.x.y` 的IP 改为本机的局域网 IP。涉及文件：launchSettings.json、app.setttings、App.vue
+> 备注：搜索整个解决方案，将所有类似 `192.168.x.y` 的IP 改为本机的局域网 IP。涉及文件：launchSettings.json、appsetttings.json、App.vue
 
 ### 1、启动服务端
 
