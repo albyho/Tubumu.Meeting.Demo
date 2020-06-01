@@ -134,6 +134,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 throw new ArgumentNullException(nameof(fb));
             }
+
             // type is mandatory.
             if (fb.Type.IsNullOrWhiteSpace())
                 throw new ArgumentException(nameof(fb.Type));
@@ -161,7 +162,9 @@ namespace TubumuMeeting.Mediasoup
 
             // uri is mandatory.
             if (ext.Uri.IsNullOrEmpty())
+            {
                 throw new ArgumentException(nameof(ext.Uri));
+            }
 
             // preferredId is mandatory.
             // 在 Node.js 实现在，判断了 preferredId 的数据类型。在强类型语言中不需要。
@@ -323,7 +326,9 @@ namespace TubumuMeeting.Mediasoup
 
             // uri is mandatory.
             if (ext.Uri.IsNullOrEmpty())
+            {
                 throw new ArgumentException(nameof(ext.Uri));
+            }
 
             // id is mandatory.
             // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
@@ -578,7 +583,9 @@ namespace TubumuMeeting.Mediasoup
                     var pt = dynamicPayloadTypes.FirstOrDefault();
 
                     if (pt == 0)
+                    {
                         throw new Exception("cannot allocate more dynamic codec payload types");
+                    }
 
                     dynamicPayloadTypes.RemoveAt(0);
 
@@ -602,7 +609,9 @@ namespace TubumuMeeting.Mediasoup
                     var pt = dynamicPayloadTypes.FirstOrDefault();
 
                     if (pt == 0)
+                    {
                         throw new Exception("cannot allocate more dynamic codec payload types");
+                    }
 
                     dynamicPayloadTypes.RemoveAt(0);
 
@@ -617,7 +626,6 @@ namespace TubumuMeeting.Mediasoup
                             { "apt", codec.PreferredPayloadType}
                         },
                         RtcpFeedback = Array.Empty<RtcpFeedback>(),
-
                     };
 
                     // Append to the codec list.
@@ -648,7 +656,9 @@ namespace TubumuMeeting.Mediasoup
             foreach (var codec in parameters.Codecs)
             {
                 if (IsRtxMimeType(codec.MimeType))
+                {
                     continue;
+                }
 
                 // Search for the same media codec in capabilities.
                 var matchedCapCodec = caps.Codecs
@@ -661,7 +671,9 @@ namespace TubumuMeeting.Mediasoup
             foreach (var codec in parameters.Codecs)
             {
                 if (!IsRtxMimeType(codec.MimeType))
+                {
                     continue;
+                }
 
                 // Search for the associated media codec.
                 var associatedMediaCodec = parameters.Codecs
@@ -728,7 +740,9 @@ namespace TubumuMeeting.Mediasoup
             foreach (var codec in parameters.Codecs)
             {
                 if (IsRtxMimeType(codec.MimeType))
+                {
                     continue;
+                }
 
                 var consumableCodecPt = rtpMapping.Codecs
                     .Where(entry => entry.PayloadType == codec.PayloadType)
@@ -838,14 +852,18 @@ namespace TubumuMeeting.Mediasoup
                     .FirstOrDefault();
 
                 if (matchedCapCodec == null)
+                {
                     continue;
+                }
 
                 matchingCodecs.Add(codec);
             }
 
             // Ensure there is at least one media codec.
             if (matchingCodecs.Count == 0 || IsRtxMimeType(matchingCodecs[0].MimeType))
+            {
                 return false;
+            }
 
             return true;
         }
@@ -930,7 +948,6 @@ namespace TubumuMeeting.Mediasoup
             var consumerEncoding = new RtpEncodingParameters
             {
                 Ssrc = Utils.GenerateRandomNumber()
-
             };
 
             if (rtxSupported)
@@ -996,7 +1013,9 @@ namespace TubumuMeeting.Mediasoup
             foreach (var codec in consumableCodecs)
             {
                 if (!enableRtx && IsRtxMimeType(codec.MimeType))
+                {
                     continue;
+                }
 
                 codec.RtcpFeedback = codec.RtcpFeedback
                     .Where(fb =>
@@ -1042,10 +1061,9 @@ namespace TubumuMeeting.Mediasoup
             {
                 var got1 = a.TryGetValue(key, out var aPacketizationMode);
                 var got2 = b.TryGetValue(key, out var bPacketizationMode);
-                if (got1 && got2)
+                if (got1 && got2 && !aPacketizationMode.Equals(bPacketizationMode))
                 {
-                    if (!aPacketizationMode.Equals(bPacketizationMode))
-                        return false;
+                    return false;
                 }
                 else if ((got1 && !got2) || (!got1 && got2))
                 {
@@ -1077,13 +1095,19 @@ namespace TubumuMeeting.Mediasoup
             var bMimeType = bCodec.MimeType.ToLower();
 
             if (aMimeType != bMimeType)
+            {
                 return false;
+            }
 
             if (aCodec.ClockRate != bCodec.ClockRate)
+            {
                 return false;
+            }
 
             if (aCodec.Channels != bCodec.Channels)
+            {
                 return false;
+            }
 
             // Per codec special checks.
             switch (aMimeType)
@@ -1098,7 +1122,9 @@ namespace TubumuMeeting.Mediasoup
                         if (strict)
                         {
                             if (!H264ProfileLevelId.IsSameProfile(aCodec.Parameters, bCodec.Parameters))
+                            {
                                 return false;
+                            }
 
                             string selectedProfileLevelId;
 
@@ -1145,17 +1171,19 @@ namespace TubumuMeeting.Mediasoup
         {
             if (payloadType == null && parameters == null) return true;
             if (parameters == null) return false;
+
             if (!parameters.TryGetValue("apt", out var apt))
             {
                 return false;
             }
+
             var apiInteger = Int32.Parse(apt.ToString());
             if (payloadType != apiInteger)
             {
                 return false;
             }
+
             return true;
         }
-
     }
 }

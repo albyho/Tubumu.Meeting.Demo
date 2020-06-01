@@ -278,6 +278,9 @@ export default {
         appData: { ...appData, peerId } // Trick.
       });
 
+      // Store in the map.
+      this.consumers.set(consumer.id, consumer);
+
       consumer.on("transportclose", () => {
         this.consumers.delete(consumer.id);
       });

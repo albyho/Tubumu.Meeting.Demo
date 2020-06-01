@@ -33,9 +33,12 @@ namespace TubumuMeeting.Mediasoup
                 {
                     throw new Exception("none worker");
                 }
+
                 var worker = _workers[_nextMediasoupWorkerIndex];
                 if (++_nextMediasoupWorkerIndex == _workers.Count)
+                {
                     _nextMediasoupWorkerIndex = 0;
+                }
 
                 return worker;
             }
