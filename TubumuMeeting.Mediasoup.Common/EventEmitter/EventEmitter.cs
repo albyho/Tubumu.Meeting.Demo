@@ -105,7 +105,7 @@ namespace TubumuMeeting.Mediasoup
             }
             else
             {
-                subscribedMethods.RemoveAll(x => x != null);
+                subscribedMethods.RemoveAll(m => true);
             }
         }
 

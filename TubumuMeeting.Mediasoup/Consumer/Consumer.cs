@@ -128,7 +128,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits producerpause</para>
         /// <para>@emits producerresume</para>
         /// <para>@emits score - (score: ConsumerScore)</para>
-        /// <para>@emits layerschange - (layers: ConsumerLayers | null)</para>
+        /// <para>@emits layerschange - (layers: ConsumerLayers | undefined)</para>
         /// <para>@emits trace - (trace: ConsumerTraceEventData)</para>
         /// <para>@emits @close</para>
         /// <para>@emits @producerclose</para>
@@ -137,7 +137,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits pause</para>
         /// <para>@emits resume</para>
         /// <para>@emits score - (score: ConsumerScore)</para>
-        /// <para>@emits layerschange - (layers: ConsumerLayers | null)</para>
+        /// <para>@emits layerschange - (layers: ConsumerLayers | undefined)</para>
         /// <para>@emits trace - (trace: ConsumerTraceEventData)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
