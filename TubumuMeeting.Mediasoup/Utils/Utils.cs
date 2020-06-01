@@ -10,9 +10,9 @@ namespace TubumuMeeting.Mediasoup
         /// 生成 100000000 - 999999999 的随机数
         /// </summary>
         /// <returns></returns>
-        public static long GenerateRandomNumber()
+        public static uint GenerateRandomNumber()
         {
-            return _random.Next(100000000, 999999999);
+            return (uint)_random.Next(100000000, 999999999);
         }
     }
 }

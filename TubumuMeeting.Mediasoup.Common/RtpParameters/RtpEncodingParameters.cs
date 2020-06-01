@@ -12,7 +12,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// The media SSRC.
         /// </summary>
-        public long Ssrc { get; set; }
+        public uint Ssrc { get; set; }
 
         /// <summary>
         /// The RID RTP extension value. Must be unique.

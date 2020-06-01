@@ -18,12 +18,12 @@ namespace TubumuMeeting.Mediasoup
 
     public class RtpMappingEncoding
     {
-        public long? Ssrc { get; set; }
+        public uint? Ssrc { get; set; }
 
         public string? Rid { get; set; }
 
         public string? ScalabilityMode { get; set; }
 
-        public long MappedSsrc { get; set; }
+        public uint MappedSsrc { get; set; }
     }
 }

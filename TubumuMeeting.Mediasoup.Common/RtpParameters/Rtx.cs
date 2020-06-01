@@ -5,6 +5,6 @@ namespace TubumuMeeting.Mediasoup
     [Serializable]
     public class Rtx
     {
-        public long Ssrc { get; set; }
+        public uint Ssrc { get; set; }
     }
 }
