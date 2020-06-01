@@ -12,7 +12,7 @@ namespace TubumuMeeting.Mediasoup
     /// example:
     ///
     /// - Multiple H264 codecs, each with their own distinct 'packetization-mode' and
-    ///   'profile-level-id' values.
+    /// 'profile-level-id' values.
     /// - Multiple VP9 codecs, each with their own distinct 'profile-id' value.
     ///
     /// RtpCodecCapability entries in the mediaCodecs array of RouterOptions do not

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
@@ -7,6 +8,9 @@ using TubumuMeeting.Libuv;
 
 namespace TubumuMeeting.Mediasoup
 {
+    /// <summary>
+    /// A worker represents a mediasoup C++ subprocess that runs in a single CPU core and handles Router instances.
+    /// </summary>
     public class Worker : EventEmitter
     {
         #region Constants
@@ -195,15 +199,15 @@ namespace TubumuMeeting.Mediasoup
         }
 
         /// <summary>
-        /// Update settings.
+        /// Updates the worker settings in runtime. Just a subset of the worker settings can be updated.
         /// </summary>
-        public Task<string?> UpdateSettingsAsync(WorkerLogLevel logLevel, IEnumerable<string> logTags)
+        public Task<string?> UpdateSettingsAsync(WorkerUpdateableSettings workerUpdateableSettings)
         {
             _logger.LogDebug("UpdateSettingsAsync()");
             var reqData = new
             {
-                LogLevel = logLevel,
-                LogTags = logTags
+                LogLevel = workerUpdateableSettings.LogLevel.HasValue ? workerUpdateableSettings.LogLevel.GetEnumStringValue() : null,
+                LogTags = workerUpdateableSettings.LogTags != null ? workerUpdateableSettings.LogTags.Select(m => m.GetEnumStringValue()) : null,
             };
             return _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS, null, reqData);
         }

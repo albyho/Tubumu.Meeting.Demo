@@ -276,7 +276,7 @@ namespace TubumuMeeting.Mediasoup
         /// @param {Object} [remote_offered_params={}]
         ///
         /// @returns {String} Canonical string representation as three hex bytes of the
-        ///   profile level id, or null if no one of the params have profile-level-id.
+        /// profile level id, or null if no one of the params have profile-level-id.
         ///
         /// @throws {TypeError} If Profile mismatch or invalid params.
         /// </summary>

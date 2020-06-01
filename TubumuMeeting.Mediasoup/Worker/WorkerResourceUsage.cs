@@ -5,9 +5,8 @@ namespace TubumuMeeting.Mediasoup
 {
     /// <summary>
     /// An object with the fields of the uv_rusage_t struct.
-    ///
-    /// - http://docs.libuv.org/en/v1.x/misc.html#c.uv_rusage_t
-    /// - https://linux.die.net/man/2/getrusage
+    /// <para>http://docs.libuv.org/en/v1.x/misc.html#c.uv_rusage_t</para>
+    /// <para>https://linux.die.net/man/2/getrusage</para>
     /// </summary>
     public struct WorkerResourceUsage
     {

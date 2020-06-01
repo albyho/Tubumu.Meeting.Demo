@@ -23,6 +23,6 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Custom application data.
         /// </summary>
-        public Dictionary<string, object>? AppData { get; set; }
+        public Dictionary<string, object>? AppData { get; set; } = new Dictionary<string, object>();
     }
 }
