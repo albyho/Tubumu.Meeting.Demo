@@ -1,6 +1,6 @@
 ﻿namespace TubumuMeeting.Mediasoup
 {
-    public class RouteSettings
+    public class RouterSettings
     {
         public RtpCodecCapability[] RtpCodecCapabilities { get; set; }
     }

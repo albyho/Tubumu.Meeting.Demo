@@ -235,7 +235,7 @@ namespace TubumuMeeting.Meeting.Server
             // TODO: (alby)线程安全处理
 
             // Router media codecs.
-            var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouteSettings.RtpCodecCapabilities;
+            var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
 
             // Create a mediasoup Router.
             var worker = _mediasoupServer.GetWorker();

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -14,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Tubumu.Core.Extensions;
 using Tubumu.Core.Json;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Meeting.Server;
@@ -55,7 +55,7 @@ namespace TubumuMeeting.Web
             var corsSettings = Configuration.GetSection("CorsSettings").Get<CorsSettings>();
             services.AddCors(options => options.AddPolicy("DefaultPolicy",
                 builder => builder.WithOrigins(corsSettings.Origins).AllowAnyMethod().AllowAnyHeader().AllowCredentials())
-                //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
+            //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
             );
 
             // Authentication
@@ -136,21 +136,44 @@ namespace TubumuMeeting.Web
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
 
             var mediasoupStartupSettings = Configuration.GetSection("MediasoupStartupSettings").Get<MediasoupStartupSettings>();
-            var webRtcTransportSettings = Configuration.GetSection("WebRtcTransportSettings").Get<WebRtcTransportSettings>();
+            var workerSettings = Configuration.GetSection("MediasoupSettings:WorkerSettings").Get<WorkerSettings>();
+            var routerSettings = Configuration.GetSection("MediasoupSettings:RouterSettings").Get<RouterSettings>();
+            var webRtcTransportSettings = Configuration.GetSection("MediasoupSettings:WebRtcTransportSettings").Get<WebRtcTransportSettings>();
             services.AddMediasoup(options =>
             {
-                options.MediasoupSettings.WorkerSettings.LogLevel = WorkerLogLevel.Debug;
+                // MediasoupStartupSettings
+                if (mediasoupStartupSettings != null)
+                {
+                    options.MediasoupStartupSettings.MediasoupVersion = mediasoupStartupSettings.MediasoupVersion;
+                    options.MediasoupStartupSettings.WorkerPath = mediasoupStartupSettings.WorkerPath;
+                    options.MediasoupStartupSettings.NumberOfWorkers = mediasoupStartupSettings.NumberOfWorkers <= 0 ? Environment.ProcessorCount : mediasoupStartupSettings.NumberOfWorkers;
+                }
+
+                // WorkerSettings
+                if (workerSettings != null)
+                {
+                    options.MediasoupSettings.WorkerSettings.LogLevel = workerSettings.LogLevel;
+                    options.MediasoupSettings.WorkerSettings.LogTags = workerSettings.LogTags;
+                    options.MediasoupSettings.WorkerSettings.RtcMinPort = workerSettings.RtcMinPort;
+                    options.MediasoupSettings.WorkerSettings.RtcMaxPort = workerSettings.RtcMaxPort;
+                    options.MediasoupSettings.WorkerSettings.DtlsCertificateFile = workerSettings.DtlsCertificateFile;
+                    options.MediasoupSettings.WorkerSettings.DtlsPrivateKeyFile = workerSettings.DtlsPrivateKeyFile;
+                }
+
+                // RouteSettings
+                if (routerSettings != null && !routerSettings.RtpCodecCapabilities.IsNullOrEmpty())
+                {
+                    options.MediasoupSettings.RouterSettings = routerSettings;
+                }
 
                 // WebRtcTransportSettings
-                options.MediasoupSettings.WebRtcTransportSettings.ListenIps = webRtcTransportSettings.ListenIps;
-                options.MediasoupSettings.WebRtcTransportSettings.InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate;
-                options.MediasoupSettings.WebRtcTransportSettings.MinimumAvailableOutgoingBitrate = webRtcTransportSettings.MinimumAvailableOutgoingBitrate;
-                options.MediasoupSettings.WebRtcTransportSettings.MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize;
-
-                // MediasoupStartupSettings
-                options.MediasoupStartupSettings.MediasoupVersion = mediasoupStartupSettings.MediasoupVersion;
-                options.MediasoupStartupSettings.WorkerPath = mediasoupStartupSettings.WorkerPath;
-                options.MediasoupStartupSettings.NumberOfWorkers = mediasoupStartupSettings.NumberOfWorkers <= 0 ? Environment.ProcessorCount : mediasoupStartupSettings.NumberOfWorkers;
+                if (webRtcTransportSettings != null)
+                {
+                    options.MediasoupSettings.WebRtcTransportSettings.ListenIps = webRtcTransportSettings.ListenIps;
+                    options.MediasoupSettings.WebRtcTransportSettings.InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate;
+                    options.MediasoupSettings.WebRtcTransportSettings.MinimumAvailableOutgoingBitrate = webRtcTransportSettings.MinimumAvailableOutgoingBitrate;
+                    options.MediasoupSettings.WebRtcTransportSettings.MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize;
+                }
             });
         }
 

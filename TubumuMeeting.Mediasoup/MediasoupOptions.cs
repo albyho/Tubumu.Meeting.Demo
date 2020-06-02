@@ -37,10 +37,10 @@ namespace TubumuMeeting.Mediasoup
                         WorkerLogTag.Sctp,
                         WorkerLogTag.Message,
                     },
-                    RtcMinPort = 40000,
-                    RtcMaxPort = 49999,
+                    RtcMinPort = 10000,
+                    RtcMaxPort = 59999,
                 },
-                RouteSettings = new RouteSettings
+                RouterSettings = new RouterSettings
                 {
                     RtpCodecCapabilities = new[]
                     {
