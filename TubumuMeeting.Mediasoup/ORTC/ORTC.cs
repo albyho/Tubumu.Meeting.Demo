@@ -30,7 +30,7 @@ namespace TubumuMeeting.Mediasoup
             }
             if (caps.Codecs == null)
             {
-                throw new ArgumentNullException(nameof(caps.Codecs));
+                caps.Codecs = new List<RtpCodecCapability>();
             }
 
             foreach (var codec in caps.Codecs)
@@ -70,7 +70,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // Just override kind with media component in mimeType.
-            codec.Kind = mimeType.ToLower().StartsWith("video") ? MediaKind.Video : MediaKind.Audio;
+            codec.Kind = mimeType.StartsWith("video") ? MediaKind.Video : MediaKind.Audio;
 
             // preferredPayloadType is optional.
             // 在 Node.js 实现在，判断了 preferredPayloadType 在有值的情况下的数据类型。在强类型语言中不需要。
@@ -85,7 +85,6 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // parameters is optional. If unset, set it to an empty object.
-            // TODO: (alby)强类型无法转 Empty 对象
             if (codec.Parameters == null)
             {
                 codec.Parameters = new Dictionary<string, object>();
@@ -105,6 +104,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     throw new ArgumentOutOfRangeException($"invalid codec parameter[key:${ key }, value:${ value }]");
                 }
+                // Specific parameters validation.
                 if (key == "apt" && !value.IsNumericType())
                 {
                     throw new ArgumentOutOfRangeException("invalid codec apt parameter");
@@ -230,10 +230,11 @@ namespace TubumuMeeting.Mediasoup
 
             // rtcp is optional. If unset, fill with an empty object.
             // TODO: (alby)强类型无法转 Empty 对象
-            if (parameters.Rtcp != null)
+            if (parameters.Rtcp == null)
             {
-                ValidateRtcpParameters(parameters.Rtcp);
+                parameters.Rtcp = new RtcpParameters();
             }
+            ValidateRtcpParameters(parameters.Rtcp);
         }
 
         /// <summary>
@@ -274,7 +275,6 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // parameters is optional. If unset, set it to an empty object.
-            // TODO: (alby)强类型无法转 Empty 对象。
             if (codec.Parameters == null)
             {
                 codec.Parameters = new Dictionary<string, object>();
@@ -340,7 +340,6 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // parameters is optional. If unset, set it to an empty object.
-            // TODO: (alby)强类型无法转 Empty 对象。
             if (ext.Parameters == null)
             {
                 ext.Parameters = new Dictionary<string, object>();
@@ -1055,6 +1054,13 @@ namespace TubumuMeeting.Mediasoup
             return RtxMimeTypeRegex.IsMatch(mimeType);
         }
 
+        /// <summary>
+        /// key 要么都存在于 a 和 b，要么都不存在于 a 和 b。
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
         private static bool CheckDirectoryValueEquals(IDictionary<string, object> a, IDictionary<string, object> b, string key)
         {
             if (a != null && b != null)
