@@ -20,12 +20,12 @@
         /// <summary>
         /// IP used in the PipeTransport pair. Default '127.0.0.1'.
         /// </summary>
-        public TransportListenIp? ListenIp { get; set; } = new TransportListenIp { Ip = "0.0.0.0", AnnouncedIp = "127.0.0.1" };
+        public TransportListenIp? ListenIp { get; set; } = new TransportListenIp { Ip = "127.0.0.1", AnnouncedIp = null };
 
         /// <summary>
-        /// Create a SCTP association. Default false.
+        /// Create a SCTP association. Default true.(注：原注释中默认是 false。)
         /// </summary>
-        public bool? EnableSctp { get; set; } = false;
+        public bool? EnableSctp { get; set; } = true;
 
         /// <summary>
         /// SCTP streams number.
