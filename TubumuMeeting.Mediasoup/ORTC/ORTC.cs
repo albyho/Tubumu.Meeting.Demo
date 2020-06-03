@@ -1173,7 +1173,7 @@ namespace TubumuMeeting.Mediasoup
             return true;
         }
 
-        public static bool MatchCodecsWithPayloadTypeAndApt(int? payloadType, IDictionary<string, object> parameters)
+        private static bool MatchCodecsWithPayloadTypeAndApt(int? payloadType, IDictionary<string, object> parameters)
         {
             if (payloadType == null && parameters == null) return true;
             if (parameters == null) return false;
