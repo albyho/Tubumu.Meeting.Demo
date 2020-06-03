@@ -24,7 +24,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string? Protocol { get; set; }
 
-
         /// <summary>
         /// Custom application data.
         /// </summary>

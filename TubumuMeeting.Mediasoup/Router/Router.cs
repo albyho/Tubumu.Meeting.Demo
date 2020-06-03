@@ -308,7 +308,8 @@ namespace TubumuMeeting.Mediasoup
                             new TransportInternalData(@internal.RouterId, @internal.TransportId),
                             sctpParameters: null,
                             sctpState: null,
-                            _channel, AppData,
+                            _channel,
+                            plainTransportOptions.AppData,
                             () => RtpCapabilities,
                             m => _producers[m],
                             m => _dataProducers[m],
@@ -379,7 +380,8 @@ namespace TubumuMeeting.Mediasoup
                             new TransportInternalData(@internal.RouterId, @internal.TransportId),
                             sctpParameters: null,
                             sctpState: null,
-                            _channel, AppData,
+                            _channel, 
+                            pipeTransportOptions.AppData,
                             () => RtpCapabilities,
                             m => _producers[m],
                             m => _dataProducers[m],
@@ -419,11 +421,77 @@ namespace TubumuMeeting.Mediasoup
         }
 
         /// <summary>
+        /// Create a DirectTransport.
+        /// </summary>
+        /// <param name="directTransportOptions"></param>
+        /// <returns></returns>
+        public async Task<DirectTransport> CreateDirectTransportAsync(DirectTransportOptions directTransportOptions)
+        {
+            _logger.LogDebug("CreateDirectTransportAsync()");
+
+            var @internal = new
+            {
+                RouterId,
+                TransportId = Guid.NewGuid().ToString(),
+            };
+
+            var reqData = new
+            {
+                Direct = true,
+                directTransportOptions.MaxMessageSize,
+            };
+
+            var status = await _channel.RequestAsync(MethodId.ROUTER_CREATE_DIRECT_TRANSPORT, @internal, reqData);
+            var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status!);
+
+            var transport = new DirectTransport(_loggerFactory,
+                new TransportInternalData(@internal.RouterId, @internal.TransportId),
+                sctpParameters: null,
+                sctpState: null,
+                _channel,
+                directTransportOptions.AppData,
+                () => RtpCapabilities,
+                m => _producers[m],
+                m => _dataProducers[m]
+                );
+
+            _transports[transport.TransportId] = transport;
+
+            transport.On("@close", _ => _transports.Remove(transport.TransportId));
+            transport.On("@newproducer", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers[producer.ProducerId] = producer;
+            });
+            transport.On("@producerclose", obj =>
+            {
+                var producer = (Producer)obj!;
+                _producers.Remove(producer.ProducerId);
+            });
+            transport.On("@newdataproducer", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers[dataProducer.DataProducerId] = dataProducer;
+            });
+            transport.On("@dataproducerclose", obj =>
+            {
+                var dataProducer = (DataProducer)obj!;
+                _dataProducers.Remove(dataProducer.DataProducerId);
+            });
+
+            // Emit observer event.
+            Observer.Emit("newtransport", transport);
+
+            return transport;
+        }
+
+        /// <summary>
         /// Pipes the given Producer or DataProducer into another Router in same host.
         /// </summary>
+        /// <param name="pipeToRouterOptions">ListenIp 传入 127.0.0.1, EnableSrtp 传入 true </param>
+        /// <returns></returns>
         public async Task<PipeToRouterResult> PipeToRouterAsync(PipeToRouterOptions pipeToRouterOptions)
         {
-
             if (pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
                 throw new Exception("missing producerId or dataProducerId");
 
@@ -473,7 +541,6 @@ namespace TubumuMeeting.Mediasoup
             {
                 try
                 {
-                    // TODO: (alby)使用 Task.WhenAll 改写
                     var pipeTransports = await Task.WhenAll(CreatePipeTransportAsync(new PipeTransportOptions
                         {
                             ListenIp = pipeToRouterOptions.ListenIp,

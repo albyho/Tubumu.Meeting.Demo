@@ -35,11 +35,11 @@
         /// <summary>
         /// Enable RTX and NACK for RTP retransmission.
         /// </summary>
-        public bool? EnableRtx { get; set; }
+        public bool? EnableRtx { get; set; } = false;
 
         /// <summary>
         /// Enable SRTP.
         /// </summary>
-        public bool? EnableSrtp { get; set; }
+        public bool? EnableSrtp { get; set; } = false;
     }
 }

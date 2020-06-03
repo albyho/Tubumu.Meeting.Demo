@@ -31,6 +31,9 @@ namespace TubumuMeeting.Mediasoup
         [EnumStringValue("router.createPipeTransport")]
         ROUTER_CREATE_PIPE_TRANSPORT,
 
+        [EnumStringValue("router.createDirectTransport")]
+        ROUTER_CREATE_DIRECT_TRANSPORT,
+
         [EnumStringValue("router.createAudioLevelObserver")]
         ROUTER_CREATE_AUDIO_LEVEL_OBSERVER,
 
