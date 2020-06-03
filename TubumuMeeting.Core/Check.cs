@@ -10,7 +10,7 @@ namespace Tubumu.Modules.Core
     public static class Check
     {
         [ContractAnnotation("value:null => halt")]
-        public static T NotNull<T>(T value, [InvokerParameterName] [NotNull] string parameterName)
+        public static T NotNull<T>(T value, [InvokerParameterName][NotNull] string parameterName)
         {
             if (value == null)
             {
@@ -21,7 +21,7 @@ namespace Tubumu.Modules.Core
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static T NotNull<T>(T value, [InvokerParameterName] [NotNull] string parameterName, string message)
+        public static T NotNull<T>(T value, [InvokerParameterName][NotNull] string parameterName, string message)
         {
             if (value == null)
             {
@@ -32,7 +32,7 @@ namespace Tubumu.Modules.Core
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static string NotNullOrWhiteSpace(string value, [InvokerParameterName] [NotNull] string parameterName)
+        public static string NotNullOrWhiteSpace(string value, [InvokerParameterName][NotNull] string parameterName)
         {
             if (value.IsNullOrWhiteSpace())
             {
@@ -43,7 +43,7 @@ namespace Tubumu.Modules.Core
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static string NotNullOrEmpty(string value, [InvokerParameterName] [NotNull] string parameterName)
+        public static string NotNullOrEmpty(string value, [InvokerParameterName][NotNull] string parameterName)
         {
             if (value.IsNullOrEmpty())
             {
@@ -54,7 +54,7 @@ namespace Tubumu.Modules.Core
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static ICollection<T> NotNullOrEmpty<T>(ICollection<T> value, [InvokerParameterName] [NotNull] string parameterName)
+        public static ICollection<T> NotNullOrEmpty<T>(ICollection<T> value, [InvokerParameterName][NotNull] string parameterName)
         {
             if (value.IsNullOrEmpty())
             {

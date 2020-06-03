@@ -116,7 +116,7 @@ namespace TubumuMeeting.Mediasoup
                             Channel channel,
                             Dictionary<string, object>? appData)
         {
-            _logger = loggerFactory.CreateLogger<DataConsumer>(); 
+            _logger = loggerFactory.CreateLogger<DataConsumer>();
 
             // Internal
             Internal = dataConsumerInternalData;

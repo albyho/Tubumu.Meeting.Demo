@@ -352,7 +352,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("CreatePipeTransportAsync()");
 
-            if(pipeTransportOptions.ListenIp == null)
+            if (pipeTransportOptions.ListenIp == null)
             {
                 throw new NullReferenceException("missing listenIp");
             }
@@ -381,7 +381,7 @@ namespace TubumuMeeting.Mediasoup
                             new TransportInternalData(@internal.RouterId, @internal.TransportId),
                             sctpParameters: null,
                             sctpState: null,
-                            _channel, 
+                            _channel,
                             pipeTransportOptions.AppData,
                             () => RtpCapabilities,
                             m => _producers[m],
@@ -493,7 +493,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public async Task<PipeToRouterResult> PipeToRouterAsync(PipeToRouterOptions pipeToRouterOptions)
         {
-            if(pipeToRouterOptions.ListenIp == null)
+            if (pipeToRouterOptions.ListenIp == null)
             {
                 throw new NullReferenceException("missing listenIp");
             }
@@ -548,13 +548,13 @@ namespace TubumuMeeting.Mediasoup
                 try
                 {
                     var pipeTransports = await Task.WhenAll(CreatePipeTransportAsync(new PipeTransportOptions
-                        {
-                            ListenIp = pipeToRouterOptions.ListenIp,
-                            EnableSctp = pipeToRouterOptions.EnableSctp,
-                            NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
-                            EnableRtx = pipeToRouterOptions.EnableRtx,
-                            EnableSrtp = pipeToRouterOptions.EnableSrtp
-                        }),
+                    {
+                        ListenIp = pipeToRouterOptions.ListenIp,
+                        EnableSctp = pipeToRouterOptions.EnableSctp,
+                        NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
+                        EnableRtx = pipeToRouterOptions.EnableRtx,
+                        EnableSrtp = pipeToRouterOptions.EnableSrtp
+                    }),
                         pipeToRouterOptions.Router.CreatePipeTransportAsync(new PipeTransportOptions
                         {
                             ListenIp = pipeToRouterOptions.ListenIp,
@@ -569,11 +569,11 @@ namespace TubumuMeeting.Mediasoup
                     remotePipeTransport = pipeTransports[1];
 
                     await Task.WhenAll(localPipeTransport.ConnectAsync(new PipeTransportConnectParameters
-                        {
-                            Ip = remotePipeTransport.Tuple.LocalIp,
-                            Port = remotePipeTransport.Tuple.LocalPort,
-                            SrtpParameters = remotePipeTransport.SrtpParameters,
-                        }),
+                    {
+                        Ip = remotePipeTransport.Tuple.LocalIp,
+                        Port = remotePipeTransport.Tuple.LocalPort,
+                        SrtpParameters = remotePipeTransport.SrtpParameters,
+                    }),
                         remotePipeTransport.ConnectAsync(new PipeTransportConnectParameters
                         {
                             Ip = localPipeTransport.Tuple.LocalIp,

@@ -506,7 +506,7 @@ namespace TubumuMeeting.Mediasoup
                 Type = (ConsumerType)producer.Type, // 注意：类型转换
             };
 
-            var consumer = new Consumer(_loggerFactory, 
+            var consumer = new Consumer(_loggerFactory,
                 @internal,
                 data.Kind,
                 data.RtpParameters,
