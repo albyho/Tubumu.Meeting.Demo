@@ -17,7 +17,4 @@
     <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DirectTransport\" />
-  </ItemGroup>
 </Project>
