@@ -352,6 +352,11 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("CreatePipeTransportAsync()");
 
+            if(pipeTransportOptions.ListenIp == null)
+            {
+                throw new NullReferenceException("missing listenIp");
+            }
+
             var @internal = new
             {
                 RouterId,
@@ -484,10 +489,15 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Pipes the given Producer or DataProducer into another Router in same host.
         /// </summary>
-        /// <param name="pipeToRouterOptions">ListenIp 传入 127.0.0.1, EnableSrtp 传入 true </param>
+        /// <param name="pipeToRouterOptions">ListenIp 传入 127.0.0.1, EnableSrtp 传入 true 。</param>
         /// <returns></returns>
         public async Task<PipeToRouterResult> PipeToRouterAsync(PipeToRouterOptions pipeToRouterOptions)
         {
+            if(pipeToRouterOptions.ListenIp == null)
+            {
+                throw new NullReferenceException("missing listenIp");
+            }
+
             if (pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
                 throw new Exception("missing producerId or dataProducerId");
 
@@ -609,7 +619,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     pipeConsumer = await localPipeTransport.ConsumeAsync(new ConsumerOptions
                     {
-                        ProducerId = pipeToRouterOptions.ProducerId
+                        ProducerId = pipeToRouterOptions.ProducerId!
                     });
 
                     pipeProducer = await remotePipeTransport.ProduceAsync(new ProducerOptions
@@ -653,7 +663,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     pipeDataConsumer = await localPipeTransport.ConsumeDataAsync(new DataConsumerOptions
                     {
-                        DataProducerId = pipeToRouterOptions.DataProducerId
+                        DataProducerId = pipeToRouterOptions.DataProducerId!
                     });
 
                     pipeDataProducer = await remotePipeTransport.ProduceDataAsync(new DataProducerOptions

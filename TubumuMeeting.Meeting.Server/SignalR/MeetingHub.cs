@@ -399,7 +399,7 @@ namespace TubumuMeeting.Meeting.Server
 
             var status = await transport.GetStatsAsync();
             // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<TransportStat>(status);
+            var data = JsonConvert.DeserializeObject<TransportStat>(status!);
 
             return new MeetingMessage { Code = 200, Message = "GetTransportStats 成功", Data = data };
         }
@@ -412,7 +412,7 @@ namespace TubumuMeeting.Meeting.Server
             }
             var status = await producer.GetStatsAsync();
             // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<ProducerStat>(status);
+            var data = JsonConvert.DeserializeObject<ProducerStat>(status!);
 
             return new MeetingMessage { Code = 200, Message = "GetProducerStats 成功", Data = data };
         }
@@ -426,7 +426,7 @@ namespace TubumuMeeting.Meeting.Server
 
             var status = await consumer.GetStatsAsync();
             // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<ConsumerStat>(status);
+            var data = JsonConvert.DeserializeObject<ConsumerStat>(status!);
 
             return new MeetingMessage { Code = 200, Message = "GetConsumerStats 成功", Data = data };
         }

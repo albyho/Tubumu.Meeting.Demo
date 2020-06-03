@@ -294,7 +294,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = consumerLayers;
             var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, Internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<ConsumerSetPreferredLayersResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<ConsumerSetPreferredLayersResponseData>(status!);
             PreferredLayers = responseData;
         }
 
@@ -307,7 +307,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new { Priority = priority };
             var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, Internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status!);
             Priority = responseData.Priority;
         }
 
@@ -320,7 +320,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new { Priority = 1 };
             var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, Internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status!);
 
             Priority = responseData.Priority;
         }

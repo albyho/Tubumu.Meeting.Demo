@@ -6,6 +6,6 @@
 
         public int Port { get; set; }
 
-        public SrtpParameters SrtpParameters { get; set; }
+        public SrtpParameters? SrtpParameters { get; set; }
     }
 }
