@@ -134,10 +134,6 @@ namespace TubumuMeeting.Mediasoup
             // Clear map of Router/PipeTransports.
             _mapRouterPipeTransports.Clear();
 
-            // TODO: (alby)完善
-            // Close the pipeToRouter AwaitQueue instance.
-            //_pipeToRouterQueue.close();
-
             Emit("@close");
 
             // Emit observer event.
