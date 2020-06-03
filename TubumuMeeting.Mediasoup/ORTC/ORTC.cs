@@ -1049,7 +1049,7 @@ namespace TubumuMeeting.Mediasoup
             return consumerParams;
         }
 
-        public static bool IsRtxMimeType(string mimeType)
+        private static bool IsRtxMimeType(string mimeType)
         {
             return RtxMimeTypeRegex.IsMatch(mimeType);
         }
@@ -1095,7 +1095,7 @@ namespace TubumuMeeting.Mediasoup
             return true;
         }
 
-        public static bool MatchCodecs(RtpCodecBase aCodec, RtpCodecBase bCodec, bool strict = false, bool modify = false)
+        private static bool MatchCodecs(RtpCodecBase aCodec, RtpCodecBase bCodec, bool strict = false, bool modify = false)
         {
             var aMimeType = aCodec.MimeType.ToLower();
             var bMimeType = bCodec.MimeType.ToLower();
