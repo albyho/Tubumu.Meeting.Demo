@@ -397,7 +397,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<TransportProduceResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<TransportProduceResponseData>(status!);
             var data = new
             {
                 producerOptions.Kind,
@@ -497,7 +497,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status!);
 
             var data = new
             {
@@ -567,7 +567,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_PRODUCE_DATA, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<TransportDataProduceResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<TransportDataProduceResponseData>(status!);
             var dataProducer = new DataProducer(_loggerFactory,
                 @internal,
                 responseData.SctpStreamParameters,
@@ -637,7 +637,7 @@ namespace TubumuMeeting.Mediasoup
             };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME_DATA, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<TransportDataConsumeResponseData>(status);
+            var responseData = JsonConvert.DeserializeObject<TransportDataConsumeResponseData>(status!);
 
             var dataConsumer = new DataConsumer(_loggerFactory,
                 @internal,
