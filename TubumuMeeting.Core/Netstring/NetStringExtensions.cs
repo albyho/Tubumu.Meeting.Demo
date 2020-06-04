@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 
-namespace TubumuMeeting.Netstrings
+namespace TubumuMeeting.Netstring
 {
-    public static class NetStringsExtensions
+    public static class NetStringExtensions
     {
         public static string DecodeFromArraySegment(this ArraySegment<byte> arraySegment)
         {

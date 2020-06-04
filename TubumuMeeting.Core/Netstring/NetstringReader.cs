@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace TubumuMeeting.Netstrings
+namespace TubumuMeeting.Netstring
 {
     public class NetstringReader : IEnumerator<string>, IEnumerable<string>, IDisposable
     {

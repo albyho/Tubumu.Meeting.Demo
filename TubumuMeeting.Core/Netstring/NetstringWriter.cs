@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace TubumuMeeting.Netstrings
+namespace TubumuMeeting.Netstring
 {
     public class NetstringWriter
     {

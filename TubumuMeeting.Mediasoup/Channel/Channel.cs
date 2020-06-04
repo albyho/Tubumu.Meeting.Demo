@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
 using TubumuMeeting.Libuv;
-using TubumuMeeting.Netstrings;
+using TubumuMeeting.Netstring;
 
 namespace TubumuMeeting.Mediasoup
 {
