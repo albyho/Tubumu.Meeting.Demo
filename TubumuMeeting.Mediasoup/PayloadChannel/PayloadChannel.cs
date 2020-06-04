@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
+using Tubumu.Core.Extensions.Object;
 using TubumuMeeting.Libuv;
 using TubumuMeeting.Netstrings;
 
@@ -38,13 +39,14 @@ namespace TubumuMeeting.Mediasoup
         // Buffer for reading messages from the worker.
         private StringBuilder? _recvBuffer;
 
+        // Ongoing notification (waiting for its payload).
+        private OngoingNotification? _ongoingNotification;
+
         #endregion
 
         #region Events
 
-        public event Action<string>? RunningEvent;
-
-        public event Action<string, string, string>? MessageEvent;
+        public event Action<string, string, string, string>? MessageEvent;
 
         #endregion
 
@@ -101,6 +103,68 @@ namespace TubumuMeeting.Mediasoup
             {
 
             }
+        }
+
+        public void Notify(string @event, object @internal, string data, string payload)
+        {
+            _logger.LogDebug($"notify() [event:{@event}]");
+
+            if (_closed)
+                throw new InvalidStateException("PayloadChannel closed");
+
+            var notification = new { @event, @internal, data };
+            var ns1 = NetstringWriter.Encode(notification.ToCamelCaseJson());
+            var ns2 = NetstringWriter.Encode(payload);
+
+            var ns1Bytes = Encoding.UTF8.GetBytes(ns1);
+            var ns2Bytes = Encoding.UTF8.GetBytes(ns2);
+            if (ns1Bytes.Length > NsMessageMaxLen)
+            {
+                throw new Exception("PayloadChannel notification too big");
+            }
+            if (ns2Bytes.Length > NsMessageMaxLen)
+            {
+                throw new Exception("PayloadChannel payload too big");
+            }
+
+            Loop.Default.Sync(() =>
+            {
+                try
+                {
+                    // This may throw if closed or remote side ended.
+                    _producerSocket.Write(ns1Bytes, ex =>
+                    {
+                        if (ex != null)
+                        {
+                            _logger.LogError(ex, "_producerSocket.Write() | error");
+                        }
+                    });
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning($"notify() | sending notification failed: {ex}");
+                    return;
+                }
+
+                try
+                {
+                    // This may throw if closed or remote side ended.
+                    _producerSocket.Write(ns2Bytes, ex =>
+                    {
+                        if (ex != null)
+                        {
+                            _logger.LogError(ex, "_producerSocket.Write() | error");
+                        }
+                    });
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning($"notify() | sending notification failed: {ex}");
+                    return;
+                }
+            });
         }
 
         #region Event handles
@@ -186,15 +250,33 @@ namespace TubumuMeeting.Mediasoup
 
         private void ProcessMessage(string nsPayload)
         {
-            var msg = JObject.Parse(nsPayload);
-            var targetId = msg["targetId"].Value(String.Empty);
-            var @event = msg["event"].Value(string.Empty);
-            var data = msg["data"].Value(string.Empty);
-
-            if (!targetId.IsNullOrWhiteSpace() && !@event.IsNullOrWhiteSpace())
+            if (_ongoingNotification == null)
             {
-                _logger.LogError("received message is not a notification");
-                return;
+                var msg = JObject.Parse(nsPayload);
+                var targetId = msg["targetId"].Value(String.Empty);
+                var @event = msg["event"].Value(string.Empty);
+                var data = msg["data"].Value(string.Empty);
+
+                if (!targetId.IsNullOrWhiteSpace() && !@event.IsNullOrWhiteSpace())
+                {
+                    _logger.LogError("received message is not a notification");
+                    return;
+                }
+
+                _ongoingNotification = new OngoingNotification
+                {
+                    TargetId = targetId,
+                    Event = @event,
+                    Data = data,
+                };
+            }
+            else
+            {
+                // Emit the corresponding event.
+                MessageEvent?.Invoke(_ongoingNotification.TargetId, _ongoingNotification.Event, _ongoingNotification.Data, nsPayload);
+
+                // Unset ongoing notification.
+                _ongoingNotification = null;
             }
         }
 

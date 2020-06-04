@@ -133,8 +133,8 @@ namespace TubumuMeeting.Mediasoup
                 Data = data,
             };
             var ns = NetstringWriter.Encode(requestMesssge.ToCamelCaseJson());
-            var bytes = Encoding.UTF8.GetBytes(ns);
-            if (bytes.Length > NsMessageMaxLen)
+            var nsBytes = Encoding.UTF8.GetBytes(ns);
+            if (nsBytes.Length > NsMessageMaxLen)
             {
                 throw new Exception("Channel request too big");
             }
@@ -178,7 +178,7 @@ namespace TubumuMeeting.Mediasoup
                 try
                 {
                     // This may throw if closed or remote side ended.
-                    _producerSocket.Write(ns, ex =>
+                    _producerSocket.Write(nsBytes, ex =>
                     {
                         if (ex != null)
                         {
