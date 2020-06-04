@@ -409,6 +409,7 @@ namespace TubumuMeeting.Meeting.Server
 
             var status = await transport.GetStatsAsync();
             // TODO: (alby)考虑不进行反序列化
+            // TODO: (alby)实际上有 WebTransportStat、PlainTransportStat、PipeTransportStat 和 DirectTransportStat。这里反序列化后会丢失数据。
             var data = JsonConvert.DeserializeObject<TransportStat>(status!);
 
             return new MeetingMessage { Code = 200, Message = "GetTransportStats 成功", Data = data };
