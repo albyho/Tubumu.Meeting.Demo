@@ -243,7 +243,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        private void OnPayloadChannelMessage(string targetId, string @event, string data, string payload)
+        private void OnPayloadChannelMessage(string targetId, string @event, NotifyData data, string payload)
         {
             if (targetId != DataConsumerId) return;
             switch (@event)
@@ -253,11 +253,12 @@ namespace TubumuMeeting.Mediasoup
                         if (Closed)
                             break;
 
-                        /*
-                        const ppid = data.ppid as number;
-                        const message = payload;
+                        var ppid = data.PPID;
+                        var message = payload;
 
-                        this.safeEmit('message', message, ppid);
+                        // TODO: (alby)Emit 暂不支持超过两个参数
+                        /*
+                        Emit('message', message, ppid);
                         */
 
                         break;

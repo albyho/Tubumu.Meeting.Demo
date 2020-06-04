@@ -10,6 +10,6 @@ namespace TubumuMeeting.Mediasoup
 
         public string Event { get; set; }
 
-        public string Data { get; set; }
+        public NotifyData Data { get; set; }
     }
 }

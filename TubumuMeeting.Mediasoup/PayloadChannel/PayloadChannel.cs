@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
@@ -46,7 +47,7 @@ namespace TubumuMeeting.Mediasoup
 
         #region Events
 
-        public event Action<string, string, string, string>? MessageEvent;
+        public event Action<string, string, NotifyData, string>? MessageEvent;
 
         #endregion
 
@@ -263,11 +264,13 @@ namespace TubumuMeeting.Mediasoup
                     return;
                 }
 
+                var notifyData = JsonConvert.DeserializeObject<NotifyData>(data);
+
                 _ongoingNotification = new OngoingNotification
                 {
                     TargetId = targetId,
                     Event = @event,
-                    Data = data,
+                    Data = notifyData,
                 };
             }
             else
