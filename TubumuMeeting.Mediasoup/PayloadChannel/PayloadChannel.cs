@@ -105,7 +105,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        public void Notify(string @event, object @internal, string data, string payload)
+        public void Notify(string @event, object @internal, NotifyData data, string payload)
         {
             _logger.LogDebug($"notify() [event:{@event}]");
 
@@ -248,11 +248,11 @@ namespace TubumuMeeting.Mediasoup
 
         #region Private Methods
 
-        private void ProcessMessage(string nsPayload)
+        private void ProcessMessage(string payload)
         {
             if (_ongoingNotification == null)
             {
-                var msg = JObject.Parse(nsPayload);
+                var msg = JObject.Parse(payload);
                 var targetId = msg["targetId"].Value(String.Empty);
                 var @event = msg["event"].Value(string.Empty);
                 var data = msg["data"].Value(string.Empty);
@@ -273,7 +273,7 @@ namespace TubumuMeeting.Mediasoup
             else
             {
                 // Emit the corresponding event.
-                MessageEvent?.Invoke(_ongoingNotification.TargetId, _ongoingNotification.Event, _ongoingNotification.Data, nsPayload);
+                MessageEvent?.Invoke(_ongoingNotification.TargetId, _ongoingNotification.Event, _ongoingNotification.Data, payload);
 
                 // Unset ongoing notification.
                 _ongoingNotification = null;

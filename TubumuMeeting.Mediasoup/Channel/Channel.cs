@@ -322,9 +322,9 @@ namespace TubumuMeeting.Mediasoup
 
         #region Private Methods
 
-        private void ProcessMessage(string nsPayload)
+        private void ProcessMessage(string payload)
         {
-            var msg = JObject.Parse(nsPayload);
+            var msg = JObject.Parse(payload);
             var id = msg["id"].Value(0);
             var accepted = msg["accepted"].Value(false);
             var targetId = msg["targetId"].Value(String.Empty);
@@ -372,7 +372,7 @@ namespace TubumuMeeting.Mediasoup
             // Otherwise unexpected message.
             else
             {
-                _logger.LogError($"ProcessMessage() | received message is not a response nor a notification: {nsPayload}");
+                _logger.LogError($"ProcessMessage() | received message is not a response nor a notification: {payload}");
             }
         }
 

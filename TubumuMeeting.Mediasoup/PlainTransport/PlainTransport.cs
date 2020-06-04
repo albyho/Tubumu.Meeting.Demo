@@ -49,6 +49,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="sctpParameters"></param>
         /// <param name="sctpState"></param>
         /// <param name="channel"></param>
+        /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         /// <param name="getRouterRtpCapabilities"></param>
         /// <param name="getProducerById"></param>
@@ -58,6 +59,7 @@ namespace TubumuMeeting.Mediasoup
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
+            PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
             Func<string, Producer> getProducerById,
@@ -67,7 +69,7 @@ namespace TubumuMeeting.Mediasoup
             TransportTuple tuple,
             TransportTuple? rtcpTuple,
             SrtpParameters? srtpParameters
-            ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
+            ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, payloadChannel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _logger = loggerFactory.CreateLogger<PlainTransport>();
 

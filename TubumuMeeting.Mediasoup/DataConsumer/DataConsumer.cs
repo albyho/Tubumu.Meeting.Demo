@@ -78,6 +78,11 @@ namespace TubumuMeeting.Mediasoup
         private readonly Channel _channel;
 
         /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
+        private readonly PayloadChannel _payloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
@@ -107,6 +112,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="label"></param>
         /// <param name="protocol"></param>
         /// <param name="channel"></param>
+        /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         public DataConsumer(ILoggerFactory loggerFactory,
                             DataConsumerInternalData dataConsumerInternalData,
@@ -114,6 +120,7 @@ namespace TubumuMeeting.Mediasoup
                             string label,
                             string protocol,
                             Channel channel,
+                            PayloadChannel payloadChannel,
                             Dictionary<string, object>? appData)
         {
             _logger = loggerFactory.CreateLogger<DataConsumer>();
@@ -127,6 +134,7 @@ namespace TubumuMeeting.Mediasoup
             Protocol = protocol;
 
             _channel = channel;
+            _payloadChannel = payloadChannel;
             AppData = appData;
 
             HandleWorkerNotifications();
@@ -202,6 +210,7 @@ namespace TubumuMeeting.Mediasoup
         private void HandleWorkerNotifications()
         {
             _channel.MessageEvent += OnChannelMessage;
+            _payloadChannel.MessageEvent += OnPayloadChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -229,6 +238,33 @@ namespace TubumuMeeting.Mediasoup
                 default:
                     {
                         _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        break;
+                    }
+            }
+        }
+
+        private void OnPayloadChannelMessage(string targetId, string @event, string data, string payload)
+        {
+            if (targetId != DataConsumerId) return;
+            switch (@event)
+            {
+                case "message":
+                    {
+                        if (Closed)
+                            break;
+
+                        /*
+                        const ppid = data.ppid as number;
+                        const message = payload;
+
+                        this.safeEmit('message', message, ppid);
+                        */
+
+                        break;
+                    }
+                default:
+                    {
+                        _logger.LogError($"OnPayloadChannelMessage() | ignoring unknown event{@event}");
                         break;
                     }
             }

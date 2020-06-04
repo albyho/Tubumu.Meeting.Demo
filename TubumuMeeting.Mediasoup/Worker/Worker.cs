@@ -15,7 +15,7 @@ namespace TubumuMeeting.Mediasoup
     {
         #region Constants
 
-        private const int StdioCount = 5;
+        private const int StdioCount = 7;
 
         #endregion
 
@@ -36,7 +36,11 @@ namespace TubumuMeeting.Mediasoup
         // Is spawn done?
         private bool _spawnDone;
 
+        // Channel instance.
         private readonly Channel _channel;
+
+        // PayloadChannel instance.
+        private readonly PayloadChannel _payloadChannel;
 
         private readonly UVStream[] _pipes;
 
@@ -153,6 +157,8 @@ namespace TubumuMeeting.Mediasoup
             _channel = new Channel(_loggerFactory.CreateLogger<Channel>(), _pipes[3], _pipes[4], ProcessId);
             _channel.RunningEvent += OnChannelRunning;
 
+            _payloadChannel = new PayloadChannel(_loggerFactory.CreateLogger<PayloadChannel>(), _pipes[5], _pipes[6], ProcessId);
+
             _pipes.ForEach(m => m?.Resume());
         }
 
@@ -173,6 +179,9 @@ namespace TubumuMeeting.Mediasoup
 
             // Close the Channel instance.
             _channel?.Close();
+
+            // Close the PayloadChannel instance.
+            _payloadChannel?.Close();
 
             // Emit observer event.
             Observer.Emit("close");
@@ -226,7 +235,7 @@ namespace TubumuMeeting.Mediasoup
 
             await _channel.RequestAsync(MethodId.WORKER_CREATE_ROUTER, @internal);
 
-            var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, AppData);
+            var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, _payloadChannel, AppData);
 
             _routers.Add(router);
 

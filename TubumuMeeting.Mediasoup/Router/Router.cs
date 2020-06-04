@@ -34,6 +34,11 @@ namespace TubumuMeeting.Mediasoup
         private readonly Channel _channel;
 
         /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
+        private readonly PayloadChannel _payloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
@@ -76,11 +81,13 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="routerId"></param>
         /// <param name="rtpCapabilities"></param>
         /// <param name="channel"></param>
+        /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         public Router(ILoggerFactory loggerFactory,
                     string routerId,
                     RtpCapabilities rtpCapabilities,
                     Channel channel,
+                    PayloadChannel payloadChannel,
                     Dictionary<string, object>? appData)
         {
             _loggerFactory = loggerFactory;
@@ -92,6 +99,7 @@ namespace TubumuMeeting.Mediasoup
             };
             RtpCapabilities = rtpCapabilities;
             _channel = channel;
+            _payloadChannel = payloadChannel;
             AppData = appData;
         }
 
@@ -226,6 +234,7 @@ namespace TubumuMeeting.Mediasoup
                 sctpParameters: null,
                 sctpState: null,
                 _channel,
+                _payloadChannel,
                 webRtcTransportOptions.AppData,
                 () => RtpCapabilities,
                 m => _producers[m],
@@ -305,6 +314,7 @@ namespace TubumuMeeting.Mediasoup
                             sctpParameters: null,
                             sctpState: null,
                             _channel,
+                            _payloadChannel,
                             plainTransportOptions.AppData,
                             () => RtpCapabilities,
                             m => _producers[m],
@@ -382,6 +392,7 @@ namespace TubumuMeeting.Mediasoup
                             sctpParameters: null,
                             sctpState: null,
                             _channel,
+                            _payloadChannel,
                             pipeTransportOptions.AppData,
                             () => RtpCapabilities,
                             m => _producers[m],
@@ -450,6 +461,7 @@ namespace TubumuMeeting.Mediasoup
                 sctpParameters: null,
                 sctpState: null,
                 _channel,
+                _payloadChannel,
                 directTransportOptions.AppData,
                 () => RtpCapabilities,
                 m => _producers[m],
@@ -729,6 +741,7 @@ namespace TubumuMeeting.Mediasoup
             var audioLevelObserver = new AudioLevelObserver(_loggerFactory,
                 new RtpObserverInternalData(@internal.RouterId, @internal.RtpObserverId),
                 _channel,
+                _payloadChannel,
                 AppData,
                 m => _producers[m]);
 

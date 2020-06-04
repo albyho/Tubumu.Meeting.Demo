@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
@@ -72,6 +73,11 @@ namespace TubumuMeeting.Mediasoup
         private readonly Channel _channel;
 
         /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
+        private readonly PayloadChannel _payloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
@@ -99,6 +105,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="label"></param>
         /// <param name="protocol"></param>
         /// <param name="channel"></param>
+        /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         public DataProducer(ILoggerFactory loggerFactory,
                             DataProducerInternalData dataProducerInternalData,
@@ -106,6 +113,7 @@ namespace TubumuMeeting.Mediasoup
                             string label,
                             string protocol,
                             Channel channel,
+                            PayloadChannel payloadChannel,
                             Dictionary<string, object>? appData)
         {
             _logger = loggerFactory.CreateLogger<DataProducer>();
@@ -119,6 +127,7 @@ namespace TubumuMeeting.Mediasoup
             Protocol = protocol;
 
             _channel = channel;
+            _payloadChannel = payloadChannel;
             AppData = appData;
 
             HandleWorkerNotifications();
@@ -188,6 +197,73 @@ namespace TubumuMeeting.Mediasoup
 
             return _channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, Internal);
         }
+
+        /// <summary>
+        /// Send data (just valid for DataProducers created on a DirectTransport).
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="ppid"></param>
+        /// <returns></returns>
+        public Task SendAsync(string message, int? ppid)
+        {
+            _logger.LogDebug("SendAsync()");
+
+            /*
+             * +-------------------------------+----------+
+             * | Value                         | SCTP     |
+             * |                               | PPID     |
+             * +-------------------------------+----------+
+             * | WebRTC String                 | 51       |
+             * | WebRTC Binary Partial         | 52       |
+             * | (Deprecated)                  |          |
+             * | WebRTC Binary                 | 53       |
+             * | WebRTC String Partial         | 54       |
+             * | (Deprecated)                  |          |
+             * | WebRTC String Empty           | 56       |
+             * | WebRTC Binary Empty           | 57       |
+             * +-------------------------------+----------+
+             */
+
+            if (ppid == null)
+            {
+                ppid = !message.IsNullOrEmpty() ? 51 : 56;
+            }
+
+            // Ensure we honor PPIDs.
+            if (ppid == 56)
+            {
+                message = " ";
+            }
+
+            var notifyData = new NotifyData { PPID = ppid.Value };
+
+            _payloadChannel.Notify("dataProducer.send", Internal, notifyData, message);
+
+            return Task.CompletedTask;
+        }
+
+        // TODO: (alby)支持字节序(需改造 Netstring )
+        /*
+        public Task SendAsync(byte[] message, int? ppid)
+        {
+            _logger.LogDebug("SendAsync()");
+
+            if (ppid == null)
+            {
+                ppid = !message.IsNullOrEmpty() ? 53 : 57;
+            }
+
+            // Ensure we honor PPIDs.
+            if (ppid == 57)
+            {
+                message = new byte[1];
+            }
+
+            var notifyData = new NotifyData { PPID = ppid.Value };
+
+            _payloadChannel.Notify("dataProducer.send", Internal, notifyData, message);
+        }
+        */
 
         #region Event Handlers
 

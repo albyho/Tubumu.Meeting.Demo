@@ -46,11 +46,12 @@ namespace TubumuMeeting.Mediasoup
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
+            PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
             Func<string, Producer> getProducerById,
             Func<string, DataProducer> getDataProducerById
-            ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
+            ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, payloadChannel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<DirectTransport>();

@@ -41,6 +41,11 @@ namespace TubumuMeeting.Mediasoup
         protected readonly Channel Channel;
 
         /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
+        protected readonly PayloadChannel PayloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
@@ -79,11 +84,13 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="loggerFactory"></param>
         /// <param name="rtpObserverInternalData"></param>
         /// <param name="channel"></param>
+        /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         /// <param name="getProducerById"></param>
         public RtpObserver(ILoggerFactory loggerFactory,
                     RtpObserverInternalData rtpObserverInternalData,
                     Channel channel,
+                    PayloadChannel payloadChannel,
                     Dictionary<string, object>? appData,
                     Func<string, Producer> getProducerById)
         {
@@ -93,6 +100,7 @@ namespace TubumuMeeting.Mediasoup
             Internal = rtpObserverInternalData;
 
             Channel = channel;
+            PayloadChannel = payloadChannel;
             AppData = appData;
             GetProducerById = getProducerById;
         }

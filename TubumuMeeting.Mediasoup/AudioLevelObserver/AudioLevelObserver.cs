@@ -27,13 +27,15 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="loggerFactory"></param>
         /// <param name="rtpObserverInternalData"></param>
         /// <param name="channel"></param>
+        /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         /// <param name="getProducerById"></param>
         public AudioLevelObserver(ILoggerFactory loggerFactory,
                     RtpObserverInternalData rtpObserverInternalData,
                     Channel channel,
+                    PayloadChannel payloadChannel,
                     Dictionary<string, object>? appData,
-                    Func<string, Producer> getProducerById) : base(loggerFactory, rtpObserverInternalData, channel, appData, getProducerById)
+                    Func<string, Producer> getProducerById) : base(loggerFactory, rtpObserverInternalData, channel, payloadChannel, appData, getProducerById)
         {
             _logger = loggerFactory.CreateLogger<AudioLevelObserver>();
 

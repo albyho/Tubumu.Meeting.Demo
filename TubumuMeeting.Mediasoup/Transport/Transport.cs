@@ -70,6 +70,11 @@ namespace TubumuMeeting.Mediasoup
         protected readonly Channel Channel;
 
         /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
+        protected readonly PayloadChannel PayloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
@@ -137,6 +142,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="sctpParameters"></param>
         /// <param name="sctpState"></param>
         /// <param name="channel"></param>
+        /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         /// <param name="getRouterRtpCapabilities"></param>
         /// <param name="getProducerById"></param>
@@ -146,6 +152,7 @@ namespace TubumuMeeting.Mediasoup
             SctpParameters? sctpParameters,
             SctpState? sctpState,
             Channel channel,
+            PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
             Func<string, Producer> getProducerById,
@@ -162,6 +169,7 @@ namespace TubumuMeeting.Mediasoup
             SctpState = sctpState;
 
             Channel = channel;
+            PayloadChannel = payloadChannel;
             AppData = appData;
             GetRouterRtpCapabilities = getRouterRtpCapabilities;
             GetProducerById = getProducerById;
@@ -574,6 +582,7 @@ namespace TubumuMeeting.Mediasoup
                 responseData.Label,
                 responseData.Protocol,
                 Channel,
+                PayloadChannel,
                 AppData);
 
             DataProducers[dataProducer.DataProducerId] = dataProducer;
@@ -645,6 +654,7 @@ namespace TubumuMeeting.Mediasoup
                 responseData.Label,
                 responseData.Protocol,
                 Channel,
+                PayloadChannel,
                 AppData);
 
             DataConsumers[dataConsumer.DataConsumerId] = dataConsumer;
