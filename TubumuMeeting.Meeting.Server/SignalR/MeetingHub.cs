@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Mediasoup.Extensions;
 
@@ -24,6 +25,15 @@ namespace TubumuMeeting.Meeting.Server
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public object? Data { get; set; }
+
+        public static string Stringify(int code, string message, string? data = null)
+        {
+            if(data == null)
+            {
+                return $"{{\"code\":{code},\"message\":\"{message}\"}}";
+            }
+            return $"{{\"code\":{code},\"message\":\"{message}\",\"data\":{data}}}";
+        }
     }
 
     public interface IPeer
