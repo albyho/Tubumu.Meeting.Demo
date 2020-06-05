@@ -4,58 +4,70 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace TubumuMeeting.Core.Netstring
+namespace TubumuMeeting.Core
 {
-    public class Netstring : IEnumerator<byte[]>, IEnumerable<byte[]>
+    public struct Payload
     {
-        private readonly byte[] _buffer;
-        private byte[] _current;
-        private int _offset;
+        public ArraySegment<byte> Data { get; }
 
-        public Netstring(byte[] buffer, int offset = 0)
+        public int NetstringLength { get; }
+
+        public Payload(ArraySegment<byte> data, int netstringLength)
+        {
+            Data = data;
+            NetstringLength = netstringLength;
+        }
+    }
+
+    public class Netstring : IEnumerator<Payload>, IEnumerable<Payload>
+    {
+        private readonly ArraySegment<byte> _buffer;
+        private int _offset;
+        private Payload _current;
+
+        public Netstring(ArraySegment<byte> buffer, int offset = 0)
         {
             _buffer = buffer;
             _offset = offset;
+        }
+
+        /// <summary>
+        /// Emits the specified string as a netstring.
+        /// </summary>
+        /// <param name="value">The string to encode as a netstring.</param>
+        /// <returns>A netstring.</returns>
+        public static byte[] Encode(string value)
+        {
+            return Encode(Encoding.UTF8.GetBytes(value));
+        }
+
+        public static byte[] Encode(byte[] value)
+        {
+            var payloadLengthBuffer = Encoding.UTF8.GetBytes(value.Length.ToString());
+            var netstringLenth = payloadLengthBuffer.Length + 1 + value.Length + 1;
+            var result = new byte[netstringLenth];
+            Array.Copy(payloadLengthBuffer, 0, result, 0, payloadLengthBuffer.Length);
+            result[payloadLengthBuffer.Length] = (byte)':';
+            Array.Copy(value, 0, result, payloadLengthBuffer.Length + 1, value.Length);
+            result[result.Length - 1] = (byte)',';
+            return result;
         }
 
         #region IEnumerator, IEnumerable
 
         public bool MoveNext()
         {
-            if (_offset > _buffer.Length - 3)
+            if (_offset > _buffer.Count - 3)
             {
                 return false;
             }
 
-            _current = FetchPayload();
+            _current = ExtractPayload();
 
             return true;
         }
 
-        private byte[] FetchPayload()
-        {
-            var payloadLength = FetchPayloadLength(_buffer, _offset);
-            if (payloadLength < 0)
-            {
-                throw new InvalidDataException("Illegal size field");
-            }
-
-            var netstringLength = ComputeNetstringLength(payloadLength);
-
-            // We don't have the entire buffer yet
-            if (_buffer.Length - _offset - netstringLength < 0)
-            {
-                throw new InvalidDataException("Don't have the entire buffer yet");
-            }
-
-            var start = _offset + (netstringLength - payloadLength - 1);
-            var payload = new byte[payloadLength];
-            Array.Copy(_buffer, start, payload, 0, payloadLength);
-            _offset += netstringLength;
-            return payload;
-        }
-
-        public byte[] Current => _current;
+        public Payload Current => _current;
 
         object IEnumerator.Current => _current;
 
@@ -69,7 +81,7 @@ namespace TubumuMeeting.Core.Netstring
             throw new NotImplementedException();
         }
 
-        public IEnumerator<byte[]> GetEnumerator()
+        public IEnumerator<Payload> GetEnumerator()
         {
             return this;
         }
@@ -81,13 +93,13 @@ namespace TubumuMeeting.Core.Netstring
 
         #endregion
 
-        private static int FetchPayloadLength(byte[] netstring, int offset)
+        private static int ExtractPayloadLength(ArraySegment<byte> buffer, int offset)
         {
             var len = 0;
             var i = 0;
-            for (i = offset; i < netstring.Length; i++)
+            for (i = offset; i < buffer.Count; i++)
             {
-                var cc = netstring[i];
+                var cc = buffer.Array[buffer.Offset + i];
 
                 if (cc == ':'/*0x3a*/)
                 {
@@ -113,7 +125,7 @@ namespace TubumuMeeting.Core.Netstring
             }
 
             // We didn't get a complete length specification
-            if (i == netstring.Length)
+            if (i == buffer.Count)
             {
                 return -1;
             }
@@ -141,6 +153,27 @@ namespace TubumuMeeting.Core.Netstring
 
             // nslen + 1 (last digit) + 1 (:) + 1 (,)
             return nslen + 3;
+        }
+
+        private Payload ExtractPayload()
+        {
+            var payloadLength = ExtractPayloadLength(_buffer, _offset);
+            if (payloadLength < 0)
+            {
+                throw new InvalidDataException("Illegal size field");
+            }
+
+            var netstringLength = ComputeNetstringLength(payloadLength);
+
+            // We don't have the entire buffer yet
+            if (_buffer.Count - _offset - netstringLength < 0)
+            {
+                throw new InvalidDataException("Don't have the entire buffer yet");
+            }
+
+            var start = _offset + (netstringLength - payloadLength - 1);
+            _offset += netstringLength;
+            return new Payload(new ArraySegment<byte>(_buffer.Array, start, payloadLength), netstringLength);
         }
     }
 }

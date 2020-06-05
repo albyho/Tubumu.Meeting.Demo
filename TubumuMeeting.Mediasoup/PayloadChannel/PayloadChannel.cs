@@ -5,8 +5,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
+using TubumuMeeting.Core;
 using TubumuMeeting.Libuv;
-using TubumuMeeting.Netstring;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -38,7 +38,7 @@ namespace TubumuMeeting.Mediasoup
         private bool _closed = false;
 
         // Buffer for reading messages from the worker.
-        private StringBuilder? _recvBuffer;
+        private ArraySegment<byte>? _recvBuffer;
 
         // Ongoing notification (waiting for its payload).
         private OngoingNotification? _ongoingNotification;
@@ -114,11 +114,9 @@ namespace TubumuMeeting.Mediasoup
                 throw new InvalidStateException("PayloadChannel closed");
 
             var notification = new { @event, @internal, data };
-            var ns1 = NetstringWriter.Encode(notification.ToCamelCaseJson());
-            var ns2 = NetstringWriter.Encode(payload);
+            var ns1Bytes = Netstring.Encode(notification.ToCamelCaseJson());
+            var ns2Bytes = Netstring.Encode(payload);
 
-            var ns1Bytes = Encoding.UTF8.GetBytes(ns1);
-            var ns2Bytes = Encoding.UTF8.GetBytes(ns2);
             if (ns1Bytes.Length > NsMessageMaxLen)
             {
                 throw new Exception("PayloadChannel notification too big");
@@ -172,19 +170,19 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnData(ArraySegment<byte> data)
         {
-            var buffer = Encoding.UTF8.GetString(data.Array, data.Offset, data.Count);
-
             if (_recvBuffer == null)
             {
-                _recvBuffer = new StringBuilder(buffer);
+                _recvBuffer = data;
             }
             else
             {
-                _recvBuffer.Append(buffer);
+                var newBuffer = new byte[_recvBuffer.Value.Count + data.Count];
+                Array.Copy(_recvBuffer.Value.Array, _recvBuffer.Value.Offset, newBuffer, 0, _recvBuffer.Value.Count);
+                Array.Copy(data.Array, data.Offset, newBuffer, _recvBuffer.Value.Count, data.Count);
+                _recvBuffer = new ArraySegment<byte>(newBuffer);
             }
 
-            var message = _recvBuffer.ToString();
-            if (message.Length > NsPayloadMaxLen)
+            if (_recvBuffer.Value.Count > NsPayloadMaxLen)
             {
                 _logger.LogError("ConsumerSocketOnData() | receiving buffer is full, discarding all data into it");
                 // Reset the buffer and exit.
@@ -193,26 +191,27 @@ namespace TubumuMeeting.Mediasoup
             }
 
             //_logger.LogError($"ConsumerSocketOnData: {buffer}");
-            using var nsReader = new NetstringReader(message);
+            var netstring = new Netstring(_recvBuffer.Value);
             try
             {
-                var nsPayloadLength = 0;
-                foreach (var nsPayload in nsReader)
+                var nsLength = 0;
+                foreach (var payload in netstring)
                 {
-                    nsPayloadLength += nsPayload.Length.ToString().Length + 1 + nsPayload.Length + 1;
-                    ProcessMessage(nsPayload);
+                    nsLength += payload.NetstringLength;
+                    var payloadString = Encoding.UTF8.GetString(payload.Data.Array, payload.Data.Offset, payload.Data.Count);
+                    ProcessMessage(payloadString);
                 }
 
-                if (nsPayloadLength > 0)
+                if (nsLength > 0)
                 {
-                    if (nsPayloadLength == message.Length)
+                    if (nsLength == _recvBuffer.Value.Count)
                     {
                         // Reset the buffer.
                         _recvBuffer = null;
                     }
                     else
                     {
-                        _recvBuffer = new StringBuilder(message.Substring(nsPayloadLength, message.Length - nsPayloadLength));
+                        _recvBuffer = new ArraySegment<byte>(_recvBuffer.Value.Array, _recvBuffer.Value.Offset + nsLength, _recvBuffer.Value.Count - nsLength);
                     }
                 }
             }

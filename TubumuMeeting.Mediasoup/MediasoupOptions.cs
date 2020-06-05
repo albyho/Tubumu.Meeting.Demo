@@ -102,10 +102,10 @@ namespace TubumuMeeting.Mediasoup
                     {
                         new TransportListenIp { Ip = "0.0.0.0",  AnnouncedIp = null }
                     },
-                    InitialAvailableOutgoingBitrate = 100 * 1000,
-                    MinimumAvailableOutgoingBitrate = 60 * 1000,
+                    InitialAvailableOutgoingBitrate = 1000 * 1000,
+                    MinimumAvailableOutgoingBitrate = 600 * 1000,
                     MaxSctpMessageSize = 262144,
-                    MaximumIncomingBitrate = 150 * 1000,
+                    MaximumIncomingBitrate = 1500 * 1000,
                 }
             }
         };

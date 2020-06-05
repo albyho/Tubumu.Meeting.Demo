@@ -682,6 +682,6 @@ body {
 }
 
 video {
-  width: 320px;
+  width: 640px;
 }
 </style>

@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
 using TubumuMeeting.Libuv;
-using TubumuMeeting.Netstring;
+using TubumuMeeting.Core;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -45,7 +45,7 @@ namespace TubumuMeeting.Mediasoup
         private readonly Dictionary<int, Sent> _sents = new Dictionary<int, Sent>();
 
         // Buffer for reading messages from the worker.
-        private StringBuilder? _recvBuffer;
+        private ArraySegment<byte>? _recvBuffer;
 
         #endregion
 
@@ -132,8 +132,7 @@ namespace TubumuMeeting.Mediasoup
                 Internal = @internal,
                 Data = data,
             };
-            var ns = NetstringWriter.Encode(requestMesssge.ToCamelCaseJson());
-            var nsBytes = Encoding.UTF8.GetBytes(ns);
+            var nsBytes = Netstring.Encode(requestMesssge.ToCamelCaseJson());
             if (nsBytes.Length > NsMessageMaxLen)
             {
                 throw new Exception("Channel request too big");
@@ -201,19 +200,19 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnData(ArraySegment<byte> data)
         {
-            var buffer = Encoding.UTF8.GetString(data.Array, data.Offset, data.Count);
-
             if (_recvBuffer == null)
             {
-                _recvBuffer = new StringBuilder(buffer);
+                _recvBuffer = data;
             }
             else
             {
-                _recvBuffer.Append(buffer);
+                var newBuffer = new byte[_recvBuffer.Value.Count + data.Count];
+                Array.Copy(_recvBuffer.Value.Array, _recvBuffer.Value.Offset, newBuffer, 0, _recvBuffer.Value.Count);
+                Array.Copy(data.Array, data.Offset, newBuffer, _recvBuffer.Value.Count, data.Count);
+                _recvBuffer = new ArraySegment<byte>(newBuffer);
             }
 
-            var message = _recvBuffer.ToString();
-            if (message.Length > NsPayloadMaxLen)
+            if (_recvBuffer.Value.Count > NsPayloadMaxLen)
             {
                 _logger.LogError("ConsumerSocketOnData() | receiving buffer is full, discarding all data into it");
                 // Reset the buffer and exit.
@@ -222,70 +221,71 @@ namespace TubumuMeeting.Mediasoup
             }
 
             //_logger.LogError($"ConsumerSocketOnData: {buffer}");
-            using var nsReader = new NetstringReader(message);
+            var netstring = new Netstring(_recvBuffer.Value);
             try
             {
-                var nsPayloadLength = 0;
-                foreach (var nsPayload in nsReader)
+                var nsLength = 0;
+                foreach (var payload in netstring)
                 {
-                    nsPayloadLength += nsPayload.Length.ToString().Length + 1 + nsPayload.Length + 1;
+                    nsLength += payload.NetstringLength;
+                    var payloadString = Encoding.UTF8.GetString(payload.Data.Array, payload.Data.Offset, payload.Data.Count);
                     try
                     {
                         // We can receive JSON messages (Channel messages) or log strings.
-                        switch (nsPayload[0])
+                        switch (payloadString[0])
                         {
                             // 123 = '{' (a Channel JSON messsage).
                             case '{':
-                                ProcessMessage(nsPayload);
+                                ProcessMessage(payloadString);
                                 break;
 
                             // 68 = 'D' (a debug log).
                             case 'D':
-                                if (!nsPayload.Contains("(trace)"))
-                                _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
+                                if (!payloadString.Contains("(trace)"))
+                                _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
+                                _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 69 = 'E' (an error log).
                             case 'E':
-                                _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
+                                _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 88 = 'X' (a dump log).
                             case 'X':
                                 // eslint-disable-next-line no-console
-                                _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { nsPayload }");
+                                _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             default:
                                 // eslint-disable-next-line no-console
-                                _logger.LogWarning($"ConsumerSocketOnData() | worker[pid:{_processId}] unexpected data:{ nsPayload }");
+                                _logger.LogWarning($"ConsumerSocketOnData() | worker[pid:{_processId}] unexpected data:{ payloadString }");
                                 break;
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"ConsumerSocketOnData() | received invalid message from the worker process:{ex}\ndata: {nsPayload}");
+                        _logger.LogError($"ConsumerSocketOnData() | received invalid message from the worker process:{ex}\ndata: {payloadString}");
                         // Reset the buffer and exit.
                         _recvBuffer = null;
                         return;
                     }
                 }
 
-                if (nsPayloadLength > 0)
+                if (nsLength > 0)
                 {
-                    if (nsPayloadLength == message.Length)
+                    if (nsLength == _recvBuffer.Value.Count)
                     {
                         // Reset the buffer.
                         _recvBuffer = null;
                     }
                     else
                     {
-                        _recvBuffer = new StringBuilder(message.Substring(nsPayloadLength, message.Length - nsPayloadLength));
+                        _recvBuffer = new ArraySegment<byte>(_recvBuffer.Value.Array, _recvBuffer.Value.Offset + nsLength, _recvBuffer.Value.Count - nsLength);
                     }
                 }
             }
