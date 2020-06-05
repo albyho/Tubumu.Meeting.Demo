@@ -24,7 +24,7 @@ namespace TubumuMeeting.Mediasoup
         // Logger factory for create Channel logger.
         private readonly ILoggerFactory _loggerFactory;
 
-        // Logger
+        // Logger.
         private readonly ILogger<Worker> _logger;
 
         // mediasoup-worker child process.
@@ -42,6 +42,7 @@ namespace TubumuMeeting.Mediasoup
         // PayloadChannel instance.
         private readonly PayloadChannel _payloadChannel;
 
+        // Pipes.
         private readonly UVStream[] _pipes;
 
         // Routers set.
@@ -155,7 +156,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             _channel = new Channel(_loggerFactory.CreateLogger<Channel>(), _pipes[3], _pipes[4], ProcessId);
-            _channel.RunningEvent += OnChannelRunning;
+            _channel.MessageEvent += OnChannelMessage;
 
             _payloadChannel = new PayloadChannel(_loggerFactory.CreateLogger<PayloadChannel>(), _pipes[5], _pipes[6], ProcessId);
 
@@ -251,13 +252,16 @@ namespace TubumuMeeting.Mediasoup
 
         #region Event handles
 
-        private void OnChannelRunning(string processId)
+        private void OnChannelMessage(string targetId, string @event, string data)
         {
-            _channel.RunningEvent -= OnChannelRunning;
+            if (@event != "running") return;
+
+            _channel.MessageEvent -= OnChannelMessage;
+
             if (!_spawnDone)
             {
                 _spawnDone = true;
-                _logger.LogDebug($"OnChannelRunning() | worker process running [pid:{processId}]");
+                _logger.LogDebug($"OnChannelRunning() | worker process running [pid:{targetId}]");
                 Emit("@success");
             }
         }

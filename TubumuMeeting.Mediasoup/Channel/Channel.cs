@@ -51,8 +51,6 @@ namespace TubumuMeeting.Mediasoup
 
         #region Events
 
-        public event Action<string>? RunningEvent;
-
         public event Action<string, string, string>? MessageEvent;
 
         #endregion
@@ -363,10 +361,6 @@ namespace TubumuMeeting.Mediasoup
             // If a notification emit it to the corresponding entity.
             else if (!targetId.IsNullOrWhiteSpace() && !@event.IsNullOrWhiteSpace())
             {
-                if (@event == "running")
-                {
-                    RunningEvent?.Invoke(targetId);
-                }
                 MessageEvent?.Invoke(targetId, @event, data);
             }
             // Otherwise unexpected message.
