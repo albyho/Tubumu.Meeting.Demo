@@ -257,7 +257,6 @@ namespace TubumuMeeting.Mediasoup
                 // NOTE: No need to tell the Router since it already knows (it has
                 // been closed in fact).
             }
-
             Producers.Clear();
 
             // Close every Consumer.
@@ -557,18 +556,36 @@ namespace TubumuMeeting.Mediasoup
                 dataProducerOptions.Protocol = string.Empty;
             }
 
-            // This may throw.
-            ORTC.ValidateSctpStreamParameters(dataProducerOptions.SctpStreamParameters);
+            DataProducerType type;
+            // If this is not a DirectTransport, sctpStreamParameters are required.
+            if (GetType() != typeof(DirectTransport))
+            {
+                type = DataProducerType.Sctp;
+
+                // This may throw.
+                ORTC.ValidateSctpStreamParameters(dataProducerOptions.SctpStreamParameters);
+            }
+            // If this is a DirectTransport, sctpStreamParameters must not be given.
+            else
+            {
+                type = DataProducerType.Direct;
+
+                if (dataProducerOptions.SctpStreamParameters != null)
+                {
+                    _logger.LogWarning("ProduceDataAsync() | sctpStreamParameters are ignored when producing data on a DirectTransport");
+                }
+            }
 
             var @internal = new DataProducerInternalData
             (
                 Internal.RouterId,
                 Internal.TransportId,
-                !dataProducerOptions.Id.IsNullOrWhiteSpace() ? dataProducerOptions.Id : Guid.NewGuid().ToString()
+                !dataProducerOptions.Id.IsNullOrWhiteSpace() ? dataProducerOptions.Id! : Guid.NewGuid().ToString()
             );
 
             var reqData = new
             {
+                Type = type.GetEnumStringValue(),
                 dataProducerOptions.SctpStreamParameters,
                 Label = dataProducerOptions.Label!,
                 Protocol = dataProducerOptions.Protocol!
@@ -618,17 +635,41 @@ namespace TubumuMeeting.Mediasoup
             if (dataProducer == null)
                 throw new Exception($"DataProducer with id {dataConsumerOptions.DataProducerId} not found");
 
-            var sctpStreamParameters = dataProducer.SctpStreamParameters.DeepClone<SctpStreamParameters>();
 
-            // This may throw.
-            var sctpStreamId = GetNextSctpStreamId();
+            DataProducerType type;
+            SctpStreamParameters? sctpStreamParameters = null;
+            int sctpStreamId = -1;
 
-            if (_sctpStreamIds == null || sctpStreamId > _sctpStreamIds.Length - 1)
+            // If this is not a DirectTransport, use sctpStreamParameters from the
+            // DataProducer (if type 'sctp') unless they are given in method parameters.
+            if (GetType() != typeof(DirectTransport))
             {
-                throw new IndexOutOfRangeException(nameof(_sctpStreamIds));
+                type = DataProducerType.Sctp;
+
+                sctpStreamParameters = dataProducer.SctpStreamParameters.DeepClone<SctpStreamParameters>();
+                // This may throw.
+                sctpStreamId = GetNextSctpStreamId();
+
+                if (_sctpStreamIds == null || sctpStreamId > _sctpStreamIds.Length - 1)
+                {
+                    throw new IndexOutOfRangeException(nameof(_sctpStreamIds));
+                }
+                _sctpStreamIds[sctpStreamId] = 1;
+                sctpStreamParameters.StreamId = sctpStreamId;
             }
-            _sctpStreamIds[sctpStreamId] = 1;
-            sctpStreamParameters.StreamId = sctpStreamId;
+            // If this is a DirectTransport, sctpStreamParameters must not be used.
+            else
+            {
+                type = DataProducerType.Direct;
+
+                if (dataConsumerOptions.Ordered.HasValue ||
+                    dataConsumerOptions.MaxPacketLifeTime.HasValue ||
+                    dataConsumerOptions.MaxRetransmits.HasValue
+                )
+                {
+                    _logger.LogWarning("ConsumeDataAsync() | ordered, maxPacketLifeTime and maxRetransmits are ignored when consuming data on a DirectTransport");
+                }
+            }
 
             var @internal = new DataConsumerInternalData
             (
@@ -640,6 +681,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new
             {
+                Type = type.GetEnumStringValue(),
                 SctpStreamParameters = sctpStreamParameters,
                 dataProducer.Label,
                 dataProducer.Protocol
@@ -662,13 +704,19 @@ namespace TubumuMeeting.Mediasoup
             dataConsumer.On("@close", _ =>
             {
                 DataConsumers.Remove(dataConsumer.DataConsumerId);
-                _sctpStreamIds[sctpStreamId] = 0;
+                if (_sctpStreamIds != null && sctpStreamId >= 0)
+                {
+                    _sctpStreamIds[sctpStreamId] = 0;
+                }
             });
 
             dataConsumer.On("@dataproducerclose", _ =>
             {
                 DataConsumers.Remove(dataConsumer.DataConsumerId);
-                _sctpStreamIds[sctpStreamId] = 0;
+                if (_sctpStreamIds != null && sctpStreamId >= 0)
+                {
+                    _sctpStreamIds[sctpStreamId] = 0;
+                }
             });
 
             // Emit observer event.
