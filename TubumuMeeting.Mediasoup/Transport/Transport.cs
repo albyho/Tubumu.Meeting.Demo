@@ -563,7 +563,7 @@ namespace TubumuMeeting.Mediasoup
                 type = DataProducerType.Sctp;
 
                 // This may throw.
-                ORTC.ValidateSctpStreamParameters(dataProducerOptions.SctpStreamParameters);
+                ORTC.ValidateSctpStreamParameters(dataProducerOptions.SctpStreamParameters!);
             }
             // If this is a DirectTransport, sctpStreamParameters must not be given.
             else

@@ -687,7 +687,6 @@ namespace TubumuMeeting.Mediasoup
                         AppData = dataProducer.AppData,
                     });
 
-
                     // Pipe events from the pipe DataConsumer to the pipe DataProducer.
                     pipeDataConsumer.Observer.On("close", _ => pipeDataProducer.Close());
 
@@ -695,7 +694,6 @@ namespace TubumuMeeting.Mediasoup
                     pipeDataProducer.Observer.On("close", _ => pipeDataConsumer.Close());
 
                     return new PipeToRouterResult { PipeDataConsumer = pipeDataConsumer, PipeDataProducer = pipeDataProducer };
-
                 }
                 catch (Exception ex)
                 {

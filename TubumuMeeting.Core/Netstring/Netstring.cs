@@ -71,7 +71,9 @@ namespace TubumuMeeting.Core
 
         object IEnumerator.Current => _current;
 
+#pragma warning disable CA1063 // Implement IDisposable Correctly
         public void Dispose()
+#pragma warning restore CA1063 // Implement IDisposable Correctly
         {
 
         }
