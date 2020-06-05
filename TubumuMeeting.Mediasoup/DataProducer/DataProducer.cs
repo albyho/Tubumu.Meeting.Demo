@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
@@ -237,13 +238,17 @@ namespace TubumuMeeting.Mediasoup
 
             var notifyData = new NotifyData { PPID = ppid.Value };
 
-            _payloadChannel.Notify("dataProducer.send", Internal, notifyData, message);
+            _payloadChannel.Notify("dataProducer.send", Internal, notifyData, Encoding.UTF8.GetBytes(message));
 
             return Task.CompletedTask;
         }
 
-        // TODO: (alby)支持字节序(需改造 Netstring )
-        /*
+        /// <summary>
+        /// Send data (just valid for DataProducers created on a DirectTransport).
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="ppid"></param>
+        /// <returns></returns>
         public Task SendAsync(byte[] message, int? ppid)
         {
             _logger.LogDebug("SendAsync()");
@@ -262,8 +267,9 @@ namespace TubumuMeeting.Mediasoup
             var notifyData = new NotifyData { PPID = ppid.Value };
 
             _payloadChannel.Notify("dataProducer.send", Internal, notifyData, message);
+
+            return Task.CompletedTask;
         }
-        */
 
         #region Event Handlers
 

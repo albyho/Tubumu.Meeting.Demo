@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TubumuMeeting.Mediasoup.Extensions;
@@ -243,7 +244,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        private void OnPayloadChannelMessage(string targetId, string @event, NotifyData data, string payload)
+        private void OnPayloadChannelMessage(string targetId, string @event, NotifyData data, ArraySegment<byte> payload)
         {
             if (targetId != DataConsumerId) return;
             switch (@event)
@@ -256,10 +257,8 @@ namespace TubumuMeeting.Mediasoup
                         var ppid = data.PPID;
                         var message = payload;
 
-                        // TODO: (alby)Emit 暂不支持超过两个参数
-                        /*
-                        Emit('message', message, ppid);
-                        */
+                        // Emit 暂不支持超过两个参数
+                        Emit("message", new NoyifyMessage { Message = message, PPID = ppid });
 
                         break;
                     }

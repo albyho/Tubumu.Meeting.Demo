@@ -47,7 +47,7 @@ namespace TubumuMeeting.Mediasoup
 
         #region Events
 
-        public event Action<string, string, NotifyData, string>? MessageEvent;
+        public event Action<string, string, NotifyData, ArraySegment<byte>>? MessageEvent;
 
         #endregion
 
@@ -106,7 +106,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        public void Notify(string @event, object @internal, NotifyData data, string payload)
+        public void Notify(string @event, object @internal, NotifyData data, byte[] payload)
         {
             _logger.LogDebug($"notify() [event:{@event}]");
 
@@ -198,8 +198,7 @@ namespace TubumuMeeting.Mediasoup
                 foreach (var payload in netstring)
                 {
                     nsLength += payload.NetstringLength;
-                    var payloadString = Encoding.UTF8.GetString(payload.Data.Array, payload.Data.Offset, payload.Data.Count);
-                    ProcessMessage(payloadString);
+                    ProcessMessage(payload);
                 }
 
                 if (nsLength > 0)
@@ -248,11 +247,12 @@ namespace TubumuMeeting.Mediasoup
 
         #region Private Methods
 
-        private void ProcessMessage(string payload)
+        private void ProcessMessage(Payload payload)
         {
             if (_ongoingNotification == null)
             {
-                var msg = JObject.Parse(payload);
+                var payloadString = Encoding.UTF8.GetString(payload.Data.Array, payload.Data.Offset, payload.Data.Count);
+                var msg = JObject.Parse(payloadString);
                 var targetId = msg["targetId"].Value(String.Empty);
                 var @event = msg["event"].Value(string.Empty);
                 var data = msg["data"].Value(string.Empty);
@@ -275,7 +275,7 @@ namespace TubumuMeeting.Mediasoup
             else
             {
                 // Emit the corresponding event.
-                MessageEvent?.Invoke(_ongoingNotification.TargetId, _ongoingNotification.Event, _ongoingNotification.Data, payload);
+                MessageEvent?.Invoke(_ongoingNotification.TargetId, _ongoingNotification.Event, _ongoingNotification.Data, payload.Data);
 
                 // Unset ongoing notification.
                 _ongoingNotification = null;
