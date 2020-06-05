@@ -16,9 +16,9 @@ namespace TubumuMeeting.Meeting.Server
     public partial class Room
     {
         private readonly ILoggerFactory _loggerFactory;
-
         private readonly ILogger<Room> _logger;
 
+        [JsonIgnore]
         public bool Closed { get; private set; }
 
         [JsonIgnore]
@@ -51,6 +51,8 @@ namespace TubumuMeeting.Meeting.Server
             {
                 return;
             }
+
+            Router.Close();
 
             Closed = true;
         }
