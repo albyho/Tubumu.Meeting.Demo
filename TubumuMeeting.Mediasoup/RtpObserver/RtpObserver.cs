@@ -25,7 +25,7 @@ namespace TubumuMeeting.Mediasoup
         }
     }
 
-    public class RtpObserver : EventEmitter
+    public abstract class RtpObserver : EventEmitter
     {
         // Logger
         private readonly ILogger<RtpObserver> _logger;
@@ -103,7 +103,15 @@ namespace TubumuMeeting.Mediasoup
             PayloadChannel = payloadChannel;
             AppData = appData;
             GetProducerById = getProducerById;
+            HandleWorkerNotifications();
         }
+
+        private void HandleWorkerNotifications()
+        {
+            Channel.MessageEvent += OnChannelMessage;
+        }
+
+        protected abstract void OnChannelMessage(string targetId, string @event, string data);
 
         /// <summary>
         /// Close the RtpObserver.
@@ -116,6 +124,9 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("Close()");
 
             Closed = true;
+
+            // Remove notification subscriptions.
+            Channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget.
             Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
@@ -137,6 +148,9 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("RouterClosed()");
 
             Closed = true;
+
+            // Remove notification subscriptions.
+            Channel.MessageEvent -= OnChannelMessage;
 
             Emit("routerclose");
 

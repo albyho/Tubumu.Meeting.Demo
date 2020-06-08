@@ -229,7 +229,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // rtcp is optional. If unset, fill with an empty object.
-            // TODO: (alby)强类型无法转 Empty 对象
+            // TODO: (alby)强类型无法转 Empty 对象，注意对象属性默认值可能导致的问题。
             if (parameters.Rtcp == null)
             {
                 parameters.Rtcp = new RtcpParameters();

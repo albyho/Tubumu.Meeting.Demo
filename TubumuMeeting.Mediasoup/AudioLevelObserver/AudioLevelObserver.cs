@@ -38,16 +38,9 @@ namespace TubumuMeeting.Mediasoup
                     Func<string, Producer> getProducerById) : base(loggerFactory, rtpObserverInternalData, channel, payloadChannel, appData, getProducerById)
         {
             _logger = loggerFactory.CreateLogger<AudioLevelObserver>();
-
-            HandleWorkerNotifications();
         }
 
-        private void HandleWorkerNotifications()
-        {
-            Channel.MessageEvent += OnChannelMessage;
-        }
-
-        private void OnChannelMessage(string targetId, string @event, string data)
+        protected override void OnChannelMessage(string targetId, string @event, string data)
         {
             if (targetId != Internal.RtpObserverId) return;
             switch (@event)
