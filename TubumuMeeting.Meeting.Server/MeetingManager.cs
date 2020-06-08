@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Nito.AsyncEx;
 using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
@@ -19,9 +20,9 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly MediasoupServer _mediasoupServer;
 
-        private readonly object _roomLocker = new object();
-
         private readonly object _peerLocker = new object();
+
+        private readonly AsyncLock _roomLocker = new AsyncLock();
 
         private readonly object _peerRoomLocker = new object();
 
@@ -45,7 +46,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             Room room;
 
-            lock (_roomLocker)
+            using (_roomLocker.Lock())
             {
                 if (Rooms.TryGetValue(roomId, out room))
                 {
@@ -61,7 +62,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Room? CloseRoom(Guid roomId)
         {
-            lock (_roomLocker)
+            using (_roomLocker.Lock())
             {
                 if (Rooms.TryGetValue(roomId, out var room))
                 {
@@ -156,7 +157,7 @@ namespace TubumuMeeting.Meeting.Server
                     return false;
                 }
 
-                lock (_roomLocker)
+                using (_roomLocker.Lock())
                 {
                     if (!Rooms.TryGetValue(roomId, out Room room))
                     {
@@ -218,7 +219,7 @@ namespace TubumuMeeting.Meeting.Server
         private async Task<bool> EnsureRouterAsync(Guid roomId)
         {
             Room room;
-            lock (_roomLocker)
+            using (await _roomLocker.LockAsync())
             {
                 if (!Rooms.TryGetValue(roomId, out room))
                 {
@@ -230,31 +231,29 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     return true;
                 }
+
+                // Router media codecs.
+                var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
+
+                // Create a mediasoup Router.
+                var worker = _mediasoupServer.GetWorker();
+                var router = await worker.CreateRouter(new RouterOptions
+                {
+                    MediaCodecs = mediaCodecs
+                });
+
+                // Create a mediasoup AudioLevelObserver.
+                var audioLevelObserver = await router.CreateAudioLevelObserverAsync(new AudioLevelObserverOptions
+                {
+                    MaxEntries = 1,
+                    Threshold = -80,
+                    Interval = 800,
+                });
+
+                room.Active(router, audioLevelObserver);
+
+                return true;
             }
-
-            // TODO: (alby)线程安全处理
-
-            // Router media codecs.
-            var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
-
-            // Create a mediasoup Router.
-            var worker = _mediasoupServer.GetWorker();
-            var router = await worker.CreateRouter(new RouterOptions
-            {
-                MediaCodecs = mediaCodecs
-            });
-
-            // Create a mediasoup AudioLevelObserver.
-            var audioLevelObserver = await router.CreateAudioLevelObserverAsync(new AudioLevelObserverOptions
-            {
-                MaxEntries = 1,
-                Threshold = -80,
-                Interval = 800,
-            });
-
-            room.Active(router, audioLevelObserver);
-
-            return true;
         }
     }
 }
