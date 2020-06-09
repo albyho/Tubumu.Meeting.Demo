@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Libuv;
@@ -72,11 +76,39 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits newrouter - (router: Router)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
+        /// <param name="hostEnvironment"></param>
         /// <param name="mediasoupOptions"></param>
         public Worker(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Worker>();
+
+            var workerPath = mediasoupOptions.MediasoupStartupSettings.WorkerPath;
+            if (workerPath.IsNullOrWhiteSpace())
+            {
+                // 见：https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+                string rid;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    rid = "linux";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    rid = "osx";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    rid = "win";
+                }
+                else
+                {
+                    rid = "";
+                }
+
+                var location = Assembly.GetEntryAssembly().Location;
+                var directory = Path.GetDirectoryName(location);
+                workerPath = Path.Combine(directory, "runtimes", rid, "native", "mediasoup-worker");
+            }
 
             var workerSettings = mediasoupOptions.MediasoupSettings.WorkerSettings;
 
@@ -86,7 +118,7 @@ namespace TubumuMeeting.Mediasoup
 
             var args = new List<string>
             {
-                mediasoupOptions.MediasoupStartupSettings.WorkerPath
+               workerPath
             };
             if (workerSettings.LogLevel.HasValue)
             {
@@ -127,7 +159,7 @@ namespace TubumuMeeting.Mediasoup
                 // 备注：和 Node.js 不同，_child 没有 error 事件。不过，Process.Spawn 可抛出异常。
                 _child = Process.Spawn(new ProcessOptions()
                 {
-                    File = mediasoupOptions.MediasoupStartupSettings.WorkerPath,
+                    File = workerPath,
                     Arguments = args.ToArray(),
                     Environment = env,
                     Detached = false,
