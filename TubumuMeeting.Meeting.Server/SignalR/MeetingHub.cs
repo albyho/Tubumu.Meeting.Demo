@@ -283,12 +283,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Task<MeetingMessage> CloseProducer(string producerId)
         {
-            if (PeerRoom == null)
-            {
-                return Task.FromResult(new MeetingMessage { Code = 400, Message = "CloseProducer 失败" });
-            }
-
-            if (!PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
+            if (PeerRoom == null || !PeerRoom.Peer.Producers.TryGetValue(producerId, out var producer))
             {
                 return Task.FromResult(new MeetingMessage { Code = 400, Message = "CloseProducer 失败" });
             }
