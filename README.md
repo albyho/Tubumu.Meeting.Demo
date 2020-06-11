@@ -10,12 +10,14 @@
 
 ### 1、启动服务端
 
-打开 `appsettings.json`。在 `MediasoupStartupSettings.WorkerPath` 节点设置 `mediasoup-worker` 可执行程序的物理路径。在 `TubumuMeeting.Meeting.Web` 目录执行 `dotnet run` 或者在 `Vistual Sudio` 打开解决方案启动 `TubumuMeeting.Meeting.Web` 项目。
+打开 `mediasoupsettings.json`。在 `MediasoupStartupSettings.WorkerPath` 节点设置 `mediasoup-worker` 可执行程序的物理路径。在 `TubumuMeeting.Meeting.Web` 目录执行 `dotnet run` 或者在 `Vistual Sudio` 打开解决方案启动 `TubumuMeeting.Meeting.Web` 项目。
 
 ```
 > cd TubumuMeeting.Meeting.Web
 > dotnet run
 ```
+
+> 备注：如果将 MediasoupStartupSettings.WorkerPath 注释，启动时将自动去 "runtimes/<platform>/native" 目录查找 "mediasoup-worker" 。其中 "platform" 根据平台分别可以是：win、osx 和 linux。 详见 "Worker.cs" 的构造函数。
 
 ### 2、启动前端
 
