@@ -148,7 +148,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug($"Worker() | spawning worker process: {args.ToArray().Join(" ")}");
 
             _pipes = new Pipe[StdioCount];
-            // 备注：忽略标准输入
+            // 忽略标准输入
             for (var i = 1; i < StdioCount; i++)
             {
                 _pipes[i] = new Pipe() { Writeable = true, Readable = true };
@@ -156,7 +156,7 @@ namespace TubumuMeeting.Mediasoup
 
             try
             {
-                // 备注：和 Node.js 不同，_child 没有 error 事件。不过，Process.Spawn 可抛出异常。
+                // 和 Node.js 不同，_child 没有 error 事件。不过，Process.Spawn 可抛出异常。
                 _child = Process.Spawn(new ProcessOptions()
                 {
                     File = workerPath,
@@ -257,7 +257,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Create a Router.
         /// </summary>
-        public async Task<Router> CreateRouter(RouterOptions routerOptions)
+        public async Task<Router> CreateRouterAsync(RouterOptions routerOptions)
         {
             _logger.LogDebug("CreateRouter()");
 

@@ -237,7 +237,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 // Create a mediasoup Router.
                 var worker = _mediasoupServer.GetWorker();
-                var router = await worker.CreateRouter(new RouterOptions
+                var router = await worker.CreateRouterAsync(new RouterOptions
                 {
                     MediaCodecs = mediaCodecs
                 });
