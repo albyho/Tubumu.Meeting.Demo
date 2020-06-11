@@ -102,7 +102,7 @@ namespace TubumuMeeting.Mediasoup
                 }
                 else
                 {
-                    rid = "";
+                    throw new NotSupportedException("Unsupported platform");
                 }
 
                 var location = Assembly.GetEntryAssembly().Location;
