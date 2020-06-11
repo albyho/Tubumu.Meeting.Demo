@@ -263,20 +263,12 @@ export default {
         appData
         //producerPaused // mediasoup-client 的 Transport.ts 不使用该参数
       } = data.data;
-      let codecOptions;
-
-      if (kind === "audio") {
-        codecOptions = {
-          opusStereo: 1
-        };
-      }
 
       const consumer = await this.recvTransport.consume({
         id,
         producerId,
         kind,
         rtpParameters,
-        codecOptions,
         appData: { ...appData, peerId } // Trick.
       });
 
@@ -296,18 +288,6 @@ export default {
         consumer.rtpParameters.encodings[0].scalabilityMode
       );
 
-      // We are ready. Answer the request so the server will
-      // resume this Consumer (which was paused for now).
-      const result = await this.connection.invoke("NewConsumerReady", {
-        peerId: data.data.consumerPeerId,
-        consumerId: id
-      });
-
-      if (result.code !== 200) {
-        logger.error("processNewConsumer() | NewConsumerReady.");
-        return;
-      }
-
       /*
       if (kind === "audio") {
         consumer.volume = 0;
@@ -323,6 +303,7 @@ export default {
         }
       }
       */
+
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
 
@@ -330,6 +311,18 @@ export default {
         this.remoteVideoStream = stream;
       } else {
         this.remoteAudioStream = stream;
+      }
+
+      // We are ready. Answer the request so the server will
+      // resume this Consumer (which was paused for now).
+      const result = await this.connection.invoke("NewConsumerReady", {
+        peerId: data.data.consumerPeerId,
+        consumerId: id
+      });
+
+      if (result.code !== 200) {
+        logger.error("processNewConsumer() | NewConsumerReady.");
+        return;
       }
     },
     async processMessage(data) {

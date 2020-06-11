@@ -258,25 +258,24 @@ namespace TubumuMeeting.Meeting.Server
 
             foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom!.Room.RoomId))
             {
-                if (otherPeer.PeerId != PeerRoom.Peer.PeerId)
-                {
-                    foreach (var producer in otherPeer.Producers.Values)
-                    {
-                        // 本 Peer 消费其他 Peer
-                        CreateConsumer(PeerRoom.Peer, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
-                    }
+                if (otherPeer.PeerId == PeerRoom.Peer.PeerId) continue;
 
-                    // Notify the new Peer to all other Peers.
-                    // Message: newPeer
-                    var client = _hubContext.Clients.User(otherPeer.PeerId.ToString());
-                    client.ReceiveMessage(new MeetingMessage
-                    {
-                        Code = 200,
-                        InternalCode = "newPeer",
-                        Message = "newPeer",
-                        Data = new { Id = PeerRoom.Peer.PeerId, PeerRoom.Peer.DisplayName, }
-                    }).ContinueWithOnFaultedHandleLog(_logger);
+                foreach (var producer in otherPeer.Producers.Values)
+                {
+                    // 本 Peer 消费其他 Peer
+                    CreateConsumer(PeerRoom.Peer, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
                 }
+
+                // Notify the new Peer to all other Peers.
+                // Message: newPeer
+                var client = _hubContext.Clients.User(otherPeer.PeerId.ToString());
+                client.ReceiveMessage(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = "newPeer",
+                    Message = "newPeer",
+                    Data = new { Id = PeerRoom.Peer.PeerId, PeerRoom.Peer.DisplayName, }
+                }).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             return Task.FromResult(new MeetingMessage { Code = 200, Message = "Join 成功" });
