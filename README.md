@@ -17,7 +17,7 @@
 > dotnet run
 ```
 
-> 备注：如果将 MediasoupStartupSettings.WorkerPath 注释，启动时将自动去 "runtimes/<platform>/native" 目录查找 "mediasoup-worker" 。其中 "platform" 根据平台分别可以是：win、osx 和 linux。 详见 "Worker.cs" 的构造函数。
+> 备注：如果将 MediasoupStartupSettings.WorkerPath 注释，启动时将自动去 "runtimes/{platform}/native" 目录查找 "mediasoup-worker" 。其中 "{platform}" 根据平台分别可以是：win、osx 和 linux。 详见 "Worker.cs" 的构造函数。
 
 ### 2、启动前端
 
