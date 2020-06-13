@@ -184,8 +184,11 @@ namespace TubumuMeeting.Web
             {
                 app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                app.UseHttpsRedirection();
+            }
 
-            app.UseHttpsRedirection();
             app.UseRouting();
 
             app.UseAuthentication();
