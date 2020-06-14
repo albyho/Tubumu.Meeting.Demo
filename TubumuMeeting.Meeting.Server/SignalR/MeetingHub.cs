@@ -394,6 +394,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "RequestConsumerKeyFrame 成功" };
         }
 
+        public async Task<MeetingMessage> ProduceData(ProduceDataRequest produceDataRequest)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<MeetingMessage> GetTransportStats(string transportId)
         {
             if (PeerRoom == null || !PeerRoom.Peer.Transports.TryGetValue(transportId, out var transport))
