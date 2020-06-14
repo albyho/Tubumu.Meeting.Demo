@@ -1,6 +1,6 @@
 {
   "MediasoupStartupSettings": {
-    "MediasoupVersion": "3.6.6",
+    "MediasoupVersion": "3.6.7",
     //"WorkerPath": "C:\\Developer\\OpenSource\\Meeting\\worker\\Release\\mediasoup-worker",
     //"WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/Lab/w/Release/mediasoup-worker",
     "NumberOfWorkers": 1
