@@ -10,7 +10,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Trace type.
         /// </summary>
-        public TraceEventType Type { get; set; }
+        public TransportTraceEventType Type { get; set; }
 
         /// <summary>
         /// Event timestamp.

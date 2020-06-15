@@ -97,7 +97,7 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public bool JoinPeer(int peerId, RtpCapabilities rtpCapabilities)
+        public bool JoinPeer(int peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities)
         {
             lock (_peerLocker)
             {
@@ -114,6 +114,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 peer.RtpCapabilities = rtpCapabilities;
+                peer.SctpCapabilities = sctpCapabilities;
                 peer.Joined = true;
                 return true;
             }

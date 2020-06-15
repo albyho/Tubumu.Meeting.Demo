@@ -28,7 +28,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public static string Stringify(int code, string message, string? data = null)
         {
-            if(data == null)
+            if (data == null)
             {
                 return $"{{\"code\":{code},\"message\":\"{message}\"}}";
             }
@@ -107,8 +107,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportParameters createWebRtcTransportParameters)
         {
-            var peerRoom = _meetingManager.GetPeerRoomWithPeerId(UserId);
-            if (peerRoom == null)
+            if (PeerRoom == null)
             {
                 return new MeetingMessage { Code = 400, Message = "CreateWebRtcTransport 失败" };
             }
@@ -134,11 +133,16 @@ namespace TubumuMeeting.Meeting.Server
                 webRtcTransportOptions.EnableTcp = true;
             }
 
-            var transport = await peerRoom.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
+            var transport = await PeerRoom.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
             if (transport == null)
             {
                 return new MeetingMessage { Code = 400, Message = "CreateWebRtcTransport 失败" };
             }
+
+            transport.On("sctpstatechange", sctpState =>
+            {
+                _logger.LogDebug($"WebRtcTransport \"sctpstatechange\" event [sctpState:{sctpState}]");
+            });
 
             transport.On("dtlsstatechange", value =>
             {
@@ -149,8 +153,37 @@ namespace TubumuMeeting.Meeting.Server
                 }
             });
 
+            // NOTE: For testing.
+            // await transport.enableTraceEvent([ 'probation', 'bwe' ]);
+            await transport.EnableTraceEventAsync(new[] { TransportTraceEventType.BWE });
+
+            var peerId = PeerRoom.Peer.PeerId;
+            transport.On("trace", trace =>
+            {
+                var traceData = (TransportTraceEventData)trace!;
+                _logger.LogDebug($"transport \"trace\" event [transportId:{transport.TransportId}, trace:{trace}]");
+
+                if (traceData.Type == TransportTraceEventType.BWE && traceData.Direction == TraceEventDirection.Out)
+                {
+                    // Message: downlinkBwe
+                    var client = _hubContext.Clients.User(peerId.ToString());
+                    client.ReceiveMessage(new MeetingMessage
+                    {
+                        Code = 200,
+                        InternalCode = "downlinkBwe",
+                        Message = "downlinkBwe",
+                        Data = new { 
+                            DesiredBitrate = traceData.Info["desiredBitrate"], 
+                            EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"], 
+                            AvailableBitrate = traceData.Info["availableBitrate"]
+                        }
+                    }).ContinueWithOnFaultedHandleLog(_logger);
+
+                }
+            });
+
             // Store the WebRtcTransport into the Peer data Object.
-            peerRoom.Peer.Transports[transport.TransportId] = transport;
+            PeerRoom.Peer.Transports[transport.TransportId] = transport;
 
             // If set, apply max incoming bitrate limit.
             if (webRtcTransportSettings.MaximumIncomingBitrate.HasValue && webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
@@ -251,7 +284,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!_meetingManager.JoinPeer(UserId, joinRequest.RtpCapabilities))
+            if (!_meetingManager.JoinPeer(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities))
             {
                 return Task.FromResult(new MeetingMessage { Code = 400, Message = "Join 失败" });
             }
@@ -439,6 +472,33 @@ namespace TubumuMeeting.Meeting.Server
             var data = JsonConvert.DeserializeObject<ConsumerStat>(status!);
 
             return new MeetingMessage { Code = 200, Message = "GetConsumerStats 成功", Data = data };
+        }
+
+        public async Task<MeetingMessage> GetDataConsumerStats(string dataConsumerId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.DataConsumers.TryGetValue(dataConsumerId, out var dataConsumer))
+            {
+                return new MeetingMessage { Code = 400, Message = "GetDataConsumerStats 失败" };
+            }
+
+            var status = await dataConsumer.GetStatsAsync();
+            // TODO: (alby)考虑不进行反序列化
+            var data = JsonConvert.DeserializeObject<DataConsumerStat>(status!);
+
+            return new MeetingMessage { Code = 200, Message = "GetDataConsumerStats 成功", Data = data };
+        }
+
+        public async Task<MeetingMessage> GetDataProducerStats(string dataProducerId)
+        {
+            if (PeerRoom == null || !PeerRoom.Peer.DataProducers.TryGetValue(dataProducerId, out var dataProducer))
+            {
+                return new MeetingMessage { Code = 400, Message = "GetDataProducerStats 失败" };
+            }
+            var status = await dataProducer.GetStatsAsync();
+            // TODO: (alby)考虑不进行反序列化
+            var data = JsonConvert.DeserializeObject<DataProducerStat>(status!);
+
+            return new MeetingMessage { Code = 200, Message = "GetDataProducerStats 成功", Data = data };
         }
 
         #region CreateConsumer

@@ -18,11 +18,17 @@ namespace TubumuMeeting.Meeting.Server
 
         public RtpCapabilities? RtpCapabilities { get; set; }
 
+        public SctpCapabilities? SctpCapabilities { get; set; }
+
         public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();
 
         public Dictionary<string, Producer> Producers { get; } = new Dictionary<string, Producer>();
 
         public Dictionary<string, Consumer> Consumers { get; } = new Dictionary<string, Consumer>();
+
+        public Dictionary<string, DataProducer> DataProducers { get; } = new Dictionary<string, DataProducer>();
+
+        public Dictionary<string, DataConsumer> DataConsumers { get; } = new Dictionary<string, DataConsumer>();
 
         public Peer(int peerId, string displayName)
         {
@@ -41,7 +47,7 @@ namespace TubumuMeeting.Meeting.Server
             Closed = true;
             Joined = false;
             RtpCapabilities = null;
-
+            SctpCapabilities = null;
 
             // Iterate and close all mediasoup Transport associated to this Peer, so all
             // its Producers and Consumers will also be closed.

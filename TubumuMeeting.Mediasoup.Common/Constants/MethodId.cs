@@ -67,7 +67,7 @@ namespace TubumuMeeting.Mediasoup
         [EnumStringValue("transport.consumeData")]
         TRANSPORT_CONSUME_DATA,
 
-        [EnumStringValue("transport.enableTraceEvents")]
+        [EnumStringValue("transport.enableTraceEvent")]
         TRANSPORT_ENABLE_TRACE_EVENT,
 
         [EnumStringValue("producer.close")]
