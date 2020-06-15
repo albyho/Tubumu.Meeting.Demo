@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Mediasoup.Extensions;
 
@@ -186,14 +187,14 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             // NOTE: For testing.
-            // await transport.enableTraceEvent([ 'probation', 'bwe' ]);
-            await transport.EnableTraceEventAsync(new[] { TransportTraceEventType.BWE });
+            //await transport.EnableTraceEventAsync(new[] { TransportTraceEventType.Probation, TransportTraceEventType.BWE });
+            //await transport.EnableTraceEventAsync(new[] { TransportTraceEventType.BWE });
 
             var peerId = PeerRoom.Peer.PeerId;
             transport.On("trace", trace =>
             {
                 var traceData = (TransportTraceEventData)trace!;
-                _logger.LogDebug($"transport \"trace\" event [transportId:{transport.TransportId}, trace:{trace}]");
+                _logger.LogDebug($"transport \"trace\" event [transportId:{transport.TransportId}, trace:{traceData.Type.GetEnumStringValue()}]");
 
                 if (traceData.Type == TransportTraceEventType.BWE && traceData.Direction == TraceEventDirection.Out)
                 {
@@ -211,7 +212,6 @@ namespace TubumuMeeting.Meeting.Server
                             AvailableBitrate = traceData.Info["availableBitrate"]
                         }
                     }).ContinueWithOnFaultedHandleLog(_logger);
-
                 }
             });
 
@@ -460,7 +460,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "RequestConsumerKeyFrame 成功" };
         }
 
-        public async Task<MeetingMessage> ProduceData(ProduceDataRequest produceDataRequest)
+        public Task<MeetingMessage> ProduceData(ProduceDataRequest produceDataRequest)
         {
             throw new NotImplementedException();
         }

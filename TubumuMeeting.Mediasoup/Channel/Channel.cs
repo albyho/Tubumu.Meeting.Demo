@@ -240,7 +240,7 @@ namespace TubumuMeeting.Mediasoup
                             // 68 = 'D' (a debug log).
                             case 'D':
                                 //if (!payloadString.Contains("(trace)"))
-                                _logger.LogError($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
+                                _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 87 = 'W' (a warn log).

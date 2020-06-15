@@ -128,20 +128,20 @@ export default {
         return;
       }
 
-      // EnterRoom 成功
+      // EnterRoom 成功, GetRouterRtpCapabilities
       result = await this.connection.invoke("GetRouterRtpCapabilities");
       if (result.code !== 200) {
         logger.error("processMessage() | GetRouterRtpCapabilities failure.");
         return;
       }
 
-      // GetRouterRtpCapabilities 成功
       const routerRtpCapabilities = result.data;
       this.mediasoupDevice = new mediasoupClient.Device();
       await this.mediasoupDevice.load({
         routerRtpCapabilities
       });
 
+      // GetRouterRtpCapabilities 成功, CreateWebRtcTransport(生产)
       result = await this.connection.invoke("CreateWebRtcTransport", {
         forceTcp: false,
         producing: true,
@@ -152,7 +152,7 @@ export default {
         return;
       }
 
-      // CreateWebRtcTransport 成功
+      // CreateWebRtcTransport(生产) 成功, createSendTransport
       this.sendTransport = this.mediasoupDevice.createSendTransport({
         id: result.data.id,
         iceParameters: result.data.iceParameters,
@@ -179,6 +179,7 @@ export default {
 
       this.sendTransport.on(
         "produce",
+        // eslint-disable-next-line no-unused-vars
         async ({ kind, rtpParameters, appData }, callback, errback) => {
           logger.debug("sendTransport.on produce");
           try {
@@ -204,13 +205,14 @@ export default {
         logger.debug(`connectionstatechange: ${state}`);
       });
 
+      // createSendTransport 成功, CreateWebRtcTransport(消费)
       result = await this.connection.invoke("CreateWebRtcTransport", {
         forceTcp: false,
         producing: false,
         consuming: true
       });
 
-      // CreateWebRtcTransport 成功
+      // CreateWebRtcTransport(消费), createRecvTransport
       this.recvTransport = this.mediasoupDevice.createRecvTransport({
         id: result.data.id,
         iceParameters: result.data.iceParameters,
@@ -234,6 +236,7 @@ export default {
         }
       );
 
+      // createRecvTransport 成功, Join
       result = await this.connection.invoke("Join", {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
         sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
@@ -243,7 +246,6 @@ export default {
         return;
       }
 
-      // Join 成功
       if (this.mediasoupDevice.canProduce("audio")) {
         this.enableMic();
       }
