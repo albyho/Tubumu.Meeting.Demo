@@ -63,18 +63,50 @@ namespace TubumuMeeting.Meeting.Server
 
         public override Task OnConnectedAsync()
         {
+            ClosePeer();
             var handleResult = _meetingManager.HandlePeer(UserId, "Guest");
             if (handleResult)
             {
                 return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
             }
+
             return Clients.Caller.PeerHandled(new MeetingMessage { Code = 400, Message = "连接失败" });
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            _meetingManager.ClosePeer(UserId);
+            ClosePeer();
             return base.OnDisconnectedAsync(exception);
+        }
+
+        private void ClosePeer()
+        {
+            var peerRoom = PeerRoom;
+            if (peerRoom != null)
+            {
+                foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(peerRoom.Room.RoomId))
+                {
+                    if (otherPeer.PeerId == peerRoom.Peer.PeerId) continue;
+
+                    var client = _hubContext.Clients.User(otherPeer.PeerId.ToString());
+                    client.ReceiveMessage(new MeetingMessage
+                    {
+                        Code = 200,
+                        InternalCode = "peerClosed",
+                        Message = "peerClosed",
+                        Data = new { PeerId = peerRoom.Peer.PeerId }
+                    }).ContinueWithOnFaultedHandleLog(_logger);
+                }
+
+                // Iterate and close all mediasoup Transport associated to this Peer, so all
+                // its Producers and Consumers will also be closed.
+                foreach (var transport in peerRoom.Peer.Transports.Values)
+                {
+                    transport.Close();
+                }
+            }
+
+            _meetingManager.ClosePeer(UserId);
         }
 
         private int UserId => int.Parse(Context.User.Identity.Name);
@@ -88,10 +120,10 @@ namespace TubumuMeeting.Meeting.Server
         {
             if (!await _meetingManager.PeerEnterRoomAsync(UserId, roomId))
             {
-                return new MeetingMessage { Code = 400, Message = "进入房间失败" };
+                return new MeetingMessage { Code = 400, Message = "Enter 失败" };
             }
 
-            return new MeetingMessage { Code = 200, Message = "进入房间成功" };
+            return new MeetingMessage { Code = 200, Message = "Enter 成功" };
         }
 
         public Task<MeetingMessage> GetRouterRtpCapabilities()
@@ -172,9 +204,10 @@ namespace TubumuMeeting.Meeting.Server
                         Code = 200,
                         InternalCode = "downlinkBwe",
                         Message = "downlinkBwe",
-                        Data = new { 
-                            DesiredBitrate = traceData.Info["desiredBitrate"], 
-                            EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"], 
+                        Data = new
+                        {
+                            DesiredBitrate = traceData.Info["desiredBitrate"],
+                            EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"],
                             AvailableBitrate = traceData.Info["availableBitrate"]
                         }
                     }).ContinueWithOnFaultedHandleLog(_logger);

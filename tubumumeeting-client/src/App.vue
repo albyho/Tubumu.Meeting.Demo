@@ -342,6 +342,21 @@ export default {
           break;
         }
 
+				case 'peerClosed':
+				{
+          // eslint-disable-next-line no-unused-vars
+					const { peerId } = data.data;
+
+					break;
+        }
+        
+        case 'downlinkBwe':
+				{
+					logger.debug('\'downlinkBwe\' event:%o', data.data);
+
+					break;
+				}
+
         case "consumerClosed": {
           const { consumerId } = data.data;
           const consumer = this.consumers.get(consumerId);

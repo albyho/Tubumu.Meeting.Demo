@@ -91,6 +91,12 @@ namespace TubumuMeeting.Meeting.Server
             var peer = new Peer(peerId, name);
             lock (_peerLocker)
             {
+                if (Peers.TryGetValue(peerId, out var _))
+                {
+                    _logger.LogError($"JoinPeer() | Peer[{peerId}] is exists.");
+                    return false;
+                }
+
                 Peers[peerId] = peer;
             }
 
