@@ -49,8 +49,8 @@ namespace TubumuMeeting.Mediasoup
             PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
-            Func<string, Producer> getProducerById,
-            Func<string, DataProducer> getDataProducerById
+            Func<string, Producer?> getProducerById,
+            Func<string, DataProducer?> getDataProducerById
             ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, payloadChannel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _loggerFactory = loggerFactory;

@@ -237,8 +237,8 @@ namespace TubumuMeeting.Mediasoup
                 _payloadChannel,
                 webRtcTransportOptions.AppData,
                 () => RtpCapabilities,
-                m => _producers[m],
-                m => _dataProducers[m],
+                m => _producers.TryGetValue(m, out var p) ? p : null,
+                m => _dataProducers.TryGetValue(m, out var p) ? p : null,
                 responseData.IceRole,
                 responseData.IceParameters,
                 responseData.IceCandidates,
@@ -310,20 +310,20 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status!);
 
             var transport = new PlainTransport(_loggerFactory,
-                            new TransportInternalData(@internal.RouterId, @internal.TransportId),
-                            sctpParameters: null,
-                            sctpState: null,
-                            _channel,
-                            _payloadChannel,
-                            plainTransportOptions.AppData,
-                            () => RtpCapabilities,
-                            m => _producers[m],
-                            m => _dataProducers[m],
-                            responseData.RtcpMux,
-                            responseData.Comedia,
-                            responseData.Tuple,
-                            responseData.RtcpTuple,
-                            responseData.SrtpParameters
+                                new TransportInternalData(@internal.RouterId, @internal.TransportId),
+                                sctpParameters: null,
+                                sctpState: null,
+                                _channel,
+                                _payloadChannel,
+                                plainTransportOptions.AppData,
+                                () => RtpCapabilities,
+                                m => _producers.TryGetValue(m, out var p) ? p : null,
+                                m => _dataProducers.TryGetValue(m, out var p) ? p : null,
+                                responseData.RtcpMux,
+                                responseData.Comedia,
+                                responseData.Tuple,
+                                responseData.RtcpTuple,
+                                responseData.SrtpParameters
                             );
             _transports[transport.TransportId] = transport;
 
@@ -388,18 +388,18 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<RouterCreatePipeTransportResponseData>(status!);
 
             var transport = new PipeTransport(_loggerFactory,
-                            new TransportInternalData(@internal.RouterId, @internal.TransportId),
-                            sctpParameters: null,
-                            sctpState: null,
-                            _channel,
-                            _payloadChannel,
-                            pipeTransportOptions.AppData,
-                            () => RtpCapabilities,
-                            m => _producers[m],
-                            m => _dataProducers[m],
-                            responseData.Tuple,
-                            responseData.Rtx,
-                            responseData.SrtpParameters
+                                new TransportInternalData(@internal.RouterId, @internal.TransportId),
+                                sctpParameters: null,
+                                sctpState: null,
+                                _channel,
+                                _payloadChannel,
+                                pipeTransportOptions.AppData,
+                                () => RtpCapabilities,
+                                m => _producers.TryGetValue(m, out var p) ? p : null,
+                                m => _dataProducers.TryGetValue(m, out var p) ? p : null,
+                                responseData.Tuple,
+                                responseData.Rtx,
+                                responseData.SrtpParameters
                             );
 
             _transports[transport.TransportId] = transport;
@@ -457,15 +457,15 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status!);
 
             var transport = new DirectTransport(_loggerFactory,
-                new TransportInternalData(@internal.RouterId, @internal.TransportId),
-                sctpParameters: null,
-                sctpState: null,
-                _channel,
-                _payloadChannel,
-                directTransportOptions.AppData,
-                () => RtpCapabilities,
-                m => _producers[m],
-                m => _dataProducers[m]
+                    new TransportInternalData(@internal.RouterId, @internal.TransportId),
+                    sctpParameters: null,
+                    sctpState: null,
+                    _channel,
+                    _payloadChannel,
+                    directTransportOptions.AppData,
+                    () => RtpCapabilities,
+                    m => _producers.TryGetValue(m, out var p) ? p : null,
+                    m => _dataProducers.TryGetValue(m, out var p) ? p : null
                 );
 
             _transports[transport.TransportId] = transport;
@@ -741,7 +741,7 @@ namespace TubumuMeeting.Mediasoup
                 _channel,
                 _payloadChannel,
                 AppData,
-                m => _producers[m]);
+                m => _producers.TryGetValue(m, out var p) ? p : null);
 
             _rtpObservers[audioLevelObserver.Internal.RtpObserverId] = audioLevelObserver;
             audioLevelObserver.On("@close", _ => _rtpObservers.Remove(audioLevelObserver.Internal.RtpObserverId));

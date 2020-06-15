@@ -88,10 +88,10 @@ namespace TubumuMeeting.Mediasoup
         protected readonly Func<RtpCapabilities> GetRouterRtpCapabilities;
 
         // Method to retrieve a Producer.
-        protected readonly Func<string, Producer> GetProducerById;
+        protected readonly Func<string, Producer?> GetProducerById;
 
         // Method to retrieve a DataProducer.
-        protected readonly Func<string, DataProducer> GetDataProducerById;
+        protected readonly Func<string, DataProducer?> GetDataProducerById;
 
         // Producers map.
         protected readonly Dictionary<string, Producer> Producers = new Dictionary<string, Producer>();
@@ -155,8 +155,8 @@ namespace TubumuMeeting.Mediasoup
             PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
-            Func<string, Producer> getProducerById,
-            Func<string, DataProducer> getDataProducerById)
+            Func<string, Producer?> getProducerById,
+            Func<string, DataProducer?> getDataProducerById)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Transport>();
@@ -467,7 +467,6 @@ namespace TubumuMeeting.Mediasoup
             ORTC.ValidateRtpCapabilities(consumerOptions.RtpCapabilities);
 
             var producer = GetProducerById(consumerOptions.ProducerId);
-
             if (producer == null)
                 throw new NullReferenceException($"Producer with id {consumerOptions.ProducerId} not found");
 
@@ -631,10 +630,8 @@ namespace TubumuMeeting.Mediasoup
                 throw new Exception("missing dataProducerId");
 
             var dataProducer = GetDataProducerById(dataConsumerOptions.DataProducerId);
-
             if (dataProducer == null)
                 throw new Exception($"DataProducer with id {dataConsumerOptions.DataProducerId} not found");
-
 
             DataProducerType type;
             SctpStreamParameters? sctpStreamParameters = null;

@@ -60,8 +60,8 @@ namespace TubumuMeeting.Mediasoup
             PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
-            Func<string, Producer> getProducerById,
-            Func<string, DataProducer> getDataProducerById,
+            Func<string, Producer?> getProducerById,
+            Func<string, DataProducer?> getDataProducerById,
             TransportTuple tuple,
             bool rtx,
             SrtpParameters? srtpParameters
@@ -153,7 +153,6 @@ namespace TubumuMeeting.Mediasoup
             }
 
             var producer = GetProducerById(consumerOptions.ProducerId);
-
             if (producer == null)
                 throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
 

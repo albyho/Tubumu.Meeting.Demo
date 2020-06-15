@@ -35,7 +35,7 @@ namespace TubumuMeeting.Mediasoup
                     Channel channel,
                     PayloadChannel payloadChannel,
                     Dictionary<string, object>? appData,
-                    Func<string, Producer> getProducerById) : base(loggerFactory, rtpObserverInternalData, channel, payloadChannel, appData, getProducerById)
+                    Func<string, Producer?> getProducerById) : base(loggerFactory, rtpObserverInternalData, channel, payloadChannel, appData, getProducerById)
         {
             _logger = loggerFactory.CreateLogger<AudioLevelObserver>();
         }
@@ -47,14 +47,24 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "volumes":
                     {
-                        var notification = JsonConvert.DeserializeObject<AudioLevelObserverVolumeNotificationData[]>(data);
-                        var volumes = notification.Select(m => new AudioLevelObserverVolume
-                        {
-                            Producer = GetProducerById(m.ProducerId),
-                            Volume = m.Volume,
-                        }).ToArray();
 
-                        if (volumes.Length > 0)
+                        var notification = JsonConvert.DeserializeObject<AudioLevelObserverVolumeNotificationData[]>(data);
+
+                        List<AudioLevelObserverVolume> volumes = new List<AudioLevelObserverVolume>();
+                        foreach(var item in notification)
+                        {
+                            var producer = GetProducerById(item.ProducerId);
+                            if (producer != null)
+                            {
+                                volumes.Add(new AudioLevelObserverVolume
+                                {
+                                    Producer = producer,
+                                    Volume = item.Volume,
+                                });
+                            }
+                        }
+
+                        if (volumes.Count > 0)
                         {
                             Emit("volumes", volumes);
 

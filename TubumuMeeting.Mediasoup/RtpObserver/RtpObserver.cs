@@ -63,7 +63,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Method to retrieve a Producer.
         /// </summary>
-        protected readonly Func<string, Producer> GetProducerById;
+        protected readonly Func<string, Producer?> GetProducerById;
 
         /// <summary>
         /// Observer instance.
@@ -92,7 +92,7 @@ namespace TubumuMeeting.Mediasoup
                     Channel channel,
                     PayloadChannel payloadChannel,
                     Dictionary<string, object>? appData,
-                    Func<string, Producer> getProducerById)
+                    Func<string, Producer?> getProducerById)
         {
             _logger = loggerFactory.CreateLogger<RtpObserver>();
 
@@ -206,6 +206,8 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("AddProducerAsync()");
 
             var producer = GetProducerById(producerId);
+            if (producer == null) return;
+
             var @internal = new
             {
                 Internal.RouterId,
@@ -227,6 +229,8 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("RemoveProducerAsync()");
 
             var producer = GetProducerById(producerId);
+            if (producer == null) return;
+
             var @internal = new
             {
                 Internal.RouterId,
