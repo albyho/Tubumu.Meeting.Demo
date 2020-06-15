@@ -281,18 +281,6 @@ export default {
         this.consumers.delete(consumer.id);
       });
 
-      // We are ready. Answer the request so the server will
-      // resume this Consumer (which was paused for now).
-      const result = await this.connection.invoke("NewConsumerReady", {
-        peerId: data.data.consumerPeerId,
-        consumerId: id
-      });
-
-      if (result.code !== 200) {
-        logger.error("processNewConsumer() | NewConsumerReady.");
-        return;
-      }
-
       const {
         // eslint-disable-next-line no-unused-vars
         spatialLayers,
@@ -325,6 +313,18 @@ export default {
         this.remoteVideoStream = stream;
       } else {
         this.remoteAudioStream = stream;
+      }
+
+      // We are ready. Answer the request so the server will
+      // resume this Consumer (which was paused for now).
+      const result = await this.connection.invoke("NewConsumerReady", {
+        peerId: data.data.consumerPeerId,
+        consumerId: id
+      });
+
+      if (result.code !== 200) {
+        logger.error("processNewConsumer() | NewConsumerReady.");
+        return;
       }
     },
     async processMessage(data) {
