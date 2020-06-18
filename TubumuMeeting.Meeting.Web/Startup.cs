@@ -135,6 +135,7 @@ namespace TubumuMeeting.Web
                 });
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
 
+            // Mediasoup
             var mediasoupStartupSettings = Configuration.GetSection("MediasoupStartupSettings").Get<MediasoupStartupSettings>();
             var workerSettings = Configuration.GetSection("MediasoupSettings:WorkerSettings").Get<WorkerSettings>();
             var routerSettings = Configuration.GetSection("MediasoupSettings:RouterSettings").Get<RouterSettings>();
@@ -196,14 +197,20 @@ namespace TubumuMeeting.Web
 
             app.UseCors("DefaultPolicy");
 
+            app.UseMediasoup();
+
             app.UseEndpoints(endpoints =>
             {
-                // SignalR
-                endpoints.MapHub<MeetingHub>("/hubs/meetingHub");
                 endpoints.MapGet("/", async context =>
                 {
                     await context.Response.WriteAsync("Tubumu Meeting");
                 });
+            });
+
+            // SignalR
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHub<MeetingHub>("/hubs/meetingHub");
             });
 
             app.UseMediasoup();
