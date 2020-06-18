@@ -106,13 +106,6 @@ namespace TubumuMeeting.Mediasoup
             HandleWorkerNotifications();
         }
 
-        private void HandleWorkerNotifications()
-        {
-            Channel.MessageEvent += OnChannelMessage;
-        }
-
-        protected abstract void OnChannelMessage(string targetId, string @event, string data);
-
         /// <summary>
         /// Close the RtpObserver.
         /// </summary>
@@ -242,5 +235,16 @@ namespace TubumuMeeting.Mediasoup
             // Emit observer event.
             Observer.Emit("removeproducer", producer);
         }
+
+        #region Event Handlers
+
+        private void HandleWorkerNotifications()
+        {
+            Channel.MessageEvent += OnChannelMessage;
+        }
+
+        protected abstract void OnChannelMessage(string targetId, string @event, string data);
+
+        #endregion
     }
 }

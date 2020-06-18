@@ -121,6 +121,7 @@ namespace TubumuMeeting.Mediasoup
                 // Unrecognized level_idc.
                 default:
                     {
+                        // NOTE: For testing.
                         //debug("parseProfileLevelId() | unrecognized level_idc:%s", level_idc);
                         return null;
                     }
@@ -135,8 +136,8 @@ namespace TubumuMeeting.Mediasoup
                 }
             }
 
+            // NOTE: For testing.
             //debug("parseProfileLevelId() | unrecognized profile_idc/profile_iop combination");
-
             return null;
         }
 
@@ -170,6 +171,7 @@ namespace TubumuMeeting.Mediasoup
                     // Level 1_b is not allowed for other profiles.
                     default:
                         {
+                            // NOTE: For testing.
                             //debug("profileLevelIdToString() | Level 1_b not is allowed for profile:%s", profileLevelId.profile);
                             return null;
                         }
@@ -207,6 +209,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
+                        // NOTE: For testing.
                         //debug("profileLevelIdToString() | unrecognized profile:%s", profileLevelId.profile);
                         return null;
                     }
@@ -288,6 +291,7 @@ namespace TubumuMeeting.Mediasoup
             // both using the default profile. In this case, don"t return anything.
             if (!local_supported_params.TryGetValue("profile-level-id", out _) && !remote_offered_params.TryGetValue("profile-level-id", out _))
             {
+                // NOTE: For testing.
                 //debug("generateProfileLevelIdForAnswer() | no profile-level-id in local and remote params");
                 return null;
             }
@@ -295,7 +299,6 @@ namespace TubumuMeeting.Mediasoup
             // Parse profile-level-ids.
             var local_profile_level_id = ParseSdpProfileLevelId(local_supported_params);
             var remote_profile_level_id = ParseSdpProfileLevelId(remote_offered_params);
-
 
             // The local and remote codec must have valid and equal H264 Profiles.
             if (local_profile_level_id == null)

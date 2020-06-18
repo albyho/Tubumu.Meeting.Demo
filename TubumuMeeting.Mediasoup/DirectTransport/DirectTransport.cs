@@ -125,6 +125,8 @@ namespace TubumuMeeting.Mediasoup
             throw new NotImplementedException("ConsumeAsync() not implemented in DirectTransport");
         }
 
+        #region Event Handlers
+
         private void HandleWorkerNotifications()
         {
             Channel.MessageEvent += OnChannelMessage;
@@ -154,5 +156,7 @@ namespace TubumuMeeting.Mediasoup
                     }
             }
         }
+
+        #endregion
     }
 }

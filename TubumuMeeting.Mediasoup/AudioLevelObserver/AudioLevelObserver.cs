@@ -8,7 +8,9 @@ namespace TubumuMeeting.Mediasoup
 {
     public class AudioLevelObserver : RtpObserver
     {
-        // Logger
+        /// <summary>
+        /// Logger
+        /// </summary>
         private readonly ILogger<AudioLevelObserver> _logger;
 
         /// <summary>

@@ -24,7 +24,6 @@
     /// </summary>
     public class NumSctpStreams
     {
-
         /// <summary>
         /// Initially requested number of outgoing SCTP streams.
         /// </summary>

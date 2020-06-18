@@ -55,6 +55,5 @@ namespace TubumuMeeting.Mediasoup
         /// Custom application data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; set; }
-
     }
 }

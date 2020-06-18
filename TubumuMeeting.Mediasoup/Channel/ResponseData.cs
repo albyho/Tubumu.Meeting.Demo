@@ -105,7 +105,6 @@
 
     public class ConsumerSetPreferredLayersResponseData : ConsumerLayers
     {
-
     }
 
     public class ConsumerSetOrUnsetPriorityResponseData

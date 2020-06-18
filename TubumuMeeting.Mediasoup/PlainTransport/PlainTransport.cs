@@ -146,6 +146,8 @@ namespace TubumuMeeting.Mediasoup
             SrtpParameters = responseData.SrtpParameters;
         }
 
+        #region Event Handlers
+
         private void HandleWorkerNotifications()
         {
             Channel.MessageEvent += OnChannelMessage;
@@ -217,5 +219,7 @@ namespace TubumuMeeting.Mediasoup
                     }
             }
         }
+
+        #endregion
     }
 }

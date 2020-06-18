@@ -1049,6 +1049,8 @@ namespace TubumuMeeting.Mediasoup
             return consumerParams;
         }
 
+        #region Private Methods
+
         private static bool IsRtxMimeType(string mimeType)
         {
             return RtxMimeTypeRegex.IsMatch(mimeType);
@@ -1191,5 +1193,7 @@ namespace TubumuMeeting.Mediasoup
 
             return true;
         }
+
+        #endregion
     }
 }

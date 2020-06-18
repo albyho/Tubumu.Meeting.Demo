@@ -737,6 +737,8 @@ namespace TubumuMeeting.Mediasoup
             return Channel.RequestAsync(MethodId.TRANSPORT_ENABLE_TRACE_EVENT, Internal, reqData);
         }
 
+        #region Private Methods
+
         private int GetNextSctpStreamId()
         {
             if (SctpParameters == null)
@@ -771,5 +773,7 @@ namespace TubumuMeeting.Mediasoup
 
             throw new Exception("no sctpStreamId available");
         }
+
+        #endregion
     }
 }

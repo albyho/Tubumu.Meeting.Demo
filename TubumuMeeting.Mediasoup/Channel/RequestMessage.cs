@@ -15,6 +15,7 @@ namespace TubumuMeeting.Mediasoup
         public object? Data { get; set; }
     }
 
+    // Note: For testing.
     /*
     public class ResponseMessage
     {

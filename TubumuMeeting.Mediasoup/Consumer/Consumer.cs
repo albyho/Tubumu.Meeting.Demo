@@ -110,10 +110,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public ConsumerScore? Score;
 
-        // Preferred layers.
+        /// <summary>
+        /// Preferred layers.
+        /// </summary>
         public ConsumerLayers? PreferredLayers { get; private set; }
 
-        // Curent layers.
+        /// <summary>
+        /// Curent layers.
+        /// </summary>
         public ConsumerLayers? CurrentLayers { get; private set; }
 
         /// <summary>

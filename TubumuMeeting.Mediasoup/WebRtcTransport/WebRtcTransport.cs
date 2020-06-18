@@ -184,6 +184,8 @@ namespace TubumuMeeting.Mediasoup
             return IceParameters;
         }
 
+        #region Event Handlers
+
         private void HandleWorkerNotifications()
         {
             Channel.MessageEvent += OnChannelMessage;
@@ -270,6 +272,7 @@ namespace TubumuMeeting.Mediasoup
                     }
             }
         }
-    }
 
+        #endregion
+    }
 }

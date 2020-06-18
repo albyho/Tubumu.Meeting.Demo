@@ -48,19 +48,29 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public bool Closed { get; private set; }
 
-        // Transports map.
+        /// <summary>
+        /// Transports map.
+        /// </summary>
         private readonly Dictionary<string, Transport> _transports = new Dictionary<string, Transport>();
 
-        // Producers map.
+        /// <summary>
+        /// Producers map.
+        /// </summary>
         private readonly Dictionary<string, Producer> _producers = new Dictionary<string, Producer>();
 
-        // RtpObservers map.
+        /// <summary>
+        /// RtpObservers map.
+        /// </summary>
         private readonly Dictionary<string, RtpObserver> _rtpObservers = new Dictionary<string, RtpObserver>();
 
-        // DataProducers map.
+        /// <summary>
+        /// DataProducers map.
+        /// </summary>
         private readonly Dictionary<string, DataProducer> _dataProducers = new Dictionary<string, DataProducer>();
 
-        // Router to PipeTransport map.
+        /// <summary>
+        /// Router to PipeTransport map.
+        /// </summary>
         private readonly Dictionary<Router, PipeTransport[]> _mapRouterPipeTransports = new Dictionary<Router, PipeTransport[]>();
 
         /// <summary>
@@ -776,6 +786,8 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
+        #region IEquatable<T>
+
         public bool Equals(Router other)
         {
             return RouterId == other.RouterId;
@@ -785,5 +797,7 @@ namespace TubumuMeeting.Mediasoup
         {
             return RouterId.GetHashCode();
         }
+
+        #endregion
     }
 }
