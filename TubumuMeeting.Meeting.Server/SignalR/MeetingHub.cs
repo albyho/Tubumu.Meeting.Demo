@@ -834,10 +834,9 @@ namespace TubumuMeeting.Meeting.Server
                         Lablel = dataConsumer.Label,
                         Protocol = dataConsumer.Protocol,
                         AppData = dataProducer.AppData,
-                        // DataConsumerPeerId = dataConsumerPeer.PeerId, // 方便 NewDataConsumerReady 查找 DataConsumer
+                        // CreateDataConsumer 和 CreateConsumer 不同，前者在请求客户端后不进行后续操作。所以，这里不用加一个 DataConsumerPeerId 属性。
                     }
                 });
-                // CreateDataConsumer 和 CreateConsumer 不同，前者在请求客户端后不进行后续操作。
             }
             catch (Exception ex)
             {
