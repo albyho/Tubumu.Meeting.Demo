@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -89,7 +90,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     if (otherPeer.PeerId == peerRoom.Peer.PeerId) continue;
 
-                    var client = _hubContext.Clients.User(otherPeer.PeerId.ToString());
+                    var client = _hubContext.Clients.User(otherPeer.PeerId);
                     client.ReceiveMessage(new MeetingMessage
                     {
                         Code = 200,
@@ -294,9 +295,8 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             // Optimization: Create a server-side Consumer for each Peer.
-            foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom.Room.RoomId))
+            foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom.Room.RoomId, excludePeerId: PeerRoom.Peer.PeerId))
             {
-                if (otherPeer.PeerId == PeerRoom.Peer.PeerId) continue;
                 // 其他 Peer 消费本 Peer
                 CreateConsumer(otherPeer, PeerRoom.Peer, producer).ContinueWithOnFaultedHandleLog(_logger);
             }
@@ -322,10 +322,8 @@ namespace TubumuMeeting.Meeting.Server
                 return Task.FromResult(new MeetingMessage { Code = 400, Message = "Join 失败" });
             }
 
-            foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom!.Room.RoomId))
+            foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom!.Room.RoomId, excludePeerId: PeerRoom.Peer.PeerId))
             {
-                if (otherPeer.PeerId == PeerRoom.Peer.PeerId) continue;
-
                 foreach (var producer in otherPeer.Producers.Values)
                 {
                     // 本 Peer 消费其他 Peer
@@ -334,7 +332,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 // Notify the new Peer to all other Peers.
                 // Message: newPeer
-                var client = _hubContext.Clients.User(otherPeer.PeerId.ToString());
+                var client = _hubContext.Clients.User(otherPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -460,9 +458,33 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "RequestConsumerKeyFrame 成功" };
         }
 
-        public Task<MeetingMessage> ProduceData(ProduceDataRequest produceDataRequest)
+        public async Task<MeetingMessage> ProduceData(ProduceDataRequest produceDataRequest)
         {
-            throw new NotImplementedException();
+            if (PeerRoom == null || !PeerRoom.Peer.Transports.TryGetValue(produceDataRequest.TransportId, out var transport))
+            {
+                return new MeetingMessage { Code = 400, Message = "ProduceData 失败" };
+            }
+
+            var dataProducer = await transport.ProduceDataAsync(new DataProducerOptions
+            {
+                Id = produceDataRequest.TransportId,
+                SctpStreamParameters = produceDataRequest.SctpStreamParameters,
+                Label = produceDataRequest.Label,
+                Protocol = produceDataRequest.Protocol,
+                AppData = produceDataRequest.AppData,
+            });
+
+            // Store the Producer into the protoo Peer data Object.
+            PeerRoom.Peer.DataProducers[dataProducer.DataProducerId] = dataProducer;
+
+            // Create a server-side DataConsumer for each Peer.
+            foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(PeerRoom.Room.RoomId, excludePeerId: PeerRoom.Peer.PeerId))
+            {
+                // 其他 Peer 消费本 Peer
+                CreateDataConsumer(otherPeer, PeerRoom.Peer, dataProducer).ContinueWithOnFaultedHandleLog(_logger);
+            }
+
+            return new MeetingMessage { Code = 200, Message = "ProduceData 成功" };
         }
 
         public async Task<MeetingMessage> GetTransportStats(string transportId)
@@ -587,7 +609,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var data = (ConsumerScore)score!;
                 // Message: consumerScore
-                var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
+                var client = _hubContext.Clients.User(consumerPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -610,7 +632,7 @@ namespace TubumuMeeting.Meeting.Server
                 consumerPeer.Consumers.Remove(consumer.ConsumerId);
 
                 // Message: consumerClosed
-                var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
+                var client = _hubContext.Clients.User(consumerPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -623,7 +645,7 @@ namespace TubumuMeeting.Meeting.Server
             consumer.On("producerpause", _ =>
             {
                 // Message: consumerPaused
-                var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
+                var client = _hubContext.Clients.User(consumerPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -636,7 +658,7 @@ namespace TubumuMeeting.Meeting.Server
             consumer.On("producerresume", _ =>
             {
                 // Message: consumerResumed
-                var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
+                var client = _hubContext.Clients.User(consumerPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -650,7 +672,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var data = JsonConvert.DeserializeObject<ConsumerLayers>(layers!.ToString());
                 // Message: consumerLayersChanged
-                var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
+                var client = _hubContext.Clients.User(consumerPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -664,7 +686,7 @@ namespace TubumuMeeting.Meeting.Server
             try
             {
                 // Message: newConsumer
-                var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
+                var client = _hubContext.Clients.User(consumerPeer.PeerId);
                 await client.NewConsumer(new MeetingMessage
                 {
                     Code = 200,
@@ -676,11 +698,11 @@ namespace TubumuMeeting.Meeting.Server
                         Kind = consumer.Kind,
                         ProducerId = producer.ProducerId,
                         Id = consumer.ConsumerId,
-                        ConsumerPeerId = consumerPeer.PeerId, // 方便 NewConsumerReady 查找 Consumer
                         RtpParameters = consumer.RtpParameters,
                         Type = consumer.Type,
                         AppData = producer.AppData,
                         ProducerPaused = consumer.ProducerPaused,
+                        ConsumerPeerId = consumerPeer.PeerId, // 方便 NewConsumerReady 查找 Consumer
                     }
                 });
             }
@@ -707,7 +729,7 @@ namespace TubumuMeeting.Meeting.Server
             await consumer.ResumeAsync();
 
             // Message: consumerScore
-            var client = _hubContext.Clients.User(consumerPeer.PeerId.ToString());
+            var client = _hubContext.Clients.User(consumerPeer.PeerId);
             client.ReceiveMessage(new MeetingMessage
             {
                 Code = 200,
@@ -721,6 +743,106 @@ namespace TubumuMeeting.Meeting.Server
             }).ContinueWithOnFaultedHandleLog(_logger);
 
             return new MeetingMessage { Code = 200, Message = "NewConsumerReady 成功" };
+        }
+
+        #endregion
+
+        #region CreateDataConsumer
+
+        /// <summary>
+        /// Creates a mediasoup DataConsumer for the given mediasoup DataProducer.
+        /// </summary>
+        /// <param name="dataConsumerPeer"></param>
+        /// <param name="dataProducerPeer"></param>
+        /// <param name="dataProducer"></param>
+        /// <returns></returns>
+        private async Task CreateDataConsumer(Peer dataConsumerPeer, Peer dataProducerPeer, DataProducer dataProducer)
+        {
+            // NOTE: Don't create the DataConsumer if the remote Peer cannot consume it.
+            if (dataConsumerPeer.SctpCapabilities == null)
+            {
+                return;
+            }
+
+            // Must take the Transport the remote Peer is using for consuming.
+            var transport = dataConsumerPeer.GetConsumerTransport();
+            // This should not happen.
+            if (transport == null)
+            {
+                _logger.LogWarning("CreateDataConsumer() | Transport for consuming not found");
+                return;
+            }
+
+            // Create the DataConsumer.
+            DataConsumer dataConsumer;
+
+            try
+            {
+                dataConsumer = await transport.ConsumeDataAsync(new DataConsumerOptions
+                {
+                    DataProducerId = dataProducer.DataProducerId,
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"CreateDataConsumer() | [error:\"{ex}\"]");
+                return;
+            }
+
+            // Store the DataConsumer into the protoo dataConsumerPeer data Object.
+            dataConsumerPeer.DataConsumers[dataConsumer.DataConsumerId] = dataConsumer;
+
+            // Set DataConsumer events.
+            dataConsumer.On("transportclose", _ =>
+            {
+                // Remove from its map.
+                dataConsumerPeer.DataConsumers.Remove(dataConsumer.DataConsumerId);
+            });
+
+            dataConsumer.On("dataproducerclose", _ =>
+            {
+                // Remove from its map.
+                dataConsumerPeer.DataConsumers.Remove(dataConsumer.DataConsumerId);
+
+                // Message: consumerClosed
+                var client = _hubContext.Clients.User(dataConsumerPeer.PeerId);
+                client.ReceiveMessage(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = "dataConsumerClosed",
+                    Message = "dataConsumerClosed",
+                    Data = new { DataConsumerId = dataConsumer.DataConsumerId }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+            });
+
+            // Send a protoo request to the remote Peer with Consumer parameters.
+            try
+            {
+                // Message: newConsumer
+                var client = _hubContext.Clients.User(dataConsumerPeer.PeerId);
+                await client.NewConsumer(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = "newDataConsumer",
+                    Message = "newDataConsumer",
+                    Data = new
+                    {
+                        PeerId = dataProducerPeer?.PeerId,
+                        DataProducerId = dataProducer.DataProducerId,
+                        Id = dataConsumer.DataConsumerId,
+                        SctpStreamParameters = dataConsumer.SctpStreamParameters,
+                        Lablel = dataConsumer.Label,
+                        Protocol = dataConsumer.Protocol,
+                        AppData = dataProducer.AppData,
+                        // DataConsumerPeerId = dataConsumerPeer.PeerId, // 方便 NewDataConsumerReady 查找 DataConsumer
+                    }
+                });
+                // CreateDataConsumer 和 CreateConsumer 不同，前者在请求客户端后不进行后续操作。
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"CreateDataConsumer() | [error:\"{ex}\"]");
+            }
         }
 
         #endregion

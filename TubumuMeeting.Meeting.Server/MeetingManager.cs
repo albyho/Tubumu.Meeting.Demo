@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
+using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
@@ -212,11 +213,16 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public IEnumerable<Peer> GetPeersWithRoomId(Guid roomId)
+        public IEnumerable<Peer> GetPeersWithRoomId(Guid roomId, string excludePeerId = null)
         {
             lock (_peerRoomLocker)
             {
-                return PeerRoomList.Where(m => m.Room.RoomId == roomId).Select(m => m.Peer);
+                var peers = PeerRoomList.Where(m => m.Room.RoomId == roomId).Select(m => m.Peer);
+                if(!excludePeerId.IsNullOrWhiteSpace())
+                {
+                    peers = peers.Where(m => m.PeerId != excludePeerId);
+                }
+                return peers;
             }
         }
     }
