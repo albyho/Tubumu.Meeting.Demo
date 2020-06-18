@@ -110,7 +110,7 @@ namespace TubumuMeeting.Meeting.Server
             _meetingManager.ClosePeer(UserId);
         }
 
-        private int UserId => int.Parse(Context.User.Identity.Name);
+        private string UserId => Context.User.Identity.Name;
 
         private PeerRoom? PeerRoom => _meetingManager.GetPeerRoomWithPeerId(UserId);
     }

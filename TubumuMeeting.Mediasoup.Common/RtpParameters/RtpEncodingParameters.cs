@@ -45,7 +45,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string? ScalabilityMode { get; set; }
 
-
         /// <summary>
         /// Others.
         /// </summary>

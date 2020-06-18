@@ -8,7 +8,7 @@ namespace TubumuMeeting.Meeting.Server
 {
     public class Peer : IEquatable<Peer>
     {
-        public int PeerId { get; }
+        public string PeerId { get; }
 
         public string DisplayName { get; }
 
@@ -30,7 +30,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, DataConsumer> DataConsumers { get; } = new Dictionary<string, DataConsumer>();
 
-        public Peer(int peerId, string displayName)
+        public Peer(string peerId, string displayName)
         {
             PeerId = peerId;
             DisplayName = displayName.IsNullOrWhiteSpace() ? "Guest" : displayName;

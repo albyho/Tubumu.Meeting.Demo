@@ -31,17 +31,29 @@ const PC_PROPRIETARY_CONSTRAINTS = {
   optional: [{ googDscp: true }]
 };
 
-const VIDEO_SIMULCAST_ENCODINGS = [
+const WEBCAM_SIMULCAST_ENCODINGS = [
   { scaleResolutionDownBy: 4 },
   { scaleResolutionDownBy: 2 },
   { scaleResolutionDownBy: 1 }
 ];
 
 // Used for VP9 webcam video.
-const VIDEO_KSVC_ENCODINGS = [{ scalabilityMode: "S3T3_KEY" }];
+const WEBCAM_KSVC_ENCODINGS = [{ scalabilityMode: "S3T3_KEY" }];
 
-// Used for VP9 desktop sharing.
-// const VIDEO_SVC_ENCODINGS = [{ scalabilityMode: "S3T3", dtx: true }];
+// Used for simulcast screen sharing.
+// eslint-disable-next-line no-unused-vars
+const SCREEN_SHARING_SIMULCAST_ENCODINGS =
+[
+	{ scaleResolutionDownBy: 1, dtx: true, maxBitrate: 1500000 },
+	{ scaleResolutionDownBy: 1, dtx: true, maxBitrate: 6000000 }
+];
+
+// Used for VP9 screen sharing.
+// eslint-disable-next-line no-unused-vars
+const SCREEN_SHARING_SVC_ENCODINGS =
+[
+	{ scalabilityMode: 'S3T3', dtx: true }
+];
 
 const logger = new Logger("App");
 
@@ -534,8 +546,8 @@ export default {
           let encodings;
 
           if (firstVideoCodec.mimeType.toLowerCase() === "video/vp9")
-            encodings = VIDEO_KSVC_ENCODINGS;
-          else encodings = VIDEO_SIMULCAST_ENCODINGS;
+            encodings = WEBCAM_KSVC_ENCODINGS;
+          else encodings = WEBCAM_SIMULCAST_ENCODINGS;
 
           this.webcamProducer = await this.sendTransport.produce({
             track,

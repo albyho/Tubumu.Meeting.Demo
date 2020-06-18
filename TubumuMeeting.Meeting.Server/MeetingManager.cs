@@ -30,7 +30,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
 
-        public Dictionary<int, Peer> Peers { get; } = new Dictionary<int, Peer>();
+        public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
         public HashSet<PeerRoom> PeerRoomList { get; } = new HashSet<PeerRoom>();
 
@@ -84,7 +84,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public bool HandlePeer(int peerId, string name)
+        public bool HandlePeer(string peerId, string name)
         {
             ClosePeer(peerId);
 
@@ -103,7 +103,7 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public bool JoinPeer(int peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities)
+        public bool JoinPeer(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities)
         {
             lock (_peerLocker)
             {
@@ -126,7 +126,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public void ClosePeer(int peerId)
+        public void ClosePeer(string peerId)
         {
             lock (_peerLocker)
             {
@@ -149,7 +149,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> PeerEnterRoomAsync(int peerId, Guid roomId)
+        public async Task<bool> PeerEnterRoomAsync(string peerId, Guid roomId)
         {
             // TODO: (alby)代码清理, Room 会预先创建好。
             GetOrCreateRoom(roomId, "Meeting");
@@ -187,7 +187,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public PeerRoom? GetPeerRoomWithPeerId(int peerId)
+        public PeerRoom? GetPeerRoomWithPeerId(string peerId)
         {
             lock (_peerRoomLocker)
             {
@@ -203,7 +203,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public Room? GetRoomWithPeerId(int peerId)
+        public Room? GetRoomWithPeerId(string peerId)
         {
             // TODO: (alby)目前暂时只允许进入一个房间
             lock (_peerRoomLocker)

@@ -2,7 +2,7 @@
 {
     public class NewConsumerReadyRequest
     {
-        public int PeerId { get; set; }
+        public string PeerId { get; set; }
 
         public string ConsumerId { get; set; }
     }
