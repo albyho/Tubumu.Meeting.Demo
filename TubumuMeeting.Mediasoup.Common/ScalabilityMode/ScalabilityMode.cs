@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Tubumu.Core.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -23,7 +24,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// 是否包含 "_KEY"
         /// </summary>
-        public bool Ksvc { get; set; }
+        public bool KSvc { get; set; }
 
         /// <summary>
         /// Parses the given scalabilityMode string according to the rules in webrtc-svc.
@@ -38,13 +39,13 @@ namespace TubumuMeeting.Mediasoup
             {
                 result.SpatialLayers = int.Parse(match.Groups[1].Value);
                 result.TemporalLayers = int.Parse(match.Groups[2].Value);
-                result.Ksvc = match.Groups.Count >= 4 && match.Groups[3].Value == "_KEY";
+                result.KSvc = match.Groups.Count >= 4 && !match.Groups[3].Value.IsNullOrWhiteSpace();
             }
             else
             {
                 result.SpatialLayers = 1;
                 result.TemporalLayers = 1;
-                result.Ksvc = false;
+                result.KSvc = false;
             }
             return result;
         }
