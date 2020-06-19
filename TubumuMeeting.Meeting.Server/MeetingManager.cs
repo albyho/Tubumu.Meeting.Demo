@@ -219,7 +219,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public IEnumerable<Peer> GetPeersWithRoomId(Guid roomId, string excludePeerId = null)
+        public IEnumerable<Peer> GetPeersWithRoomId(Guid roomId, string? excludePeerId = null)
         {
             lock (_peerRoomLocker)
             {

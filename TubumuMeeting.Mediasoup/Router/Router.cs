@@ -804,7 +804,6 @@ namespace TubumuMeeting.Mediasoup
             if (!_producers.TryGetValue(producerId, out Producer producer))
             {
                 _logger.LogError($"CanConsume() | Producer with id {producerId} not found");
-
                 return false;
             }
 
@@ -815,7 +814,6 @@ namespace TubumuMeeting.Mediasoup
             catch (Exception ex)
             {
                 _logger.LogError(ex, "CanConsume() | unexpected error");
-
                 return false;
             }
         }

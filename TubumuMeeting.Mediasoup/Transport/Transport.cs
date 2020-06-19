@@ -169,7 +169,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="getRouterRtpCapabilities"></param>
         /// <param name="getProducerById"></param>
         /// <param name="getDataProducerById"></param>
-        public Transport(ILoggerFactory loggerFactory,
+        protected Transport(ILoggerFactory loggerFactory,
             TransportInternalData transportInternalData,
             SctpParameters? sctpParameters,
             SctpState? sctpState,

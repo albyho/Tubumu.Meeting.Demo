@@ -202,6 +202,8 @@ namespace TubumuMeeting.Mediasoup
                     _logger.LogError($"Worker() | worker process error [pid:{ProcessId}]: {ex.Message}");
                     Emit("died", ex);
                 }
+
+                throw;
             }
 
             _channel = new Channel(_loggerFactory.CreateLogger<Channel>(), _pipes[3], _pipes[4], ProcessId);
@@ -268,8 +270,8 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("UpdateSettingsAsync()");
             var reqData = new
             {
-                LogLevel = workerUpdateableSettings.LogLevel.HasValue ? workerUpdateableSettings.LogLevel.GetEnumStringValue() : null,
-                LogTags = workerUpdateableSettings.LogTags != null ? workerUpdateableSettings.LogTags.Select(m => m.GetEnumStringValue()) : null,
+                LogLevel = workerUpdateableSettings?.LogLevel.GetEnumStringValue(),
+                LogTags = workerUpdateableSettings?.LogTags.Select(m => m.GetEnumStringValue()),
             };
             return _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS, null, reqData);
         }

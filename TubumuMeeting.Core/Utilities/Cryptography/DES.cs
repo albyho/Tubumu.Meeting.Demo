@@ -193,7 +193,7 @@ namespace Tubumu.Core.Utilities.Cryptography
         /// <returns></returns>
         public static Byte[] DecryptFromByteArrayToByteArray(Byte[] inputByteArray, string key = null)
         {
-            return DecryptFromByteArrayToByteArray(inputByteArray, CipherMode.ECB, PaddingMode.Zeros);
+            return DecryptFromByteArrayToByteArray(inputByteArray, CipherMode.ECB, PaddingMode.Zeros, key);
         }
 
         /// <summary>

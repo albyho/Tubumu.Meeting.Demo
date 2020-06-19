@@ -274,7 +274,7 @@ namespace TubumuMeeting.Mediasoup
 
             var reqData = new
             {
-                Types = types ?? new TraceEventType[0]
+                Types = types ?? Array.Empty<TraceEventType>()
             };
 
             return _channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, Internal, reqData);

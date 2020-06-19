@@ -89,7 +89,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         /// <param name="getProducerById"></param>
-        public RtpObserver(ILoggerFactory loggerFactory,
+        protected RtpObserver(ILoggerFactory loggerFactory,
             RtpObserverInternalData rtpObserverInternalData,
             Channel channel,
             PayloadChannel payloadChannel,

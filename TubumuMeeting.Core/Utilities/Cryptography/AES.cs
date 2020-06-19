@@ -177,7 +177,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             var buffer = ByteArrayFromHexString(decryptString);
             if (buffer.IsNullOrEmpty())
             {
-                return new Byte[0];
+                return Array.Empty<byte>();
             }
             return DecryptFromByteArrayToByteArray(buffer, key);
         }
@@ -215,7 +215,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             var buffer = Convert.FromBase64String(decryptString);
             if (buffer.IsNullOrEmpty())
             {
-                return new Byte[0];
+                return Array.Empty<byte>();
             }
             return DecryptFromByteArrayToByteArray(buffer, key);
         }
@@ -228,7 +228,7 @@ namespace Tubumu.Core.Utilities.Cryptography
         {
             if (hexString.IsNullOrWhiteSpace() || hexString.Length % 2 != 0)
             {
-                return new Byte[0];
+                return Array.Empty<byte>();
             }
             var buffer = new Byte[hexString.Length / 2];
             for (int i = 0; i < buffer.Length; i++)

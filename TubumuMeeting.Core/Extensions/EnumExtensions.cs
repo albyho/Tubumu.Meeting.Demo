@@ -193,7 +193,7 @@ namespace Tubumu.Core.Extensions
         #endregion
     }
 
-    public class EnumStringValueAttribute : Attribute
+    public sealed class EnumStringValueAttribute : Attribute
     {
         public string Value { get; set; }
 

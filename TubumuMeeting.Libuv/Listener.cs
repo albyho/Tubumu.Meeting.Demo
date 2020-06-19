@@ -53,8 +53,10 @@ namespace TubumuMeeting.Libuv
             catch (Exception)
             {
                 stream.Dispose();
+
                 throw;
             }
+
             return stream as TStream;
         }
 

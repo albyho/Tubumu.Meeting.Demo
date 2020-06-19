@@ -6,7 +6,7 @@ namespace TubumuMeeting.Mediasoup
     /// <summary>
     /// https://github.com/ibc/h264-profile-level-id
     /// </summary>
-    public class H264ProfileLevelId
+    public static class H264ProfileLevelId
     {
         public const int ProfileConstrainedBaseline = 1;
         public const int ProfileBaseline = 2;
