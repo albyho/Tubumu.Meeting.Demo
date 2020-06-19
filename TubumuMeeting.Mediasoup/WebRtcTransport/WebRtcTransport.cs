@@ -87,8 +87,7 @@ namespace TubumuMeeting.Mediasoup
             TransportTuple? iceSelectedTuple,
             DtlsParameters dtlsParameters,
             DtlsState dtlsState,
-            string? dtlsRemoteCert
-            ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, payloadChannel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
+            string? dtlsRemoteCert) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, payloadChannel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
             _logger = loggerFactory.CreateLogger<WebRtcTransport>();
 

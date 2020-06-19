@@ -10,8 +10,15 @@ namespace TubumuMeeting.Mediasoup
 {
     public class Router : EventEmitter, IEquatable<Router>
     {
-        // Logger
+
+        /// <summary>
+        /// Logger factory for create logger.
+        /// </summary>
         private readonly ILoggerFactory _loggerFactory;
+
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<Router> _logger;
 
         #region Internal data.
@@ -94,11 +101,12 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         public Router(ILoggerFactory loggerFactory,
-                    string routerId,
-                    RtpCapabilities rtpCapabilities,
-                    Channel channel,
-                    PayloadChannel payloadChannel,
-                    Dictionary<string, object>? appData)
+            string routerId,
+            RtpCapabilities rtpCapabilities,
+            Channel channel,
+            PayloadChannel payloadChannel,
+            Dictionary<string, object>? appData
+            )
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Router>();

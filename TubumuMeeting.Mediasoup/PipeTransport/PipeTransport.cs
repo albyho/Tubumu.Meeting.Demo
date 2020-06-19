@@ -10,7 +10,7 @@ namespace TubumuMeeting.Mediasoup
     public class PipeTransport : Transport
     {
         /// <summary>
-        /// Logger factory.
+        /// Logger factory for create logger.
         /// </summary>
         private readonly ILoggerFactory _loggerFactory;
 

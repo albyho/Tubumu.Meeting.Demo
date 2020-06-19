@@ -31,7 +31,7 @@ namespace TubumuMeeting.Mediasoup
     public abstract class Transport : EventEmitter
     {
         /// <summary>
-        /// Logger factory.
+        /// Logger factory for create logger.
         /// </summary>
         private readonly ILoggerFactory _loggerFactory;
 
@@ -84,37 +84,59 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public bool Closed { get; private set; }
 
+        /// <summary>
         // Method to retrieve Router RTP capabilities.
+        /// </summary>
         protected readonly Func<RtpCapabilities> GetRouterRtpCapabilities;
 
+        /// <summary>
         // Method to retrieve a Producer.
+        /// </summary>
         protected readonly Func<string, Producer?> GetProducerById;
 
+        /// <summary>
         // Method to retrieve a DataProducer.
+        /// </summary>
         protected readonly Func<string, DataProducer?> GetDataProducerById;
 
+        /// <summary>
         // Producers map.
+        /// </summary>
         protected readonly Dictionary<string, Producer> Producers = new Dictionary<string, Producer>();
 
+        /// <summary>
         // Consumers map.
+        /// </summary>
         protected readonly Dictionary<string, Consumer> Consumers = new Dictionary<string, Consumer>();
 
+        /// <summary>
         // DataProducers map.
+        /// </summary>
         protected readonly Dictionary<string, DataProducer> DataProducers = new Dictionary<string, DataProducer>();
 
+        /// <summary>
         // DataConsumers map.
+        /// </summary>
         protected readonly Dictionary<string, DataConsumer> DataConsumers = new Dictionary<string, DataConsumer>();
 
+        /// <summary>
         // RTCP CNAME for Producers.
+        /// </summary>
         private string? _cnameForProducers;
 
+        /// <summary>
         // Next MID for Consumers. It's converted into string when used.
+        /// </summary>
         private int _nextMidForConsumers = 0;
 
+        /// <summary>
         // Buffer with available SCTP stream ids.
+        /// </summary>
         private int[]? _sctpStreamIds;
 
+        /// <summary>m
         // Next SCTP stream id.
+        /// </summary>
         private int _nextSctpStreamId;
 
         /// <summary>
@@ -156,7 +178,8 @@ namespace TubumuMeeting.Mediasoup
             Dictionary<string, object>? appData,
             Func<RtpCapabilities> getRouterRtpCapabilities,
             Func<string, Producer?> getProducerById,
-            Func<string, DataProducer?> getDataProducerById)
+            Func<string, DataProducer?> getDataProducerById
+            )
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Transport>();

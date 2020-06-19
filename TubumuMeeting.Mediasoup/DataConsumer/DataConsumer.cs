@@ -40,7 +40,7 @@ namespace TubumuMeeting.Mediasoup
     public class DataConsumer : EventEmitter
     {
         /// <summary>
-        /// Logger
+        /// Logger.
         /// </summary>
         private readonly ILogger<DataConsumer> _logger;
 
@@ -116,13 +116,14 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="payloadChannel"></param>
         /// <param name="appData"></param>
         public DataConsumer(ILoggerFactory loggerFactory,
-                            DataConsumerInternalData dataConsumerInternalData,
-                            SctpStreamParameters sctpStreamParameters,
-                            string label,
-                            string protocol,
-                            Channel channel,
-                            PayloadChannel payloadChannel,
-                            Dictionary<string, object>? appData)
+            DataConsumerInternalData dataConsumerInternalData,
+            SctpStreamParameters sctpStreamParameters,
+            string label,
+            string protocol,
+            Channel channel,
+            PayloadChannel payloadChannel,
+            Dictionary<string, object>? appData
+            )
         {
             _logger = loggerFactory.CreateLogger<DataConsumer>();
 

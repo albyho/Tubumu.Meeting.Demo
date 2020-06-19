@@ -27,7 +27,9 @@ namespace TubumuMeeting.Mediasoup
 
     public abstract class RtpObserver : EventEmitter
     {
-        // Logger
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<RtpObserver> _logger;
 
         /// <summary>
@@ -88,11 +90,12 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="appData"></param>
         /// <param name="getProducerById"></param>
         public RtpObserver(ILoggerFactory loggerFactory,
-                    RtpObserverInternalData rtpObserverInternalData,
-                    Channel channel,
-                    PayloadChannel payloadChannel,
-                    Dictionary<string, object>? appData,
-                    Func<string, Producer?> getProducerById)
+            RtpObserverInternalData rtpObserverInternalData,
+            Channel channel,
+            PayloadChannel payloadChannel,
+            Dictionary<string, object>? appData,
+            Func<string, Producer?> getProducerById
+            )
         {
             _logger = loggerFactory.CreateLogger<RtpObserver>();
 

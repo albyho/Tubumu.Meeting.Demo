@@ -15,7 +15,14 @@ namespace TubumuMeeting.Meeting.Server
 
     public partial class Room
     {
+        /// <summary>
+        /// Logger factory for create logger.
+        /// </summary>
         private readonly ILoggerFactory _loggerFactory;
+
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<Room> _logger;
 
         [JsonIgnore]

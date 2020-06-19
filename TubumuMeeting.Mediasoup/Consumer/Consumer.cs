@@ -42,7 +42,7 @@ namespace TubumuMeeting.Mediasoup
     public class Consumer : EventEmitter
     {
         /// <summary>
-        /// Logger
+        /// Logger.
         /// </summary>
         private readonly ILogger<Consumer> _logger;
 
@@ -156,17 +156,17 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="score"></param>
         /// <param name="preferredLayers"></param>
         public Consumer(ILoggerFactory loggerFactory,
-                    ConsumerInternalData consumerInternalData,
-                    MediaKind kind,
-                    RtpParameters rtpParameters,
-                    ConsumerType type,
-                    Channel channel,
-                    Dictionary<string, object>? appData,
-                    bool paused,
-                    bool producerPaused,
-                    ConsumerScore? score,
-                    ConsumerLayers? preferredLayers
-                    )
+            ConsumerInternalData consumerInternalData,
+            MediaKind kind,
+            RtpParameters rtpParameters,
+            ConsumerType type,
+            Channel channel,
+            Dictionary<string, object>? appData,
+            bool paused,
+            bool producerPaused,
+            ConsumerScore? score,
+            ConsumerLayers? preferredLayers
+            )
         {
             _logger = loggerFactory.CreateLogger<Consumer>();
 

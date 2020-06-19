@@ -128,14 +128,15 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="appData"></param>
         /// <param name="paused"></param>
         public Producer(ILoggerFactory loggerFactory,
-                    ProducerInternalData producerInternalData,
-                    MediaKind kind,
-                    RtpParameters rtpParameters,
-                    ProducerType type,
-                    RtpParameters consumableRtpParameters,
-                    Channel channel,
-                    Dictionary<string, object>? appData,
-                    bool paused)
+            ProducerInternalData producerInternalData,
+            MediaKind kind,
+            RtpParameters rtpParameters,
+            ProducerType type,
+            RtpParameters consumableRtpParameters,
+            Channel channel,
+            Dictionary<string, object>? appData,
+            bool paused
+            )
         {
             _logger = loggerFactory.CreateLogger<Producer>();
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -9,7 +8,7 @@ namespace TubumuMeeting.Mediasoup
     public class AudioLevelObserver : RtpObserver
     {
         /// <summary>
-        /// Logger
+        /// Logger.
         /// </summary>
         private readonly ILogger<AudioLevelObserver> _logger;
 
@@ -33,11 +32,12 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="appData"></param>
         /// <param name="getProducerById"></param>
         public AudioLevelObserver(ILoggerFactory loggerFactory,
-                    RtpObserverInternalData rtpObserverInternalData,
-                    Channel channel,
-                    PayloadChannel payloadChannel,
-                    Dictionary<string, object>? appData,
-                    Func<string, Producer?> getProducerById) : base(loggerFactory, rtpObserverInternalData, channel, payloadChannel, appData, getProducerById)
+            RtpObserverInternalData rtpObserverInternalData,
+            Channel channel,
+            PayloadChannel payloadChannel,
+            Dictionary<string, object>? appData,
+            Func<string, Producer?> getProducerById
+            ) : base(loggerFactory, rtpObserverInternalData, channel, payloadChannel, appData, getProducerById)
         {
             _logger = loggerFactory.CreateLogger<AudioLevelObserver>();
         }
@@ -49,11 +49,10 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "volumes":
                     {
-
                         var notification = JsonConvert.DeserializeObject<AudioLevelObserverVolumeNotificationData[]>(data);
 
                         List<AudioLevelObserverVolume> volumes = new List<AudioLevelObserverVolume>();
-                        foreach(var item in notification)
+                        foreach (var item in notification)
                         {
                             var producer = GetProducerById(item.ProducerId);
                             if (producer != null)

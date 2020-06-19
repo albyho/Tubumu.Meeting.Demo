@@ -22,25 +22,39 @@ namespace TubumuMeeting.Mediasoup
 
         #region Private Fields
 
-        // Logger
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<PayloadChannel> _logger;
 
-        // Unix Socket instance for sending messages to the worker process.
+        /// <summary>
+        /// Unix Socket instance for sending messages to the worker process.
+        /// </summary>
         private readonly UVStream _producerSocket;
 
-        // Unix Socket instance for receiving messages to the worker process.
+        /// <summary>
+        /// Unix Socket instance for receiving messages to the worker process.
+        /// </summary>
         private readonly UVStream _consumerSocket;
 
-        // Worker process PID.
+        /// <summary>
+        /// Worker process PID.
+        /// </summary>
         private readonly int _processId;
 
-        // Closed flag.
+        /// <summary>
+        /// Closed flag.
+        /// </summary>
         private bool _closed = false;
 
-        // Buffer for reading messages from the worker.
+        /// <summary>
+        /// Buffer for reading messages from the worker.
+        /// </summary>
         private ArraySegment<byte>? _recvBuffer;
 
-        // Ongoing notification (waiting for its payload).
+        /// <summary>
+        /// Ongoing notification (waiting for its payload).
+        /// </summary>
         private OngoingNotification? _ongoingNotification;
 
         #endregion

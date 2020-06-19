@@ -13,8 +13,14 @@ namespace TubumuMeeting.Meeting.Server
     {
         #region Private Fields
 
+        /// <summary>
+        /// Logger factory for create logger.
+        /// </summary>
         private readonly ILoggerFactory _loggerFactory;
 
+        /// <summary>
+        /// Logger
+        /// </summary>
         private readonly ILogger<MeetingManager> _logger;
 
         private readonly MediasoupOptions _mediasoupOptions;
@@ -218,7 +224,7 @@ namespace TubumuMeeting.Meeting.Server
             lock (_peerRoomLocker)
             {
                 var peers = PeerRoomList.Where(m => m.Room.RoomId == roomId).Select(m => m.Peer);
-                if(!excludePeerId.IsNullOrWhiteSpace())
+                if (!excludePeerId.IsNullOrWhiteSpace())
                 {
                     peers = peers.Where(m => m.PeerId != excludePeerId);
                 }
@@ -231,10 +237,9 @@ namespace TubumuMeeting.Meeting.Server
     {
         private async Task<bool> EnsureRouterAsync(Guid roomId)
         {
-            Room room;
             using (await _roomLocker.LockAsync())
             {
-                if (!Rooms.TryGetValue(roomId, out room))
+                if (!Rooms.TryGetValue(roomId, out Room room))
                 {
                     _logger.LogError($"EnsureRouterAsync() | Room[{roomId}] is not exists.");
                     return false;

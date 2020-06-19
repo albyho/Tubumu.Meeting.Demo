@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
-using TubumuMeeting.Libuv;
 using TubumuMeeting.Core;
+using TubumuMeeting.Libuv;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -23,28 +23,44 @@ namespace TubumuMeeting.Mediasoup
 
         #region Private Fields
 
-        // Logger
+        /// <summary>
+        /// Logger
+        /// </summary>
         private readonly ILogger<Channel> _logger;
 
-        // Unix Socket instance for sending messages to the worker process.
+        /// <summary>
+        /// Unix Socket instance for sending messages to the worker process.
+        /// </summary>
         private readonly UVStream _producerSocket;
 
-        // Unix Socket instance for receiving messages to the worker process.
+        /// <summary>
+        /// Unix Socket instance for receiving messages to the worker process.
+        /// </summary>
         private readonly UVStream _consumerSocket;
 
-        // Worker process PID.
+        /// <summary>
+        /// Worker process PID.
+        /// </summary>
         private readonly int _processId;
 
-        // Closed flag.
+        /// <summary>
+        /// Closed flag.
+        /// </summary>
         private bool _closed = false;
 
-        // Next id for messages sent to the worker process.
+        /// <summary>
+        /// Next id for messages sent to the worker process.
+        /// </summary>
         private int _nextId = 0;
 
-        // Map of pending sent requests.
+        /// <summary>
+        /// Map of pending sent requests.
+        /// </summary>
         private readonly Dictionary<int, Sent> _sents = new Dictionary<int, Sent>();
 
-        // Buffer for reading messages from the worker.
+        /// <summary>
+        /// Buffer for reading messages from the worker.
+        /// </summary>
         private ArraySegment<byte>? _recvBuffer;
 
         #endregion

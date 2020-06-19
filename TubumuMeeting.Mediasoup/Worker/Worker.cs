@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Libuv;
@@ -25,31 +24,49 @@ namespace TubumuMeeting.Mediasoup
 
         #region Private Fields
 
-        // Logger factory for create Channel logger.
+        /// <summary>
+        /// Logger factory for create logger.
+        /// </summary>
         private readonly ILoggerFactory _loggerFactory;
 
-        // Logger.
+        /// <summary>
+        /// Logger.
+        /// </summary>
         private readonly ILogger<Worker> _logger;
 
-        // mediasoup-worker child process.
+        /// <summary>
+        /// mediasoup-worker child process.
+        /// </summary>
         private TubumuMeeting.Libuv.Process? _child;
 
-        // Worker process PID.
+        /// <summary>
+        /// Worker process PID.
+        /// </summary>
         public int ProcessId { get; private set; }
 
-        // Is spawn done?
+        /// <summary>
+        /// Is spawn done?
+        /// </summary>
         private bool _spawnDone;
 
-        // Channel instance.
+        /// <summary>
+        /// Channel instance.
+        /// </summary>
         private readonly Channel _channel;
 
-        // PayloadChannel instance.
+        /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
         private readonly PayloadChannel _payloadChannel;
 
-        // Pipes.
+        /// <summary>
+        /// Pipes.
+        /// </summary>
         private readonly UVStream[] _pipes;
 
-        // Routers set.
+        /// <summary>
+        /// Routers set.
+        /// </summary>
         private readonly List<Router> _routers = new List<Router>();
 
         #endregion

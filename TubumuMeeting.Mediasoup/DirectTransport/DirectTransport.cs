@@ -9,11 +9,6 @@ namespace TubumuMeeting.Mediasoup
     public class DirectTransport : Transport
     {
         /// <summary>
-        /// Logger factory.
-        /// </summary>
-        private readonly ILoggerFactory _loggerFactory;
-
-        /// <summary>
         /// Logger.
         /// </summary>
         private readonly ILogger<DirectTransport> _logger;
@@ -53,7 +48,6 @@ namespace TubumuMeeting.Mediasoup
             Func<string, DataProducer?> getDataProducerById
             ) : base(loggerFactory, transportInternalData, sctpParameters, sctpState, channel, payloadChannel, appData, getRouterRtpCapabilities, getProducerById, getDataProducerById)
         {
-            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<DirectTransport>();
 
             // Data
