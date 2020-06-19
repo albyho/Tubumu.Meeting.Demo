@@ -475,15 +475,15 @@ namespace TubumuMeeting.Mediasoup
             var responseData = JsonConvert.DeserializeObject<RouterCreatePlainTransportResponseData>(status!);
 
             var transport = new DirectTransport(_loggerFactory,
-                    new TransportInternalData(@internal.RouterId, @internal.TransportId),
-                    sctpParameters: null,
-                    sctpState: null,
-                    _channel,
-                    _payloadChannel,
-                    directTransportOptions.AppData,
-                    () => RtpCapabilities,
-                    m => _producers.TryGetValue(m, out var p) ? p : null,
-                    m => _dataProducers.TryGetValue(m, out var p) ? p : null
+                new TransportInternalData(@internal.RouterId, @internal.TransportId),
+                sctpParameters: null,
+                sctpState: null,
+                _channel,
+                _payloadChannel,
+                directTransportOptions.AppData,
+                () => RtpCapabilities,
+                m => _producers.TryGetValue(m, out var p) ? p : null,
+                m => _dataProducers.TryGetValue(m, out var p) ? p : null
                 );
 
             _transports[transport.TransportId] = transport;
@@ -529,16 +529,24 @@ namespace TubumuMeeting.Mediasoup
             }
 
             if (pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
+            {
                 throw new Exception("missing producerId or dataProducerId");
+            }
 
             if (!pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && !pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
+            {
                 throw new Exception("just producerId or dataProducerId can be given");
+            }
 
             if (pipeToRouterOptions.Router == null)
+            {
                 throw new Exception("Router not found");
+            }
 
             if (pipeToRouterOptions.Router == this)
+            {
                 throw new Exception("cannot use this Router as destination");
+            }
 
             Producer? producer = null;
             DataProducer? dataProducer = null;

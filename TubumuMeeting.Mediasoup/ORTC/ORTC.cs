@@ -1069,10 +1069,12 @@ namespace TubumuMeeting.Mediasoup
             {
                 var got1 = a.TryGetValue(key, out var aPacketizationMode);
                 var got2 = b.TryGetValue(key, out var bPacketizationMode);
+                // 同时存在但不相等
                 if (got1 && got2 && !aPacketizationMode.Equals(bPacketizationMode))
                 {
                     return false;
                 }
+                // 其中之一存在
                 else if ((got1 && !got2) || (!got1 && got2))
                 {
                     return false;
@@ -1080,6 +1082,7 @@ namespace TubumuMeeting.Mediasoup
             }
             else if (a != null && b == null)
             {
+                // b 为 null的情况下，确保不存在于 a
                 var got = a.TryGetValue("packetization-mode", out var _);
                 if (got)
                 {
@@ -1088,6 +1091,7 @@ namespace TubumuMeeting.Mediasoup
             }
             else if (a == null && b != null)
             {
+                // a 为 null的情况下，确保不存在于 b
                 var got = b.TryGetValue("packetization-mode", out var _);
                 if (got)
                 {
@@ -1102,17 +1106,7 @@ namespace TubumuMeeting.Mediasoup
             var aMimeType = aCodec.MimeType.ToLower();
             var bMimeType = bCodec.MimeType.ToLower();
 
-            if (aMimeType != bMimeType)
-            {
-                return false;
-            }
-
-            if (aCodec.ClockRate != bCodec.ClockRate)
-            {
-                return false;
-            }
-
-            if (aCodec.Channels != bCodec.Channels)
+            if (aMimeType != bMimeType || aCodec.ClockRate != bCodec.ClockRate || aCodec.Channels != bCodec.Channels)
             {
                 return false;
             }

@@ -239,7 +239,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             using (await _roomLocker.LockAsync())
             {
-                if (!Rooms.TryGetValue(roomId, out Room room))
+                if (!Rooms.TryGetValue(roomId, out var room))
                 {
                     _logger.LogError($"EnsureRouterAsync() | Room[{roomId}] is not exists.");
                     return false;

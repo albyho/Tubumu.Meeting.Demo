@@ -789,7 +789,6 @@ namespace TubumuMeeting.Mediasoup
                 if (_sctpStreamIds[sctpStreamId] == 0)
                 {
                     _nextSctpStreamId = sctpStreamId + 1;
-
                     return sctpStreamId;
                 }
             }
