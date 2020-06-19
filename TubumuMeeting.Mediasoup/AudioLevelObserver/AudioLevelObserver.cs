@@ -44,7 +44,11 @@ namespace TubumuMeeting.Mediasoup
 
         protected override void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Internal.RtpObserverId) return;
+            if (targetId != Internal.RtpObserverId)
+            {
+                return;
+            }
+
             switch (@event)
             {
                 case "volumes":

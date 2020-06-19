@@ -128,7 +128,10 @@ namespace Tubumu.Core.Extensions
                 throw new ArgumentNullException(nameof(values));
             }
 
-            if (!values.Any()) return query;
+            if (!values.Any())
+            {
+                return query;
+            }
 
             ParameterExpression p = selector.Parameters.Single();
             var containsExpressions = values.Select(value => (Expression)Expression.Call(selector.Body, typeof(String).GetMethod("Contains", new[] { typeof(String) }), Expression.Constant(value)));
@@ -154,7 +157,10 @@ namespace Tubumu.Core.Extensions
                 throw new ArgumentNullException(nameof(values));
             }
 
-            if (!values.Any()) return query;
+            if (!values.Any())
+            {
+                return query;
+            }
 
             ParameterExpression selectorParameter = selector.Parameters.Single();
             ParameterExpression memberParameter = memberSelector.Parameters.Single();
@@ -207,7 +213,10 @@ namespace Tubumu.Core.Extensions
                 throw new ArgumentNullException(nameof(values));
             }
 
-            if (!values.Any()) return query;
+            if (!values.Any())
+            {
+                return query;
+            }
 
             ParameterExpression p = selector.Parameters.Single();
             IEnumerable<Expression> equals = values.Select(value => (Expression)Expression.Equal(selector.Body, Expression.Constant(value, typeof(TValue))));

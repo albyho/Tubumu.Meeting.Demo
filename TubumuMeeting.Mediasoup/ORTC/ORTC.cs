@@ -137,11 +137,15 @@ namespace TubumuMeeting.Mediasoup
 
             // type is mandatory.
             if (fb.Type.IsNullOrWhiteSpace())
+            {
                 throw new ArgumentException(nameof(fb.Type));
+            }
 
             // parameter is optional. If unset set it to an empty string.
             if (fb.Parameter.IsNullOrWhiteSpace())
+            {
                 fb.Parameter = "";
+            }
         }
 
         /// <summary>
@@ -593,7 +597,9 @@ namespace TubumuMeeting.Mediasoup
 
                 // Ensure there is not duplicated preferredPayloadType values.
                 if (caps.Codecs.Any(c => c.PreferredPayloadType == codec.PreferredPayloadType))
+                {
                     throw new Exception("duplicated codec.preferredPayloadType");
+                }
 
                 // Merge the media codec parameters.
                 codec.Parameters = codec.Parameters.Merge(mediaCodec.Parameters);
@@ -899,14 +905,18 @@ namespace TubumuMeeting.Mediasoup
                     .FirstOrDefault();
 
                 if (matchedCapCodec == null)
+                {
                     continue;
+                }
 
                 codec.RtcpFeedback = matchedCapCodec.RtcpFeedback;
 
                 consumerParams.Codecs.Add(codec);
 
                 if (!rtxSupported && IsRtxMimeType(codec.MimeType))
+                {
                     rtxSupported = true;
+                }
             }
 
             // Ensure there is at least one media codec.
@@ -1142,9 +1152,13 @@ namespace TubumuMeeting.Mediasoup
                             if (modify)
                             {
                                 if (!selectedProfileLevelId.IsNullOrWhiteSpace())
+                                {
                                     aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;  // TODO: (alby)注意 null 引用
+                                }
                                 else
+                                {
                                     aCodec.Parameters.Remove("profile-level-id");
+                                }
                             }
                         }
 
@@ -1171,8 +1185,15 @@ namespace TubumuMeeting.Mediasoup
 
         private static bool MatchCodecsWithPayloadTypeAndApt(int? payloadType, IDictionary<string, object> parameters)
         {
-            if (payloadType == null && parameters == null) return true;
-            if (parameters == null) return false;
+            if (payloadType == null && parameters == null)
+            {
+                return true;
+            }
+
+            if (parameters == null)
+            {
+                return false;
+            }
 
             if (!parameters.TryGetValue("apt", out var apt))
             {

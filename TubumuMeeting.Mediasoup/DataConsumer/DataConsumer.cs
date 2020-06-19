@@ -148,7 +148,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -172,7 +174,9 @@ namespace TubumuMeeting.Mediasoup
         public void TransportClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("TransportClosed()");
 
@@ -217,13 +221,20 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != DataConsumerId) return;
+            if (targetId != DataConsumerId)
+            {
+                return;
+            }
+
             switch (@event)
             {
                 case "dataproducerclose":
                     {
                         if (Closed)
+                        {
                             break;
+                        }
+
                         Closed = true;
 
                         // Remove notification subscriptions.
@@ -247,13 +258,19 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnPayloadChannelMessage(string targetId, string @event, NotifyData data, ArraySegment<byte> payload)
         {
-            if (targetId != DataConsumerId) return;
+            if (targetId != DataConsumerId)
+            {
+                return;
+            }
+
             switch (@event)
             {
                 case "message":
                     {
                         if (Closed)
+                        {
                             break;
+                        }
 
                         var ppid = data.PPID;
                         var message = payload;

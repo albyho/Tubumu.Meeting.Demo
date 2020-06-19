@@ -205,7 +205,9 @@ namespace TubumuMeeting.Mediasoup
         public virtual void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -263,7 +265,9 @@ namespace TubumuMeeting.Mediasoup
         public virtual void RouterClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("RouterClosed()");
 
@@ -381,7 +385,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Don't do this in PipeTransports since there we must keep CNAME value in
             // each Producer.
-            // TODO: (alby)不好的模式
+            // TODO: (alby)反模式
             if (GetType() != typeof(PipeTransport))
             {
                 // If CNAME is given and we don't have yet a CNAME for Producers in this
@@ -491,7 +495,9 @@ namespace TubumuMeeting.Mediasoup
 
             var producer = GetProducerById(consumerOptions.ProducerId);
             if (producer == null)
+            {
                 throw new NullReferenceException($"Producer with id {consumerOptions.ProducerId} not found");
+            }
 
             // This may throw.
             var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities);
@@ -567,7 +573,9 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("ProduceDataAsync()");
 
             if (!dataProducerOptions.Id.IsNullOrWhiteSpace() && DataProducers.ContainsKey(dataProducerOptions.Id!))
+            {
                 throw new Exception($"a DataProducer with same id {dataProducerOptions.Id} already exists");
+            }
 
             if (dataProducerOptions.Label.IsNullOrWhiteSpace())
             {
@@ -580,6 +588,7 @@ namespace TubumuMeeting.Mediasoup
 
             DataProducerType type;
             // If this is not a DirectTransport, sctpStreamParameters are required.
+            // TODO: (alby)反模式
             if (GetType() != typeof(DirectTransport))
             {
                 type = DataProducerType.Sctp;
@@ -650,11 +659,15 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("ConsumeDataAsync()");
 
             if (dataConsumerOptions.DataProducerId.IsNullOrWhiteSpace())
+            {
                 throw new Exception("missing dataProducerId");
+            }
 
             var dataProducer = GetDataProducerById(dataConsumerOptions.DataProducerId);
             if (dataProducer == null)
+            {
                 throw new Exception($"DataProducer with id {dataConsumerOptions.DataProducerId} not found");
+            }
 
             DataProducerType type;
             SctpStreamParameters? sctpStreamParameters = null;
@@ -662,6 +675,7 @@ namespace TubumuMeeting.Mediasoup
 
             // If this is not a DirectTransport, use sctpStreamParameters from the
             // DataProducer (if type 'sctp') unless they are given in method parameters.
+            // TODO: (alby)反模式
             if (GetType() != typeof(DirectTransport))
             {
                 type = DataProducerType.Sctp;

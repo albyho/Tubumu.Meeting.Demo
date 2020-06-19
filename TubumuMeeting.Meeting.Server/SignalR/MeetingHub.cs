@@ -86,7 +86,10 @@ namespace TubumuMeeting.Meeting.Server
             {
                 foreach (var otherPeer in _meetingManager.GetPeersWithRoomId(peerRoom.Room.RoomId))
                 {
-                    if (otherPeer.PeerId == peerRoom.Peer.PeerId) continue;
+                    if (otherPeer.PeerId == peerRoom.Peer.PeerId)
+                    {
+                        continue;
+                    }
 
                     var client = _hubContext.Clients.User(otherPeer.PeerId);
                     client.ReceiveMessage(new MeetingMessage

@@ -19,7 +19,9 @@ namespace Tubumu.Core.Utilities.Security
         public ValidationCodeCreater(int codeLength, out string validateCode)
         {
             if (codeLength < 1)
+            {
                 throw new ArgumentOutOfRangeException(nameof(codeLength));
+            }
 
             ValidationCode = CreateValidationCode(codeLength);
             validateCode = ValidationCode;

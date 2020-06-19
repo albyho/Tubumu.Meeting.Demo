@@ -61,7 +61,9 @@ namespace TubumuMeeting.Mediasoup
         public override void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             base.Close();
         }
@@ -72,7 +74,9 @@ namespace TubumuMeeting.Mediasoup
         public override void RouterClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             base.RouterClosed();
         }
@@ -128,7 +132,11 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Internal.TransportId) return;
+            if (targetId != Internal.TransportId)
+            {
+                return;
+            }
+
             switch (@event)
             {
                 case "trace":

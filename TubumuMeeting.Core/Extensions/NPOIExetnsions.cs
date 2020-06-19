@@ -90,7 +90,11 @@ namespace Tubumu.Core.Extensions
             while (n > 0)
             {
                 int m = n % 26;
-                if (m == 0) m = 26;
+                if (m == 0)
+                {
+                    m = 26;
+                }
+
                 s = (char)(m + 64) + s;
                 n = (n - m) / 26;
             }
@@ -104,12 +108,20 @@ namespace Tubumu.Core.Extensions
         /// <returns>自然数。</returns>
         public static int FromNumberSystem26(string s)
         {
-            if (string.IsNullOrEmpty(s)) return 0;
+            if (string.IsNullOrEmpty(s))
+            {
+                return 0;
+            }
+
             int n = 0;
             for (int i = s.Length - 1, j = 1; i >= 0; i--, j *= 26)
             {
                 char c = Char.ToUpper(s[i]);
-                if (c < 'A' || c > 'Z') return 0;
+                if (c < 'A' || c > 'Z')
+                {
+                    return 0;
+                }
+
                 n += ((int)c - 64) * j;
             }
             return n;

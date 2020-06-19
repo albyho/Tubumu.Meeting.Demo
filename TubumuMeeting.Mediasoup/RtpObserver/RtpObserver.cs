@@ -115,7 +115,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -139,7 +141,9 @@ namespace TubumuMeeting.Mediasoup
         public void RouterClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("RouterClosed()");
 
@@ -202,7 +206,10 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("AddProducerAsync()");
 
             var producer = GetProducerById(producerId);
-            if (producer == null) return;
+            if (producer == null)
+            {
+                return;
+            }
 
             var @internal = new
             {
@@ -225,7 +232,10 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("RemoveProducerAsync()");
 
             var producer = GetProducerById(producerId);
-            if (producer == null) return;
+            if (producer == null)
+            {
+                return;
+            }
 
             var @internal = new
             {

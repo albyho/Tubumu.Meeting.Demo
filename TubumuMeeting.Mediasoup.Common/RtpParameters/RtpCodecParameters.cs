@@ -23,7 +23,10 @@ namespace TubumuMeeting.Mediasoup
 
         public bool Equals(RtpCodecParameters other)
         {
-            if (other == null) return false;
+            if (other == null)
+            {
+                return false;
+            }
 
             var result = (MimeType == other.MimeType)
                 && (PayloadType == other.PayloadType)
@@ -57,9 +60,13 @@ namespace TubumuMeeting.Mediasoup
         public override bool Equals(object other)
         {
             if (other is RtpCodecParameters)
+            {
                 return Equals((RtpCodecParameters)other);
+            }
             else
+            {
                 return false;
+            }
         }
 
         public override int GetHashCode()

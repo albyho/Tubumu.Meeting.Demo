@@ -91,7 +91,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (_closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -137,7 +139,9 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
 
             if (_closed)
+            {
                 throw new InvalidStateException("Channel closed");
+            }
 
             var requestMesssge = new RequestMessage
             {

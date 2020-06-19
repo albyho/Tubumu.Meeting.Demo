@@ -205,7 +205,9 @@ namespace TubumuMeeting.Libuv
             cpr.Callback = (status, cpr2) =>
             {
                 for (i = 0; i < n; ++i)
+                {
                     datagchandles[i].Free();
+                }
 
                 PendingWrites--;
 

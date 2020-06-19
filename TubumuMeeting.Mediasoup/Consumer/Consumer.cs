@@ -194,7 +194,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -218,7 +220,9 @@ namespace TubumuMeeting.Mediasoup
         public void TransportClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("TransportClosed()");
 
@@ -268,7 +272,9 @@ namespace TubumuMeeting.Mediasoup
 
             // Emit observer event.
             if (!wasPaused)
+            {
                 Observer.Emit("pause");
+            }
         }
 
         /// <summary>
@@ -286,7 +292,9 @@ namespace TubumuMeeting.Mediasoup
 
             // Emit observer event.
             if (wasPaused && !ProducerPaused)
+            {
                 Observer.Emit("resume");
+            }
         }
 
         /// <summary>
@@ -362,13 +370,19 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != ConsumerId) return;
+            if (targetId != ConsumerId)
+            {
+                return;
+            }
+
             switch (@event)
             {
                 case "producerclose":
                     {
                         if (Closed)
+                        {
                             break;
+                        }
 
                         Closed = true;
 
@@ -386,7 +400,9 @@ namespace TubumuMeeting.Mediasoup
                 case "producerpause":
                     {
                         if (ProducerPaused)
+                        {
                             break;
+                        }
 
                         var wasPaused = Paused || ProducerPaused;
 
@@ -396,14 +412,18 @@ namespace TubumuMeeting.Mediasoup
 
                         // Emit observer event.
                         if (!wasPaused)
+                        {
                             Observer.Emit("pause");
+                        }
 
                         break;
                     }
                 case "producerresume":
                     {
                         if (!ProducerPaused)
+                        {
                             break;
+                        }
 
                         var wasPaused = Paused || ProducerPaused;
 
@@ -413,7 +433,9 @@ namespace TubumuMeeting.Mediasoup
 
                         // Emit observer event.
                         if (wasPaused && !Paused)
+                        {
                             Observer.Emit("resume");
+                        }
 
                         break;
                     }

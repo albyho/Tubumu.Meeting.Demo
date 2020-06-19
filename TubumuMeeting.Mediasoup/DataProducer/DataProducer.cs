@@ -141,7 +141,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -165,7 +167,9 @@ namespace TubumuMeeting.Mediasoup
         public void TransportClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("TransportClosed()");
 

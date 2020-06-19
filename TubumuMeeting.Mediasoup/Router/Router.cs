@@ -127,7 +127,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -172,7 +174,9 @@ namespace TubumuMeeting.Mediasoup
         public void WorkerClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("WorkerClosed()");
 
@@ -304,7 +308,9 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("CreatePlainTransportAsync()");
 
             if (plainTransportOptions.ListenIp == null || plainTransportOptions.ListenIp.Ip.IsNullOrWhiteSpace())
+            {
                 throw new Exception("missing listenIp");
+            }
 
             var @internal = new
             {
@@ -639,10 +645,14 @@ namespace TubumuMeeting.Mediasoup
                     _logger.LogError($"pipeToRouter() | error creating PipeTransport pair:{ex}");
 
                     if (localPipeTransport != null)
+                    {
                         localPipeTransport.Close();
+                    }
 
                     if (remotePipeTransport != null)
+                    {
                         remotePipeTransport.Close();
+                    }
 
                     throw;
                 }
@@ -684,10 +694,14 @@ namespace TubumuMeeting.Mediasoup
                     _logger.LogError($"pipeToRouter() | error creating pipe Consumer/Producer pair:{ex}");
 
                     if (pipeConsumer != null)
+                    {
                         pipeConsumer.Close();
+                    }
 
                     if (pipeProducer != null)
+                    {
                         pipeProducer.Close();
+                    }
 
                     throw;
                 }
@@ -726,10 +740,14 @@ namespace TubumuMeeting.Mediasoup
                     _logger.LogError($"pipeToRouter() | error creating pipe DataConsumer/DataProducer pair:{ex}");
 
                     if (pipeDataConsumer != null)
+                    {
                         pipeDataConsumer.Close();
+                    }
 
                     if (pipeDataProducer != null)
+                    {
                         pipeDataProducer.Close();
+                    }
 
                     throw;
                 }

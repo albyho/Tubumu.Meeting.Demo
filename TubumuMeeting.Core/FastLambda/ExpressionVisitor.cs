@@ -23,7 +23,10 @@ namespace Tubumu.Core.FastLambda
         protected virtual Expression Visit(Expression exp)
         {
             if (exp == null)
+            {
                 return exp;
+            }
+
             switch (exp.NodeType)
             {
                 case ExpressionType.Negate:
@@ -152,9 +155,13 @@ namespace Tubumu.Core.FastLambda
             if (left != b.Left || right != b.Right || conversion != b.Conversion)
             {
                 if (b.NodeType == ExpressionType.Coalesce && b.Conversion != null)
+                {
                     return Expression.Coalesce(left, right, conversion as LambdaExpression);
+                }
                 else
+                {
                     return Expression.MakeBinary(b.NodeType, left, right, b.IsLiftedToNull, b.Method);
+                }
             }
             return b;
         }
@@ -337,7 +344,10 @@ namespace Tubumu.Core.FastLambda
                 }
             }
             if (list != null)
+            {
                 return list;
+            }
+
             return original;
         }
 
@@ -367,7 +377,10 @@ namespace Tubumu.Core.FastLambda
                 }
             }
             if (list != null)
+            {
                 return list;
+            }
+
             return original;
         }
 
@@ -397,9 +410,13 @@ namespace Tubumu.Core.FastLambda
             if (args != nex.Arguments)
             {
                 if (nex.Members != null)
+                {
                     return Expression.New(nex.Constructor, args, nex.Members);
+                }
                 else
+                {
                     return Expression.New(nex.Constructor, args);
+                }
             }
             return nex;
         }

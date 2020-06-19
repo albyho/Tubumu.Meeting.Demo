@@ -92,7 +92,10 @@ namespace Tubumu.Core.Extensions
         /// <returns></returns>
         public static string Substr(this string source, int len, string att)
         {
-            if (string.IsNullOrEmpty(source)) return String.Empty;
+            if (string.IsNullOrEmpty(source))
+            {
+                return String.Empty;
+            }
 
             att = att ?? String.Empty;
 
@@ -223,7 +226,11 @@ namespace Tubumu.Core.Extensions
             }
 
             var enumerable = source as string[] ?? source.ToArray();
-            if (enumerable.IsNullOrEmpty()) return String.Empty;
+            if (enumerable.IsNullOrEmpty())
+            {
+                return String.Empty;
+            }
+
             return String.Join(separator, enumerable);
         }
 
@@ -251,7 +258,10 @@ namespace Tubumu.Core.Extensions
             }
 
             var enumerable = source as T[] ?? source.ToArray();
-            if (enumerable.IsNullOrEmpty()) return String.Empty;
+            if (enumerable.IsNullOrEmpty())
+            {
+                return String.Empty;
+            }
 
             return String.Join(separator, enumerable.Select(selector));
         }
@@ -277,7 +287,9 @@ namespace Tubumu.Core.Extensions
             }
 
             if (path.StartsWith("~"))
+            {
                 path = path.Substring(1, path.Length - 1);
+            }
 
             string[] pathNames = path.Split('/');
             path = String.Empty;
@@ -285,7 +297,9 @@ namespace Tubumu.Core.Extensions
             foreach (string p in pathNames)
             {
                 if (p != String.Empty)
+                {
                     path += p + "/";
+                }
             }
             if (path.EndsWith("/"))
             {
@@ -313,9 +327,14 @@ namespace Tubumu.Core.Extensions
             if (!path.StartsWith("~/"))
             {
                 if (!path.StartsWith("/"))
+                {
                     path = "/" + path;
+                }
+
                 if (!path.StartsWith("~"))
+                {
                     path = "~" + path;
+                }
             }
             if (path.EndsWith("/"))
             {
@@ -355,7 +374,10 @@ namespace Tubumu.Core.Extensions
         public static string Repeat(this string source, int times)
         {
             if (String.IsNullOrEmpty(source) || times <= 0)
+            {
                 return source;
+            }
+
             var sb = new StringBuilder();
             while (times > 0)
             {
@@ -373,7 +395,10 @@ namespace Tubumu.Core.Extensions
         public static string SqlFilter(this string sqlString)
         {
             if (sqlString == null)
+            {
                 return null;
+            }
+
             sqlString = sqlString.ToLower();
             string words = "and|exec|insert|select|delete|update|chr|mid|master|or|truncate|char|declare|join";
             foreach (string i in words.Split('|'))
@@ -416,7 +441,9 @@ namespace Tubumu.Core.Extensions
         public static string WithUrl(this string source, string url)
         {
             if (source == null || url == null)
+            {
                 return null;
+            }
 
             return $"<a href=\"{url}\">{source}</a>";
         }

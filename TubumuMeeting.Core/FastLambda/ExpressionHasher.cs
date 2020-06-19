@@ -67,7 +67,10 @@ namespace Tubumu.Core.FastLambda
         /// <returns></returns>
         protected override Expression Visit(Expression exp)
         {
-            if (exp == null) return exp;
+            if (exp == null)
+            {
+                return exp;
+            }
 
             Hash((int)exp.NodeType).Hash(exp.Type);
             return base.Visit(exp);
@@ -164,7 +167,10 @@ namespace Tubumu.Core.FastLambda
             Hash(nex.Constructor);
             if (nex.Members != null)
             {
-                foreach (var m in nex.Members) Hash(m);
+                foreach (var m in nex.Members)
+                {
+                    Hash(m);
+                }
             }
 
             return base.VisitNew(nex);

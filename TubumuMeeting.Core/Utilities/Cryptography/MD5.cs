@@ -30,7 +30,10 @@ namespace Tubumu.Core.Utilities.Cryptography
         /// <returns></returns>
         public static Byte[] EncryptFromStringToByteArray(string encryptString)
         {
-            if (encryptString.IsNullOrWhiteSpace()) return null;
+            if (encryptString.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
 
             var inputByteArray = Encoding.UTF8.GetBytes(encryptString);
             return EncryptFromByteArrayToByteArray(inputByteArray);
@@ -54,7 +57,10 @@ namespace Tubumu.Core.Utilities.Cryptography
         /// <returns></returns>
         public static string EncryptFromStringToBase64(string encryptString)
         {
-            if (encryptString.IsNullOrWhiteSpace()) return null;
+            if (encryptString.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
 
             var inputByteArray = Encoding.UTF8.GetBytes(encryptString);
             var encryptBuffer = EncryptFromByteArrayToByteArray(inputByteArray);

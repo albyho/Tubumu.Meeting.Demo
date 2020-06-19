@@ -215,7 +215,10 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (Closed)
+            {
                 return;
+            }
+
             Closed = true;
 
             // Kill the worker process.
@@ -303,7 +306,10 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (@event != "running") return;
+            if (@event != "running")
+            {
+                return;
+            }
 
             _channel.MessageEvent -= OnChannelMessage;
 

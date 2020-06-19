@@ -284,7 +284,11 @@ namespace Tubumu.Core.Utilities.Cryptography
         /// <returns></returns>
         public static string HexFromByteArray(Byte[] value)
         {
-            if (value == null || value.Length == 0) return String.Empty;
+            if (value == null || value.Length == 0)
+            {
+                return String.Empty;
+            }
+
             var sb = new StringBuilder();
             foreach (var item in value)
             {
@@ -301,7 +305,9 @@ namespace Tubumu.Core.Utilities.Cryptography
             {
                 Byte[] keyBytes = Encoding.UTF8.GetBytes(key);
                 if (keyBytes.Length < 8)
+                {
                     throw new ArgumentOutOfRangeException(nameof(key), "key应该是经过UTF8编码后的长度至少需要8个字节的字符串");
+                }
 
                 return keyBytes.Length == 8 ? keyBytes : keyBytes.SubArray(8);
             }

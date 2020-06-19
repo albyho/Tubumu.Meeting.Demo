@@ -53,7 +53,10 @@ namespace Tubumu.Core.Extensions.Object
         public static T FromJson<T>(string json) where T : class
         {
             if (string.IsNullOrWhiteSpace(json))
+            {
                 return default(T);
+            }
+
             return JsonConvert.DeserializeObject<T>(json);
         }
 
@@ -66,7 +69,10 @@ namespace Tubumu.Core.Extensions.Object
         public static T FromCamelCaseJson<T>(string json) where T : class
         {
             if (string.IsNullOrWhiteSpace(json))
+            {
                 return default(T);
+            }
+
             var settings = new JsonSerializerSettings();
             settings.Converters = new JsonConverter[] { new EnumStringValueEnumConverter() };
             return JsonConvert.DeserializeObject<T>(json, settings);
@@ -80,7 +86,9 @@ namespace Tubumu.Core.Extensions.Object
         public static object DeepClone(this object source)
         {
             if (source == null)
+            {
                 return null;
+            }
 
             using (var memStream = new MemoryStream())
             {
@@ -99,7 +107,10 @@ namespace Tubumu.Core.Extensions.Object
         public static T DeepClone<T>(this object source) where T : class
         {
             if (source == null || source.GetType() != typeof(T))
+            {
                 return null;
+            }
+
             return (T)DeepClone(source);
         }
 
@@ -111,7 +122,10 @@ namespace Tubumu.Core.Extensions.Object
         /// <returns>新的对象</returns>
         public static T ToModel<T>(this object source) where T : new()
         {
-            if (source == null) return default(T);
+            if (source == null)
+            {
+                return default(T);
+            }
 
             T target = new T();
 
@@ -127,8 +141,15 @@ namespace Tubumu.Core.Extensions.Object
         /// <returns>源对象</returns>
         public static T UpdateFrom<T>(this T source, object target)
         {
-            if (source == null) return default(T);
-            if (target == null) return source;
+            if (source == null)
+            {
+                return default(T);
+            }
+
+            if (target == null)
+            {
+                return source;
+            }
 
             Type type = typeof(T);
 
@@ -142,9 +163,13 @@ namespace Tubumu.Core.Extensions.Object
                     if (value != null)
                     {
                         if (sourcePropertyInfo.PropertyType.IsEnum)
+                        {
                             targetPropertyAccessor.SetValue(source, Enum.ToObject(sourcePropertyInfo.PropertyType, value));
+                        }
                         else
+                        {
                             targetPropertyAccessor.SetValue(source, value);
+                        }
                     }
                     else
                     {

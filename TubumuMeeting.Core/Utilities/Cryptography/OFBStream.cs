@@ -55,7 +55,9 @@ namespace Tubumu.Core.Utilities.Cryptography
             int toRead = Math.Min(count, _readWriteBuffer.Length);
             int read = _parent.Read(_readWriteBuffer, 0, toRead);
             if (read == EOS)
+            {
                 return EOS;
+            }
 
             for (int i = 0; i < read; i++)
             {
@@ -114,7 +116,9 @@ namespace Tubumu.Core.Utilities.Cryptography
             // NOTE undocumented feature
             // only works if keyStreamBuffer.Length % blockSize == 0
             if (read != _keyStreamBuffer.Length)
+            {
                 throw new InvalidOperationException("Implementation error: could not read all bytes from CBC stream");
+            }
         }
 
         /// <summary>

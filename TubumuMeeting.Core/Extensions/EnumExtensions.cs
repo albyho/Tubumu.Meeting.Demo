@@ -24,7 +24,9 @@ namespace Tubumu.Core.Extensions
 
             var type = enumValue.GetType();
             if (!type.IsEnum)
+            {
                 throw new ArgumentOutOfRangeException(nameof(enumValue), "The parameter named \"enumValue\" is not an enum value.");
+            }
 
             return GetEnumDisplayName(enumValue, type);
         }
@@ -44,7 +46,9 @@ namespace Tubumu.Core.Extensions
 
 
             if (!type.IsEnum)
+            {
                 throw new ArgumentOutOfRangeException(nameof(type), "The parameter named \"type\" is not an enum.");
+            }
 
             return from e in Enum.GetValues(type).Cast<T>()
                    select new KeyValuePair<T, string>(e, e.GetEnumDisplayName(type));
@@ -74,7 +78,9 @@ namespace Tubumu.Core.Extensions
 
             var type = enumValue.GetType();
             if (!type.IsEnum)
+            {
                 throw new ArgumentOutOfRangeException(nameof(enumValue), "The parameter named \"enumValue\" is not an enum value.");
+            }
 
             return GetEnumRawConstantValue(enumValue, type);
         }
@@ -85,28 +91,41 @@ namespace Tubumu.Core.Extensions
             var enumName = Enum.GetName(type, enumValue);
             var attributes = type.GetField(enumName).GetCustomAttributes(typeof(EnumStringValueAttribute), false);
             if (attributes.Length > 0)
+            {
                 return ((EnumStringValueAttribute)attributes[0]).Value;
+            }
             else
+            {
                 return null;
+            }
         }
 
         public static string GetEnumStringValue(this object enumValue)
         {
             var type = enumValue.GetType();
             if (!type.IsEnum)
+            {
                 throw new ArgumentOutOfRangeException(nameof(enumValue), "The parameter named \"enumValue\" is not an enum value.");
+            }
+
             var enumName = Enum.GetName(type, enumValue);
             var attributes = type.GetField(enumName).GetCustomAttributes(typeof(EnumStringValueAttribute), false);
             if (attributes.Length > 0)
+            {
                 return ((EnumStringValueAttribute)attributes[0]).Value;
+            }
             else
+            {
                 return null;
+            }
         }
 
         public static string[] GetEnumStringValues(this Type enumType)
         {
             if (!enumType.IsEnum)
+            {
                 throw new ArgumentOutOfRangeException(nameof(enumType), "The parameter named \"enumValue\" is not an enum type.");
+            }
 
             var fields = enumType.GetFields();
             var result = new List<string>();
@@ -125,7 +144,9 @@ namespace Tubumu.Core.Extensions
         public static IDictionary<string, T> GetEnumStringValueMap<T>(this Type enumType)
         {
             if (!enumType.IsEnum)
+            {
                 throw new ArgumentOutOfRangeException(nameof(enumType), "The parameter named \"enumValue\" is not an enum type.");
+            }
 
             var values = Enum.GetValues(enumType).Cast<T>();
             var result = new Dictionary<string, T>();
@@ -153,13 +174,20 @@ namespace Tubumu.Core.Extensions
         private static string GetEnumDisplayName(this object enumValue, Type type)
         {
             var enumName = Enum.GetName(type, enumValue);
-            if (enumName == null) return null;
+            if (enumName == null)
+            {
+                return null;
+            }
 
             var attributes = type.GetField(enumName).GetCustomAttributes(typeof(DisplayAttribute), false);
             if (attributes.Length > 0)
+            {
                 return ((DisplayAttribute)attributes[0]).GetName(); // TODO: (alby)如果 DisplayAttribute 的 DisplayName 属性为 IsNullOrWhiteSpace ,尝试从资源文件获取
+            }
             else
+            {
                 return enumValue.ToString();
+            }
         }
 
         #endregion

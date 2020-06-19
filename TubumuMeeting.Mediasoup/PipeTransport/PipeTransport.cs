@@ -84,10 +84,14 @@ namespace TubumuMeeting.Mediasoup
         public override void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             if (SctpState.HasValue)
+            {
                 SctpState = Mediasoup.SctpState.Closed;
+            }
 
             base.Close();
         }
@@ -98,10 +102,14 @@ namespace TubumuMeeting.Mediasoup
         public override void RouterClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             if (SctpState.HasValue)
+            {
                 SctpState = Mediasoup.SctpState.Closed;
+            }
 
             base.RouterClosed();
         }
@@ -154,7 +162,9 @@ namespace TubumuMeeting.Mediasoup
 
             var producer = GetProducerById(consumerOptions.ProducerId);
             if (producer == null)
+            {
                 throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
+            }
 
             // This may throw.
             var rtpParameters = ORTC.GetPipeConsumerRtpParameters(producer.ConsumableRtpParameters, Rtx);
@@ -218,7 +228,11 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != Internal.TransportId) return;
+            if (targetId != Internal.TransportId)
+            {
+                return;
+            }
+
             switch (@event)
             {
                 case "sctpstatechange":

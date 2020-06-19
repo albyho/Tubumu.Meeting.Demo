@@ -77,12 +77,16 @@ namespace TubumuMeeting.Mediasoup
         {
             // The string should consist of 3 bytes in hexadecimal format.
             if (str == null || str.Length != 6)
+            {
                 return null;
+            }
 
             var profile_level_id_numeric = Convert.ToInt32(str, 16);
 
             if (profile_level_id_numeric == 0)
+            {
                 return null;
+            }
 
             // Separate into three bytes.
             var level_idc = profile_level_id_numeric & 0xFF;
@@ -218,7 +222,9 @@ namespace TubumuMeeting.Mediasoup
             var levelStr = Convert.ToString(profileLevelId.Level, 16);
 
             if (levelStr.Length == 1)
+            {
                 levelStr = $"0{levelStr}";
+            }
 
             return $"${profile_idc_iop_string}{levelStr}";
         }
@@ -235,7 +241,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public static ProfileLevelId? ParseSdpProfileLevelId(IDictionary<string, object> parameters)
         {
-            if (!parameters.TryGetValue("profile-level-id", out var profile_level_id)) return DefaultProfileLevelId;
+            if (!parameters.TryGetValue("profile-level-id", out var profile_level_id))
+            {
+                return DefaultProfileLevelId;
+            }
 
             // TODO: (alby)如果 ParseProfileLevelId 返回 null，ParseSdpProfileLevelId 是否应该返回 DefaultProfileLevelId ？
             return ParseProfileLevelId(profile_level_id.ToString());
@@ -302,13 +311,19 @@ namespace TubumuMeeting.Mediasoup
 
             // The local and remote codec must have valid and equal H264 Profiles.
             if (local_profile_level_id == null)
+            {
                 throw new Exception("invalid local_profile_level_id");
+            }
 
             if (remote_profile_level_id == null)
+            {
                 throw new Exception("invalid remote_profile_level_id");
+            }
 
             if (local_profile_level_id.Profile != remote_profile_level_id.Profile)
+            {
                 throw new Exception("H264 Profile mismatch");
+            }
 
             // Parse level information.
             var level_asymmetry_allowed = IsLevelAsymmetryAllowed(local_supported_params) && IsLevelAsymmetryAllowed(remote_offered_params);
@@ -334,10 +349,14 @@ namespace TubumuMeeting.Mediasoup
         private static bool IsLessLevel(int a, int b)
         {
             if (a == Level1_b)
+            {
                 return b != Level1 && b != Level1_b;
+            }
 
             if (b == Level1_b)
+            {
                 return a != Level1;
+            }
 
             return a < b;
         }

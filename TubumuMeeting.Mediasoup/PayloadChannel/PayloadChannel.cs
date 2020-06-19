@@ -85,7 +85,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (_closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -125,7 +127,9 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug($"notify() [event:{@event}]");
 
             if (_closed)
+            {
                 throw new InvalidStateException("PayloadChannel closed");
+            }
 
             var notification = new { @event, @internal, data };
             var ns1Bytes = Netstring.Encode(notification.ToCamelCaseJson());

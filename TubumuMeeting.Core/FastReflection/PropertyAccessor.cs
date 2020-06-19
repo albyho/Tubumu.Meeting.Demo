@@ -50,7 +50,10 @@ namespace Tubumu.Core.FastReflection
 
         private void InitializeGet(PropertyInfo propertyInfo)
         {
-            if (!propertyInfo.CanRead) return;
+            if (!propertyInfo.CanRead)
+            {
+                return;
+            }
 
             // Target: (object)(((TInstance)instance).Property)
 
@@ -75,7 +78,11 @@ namespace Tubumu.Core.FastReflection
 
         private void InitializeSet(PropertyInfo propertyInfo)
         {
-            if (!propertyInfo.CanWrite) return;
+            if (!propertyInfo.CanWrite)
+            {
+                return;
+            }
+
             _setMethodInvoker = new MethodInvoker(propertyInfo.GetSetMethod(true));
         }
 

@@ -83,7 +83,11 @@ namespace Tubumu.Core.Extensions.Ip
         /// <returns></returns>
         public static bool IsIPv4(this string ip)
         {
-            if (ip.IsNullOrWhiteSpace() || ip.Length < 7 || ip.Length > 15) return false;
+            if (ip.IsNullOrWhiteSpace() || ip.Length < 7 || ip.Length > 15)
+            {
+                return false;
+            }
+
             return IpV4Regex.IsMatch(ip);
         }
     }

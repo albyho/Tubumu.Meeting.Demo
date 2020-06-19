@@ -162,7 +162,9 @@ namespace TubumuMeeting.Mediasoup
         public void Close()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("Close()");
 
@@ -186,7 +188,9 @@ namespace TubumuMeeting.Mediasoup
         public void TransportClosed()
         {
             if (Closed)
+            {
                 return;
+            }
 
             _logger.LogDebug("TransportClosed()");
 
@@ -285,7 +289,11 @@ namespace TubumuMeeting.Mediasoup
 
         private void OnChannelMessage(string targetId, string @event, string data)
         {
-            if (targetId != ProducerId) return;
+            if (targetId != ProducerId)
+            {
+                return;
+            }
+
             switch (@event)
             {
                 case "score":
