@@ -38,7 +38,9 @@ const WEBCAM_SIMULCAST_ENCODINGS = [
 ];
 
 // Used for VP9 webcam video.
-const WEBCAM_KSVC_ENCODINGS = [{ scalabilityMode: "S3T3_KEY" }];
+const WEBCAM_KSVC_ENCODINGS = [
+  { scalabilityMode: "S3T3_KEY" }
+];
 
 // Used for simulcast screen sharing.
 // eslint-disable-next-line no-unused-vars
@@ -64,7 +66,7 @@ export default {
   components: {},
   data() {
     return {
-      useSimulcast: false,
+      useSimulcast: true,
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
@@ -74,6 +76,8 @@ export default {
       audioDevices: {},
       webcamProducer: null,
       micProducer: null,
+      forceH264: false,
+      forceVP9: false,
       localVideoStream: null,
       remoteVideoStream: null,
       remoteAudioStream: null
@@ -467,8 +471,6 @@ export default {
           appData: { source: "mic" }
         });
 
-        await this._updateAudioDevices();
-
         this.micProducer.on("transportclose", () => {
           this.micProducer = null;
         });
@@ -537,41 +539,54 @@ export default {
 
         track = stream.getVideoTracks()[0];
 
+        let encodings;
+        let codec;
+        const codecOptions =
+        {
+          videoGoogleStartBitrate : 1000
+        };
+      
+        if (this.forceH264)
+        {
+          codec = this.mediasoupDevice.rtpCapabilities.codecs
+            .find((c) => c.mimeType.toLowerCase() === 'video/h264');
+
+          if (!codec)
+          {
+            throw new Error('desired H264 codec+configuration is not supported');
+          }
+        }
+        else if (this.forceVP9)
+        {
+          codec = this.mediasoupDevice.rtpCapabilities.codecs
+            .find((c) => c.mimeType.toLowerCase() === 'video/vp9');
+
+          if (!codec)
+          {
+            throw new Error('desired VP9 codec+configuration is not supported');
+          }
+        }
+      
         if (this.useSimulcast) {
           // If VP9 is the only available video codec then use SVC.
           const firstVideoCodec = this.mediasoupDevice.rtpCapabilities.codecs.find(
             c => c.kind === "video"
           );
 
-          let encodings;
-
           if (firstVideoCodec.mimeType.toLowerCase() === "video/vp9")
             encodings = WEBCAM_KSVC_ENCODINGS;
           else encodings = WEBCAM_SIMULCAST_ENCODINGS;
-
-          this.webcamProducer = await this.sendTransport.produce({
-            track,
-            encodings,
-            codecOptions: {
-              videoGoogleStartBitrate: 1000
-            },
-            // NOTE: for testing codec selection.
-            // codec : this.mediasoupDevice.rtpCapabilities.codecs
-            // 	.find((codec) => codec.mimeType.toLowerCase() === 'video/h264')
-            appData: {
-              source: "webcam"
-            }
-          });
-        } else {
-          this.webcamProducer = await this.sendTransport.produce({
-            track,
-            appData: {
-              source: "webcam"
-            }
-          });
         }
 
-        await this._updateWebcams();
+        this.webcamProducer = await this.sendTransport.produce({
+          track,
+          encodings,
+          codecOptions,
+          codec,
+          appData: {
+            source: "webcam"
+          }
+        });
 
         this.webcamProducer.on("transportclose", () => {
           this.webcamProducer = null;
@@ -705,5 +720,9 @@ body {
 
 video {
   width: 640px;
+}
+
+video#localVideo {
+    transform: rotateY(180deg);   /* 水平镜像翻转 */
 }
 </style>
