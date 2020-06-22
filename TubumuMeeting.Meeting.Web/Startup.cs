@@ -137,9 +137,10 @@ namespace TubumuMeeting.Web
 
             // Mediasoup
             var mediasoupStartupSettings = Configuration.GetSection("MediasoupStartupSettings").Get<MediasoupStartupSettings>();
-            var workerSettings = Configuration.GetSection("MediasoupSettings:WorkerSettings").Get<WorkerSettings>();
-            var routerSettings = Configuration.GetSection("MediasoupSettings:RouterSettings").Get<RouterSettings>();
-            var webRtcTransportSettings = Configuration.GetSection("MediasoupSettings:WebRtcTransportSettings").Get<WebRtcTransportSettings>();
+            var mediasoupSettings = Configuration.GetSection("MediasoupSettings").Get<MediasoupSettings>();
+            var workerSettings = mediasoupSettings.WorkerSettings;
+            var routerSettings = mediasoupSettings.RouterSettings;
+            var webRtcTransportSettings = mediasoupSettings.WebRtcTransportSettings;
             services.AddMediasoup(options =>
             {
                 // MediasoupStartupSettings
