@@ -20,15 +20,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_Server", "02_Server", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_Core", "01_Core", "{809FCE19-5D6E-40AE-9714-3C94083DBBFC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Meeting.AspNetCore", "TubumuMeeting.Meeting.AspNetCore\TubumuMeeting.Meeting.AspNetCore.csproj", "{89F25F11-E692-454E-9358-28DD84A5267B}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Meeting.Web", "TubumuMeeting.Meeting.Web\TubumuMeeting.Meeting.Web.csproj", "{0C19036C-390D-4966-AA88-B803D7C9869F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Meeting.Server", "TubumuMeeting.Meeting.Server\TubumuMeeting.Meeting.Server.csproj", "{DC4340F5-1417-4DED-8A17-D4BA847AF03B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Mediasoup.Common", "TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj", "{33D32F1E-58AD-4EC4-8B1D-17F739A9EB26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Mediasoup.Executable", "TubumuMeeting.Mediasoup.Executable\TubumuMeeting.Mediasoup.Executable.csproj", "{2B5CF732-AA93-436B-AAE1-CED3225E659F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Mediasoup.Executable", "TubumuMeeting.Mediasoup.Executable\TubumuMeeting.Mediasoup.Executable.csproj", "{2B5CF732-AA93-436B-AAE1-CED3225E659F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -70,14 +68,6 @@ Global
 		{99598050-19CE-4C87-81F0-16CEAD34C212}.Release|Any CPU.Build.0 = Release|Any CPU
 		{99598050-19CE-4C87-81F0-16CEAD34C212}.Release|x86.ActiveCfg = Release|Any CPU
 		{99598050-19CE-4C87-81F0-16CEAD34C212}.Release|x86.Build.0 = Release|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Debug|x86.Build.0 = Debug|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Release|x86.ActiveCfg = Release|Any CPU
-		{89F25F11-E692-454E-9358-28DD84A5267B}.Release|x86.Build.0 = Release|Any CPU
 		{0C19036C-390D-4966-AA88-B803D7C9869F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0C19036C-390D-4966-AA88-B803D7C9869F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C19036C-390D-4966-AA88-B803D7C9869F}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -119,7 +109,6 @@ Global
 		{9FD26270-4FD2-4583-AA76-F0D96BC451D0} = {809FCE19-5D6E-40AE-9714-3C94083DBBFC}
 		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C} = {809FCE19-5D6E-40AE-9714-3C94083DBBFC}
 		{99598050-19CE-4C87-81F0-16CEAD34C212} = {E27ED1FF-9159-4BD2-BACD-623D65B51E82}
-		{89F25F11-E692-454E-9358-28DD84A5267B} = {B59FDD1B-57B1-4DB0-8F25-D58878B01ED0}
 		{0C19036C-390D-4966-AA88-B803D7C9869F} = {B59FDD1B-57B1-4DB0-8F25-D58878B01ED0}
 		{DC4340F5-1417-4DED-8A17-D4BA847AF03B} = {B59FDD1B-57B1-4DB0-8F25-D58878B01ED0}
 		{33D32F1E-58AD-4EC4-8B1D-17F739A9EB26} = {809FCE19-5D6E-40AE-9714-3C94083DBBFC}

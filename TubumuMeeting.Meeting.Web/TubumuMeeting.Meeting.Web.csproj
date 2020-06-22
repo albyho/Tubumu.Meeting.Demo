@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.Meeting.AspNetCore\TubumuMeeting.Meeting.AspNetCore.csproj" />
+    <ProjectReference Include="..\TubumuMeeting.Meeting.Server\TubumuMeeting.Meeting.Server.csproj" />
   </ItemGroup>
 
 </Project>

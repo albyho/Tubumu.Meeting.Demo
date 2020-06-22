@@ -19,7 +19,7 @@ namespace TubumuMeeting.Core
         }
     }
 
-    public class Netstring : IEnumerator<Payload>, IEnumerable<Payload>
+    public sealed class Netstring : IEnumerator<Payload>, IEnumerable<Payload>
     {
         private readonly ArraySegment<byte> _buffer;
         private int _offset;

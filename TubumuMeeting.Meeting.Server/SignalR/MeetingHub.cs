@@ -713,7 +713,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<MeetingMessage> NewConsumerReady(NewConsumerReadyRequest newConsumerReadyRequest)
+        public async Task<MeetingMessage> NewConsumerReturn(NewConsumerReadyRequest newConsumerReadyRequest)
         {
             _logger.LogDebug($"NewConsumerReady() | [peerId:\"{newConsumerReadyRequest.PeerId}\", consumerId:\"{newConsumerReadyRequest.ConsumerId}\"]");
 
