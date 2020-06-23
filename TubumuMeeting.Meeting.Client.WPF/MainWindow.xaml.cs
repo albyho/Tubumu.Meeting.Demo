@@ -96,13 +96,13 @@ namespace TubumuMeeting.Meeting.Client.WPF
         {
             try
             {
-                await connection.InvokeAsync("CreateWebRtcTransport", new CreateWebRtcTransportParameters
+                await connection.InvokeAsync("CreateWebRtcTransport", new CreateWebRtcTransportRequest
                 {
                     ForceTcp = false,
                     Consuming = false,
                     Producing = true,
                 });
-                await connection.InvokeAsync("CreateWebRtcTransport", new CreateWebRtcTransportParameters
+                await connection.InvokeAsync("CreateWebRtcTransport", new CreateWebRtcTransportRequest
                 {
                     ForceTcp = false,
                     Consuming = true,

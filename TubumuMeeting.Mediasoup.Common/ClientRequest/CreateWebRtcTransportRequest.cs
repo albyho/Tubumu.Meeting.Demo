@@ -1,6 +1,6 @@
 ﻿namespace TubumuMeeting.Mediasoup
 {
-    public class CreateWebRtcTransportParameters
+    public class CreateWebRtcTransportRequest
     {
         public bool ForceTcp { get; set; }
 

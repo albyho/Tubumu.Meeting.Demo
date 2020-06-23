@@ -140,7 +140,7 @@ namespace TubumuMeeting.Meeting.Server
             return Task.FromResult(new MeetingMessage { Code = 400, Message = "GetRouterRtpCapabilities 失败" });
         }
 
-        public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportParameters createWebRtcTransportParameters)
+        public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
             if (PeerRoom == null)
             {
@@ -153,16 +153,16 @@ namespace TubumuMeeting.Meeting.Server
                 ListenIps = webRtcTransportSettings.ListenIps,
                 InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate,
                 MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize,
-                EnableSctp = createWebRtcTransportParameters.SctpCapabilities != null,
-                NumSctpStreams = createWebRtcTransportParameters.SctpCapabilities?.NumStreams,
+                EnableSctp = createWebRtcTransportRequest.SctpCapabilities != null,
+                NumSctpStreams = createWebRtcTransportRequest.SctpCapabilities?.NumStreams,
                 AppData = new Dictionary<string, object>
                 {
-                    { "Consuming", createWebRtcTransportParameters.Consuming },
-                    { "Producing", createWebRtcTransportParameters.Producing },
+                    { "Consuming", createWebRtcTransportRequest.Consuming },
+                    { "Producing", createWebRtcTransportRequest.Producing },
                 },
             };
 
-            if (createWebRtcTransportParameters.ForceTcp)
+            if (createWebRtcTransportRequest.ForceTcp)
             {
                 webRtcTransportOptions.EnableUdp = false;
                 webRtcTransportOptions.EnableTcp = true;
@@ -714,13 +714,13 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<MeetingMessage> NewConsumerReturn(NewConsumerReadyRequest newConsumerReadyRequest)
+        public async Task<MeetingMessage> NewConsumerReturn(NewConsumerReturnRequest newConsumerReturnRequest)
         {
-            _logger.LogDebug($"NewConsumerReady() | [peerId:\"{newConsumerReadyRequest.PeerId}\", consumerId:\"{newConsumerReadyRequest.ConsumerId}\"]");
+            _logger.LogDebug($"NewConsumerReady() | [peerId:\"{newConsumerReturnRequest.PeerId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
 
-            if (!_meetingManager.Peers.TryGetValue(newConsumerReadyRequest.PeerId, out var consumerPeer) ||
+            if (!_meetingManager.Peers.TryGetValue(newConsumerReturnRequest.PeerId, out var consumerPeer) ||
                 consumerPeer.Closed ||
-                !consumerPeer.Consumers.TryGetValue(newConsumerReadyRequest.ConsumerId, out var consumer) ||
+                !consumerPeer.Consumers.TryGetValue(newConsumerReturnRequest.ConsumerId, out var consumer) ||
                 consumer.Closed)
             {
                 return new MeetingMessage { Code = 400, Message = "NewConsumerReturn 失败" };

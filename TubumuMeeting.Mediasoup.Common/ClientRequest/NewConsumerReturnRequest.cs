@@ -1,6 +1,6 @@
 ﻿namespace TubumuMeeting.Mediasoup
 {
-    public class NewConsumerReadyRequest
+    public class NewConsumerReturnRequest
     {
         public string PeerId { get; set; }
 
