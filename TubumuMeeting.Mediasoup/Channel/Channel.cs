@@ -168,14 +168,6 @@ namespace TubumuMeeting.Mediasoup
             var sent = new Sent
             {
                 RequestMessage = requestMesssge,
-                Close = () =>
-                {
-                    if (!_sents.Remove(id))
-                    {
-                        return;
-                    }
-                    tcs.TrySetException(new InvalidStateException("Channel closed"));
-                },
                 Resolve = data =>
                 {
                     if (!_sents.Remove(id))
@@ -191,6 +183,10 @@ namespace TubumuMeeting.Mediasoup
                         return;
                     }
                     tcs.TrySetException(e);
+                },
+                Close = () =>
+                {
+                    tcs.TrySetException(new InvalidStateException("Channel closed"));
                 },
             };
             _sents.Add(id, sent);
