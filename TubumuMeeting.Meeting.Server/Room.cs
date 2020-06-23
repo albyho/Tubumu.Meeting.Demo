@@ -25,13 +25,10 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Room> _logger;
 
-        [JsonIgnore]
         public bool Closed { get; private set; }
 
-        [JsonIgnore]
         public Router Router { get; private set; }
 
-        [JsonIgnore]
         public AudioLevelObserver AudioLevelObserver { get; private set; }
 
         public Room(ILoggerFactory loggerFactory, Guid roomId, string name)

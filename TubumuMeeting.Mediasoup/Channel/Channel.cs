@@ -100,7 +100,7 @@ namespace TubumuMeeting.Mediasoup
             _closed = true;
 
             // Close every pending sent.
-            _sents.Values.ForEach(m => m.Close?.Invoke());
+            _sents.Values.ForEach(m => m?.Close?.Invoke());
 
             // Remove event listeners but leave a fake 'error' hander to avoid
             // propagation.

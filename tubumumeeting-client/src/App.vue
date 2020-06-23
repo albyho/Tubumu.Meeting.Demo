@@ -66,7 +66,6 @@ export default {
   components: {},
   data() {
     return {
-      useSimulcast: true,
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
@@ -76,6 +75,7 @@ export default {
       audioDevices: {},
       webcamProducer: null,
       micProducer: null,
+      useSimulcast: true,
       forceH264: false,
       forceVP9: false,
       localVideoStream: null,
@@ -408,7 +408,7 @@ export default {
         case "consumerLayersChanged": {
           // eslint-disable-next-line no-unused-vars
           const { consumerId, spatialLayer, temporalLayer } = data.data;
-          const consumer = this._consumers.get(consumerId);
+          const consumer = this.consumers.get(consumerId);
 
           if (!consumer) break;
 

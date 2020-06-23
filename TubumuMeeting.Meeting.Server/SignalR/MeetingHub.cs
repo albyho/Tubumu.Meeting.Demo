@@ -671,7 +671,8 @@ namespace TubumuMeeting.Meeting.Server
 
             consumer.On("layerschange", layers =>
             {
-                var data = JsonConvert.DeserializeObject<ConsumerLayers>(layers!.ToString());
+                var data = (ConsumerLayers?)layers;
+
                 // Message: consumerLayersChanged
                 var client = _hubContext.Clients.User(consumerPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
@@ -722,7 +723,7 @@ namespace TubumuMeeting.Meeting.Server
                 !consumerPeer.Consumers.TryGetValue(newConsumerReadyRequest.ConsumerId, out var consumer) ||
                 consumer.Closed)
             {
-                return new MeetingMessage { Code = 400, Message = "NewConsumerReady 失败" };
+                return new MeetingMessage { Code = 400, Message = "NewConsumerReturn 失败" };
             }
 
             // Now that we got the positive response from the remote Peer and, if
@@ -743,7 +744,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
             }).ContinueWithOnFaultedHandleLog(_logger);
 
-            return new MeetingMessage { Code = 200, Message = "NewConsumerReady 成功" };
+            return new MeetingMessage { Code = 200, Message = "NewConsumerReturn 成功" };
         }
 
         #endregion
