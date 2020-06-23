@@ -214,7 +214,17 @@ namespace TubumuMeeting.Web
                 endpoints.MapHub<MeetingHub>("/hubs/meetingHub");
             });
 
+            // Mediasoup
             app.UseMediasoup();
+
+            // Consul
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGet("/api/Health", async context =>
+                {
+                    await context.Response.WriteAsync("ok");
+                });
+            });
         }
     }
 }
