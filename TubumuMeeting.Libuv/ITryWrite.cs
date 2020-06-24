@@ -5,4 +5,3 @@
         int TryWrite(TData data);
     }
 }
-

@@ -34,4 +34,3 @@ namespace TubumuMeeting.Libuv
         public abstract ArraySegment<byte> Retrieve(int size);
     }
 }
-

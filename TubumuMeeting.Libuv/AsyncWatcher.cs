@@ -5,8 +5,8 @@ namespace TubumuMeeting.Libuv
 {
     public class AsyncWatcher<T> : IHandle, IDisposable
     {
-        Async async;
-        Queue<T> queue = new Queue<T>();
+        private readonly Async async;
+        private readonly Queue<T> queue = new Queue<T>();
 
         public AsyncWatcher()
             : this(Loop.Constructor)
@@ -101,4 +101,3 @@ namespace TubumuMeeting.Libuv
         public event Action<T> Callback;
     }
 }
-

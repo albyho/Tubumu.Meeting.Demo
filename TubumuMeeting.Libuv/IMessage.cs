@@ -6,4 +6,3 @@
         TMessage Payload { get; set; }
     }
 }
-

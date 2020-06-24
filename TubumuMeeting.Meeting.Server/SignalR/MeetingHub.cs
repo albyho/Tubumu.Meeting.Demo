@@ -365,8 +365,7 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
             }
 
-            var webRtcTransport = transport as WebRtcTransport;
-            if (webRtcTransport == null)
+            if (!(transport is WebRtcTransport webRtcTransport))
             {
                 return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
             }

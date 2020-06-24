@@ -55,8 +55,8 @@ namespace TubumuMeeting.Libuv
 
         public ByteBufferAllocatorBase ByteBufferAllocator { get; protected set; }
 
-        Async async;
-        AsyncCallback callback;
+        private readonly Async async;
+        private readonly AsyncCallback callback;
 
         internal Loop(IntPtr handle, ByteBufferAllocatorBase allocator)
         {
@@ -253,8 +253,9 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         static extern void uv_walk(IntPtr loop, walk_cb cb, IntPtr arg);
 
-        static walk_cb walk_callback = WalkCallback;
-        static void WalkCallback(IntPtr handle, IntPtr arg)
+        private static readonly walk_cb walk_callback = WalkCallback;
+
+        private static void WalkCallback(IntPtr handle, IntPtr arg)
         {
             var gchandle = GCHandle.FromIntPtr(arg);
             (gchandle.Target as Action<IntPtr>)(handle);
@@ -281,8 +282,7 @@ namespace TubumuMeeting.Libuv
 
         public Handle GetHandle(IntPtr ptr)
         {
-            Handle handle;
-            if (handles.TryGetValue(ptr, out handle))
+            if (handles.TryGetValue(ptr, out var handle))
             {
                 return handle;
             }

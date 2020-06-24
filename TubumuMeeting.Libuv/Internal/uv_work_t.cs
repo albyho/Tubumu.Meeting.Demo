@@ -11,4 +11,3 @@ namespace TubumuMeeting.Libuv
         public IntPtr work_after_cb;
     }
 }
-

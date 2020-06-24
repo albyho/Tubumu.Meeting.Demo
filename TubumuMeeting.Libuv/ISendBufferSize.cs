@@ -5,4 +5,3 @@
         int SendBufferSize { get; set; }
     }
 }
-

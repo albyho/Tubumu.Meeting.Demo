@@ -5,4 +5,3 @@
         int ReceiveBufferSize { get; set; }
     }
 }
-

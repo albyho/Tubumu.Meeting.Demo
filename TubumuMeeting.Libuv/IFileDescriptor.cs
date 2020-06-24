@@ -8,4 +8,3 @@ namespace TubumuMeeting.Libuv
         IntPtr FileDescriptor { get; }
     }
 }
-

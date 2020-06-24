@@ -98,7 +98,7 @@ namespace TubumuMeeting.Core
         private static int ExtractPayloadLength(ArraySegment<byte> buffer, int offset)
         {
             var len = 0;
-            var i = 0;
+            int i;
             for (i = offset; i < buffer.Count; i++)
             {
                 var cc = buffer.Array[buffer.Offset + i];

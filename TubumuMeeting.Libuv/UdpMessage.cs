@@ -54,4 +54,3 @@ namespace TubumuMeeting.Libuv
         public ArraySegment<byte> Payload { get; set; }
     }
 }
-

@@ -12,4 +12,3 @@
         public UVDirectoryEntityType Type { get; set; }
     }
 }
-

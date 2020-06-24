@@ -65,7 +65,7 @@ namespace TubumuMeeting.Libuv
 
     public class Pipe : UVStream, IConnectable<Pipe, string>, IRemoteAddress<string>
     {
-        unsafe uv_pipe_t* pipe_t;
+        private readonly unsafe uv_pipe_t* pipe_t;
 
         public Pipe()
             : this(Loop.Constructor)
@@ -145,11 +145,13 @@ namespace TubumuMeeting.Libuv
             CheckDisposed();
 
             GCHandle datagchandle = GCHandle.Alloc(segment.Array, GCHandleType.Pinned);
-            CallbackPermaRequest cpr = new CallbackPermaRequest(RequestType.UV_WRITE);
-            cpr.Callback = (status, cpr2) =>
+            CallbackPermaRequest cpr = new CallbackPermaRequest(RequestType.UV_WRITE)
             {
-                datagchandle.Free();
-                Ensure.Success(status, callback);
+                Callback = (status, cpr2) =>
+                {
+                    datagchandle.Free();
+                    Ensure.Success(status, callback);
+                }
             };
 
             var ptr = (IntPtr)(datagchandle.AddrOfPinnedObject().ToInt64() + segment.Offset);
