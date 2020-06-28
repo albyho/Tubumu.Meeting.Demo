@@ -79,7 +79,7 @@
       "ListenIps": [
         {
           "Ip": "0.0.0.0",
-          "AnnouncedIp": "192.168.1.124"
+          "AnnouncedIp": "192.168.0.124"
         }
       ],
       "InitialAvailableOutgoingBitrate": 1000000,
