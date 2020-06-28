@@ -2,7 +2,7 @@
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class NoyifyMessage
+    public class NotifyMessage
     {
         public ArraySegment<byte> Message { get; set; }
 

@@ -599,14 +599,14 @@ namespace TubumuMeeting.Mediasoup
                         EnableRtx = pipeToRouterOptions.EnableRtx,
                         EnableSrtp = pipeToRouterOptions.EnableSrtp
                     }),
-                        pipeToRouterOptions.Router.CreatePipeTransportAsync(new PipeTransportOptions
-                        {
-                            ListenIp = pipeToRouterOptions.ListenIp,
-                            EnableSctp = pipeToRouterOptions.EnableSctp,
-                            NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
-                            EnableRtx = pipeToRouterOptions.EnableRtx,
-                            EnableSrtp = pipeToRouterOptions.EnableSrtp
-                        })
+                    pipeToRouterOptions.Router.CreatePipeTransportAsync(new PipeTransportOptions
+                    {
+                        ListenIp = pipeToRouterOptions.ListenIp,
+                        EnableSctp = pipeToRouterOptions.EnableSctp,
+                        NumSctpStreams = pipeToRouterOptions.NumSctpStreams,
+                        EnableRtx = pipeToRouterOptions.EnableRtx,
+                        EnableSrtp = pipeToRouterOptions.EnableSrtp
+                    })
                     );
 
                     localPipeTransport = pipeTransports[0];
@@ -618,12 +618,12 @@ namespace TubumuMeeting.Mediasoup
                         Port = remotePipeTransport.Tuple.LocalPort,
                         SrtpParameters = remotePipeTransport.SrtpParameters,
                     }),
-                        remotePipeTransport.ConnectAsync(new PipeTransportConnectParameters
-                        {
-                            Ip = localPipeTransport.Tuple.LocalIp,
-                            Port = localPipeTransport.Tuple.LocalPort,
-                            SrtpParameters = localPipeTransport.SrtpParameters,
-                        })
+                    remotePipeTransport.ConnectAsync(new PipeTransportConnectParameters
+                    {
+                        Ip = localPipeTransport.Tuple.LocalIp,
+                        Port = localPipeTransport.Tuple.LocalPort,
+                        SrtpParameters = localPipeTransport.SrtpParameters,
+                    })
                     );
 
                     localPipeTransport.Observer.On("close", _ =>

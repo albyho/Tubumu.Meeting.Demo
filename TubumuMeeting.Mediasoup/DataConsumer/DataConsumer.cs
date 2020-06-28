@@ -276,7 +276,7 @@ namespace TubumuMeeting.Mediasoup
                         var message = payload;
 
                         // Emit 暂不支持超过两个参数
-                        Emit("message", new NoyifyMessage { Message = message, PPID = ppid });
+                        Emit("message", new NotifyMessage { Message = message, PPID = ppid });
 
                         break;
                     }
