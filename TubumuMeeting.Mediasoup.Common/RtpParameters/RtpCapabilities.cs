@@ -249,8 +249,8 @@ namespace TubumuMeeting.Mediasoup
                         MimeType ="video/H264",
                         ClockRate = 90000,
                         Parameters = new Dictionary<string, object> {
-                                {"packetization-mode", 1},
-                                {"level-asymmetry-allowed", 1},
+                            { "packetization-mode", 1 },
+                            { "level-asymmetry-allowed", 1 },
                         },
                         RtcpFeedback = new RtcpFeedback[]
                         {
@@ -276,8 +276,8 @@ namespace TubumuMeeting.Mediasoup
                         MimeType ="video/H264",
                         ClockRate = 90000,
                         Parameters = new Dictionary<string, object> {
-                                {"packetization-mode", 0},
-                                {"level-asymmetry-allowed", 1},
+                            { "packetization-mode", 0 },
+                            { "level-asymmetry-allowed", 1 },
                         },
                         RtcpFeedback = new RtcpFeedback[]
                         {
@@ -303,8 +303,8 @@ namespace TubumuMeeting.Mediasoup
                         MimeType ="video/H265",
                         ClockRate = 90000,
                         Parameters = new Dictionary<string, object> {
-                                {"packetization-mode", 1},
-                                {"level-asymmetry-allowed", 1},
+                            { "packetization-mode", 1 },
+                            { "level-asymmetry-allowed", 1 },
                         },
                         RtcpFeedback = new RtcpFeedback[]
                         {
@@ -330,8 +330,8 @@ namespace TubumuMeeting.Mediasoup
                         MimeType ="video/H265",
                         ClockRate = 90000,
                         Parameters = new Dictionary<string, object> {
-                            {"packetization-mode", 0},
-                            {"level-asymmetry-allowed", 1},
+                            { "packetization-mode", 0 },
+                            { "level-asymmetry-allowed", 1 },
                         },
                         RtcpFeedback = new RtcpFeedback[]
                         {

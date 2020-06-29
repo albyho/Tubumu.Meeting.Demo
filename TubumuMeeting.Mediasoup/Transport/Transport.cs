@@ -538,7 +538,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 producer.Kind,
                 RtpParameters = rtpParameters,
-                Type = (ConsumerType)producer.Type, // 注意：类型转换
+                Type = (ConsumerType)producer.Type, // 注意：类型转换。ProducerType 的每一种值在 ConsumerType 都有对应且相同的值。
             };
 
             var consumer = new Consumer(_loggerFactory,

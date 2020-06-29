@@ -73,10 +73,10 @@ namespace TubumuMeeting.Mediasoup
             codec.Kind = mimeType.StartsWith("video") ? MediaKind.Video : MediaKind.Audio;
 
             // preferredPayloadType is optional.
-            // 在 Node.js 实现在，判断了 preferredPayloadType 在有值的情况下的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 preferredPayloadType 在有值的情况下的数据类型。在强类型语言中不需要。
 
             // clockRate is mandatory.
-            // 在 Node.js 实现在，判断了 mandatory 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 mandatory 的数据类型。在强类型语言中不需要。
 
             // channels is optional. If unset, set it to 1 (just if audio).
             if (codec.Kind == MediaKind.Audio && (!codec.Channels.HasValue || codec.Channels < 1))
@@ -161,7 +161,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // kind is optional. If unset set it to an empty string.
-            // 在 Node.js 实现在，判断了 kind 的数据类型。在强类型语言中不需要。但是将 kind 设置为了 Empty 字符串。
+            // 在 Node.js 实现中，判断了 kind 的数据类型。在强类型语言中不需要。但是将 kind 设置为了 Empty 字符串。
             // TODO: (alby)或许 kind 没有设置为 Empty 字符串会有问题。
 
             // uri is mandatory.
@@ -171,7 +171,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // preferredId is mandatory.
-            // 在 Node.js 实现在，判断了 preferredId 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 preferredId 的数据类型。在强类型语言中不需要。
 
             // preferredEncrypt is optional. If unset set it to false.
             if (!ext.PreferredEncrypt.HasValue)
@@ -197,7 +197,7 @@ namespace TubumuMeeting.Mediasoup
                 throw new ArgumentNullException(nameof(parameters));
             }
             // mid is optional.
-            // 在 Node.js 实现在，判断了 mid 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 mid 的数据类型。在强类型语言中不需要。
 
             // codecs is mandatory.
             if (parameters.Codecs == null)
@@ -266,13 +266,13 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // payloadType is mandatory.
-            // 在 Node.js 实现在，判断了 payloadType 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 payloadType 的数据类型。在强类型语言中不需要。
 
             // clockRate is mandatory.
-            // 在 Node.js 实现在，判断了 clockRate 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 clockRate 的数据类型。在强类型语言中不需要。
 
             // channels is optional. If unset, set it to 1 (just if audio).
-            // 在 Node.js 实现在，如果是音频会 delete 掉 Channels 。
+            // 在 Node.js 实现中，如果是音频会 delete 掉 Channels 。
             if (mimeType.StartsWith("audio") && (!codec.Channels.HasValue || codec.Channels < 1))
             {
                 codec.Channels = 1;
@@ -335,7 +335,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // id is mandatory.
-            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
 
             // encrypt is optional. If unset set it to false.
             if (!ext.Encrypt.HasValue)
@@ -380,17 +380,17 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // ssrc is optional.
-            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
 
             // rid is optional.
-            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
 
             // rtx is optional.
-            // 在 Node.js 实现在，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
             if (encoding.Rtx != null)
             {
                 // RTX ssrc is mandatory if rtx is present.
-                // 在 Node.js 实现在，判断了 rtx.ssrc 的数据类型。在强类型语言中不需要。
+                // 在 Node.js 实现中，判断了 rtx.ssrc 的数据类型。在强类型语言中不需要。
             }
 
             // dtx is optional. If unset set it to false.
@@ -400,7 +400,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // scalabilityMode is optional.
-            // 在 Node.js 实现在，判断了 scalabilityMode 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 scalabilityMode 的数据类型。在强类型语言中不需要。
         }
 
         /// <summary>
@@ -416,7 +416,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // cname is optional.
-            // 在 Node.js 实现在，判断了 cname 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 cname 的数据类型。在强类型语言中不需要。
 
             // reducedSize is optional. If unset set it to true.
             if (!rtcp.ReducedSize.HasValue)
@@ -454,10 +454,10 @@ namespace TubumuMeeting.Mediasoup
         public static void ValidateNumSctpStreams(NumSctpStreams numStreams)
         {
             // OS is mandatory.
-            // 在 Node.js 实现在，判断了 OS 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 OS 的数据类型。在强类型语言中不需要。
 
             // MIS is mandatory.
-            // 在 Node.js 实现在，判断了 MIS 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 MIS 的数据类型。在强类型语言中不需要。
         }
 
         /// <summary>
@@ -468,16 +468,16 @@ namespace TubumuMeeting.Mediasoup
         public static void ValidateSctpParameters(SctpParameters parameters)
         {
             // port is mandatory.
-            // 在 Node.js 实现在，判断了 port 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 port 的数据类型。在强类型语言中不需要。
 
             // OS is mandatory.
-            // 在 Node.js 实现在，判断了 OS 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 OS 的数据类型。在强类型语言中不需要。
 
             // MIS is mandatory.
-            // 在 Node.js 实现在，判断了 MIS 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 MIS 的数据类型。在强类型语言中不需要。
 
             // maxMessageSize is mandatory.
-            // 在 Node.js 实现在，判断了 maxMessageSize 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 maxMessageSize 的数据类型。在强类型语言中不需要。
         }
 
         /// <summary>
@@ -493,7 +493,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // streamId is mandatory.
-            // 在 Node.js 实现在，判断了 streamId 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 streamId 的数据类型。在强类型语言中不需要。
 
             // ordered is optional.
             var orderedGiven = true;
@@ -504,10 +504,10 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // maxPacketLifeTime is optional.
-            // 在 Node.js 实现在，判断了 maxPacketLifeTime 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 maxPacketLifeTime 的数据类型。在强类型语言中不需要。
 
             // maxRetransmits is optional.
-            // 在 Node.js 实现在，判断了 maxRetransmits 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 maxRetransmits 的数据类型。在强类型语言中不需要。
 
             if (parameters.MaxPacketLifeTime.HasValue && parameters.MaxRetransmits.HasValue)
             {
@@ -705,14 +705,14 @@ namespace TubumuMeeting.Mediasoup
                 rtpMapping.Codecs.Add(new RtpMappingCodec
                 {
                     PayloadType = item.Key.PayloadType,
-                    MappedPayloadType = item.Value.PreferredPayloadType.Value, // TODO: (alby)注意 null 引用
+                    MappedPayloadType = item.Value.PreferredPayloadType!.Value,
                 });
             };
 
             // Generate encodings mapping.
             var mappedSsrc = Utils.GenerateRandomNumber();
 
-            foreach (var encoding in parameters.Encodings) // TODO: (alby)注意 null 引用
+            foreach (var encoding in parameters.Encodings!)
             {
                 var mappedEncoding = new RtpMappingEncoding
                 {
@@ -761,7 +761,7 @@ namespace TubumuMeeting.Mediasoup
                 var consumableCodec = new RtpCodecParameters
                 {
                     MimeType = matchedCapCodec.MimeType,
-                    PayloadType = matchedCapCodec.PreferredPayloadType.Value, // TODO: (alby)注意 null 引用
+                    PayloadType = matchedCapCodec.PreferredPayloadType!.Value,
                     ClockRate = matchedCapCodec.ClockRate,
                     Channels = matchedCapCodec.Channels,
                     Parameters = codec.Parameters, // Keep the Producer codec parameters.
@@ -779,7 +779,7 @@ namespace TubumuMeeting.Mediasoup
                     var consumableRtxCodec = new RtpCodecParameters
                     {
                         MimeType = consumableCapRtxCodec.MimeType,
-                        PayloadType = consumableCapRtxCodec.PreferredPayloadType.Value, // TODO: (alby)注意 null 引用
+                        PayloadType = consumableCapRtxCodec.PreferredPayloadType!.Value,
                         ClockRate = consumableCapRtxCodec.ClockRate,
                         Channels = consumableCapRtxCodec.Channels,
                         Parameters = consumableCapRtxCodec.Parameters, // Keep the Producer codec parameters.
@@ -790,7 +790,7 @@ namespace TubumuMeeting.Mediasoup
                 }
             }
 
-            foreach (var capExt in caps.HeaderExtensions) // TODO: (alby)注意 null 引用
+            foreach (var capExt in caps.HeaderExtensions!)
             {
 
                 // Just take RTP header extension that can be used in Consumers.
@@ -832,7 +832,7 @@ namespace TubumuMeeting.Mediasoup
 
             consumableParams.Rtcp = new RtcpParameters
             {
-                CNAME = parameters.Rtcp.CNAME, // TODO: (alby)注意 null 引用
+                CNAME = parameters.Rtcp!.CNAME,
                 ReducedSize = true,
                 Mux = true,
             };
@@ -890,12 +890,13 @@ namespace TubumuMeeting.Mediasoup
                 Rtcp = consumableParams.Rtcp
             };
 
-            foreach (var capCodec in caps.Codecs) // TODO: (alby)注意 null 引用
+            foreach (var capCodec in caps.Codecs!)
             {
                 ValidateRtpCodecCapability(capCodec);
             }
 
             var consumableCodecs = consumableParams.Codecs.DeepClone<List<RtpCodecParameters>>();
+
             var rtxSupported = false;
 
             foreach (var codec in consumableCodecs)
@@ -971,7 +972,7 @@ namespace TubumuMeeting.Mediasoup
             var scalabilityMode = encodingWithScalabilityMode?.ScalabilityMode;
 
             // If there is simulast, mangle spatial layers in scalabilityMode.
-            if (consumableParams.Encodings.Count > 1) // TODO: (alby)注意 null 引用
+            if (consumableParams.Encodings!.Count > 1)
             {
                 var scalabilityModeObject = ScalabilityMode.Parse(scalabilityMode); // TODO: (alby)注意 null 引用
 

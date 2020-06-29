@@ -165,7 +165,7 @@ namespace TubumuMeeting.Meeting.Server
 
             lock (_peerLocker)
             {
-                if (!Peers.TryGetValue(peerId, out Peer peer))
+                if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     _logger.LogError($"PeerEnterRoomAsync() | Peer[{peerId}] is not exists.");
                     return false;
@@ -173,7 +173,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (_roomLocker.Lock())
                 {
-                    if (!Rooms.TryGetValue(roomId, out Room room))
+                    if (!Rooms.TryGetValue(roomId, out var room))
                     {
                         _logger.LogError($"PeerEnterRoomAsync() | Room[{roomId}] is not exists.");
                         return false;
@@ -182,7 +182,7 @@ namespace TubumuMeeting.Meeting.Server
                     lock (_peerRoomLocker)
                     {
                         var peerRoom = new PeerRoom(peer, room);
-                        // TODO: (alby)目前暂时只允许进入一个房间
+                        // TODO: (alby)目前只允许进入一个房间
                         if (PeerRoomList.Contains(peerRoom))
                         {
                             return false;
@@ -212,7 +212,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Room? GetRoomWithPeerId(string peerId)
         {
-            // TODO: (alby)目前暂时只允许进入一个房间
+            // TODO: (alby)目前只允许进入一个房间
             lock (_peerRoomLocker)
             {
                 return PeerRoomList.FirstOrDefault(m => m.Peer.PeerId == peerId)?.Room;

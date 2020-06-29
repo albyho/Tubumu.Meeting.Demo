@@ -801,7 +801,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public bool CanConsume(string producerId, RtpCapabilities rtpCapabilities)
         {
-            if (!_producers.TryGetValue(producerId, out Producer producer))
+            if (!_producers.TryGetValue(producerId, out var producer))
             {
                 _logger.LogError($"CanConsume() | Producer with id {producerId} not found");
                 return false;
