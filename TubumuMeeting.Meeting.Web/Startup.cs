@@ -55,7 +55,6 @@ namespace TubumuMeeting.Web
             var corsSettings = Configuration.GetSection("CorsSettings").Get<CorsSettings>();
             services.AddCors(options => options.AddPolicy("DefaultPolicy",
                 builder => builder.WithOrigins(corsSettings.Origins).AllowAnyMethod().AllowAnyHeader().AllowCredentials())
-            //builder => builder.WithOrigins("*").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
             );
 
             // Authentication
