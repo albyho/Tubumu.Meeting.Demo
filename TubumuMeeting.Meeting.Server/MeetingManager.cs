@@ -39,8 +39,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
-        public HashSet<PeerRoom> PeerRoomList { get; } = new HashSet<PeerRoom>();
-
         public MeetingManager(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
         {
             _loggerFactory = loggerFactory;
@@ -78,11 +76,12 @@ namespace TubumuMeeting.Meeting.Server
 
                     lock (_peerRoomLocker)
                     {
-                        var roomPeerToRemove = PeerRoomList.Where(m => m.Room == room).ToArray();
-                        foreach (var item in roomPeerToRemove)
+                        foreach (var peer in room.Peers.Values)
                         {
-                            PeerRoomList.Remove(item);
+                            peer.Room = null;
                         }
+
+                        room.Peers.Clear();
                     }
                     return room;
                 }
@@ -100,7 +99,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 if (Peers.TryGetValue(peerId, out var _))
                 {
-                    _logger.LogError($"JoinPeer() | Peer[{peerId}] is exists.");
+                    _logger.LogError($"HandlePeer() | Peer[{peerId}] is exists.");
                     return false;
                 }
 
@@ -147,10 +146,10 @@ namespace TubumuMeeting.Meeting.Server
 
                 lock (_peerRoomLocker)
                 {
-                    var peerRoomToRemove = PeerRoomList.Where(m => m.Peer == peer).ToArray();
-                    foreach (var item in peerRoomToRemove)
+                    if(peer.Room!=null)
                     {
-                        PeerRoomList.Remove(item);
+                        peer.Room.Peers.Remove(peerId);
+                        peer.Room = null;
                     }
                 }
             }
@@ -181,54 +180,11 @@ namespace TubumuMeeting.Meeting.Server
 
                     lock (_peerRoomLocker)
                     {
-                        var peerRoom = new PeerRoom(peer, room);
-                        // TODO: (alby)目前只允许进入一个房间
-                        if (PeerRoomList.Contains(peerRoom))
-                        {
-                            return false;
-                        }
-                        PeerRoomList.Add(peerRoom);
+                        room.Peers[peerId] = peer;
+                        peer.Room = room;
                         return true;
                     }
                 }
-            }
-        }
-
-        public PeerRoom? GetPeerRoomWithPeerId(string peerId)
-        {
-            lock (_peerRoomLocker)
-            {
-                return PeerRoomList.FirstOrDefault(m => m.Peer.PeerId == peerId);
-            }
-        }
-
-        public PeerRoom? GetPeerRoomWithRoomId(Guid roomId)
-        {
-            lock (_peerRoomLocker)
-            {
-                return PeerRoomList.FirstOrDefault(m => m.Room.RoomId == roomId);
-            }
-        }
-
-        public Room? GetRoomWithPeerId(string peerId)
-        {
-            // TODO: (alby)目前只允许进入一个房间
-            lock (_peerRoomLocker)
-            {
-                return PeerRoomList.FirstOrDefault(m => m.Peer.PeerId == peerId)?.Room;
-            }
-        }
-
-        public IEnumerable<Peer> GetPeersWithRoomId(Guid roomId, string? excludePeerId = null)
-        {
-            lock (_peerRoomLocker)
-            {
-                var peers = PeerRoomList.Where(m => m.Room.RoomId == roomId).Select(m => m.Peer);
-                if (!excludePeerId.IsNullOrWhiteSpace())
-                {
-                    peers = peers.Where(m => m.PeerId != excludePeerId);
-                }
-                return peers;
             }
         }
     }

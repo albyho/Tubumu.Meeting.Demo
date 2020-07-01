@@ -161,7 +161,8 @@ export default {
       result = await this.connection.invoke("CreateWebRtcTransport", {
         forceTcp: false,
         producing: true,
-        consuming: false
+        consuming: false,
+        sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
       });
       if (result.code !== 200) {
         logger.error("processMessage() | CreateWebRtcTransport failure.");
@@ -225,7 +226,8 @@ export default {
       result = await this.connection.invoke("CreateWebRtcTransport", {
         forceTcp: false,
         producing: false,
-        consuming: true
+        consuming: true,
+        sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
       });
 
       // CreateWebRtcTransport(消费), createRecvTransport

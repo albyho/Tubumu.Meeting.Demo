@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
@@ -29,6 +30,8 @@ namespace TubumuMeeting.Meeting.Server
 
         public Router Router { get; private set; }
 
+        public Dictionary<string, Peer> Peers { get; set; }
+
         public AudioLevelObserver AudioLevelObserver { get; private set; }
 
         public Room(ILoggerFactory loggerFactory, Guid roomId, string name)
@@ -39,6 +42,7 @@ namespace TubumuMeeting.Meeting.Server
             RoomId = roomId;
             Name = name.IsNullOrWhiteSpace() ? "Meeting" : name;
             Closed = false;
+            Peers = new Dictionary<string, Peer>();
         }
 
         public void Active(Router router, AudioLevelObserver audioLevelObserver)

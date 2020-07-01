@@ -85,57 +85,57 @@ namespace TubumuMeeting.Mediasoup
         public bool Closed { get; private set; }
 
         /// <summary>
-        // Method to retrieve Router RTP capabilities.
+        /// Method to retrieve Router RTP capabilities.
         /// </summary>
         protected readonly Func<RtpCapabilities> GetRouterRtpCapabilities;
 
         /// <summary>
-        // Method to retrieve a Producer.
+        /// Method to retrieve a Producer.
         /// </summary>
         protected readonly Func<string, Producer?> GetProducerById;
 
         /// <summary>
-        // Method to retrieve a DataProducer.
+        /// Method to retrieve a DataProducer.
         /// </summary>
         protected readonly Func<string, DataProducer?> GetDataProducerById;
 
         /// <summary>
-        // Producers map.
+        /// Producers map.
         /// </summary>
         protected readonly Dictionary<string, Producer> Producers = new Dictionary<string, Producer>();
 
         /// <summary>
-        // Consumers map.
+        /// Consumers map.
         /// </summary>
         protected readonly Dictionary<string, Consumer> Consumers = new Dictionary<string, Consumer>();
 
         /// <summary>
-        // DataProducers map.
+        /// DataProducers map.
         /// </summary>
         protected readonly Dictionary<string, DataProducer> DataProducers = new Dictionary<string, DataProducer>();
 
         /// <summary>
-        // DataConsumers map.
+        /// DataConsumers map.
         /// </summary>
         protected readonly Dictionary<string, DataConsumer> DataConsumers = new Dictionary<string, DataConsumer>();
 
         /// <summary>
-        // RTCP CNAME for Producers.
+        /// RTCP CNAME for Producers.
         /// </summary>
         private string? _cnameForProducers;
 
         /// <summary>
-        // Next MID for Consumers. It's converted into string when used.
+        /// Next MID for Consumers. It's converted into string when used.
         /// </summary>
         private int _nextMidForConsumers = 0;
 
         /// <summary>
-        // Buffer with available SCTP stream ids.
+        /// Buffer with available SCTP stream ids.
         /// </summary>
         private int[]? _sctpStreamIds;
 
         /// <summary>m
-        // Next SCTP stream id.
+        /// Next SCTP stream id.
         /// </summary>
         private int _nextSctpStreamId;
 

@@ -16,6 +16,8 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool Joined { get; set; }
 
+        public Room? Room { get; set; }
+
         public RtpCapabilities? RtpCapabilities { get; set; }
 
         public SctpCapabilities? SctpCapabilities { get; set; }
