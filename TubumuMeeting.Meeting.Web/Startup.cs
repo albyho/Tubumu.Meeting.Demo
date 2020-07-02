@@ -40,7 +40,7 @@ namespace TubumuMeeting.Web
                         var settings = options.SerializerSettings;
                         settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                         settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // 自定义日期格式。默认是 ISO8601 格式。
-                        settings.Converters = new JsonConverter[] { new EnumStringValueEnumConverter() };
+                        settings.Converters = new JsonConverter[] { new EnumStringValueConverter() };
                     });
 
             // Cache
@@ -130,7 +130,7 @@ namespace TubumuMeeting.Web
                     var settings = options.PayloadSerializerSettings;
                     settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                     settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // 自定义日期格式。默认是 ISO8601 格式。
-                    settings.Converters = new JsonConverter[] { new EnumStringValueEnumConverter() };
+                    settings.Converters = new JsonConverter[] { new EnumStringValueConverter() };
                 });
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
 

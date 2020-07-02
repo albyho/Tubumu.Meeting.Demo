@@ -7,7 +7,7 @@ using Tubumu.Core.Extensions;
 
 namespace Tubumu.Core.Json
 {
-    public class EnumStringValueEnumConverter : StringEnumConverter
+    public class EnumStringValueConverter : StringEnumConverter
     {
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {

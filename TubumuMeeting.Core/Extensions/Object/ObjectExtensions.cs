@@ -41,7 +41,7 @@ namespace Tubumu.Core.Extensions.Object
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
                 DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss", // 自定义日期格式。默认是 ISO8601 格式。
-                Converters = new JsonConverter[] { new EnumStringValueEnumConverter() }
+                Converters = new JsonConverter[] { new EnumStringValueConverter() }
             };
             return JsonConvert.SerializeObject(source, settings);
         }
@@ -77,7 +77,7 @@ namespace Tubumu.Core.Extensions.Object
 
             var settings = new JsonSerializerSettings
             {
-                Converters = new JsonConverter[] { new EnumStringValueEnumConverter() }
+                Converters = new JsonConverter[] { new EnumStringValueConverter() }
             };
             return JsonConvert.DeserializeObject<T>(json, settings);
         }
