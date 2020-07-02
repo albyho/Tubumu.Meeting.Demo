@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using System.Collections.ObjectModel;
+
+namespace TubumuMeeting.Mediasoup
 {
     public class RouterCreateWebRtcTransportResponseData
     {
@@ -6,7 +8,7 @@
 
         public IceParameters IceParameters { get; set; }
 
-        public IceCandidate[] IceCandidates { get; set; }
+        public ReadOnlyCollection<IceCandidate> IceCandidates { get; set; }
 
         public IceState IceState { get; set; }
 

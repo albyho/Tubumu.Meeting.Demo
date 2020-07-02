@@ -37,10 +37,12 @@ namespace Tubumu.Core.Extensions.Object
         /// <returns></returns>
         public static string ToCamelCaseJson(this object source)
         {
-            var settings = new JsonSerializerSettings();
-            settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // 自定义日期格式。默认是 ISO8601 格式。
-            settings.Converters = new JsonConverter[] { new EnumStringValueEnumConverter() };
+            var settings = new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss", // 自定义日期格式。默认是 ISO8601 格式。
+                Converters = new JsonConverter[] { new EnumStringValueEnumConverter() }
+            };
             return JsonConvert.SerializeObject(source, settings);
         }
 
@@ -73,8 +75,10 @@ namespace Tubumu.Core.Extensions.Object
                 return default(T);
             }
 
-            var settings = new JsonSerializerSettings();
-            settings.Converters = new JsonConverter[] { new EnumStringValueEnumConverter() };
+            var settings = new JsonSerializerSettings
+            {
+                Converters = new JsonConverter[] { new EnumStringValueEnumConverter() }
+            };
             return JsonConvert.DeserializeObject<T>(json, settings);
         }
 

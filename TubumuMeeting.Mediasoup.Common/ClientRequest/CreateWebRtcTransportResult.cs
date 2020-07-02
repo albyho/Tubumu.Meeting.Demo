@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.ObjectModel;
+using Newtonsoft.Json;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -8,7 +9,7 @@ namespace TubumuMeeting.Mediasoup
 
         public IceParameters IceParameters { get; set; }
 
-        public IceCandidate[] IceCandidates { get; set; }
+        public ReadOnlyCollection<IceCandidate> IceCandidates { get; set; }
 
         public DtlsParameters DtlsParameters { get; set; }
 

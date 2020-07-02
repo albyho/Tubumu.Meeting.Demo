@@ -1,4 +1,5 @@
 [Uu]pload/
+App_Data/logs/
 .vscode/
 runtimes/**/mediasoup-worker*.*
 

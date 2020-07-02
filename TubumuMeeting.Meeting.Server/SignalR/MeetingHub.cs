@@ -117,7 +117,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private Peer? Peer => _meetingManager.Peers.TryGetValue(UserId, out var peer) ? peer : null;
 
-        private Room? Room => Peer != null ? Peer.Room : null;
+        private Room? Room => Peer?.Room;
     }
 
     public partial class MeetingHub

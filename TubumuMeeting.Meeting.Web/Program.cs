@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -13,13 +14,13 @@ namespace TubumuMeeting.Web
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    var mediasoupconfig = new ConfigurationBuilder()
-                        .AddJsonFile("mediasoupsettings.json", optional: false)
-                        .Build();
-                    webBuilder.UseConfiguration(mediasoupconfig);
-                    webBuilder.UseStartup<Startup>();
-                });
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                var mediasoupconfig = new ConfigurationBuilder()
+                    .AddJsonFile("mediasoupsettings.json", optional: false)
+                    .Build();
+                webBuilder.UseConfiguration(mediasoupconfig);
+                webBuilder.UseStartup<Startup>();
+            });
     }
 }

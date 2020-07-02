@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -19,7 +20,7 @@ namespace TubumuMeeting.Mediasoup
 
         public IceParameters IceParameters { get; private set; }
 
-        public IceCandidate[] IceCandidates { get; private set; }
+        public ReadOnlyCollection<IceCandidate> IceCandidates { get; private set; }
 
         public IceState IceState { get; private set; }
 
@@ -82,7 +83,7 @@ namespace TubumuMeeting.Mediasoup
             Func<string, DataProducer?> getDataProducerById,
             string iceRole,
             IceParameters iceParameters,
-            IceCandidate[] iceCandidates,
+            ReadOnlyCollection<IceCandidate> iceCandidates,
             IceState iceState,
             TransportTuple? iceSelectedTuple,
             DtlsParameters dtlsParameters,
