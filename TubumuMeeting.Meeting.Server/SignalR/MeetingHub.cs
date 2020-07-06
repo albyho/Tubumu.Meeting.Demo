@@ -126,10 +126,10 @@ namespace TubumuMeeting.Meeting.Server
         {
             if (!await _meetingManager.PeerEnterRoomAsync(UserId, roomId))
             {
-                return new MeetingMessage { Code = 400, Message = "Enter 失败" };
+                return new MeetingMessage { Code = 400, Message = "EnterRoom 失败" };
             }
 
-            return new MeetingMessage { Code = 200, Message = "Enter 成功" };
+            return new MeetingMessage { Code = 200, Message = "EnterRoom 成功" };
         }
 
         public Task<MeetingMessage> GetRouterRtpCapabilities()
