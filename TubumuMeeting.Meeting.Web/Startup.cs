@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -179,7 +180,7 @@ namespace TubumuMeeting.Web
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime lifetime, ILogger<Startup> logger)
         {
             if (env.IsDevelopment())
             {
@@ -224,6 +225,16 @@ namespace TubumuMeeting.Web
                     await context.Response.WriteAsync("ok");
                 });
             });
+
+            try
+            {
+                var consulSettings = Configuration.GetSection("ConsulSettings").Get<ConsulSettings>();
+                app.UseConsul(lifetime, consulSettings);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "UseConsul()");
+            }
         }
     }
 }

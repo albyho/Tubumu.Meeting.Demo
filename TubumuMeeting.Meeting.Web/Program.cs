@@ -18,6 +18,7 @@ namespace TubumuMeeting.Web
             {
                 var mediasoupconfig = new ConfigurationBuilder()
                     .AddJsonFile("mediasoupsettings.json", optional: false)
+                    .AddJsonFile("consulsettings.json", optional: false)
                     .Build();
                 webBuilder.UseConfiguration(mediasoupconfig);
                 webBuilder.UseStartup<Startup>();
