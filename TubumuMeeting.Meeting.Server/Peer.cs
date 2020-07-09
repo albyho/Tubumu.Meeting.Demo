@@ -16,11 +16,13 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool Joined { get; set; }
 
-        public Room? Room { get; set; }
-
         public RtpCapabilities? RtpCapabilities { get; set; }
 
         public SctpCapabilities? SctpCapabilities { get; set; }
+
+        public Group? Group { get; set; }
+
+        public Dictionary<Guid, Room>? Rooms { get; } = new Dictionary<Guid, Room>();
 
         public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();
 
