@@ -158,7 +158,7 @@ export default {
         return;
       }
 
-      // CreateWebRtcTransport 成功, CreateWebRtcTransport(生产)
+      // Join成功，CreateWebRtcTransport(生产) 
       result = await this.connection.invoke("CreateWebRtcTransport", {
         forceTcp: false,
         producing: true,
@@ -170,7 +170,7 @@ export default {
         return;
       }
 
-      // CreateWebRtcTransport(生产) 成功, createSendTransport
+      // CreateWebRtcTransport(生产), createSendTransport(生产)
       this.sendTransport = this.mediasoupDevice.createSendTransport({
         id: result.data.id,
         iceParameters: result.data.iceParameters,
@@ -213,6 +213,12 @@ export default {
               return;
             }
             callback({ id: result.data.id });
+
+            await this.connection.invoke("Consume", {
+              peerId: 29,
+              producerIds: [result.data.id]
+            });
+
           } catch (error) {
             errback(error);
           }

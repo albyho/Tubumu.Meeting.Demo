@@ -137,7 +137,29 @@ namespace TubumuMeeting.Meeting.Server
 
             if (!await _meetingManager.PeerEnterGroupAsync(UserId, joinRequest.GroupId))
             {
-                return new MeetingMessage { Code = 400, Message = "Join 失败(EnterGroup 失败)" };
+                return new MeetingMessage { Code = 400, Message = "Join 失败(PeerEnterGroup 失败)" };
+            }
+
+            foreach (var otherPeer in Group!.Peers.Values)
+            {
+                if (otherPeer.PeerId == UserId)
+                {
+                    continue;
+                }
+
+                // Notify the new Peer to all other Peers.
+                // Message: newPeer
+                var client = _hubContext.Clients.User(otherPeer.PeerId);
+                client.ReceiveMessage(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = "newPeer",
+                    Message = "newPeer",
+                    Data = new { 
+                        Id = Peer!.PeerId,
+                        Peer.DisplayName,
+                    }
+                }).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             return new MeetingMessage { Code = 200, Message = "Join 成功" };
@@ -345,27 +367,33 @@ namespace TubumuMeeting.Meeting.Server
 
         public MeetingMessage Consume(ConsumeRequest consumeRequest)
         {
-            if(consumeRequest.ProducerIds.IsNullOrEmpty())
-            {
-                return new MeetingMessage { Code = 400, Message = "Consume 失败" };
-            }
-
             // 只能消费本组
             if (Group == null || !Group.Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
             {
                 return new MeetingMessage { Code = 400, Message = "Consume 失败" };
             }
 
-            foreach(var producerId in consumeRequest.ProducerIds!)
+            if (!consumeRequest.ProducerIds.IsNullOrEmpty())
             {
-                if(!otherPeer.Producers.TryGetValue(producerId, out var producer))
+                foreach (var producerId in consumeRequest.ProducerIds!)
                 {
-                    _logger.LogWarning($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", producerId:\"{producerId}\"]");
-                    continue;
-                }
+                    if (!otherPeer.Producers.TryGetValue(producerId, out var producer))
+                    {
+                        _logger.LogWarning($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", producerId:\"{producerId}\"]");
+                        continue;
+                    }
 
-                // 本 Peer 消费其他 Peer
-                CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                    // 本 Peer 消费其他 Peer
+                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                }
+            }
+            else
+            {
+                foreach(var producer in otherPeer.Producers.Values)
+                {
+                    // 本 Peer 消费其他 Peer
+                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                }
             }
 
             return new MeetingMessage { Code = 200, Message = "Consume 成功" };

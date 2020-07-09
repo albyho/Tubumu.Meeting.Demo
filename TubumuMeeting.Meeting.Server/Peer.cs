@@ -34,6 +34,8 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, DataConsumer> DataConsumers { get; } = new Dictionary<string, DataConsumer>();
 
+        public Dictionary<string, object> AppData { get; } = new Dictionary<string, object>();
+
         public Peer(string peerId, string displayName)
         {
             PeerId = peerId;

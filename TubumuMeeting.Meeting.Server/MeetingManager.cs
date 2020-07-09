@@ -170,6 +170,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PeerEnterGroupAsync(string peerId, Guid groupId)
         {
+            // TODO: (alby)临时代码
             await GetOrCreateGroupAsync(groupId, "Test");
 
             lock (_peerLocker)

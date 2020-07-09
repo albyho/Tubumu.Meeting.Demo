@@ -7,7 +7,5 @@ namespace TubumuMeeting.Mediasoup
         public string PeerId { get; set; }
 
         public string[]? ProducerIds { get; set; }
-
-        public Dictionary<string, object> AppData { get; set; }
     }
 }
