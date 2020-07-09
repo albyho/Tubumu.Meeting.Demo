@@ -30,13 +30,11 @@ namespace TubumuMeeting.Meeting.Server
 
         public Router Router { get; private set; }
 
-        public AudioLevelObserver AudioLevelObserver { get; private set; }
-
         public Dictionary<Guid, Group> Groups { get; } = new Dictionary<Guid, Group>();
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
-        public Group(ILoggerFactory loggerFactory, Guid groupId, string name, Router router , AudioLevelObserver audioLevelObserver)
+        public Group(ILoggerFactory loggerFactory, Router router, Guid groupId, string name)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<Group>();
@@ -45,7 +43,6 @@ namespace TubumuMeeting.Meeting.Server
             Name = name.IsNullOrWhiteSpace() ? "Default" : name;
             Closed = false;
             Router = router;
-            AudioLevelObserver = audioLevelObserver;
         }
 
         public void Close()

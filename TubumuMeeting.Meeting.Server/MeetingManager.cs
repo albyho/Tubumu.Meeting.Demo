@@ -27,9 +27,11 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly MediasoupServer _mediasoupServer;
 
-        private readonly object _peerLocker = new object();
-
         private readonly AsyncLock _groupLocker = new AsyncLock();
+
+        private readonly object _roomLocker = new object();
+
+        private readonly object _peerLocker = new object();
 
         private readonly object _peerGroupLocker = new object();
 
@@ -38,6 +40,8 @@ namespace TubumuMeeting.Meeting.Server
         public RtpCapabilities DefaultRtpCapabilities { get; private set; }
 
         public Dictionary<Guid, Group> Groups { get; } = new Dictionary<Guid, Group>();
+
+        public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
@@ -52,6 +56,8 @@ namespace TubumuMeeting.Meeting.Server
             // This may throw.
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
         }
+
+        #region Group
 
         public async Task<Group> GetOrCreateGroupAsync(Guid groupId, string name)
         {
@@ -71,7 +77,7 @@ namespace TubumuMeeting.Meeting.Server
             return group;
         }
 
-        public Group? CloseGroup(Guid groupId)
+        public Group? GroupClose(Guid groupId)
         {
             using (_groupLocker.Lock())
             {
@@ -96,16 +102,41 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public bool HandlePeer(string peerId, string name)
+        #endregion
+
+        #region Room
+
+        public async Task<Room> GetOrCreateRoom(Guid groupId, Guid roomId, string name)
         {
-            ClosePeer(peerId);
+            Group group;
+            using (await _groupLocker.LockAsync())
+            {
+                if (Groups.TryGetValue(groupId, out group))
+                {
+                    _logger.LogError($"GetOrCreateRoom() | Group[{groupId}] is not exists.");
+                }
+
+                var room = CreateRoom(group, roomId, name);
+                Rooms[roomId] = room;
+
+                return room;
+            }
+        }
+
+        #endregion
+
+        #region Peer
+
+        public bool PeerHandle(string peerId, string name)
+        {
+            PeerClose(peerId);
 
             var peer = new Peer(peerId, name);
             lock (_peerLocker)
             {
                 if (Peers.TryGetValue(peerId, out var _))
                 {
-                    _logger.LogError($"HandlePeer() | Peer[{peerId}] is exists.");
+                    _logger.LogError($"PeerHandle() | Peer[{peerId}] is exists.");
                     return false;
                 }
 
@@ -115,49 +146,25 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public bool JoinPeer(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities)
+        public bool PeerJoin(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities)
         {
             lock (_peerLocker)
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
-                    _logger.LogError($"JoinPeer() | Peer[{peerId}] is not exists.");
+                    _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists.");
                     return false;
                 }
 
                 if (peer.Joined)
                 {
-                    _logger.LogError($"JoinPeer() | Peer[{peerId}] is joined.");
-                    return false;
+                    _logger.LogWarning($"PeerJoin() | Peer[{peerId}] is joined.");
                 }
 
                 peer.RtpCapabilities = rtpCapabilities;
                 peer.SctpCapabilities = sctpCapabilities;
                 peer.Joined = true;
                 return true;
-            }
-        }
-
-        public void ClosePeer(string peerId)
-        {
-            lock (_peerLocker)
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    return;
-                }
-
-                peer.Close();
-                Peers.Remove(peerId);
-
-                lock (_peerGroupLocker)
-                {
-                    if(peer.Group!=null)
-                    {
-                        peer.Group.Peers.Remove(peerId);
-                        peer.Group = null;
-                    }
-                }
             }
         }
 
@@ -191,6 +198,31 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        public void PeerClose(string peerId)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    return;
+                }
+
+                peer.Close();
+                Peers.Remove(peerId);
+
+                lock (_peerGroupLocker)
+                {
+                    if(peer.Group!=null)
+                    {
+                        peer.Group.Peers.Remove(peerId);
+                        peer.Group = null;
+                    }
+                }
+            }
+        }
+
+        #endregion
+
         #region Private Methods
 
         private async Task<Group> CreateGroupAsync(Guid groupId, string name)
@@ -205,16 +237,14 @@ namespace TubumuMeeting.Meeting.Server
                 MediaCodecs = mediaCodecs
             });
 
-            // Create a mediasoup AudioLevelObserver.
-            var audioLevelObserver = await router.CreateAudioLevelObserverAsync(new AudioLevelObserverOptions
-            {
-                MaxEntries = 1,
-                Threshold = -80,
-                Interval = 800,
-            });
-
-            var group = new Group(_loggerFactory, groupId, name, router, audioLevelObserver);
+            var group = new Group(_loggerFactory, router, groupId, name);
             return group;
+        }
+
+        private Room CreateRoom(Group group, Guid roomId, string name)
+        {
+            var room = new Room(_loggerFactory, group, roomId, name);
+            return room;
         }
 
         #endregion

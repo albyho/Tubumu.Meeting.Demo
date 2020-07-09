@@ -32,7 +32,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, Peer> Peers { get; set; }
 
-        public Room(ILoggerFactory loggerFactory, Guid roomId, string name, Group group)
+        public Room(ILoggerFactory loggerFactory, Group group, Guid roomId, string name)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<Room>();

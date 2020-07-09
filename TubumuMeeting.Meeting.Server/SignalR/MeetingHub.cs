@@ -65,7 +65,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             ClosePeer();
 
-            var handleResult = _meetingManager.HandlePeer(UserId, "Guest");
+            var handleResult = _meetingManager.PeerHandle(UserId, "Guest");
             if (handleResult)
             {
                 return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
@@ -110,7 +110,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
             }
 
-            _meetingManager.ClosePeer(UserId);
+            _meetingManager.PeerClose(UserId);
         }
 
         private string UserId => Context.User.Identity.Name;
@@ -128,8 +128,28 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
+        public async Task<MeetingMessage> Join(JoinRequest joinRequest)
+        {
+            if (!_meetingManager.PeerJoin(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities))
+            {
+                return new MeetingMessage { Code = 400, Message = "Join 失败(PeerJoin 失败)" };
+            }
+
+            if (!await _meetingManager.PeerEnterGroupAsync(UserId, joinRequest.GroupId))
+            {
+                return new MeetingMessage { Code = 400, Message = "Join 失败(EnterGroup 失败)" };
+            }
+
+            return new MeetingMessage { Code = 200, Message = "Join 成功" };
+        }
+
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
+            if(Group == null)
+            {
+                return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 失败" };
+            }
+
             var webRtcTransportSettings = _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings;
             var webRtcTransportOptions = new WebRtcTransportOptions
             {
@@ -236,51 +256,6 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
         }
 
-        public Task<MeetingMessage> Join(JoinRequest joinRequest)
-        {
-            if (Group == null || !_meetingManager.JoinPeer(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities))
-            {
-                return Task.FromResult(new MeetingMessage { Code = 400, Message = "Join 失败" });
-            }
-
-            foreach (var otherPeer in Group.Peers.Values)
-            {
-                if (otherPeer.PeerId == UserId)
-                {
-                    continue;
-                }
-
-                foreach (var producer in otherPeer.Producers.Values)
-                {
-                    // 本 Peer 消费其他 Peer
-                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
-                }
-
-                // Notify the new Peer to all other Peers.
-                // Message: newPeer
-                var client = _hubContext.Clients.User(otherPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "newPeer",
-                    Message = "newPeer",
-                    Data = new { Id = Peer!.PeerId, Peer.DisplayName, }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
-            return Task.FromResult(new MeetingMessage { Code = 200, Message = "Join 成功" });
-        }
-
-        public async Task<MeetingMessage> EnterGroup(Guid groupId)
-        {
-            if (!await _meetingManager.PeerEnterGroupAsync(UserId, groupId))
-            {
-                return new MeetingMessage { Code = 400, Message = "EnterGroup 失败" };
-            }
-
-            return new MeetingMessage { Code = 200, Message = "EnterGroup 成功" };
-        }
-
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
             if (Group == null || !Peer!.Transports.TryGetValue(produceRequest.TransportId, out var transport))
@@ -323,24 +298,6 @@ namespace TubumuMeeting.Meeting.Server
                 _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
             });
 
-            // Optimization: Create a server-side Consumer for each Peer.
-            foreach (var otherPeer in Group.Peers.Values)
-            {
-                if (otherPeer.PeerId == UserId)
-                {
-                    continue;
-                }
-
-                // 其他 Peer 消费本 Peer
-                CreateConsumer(otherPeer, Peer, producer).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
-            // Add into the audioLevelObserver.
-            if (produceRequest.Kind == MediaKind.Audio)
-            {
-                Group.AudioLevelObserver.AddProducerAsync(producer.ProducerId).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
             return new MeetingMessage
             {
                 Code = 200,
@@ -358,23 +315,8 @@ namespace TubumuMeeting.Meeting.Server
 
             producer.Close();
             Peer.Producers.Remove(producerId);
+
             return Task.FromResult(new MeetingMessage { Code = 200, Message = "CloseProducer 成功" });
-        }
-
-        public async Task<MeetingMessage> RestartIce(string transportId)
-        {
-            if (Group == null || !Peer!.Transports.TryGetValue(transportId, out var transport))
-            {
-                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
-            }
-
-            if (!(transport is WebRtcTransport webRtcTransport))
-            {
-                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
-            }
-
-            var iceParameters = await webRtcTransport.RestartIceAsync();
-            return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
         public async Task<MeetingMessage> PauseProducer(string producerId)
@@ -399,6 +341,47 @@ namespace TubumuMeeting.Meeting.Server
             await producer.ResumeAsync();
 
             return new MeetingMessage { Code = 200, Message = "ResumeProducer 成功" };
+        }
+
+        public MeetingMessage Consume(ConsumeRequest consumeRequest)
+        {
+            if(consumeRequest.ProducerIds.IsNullOrEmpty())
+            {
+                return new MeetingMessage { Code = 400, Message = "Consume 失败" };
+            }
+
+            // 只能消费本组
+            if (Group == null || !Group.Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
+            {
+                return new MeetingMessage { Code = 400, Message = "Consume 失败" };
+            }
+
+            foreach(var producerId in consumeRequest.ProducerIds!)
+            {
+                if(!otherPeer.Producers.TryGetValue(producerId, out var producer))
+                {
+                    _logger.LogWarning($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", producerId:\"{producerId}\"]");
+                    continue;
+                }
+
+                // 本 Peer 消费其他 Peer
+                CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+            }
+
+            return new MeetingMessage { Code = 200, Message = "Consume 成功" };
+        }
+
+        public Task<MeetingMessage> CloseConsumer(string consumerId)
+        {
+            if (Group == null || !Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            {
+                return Task.FromResult(new MeetingMessage { Code = 400, Message = "CloseConsumer 失败" });
+            }
+
+            consumer.Close();
+            Peer.Consumers.Remove(consumerId);
+
+            return Task.FromResult(new MeetingMessage { Code = 200, Message = "CloseConsumer 成功" });
         }
 
         public async Task<MeetingMessage> PauseConsumer(string consumerId)
@@ -562,6 +545,23 @@ namespace TubumuMeeting.Meeting.Server
             var data = JsonConvert.DeserializeObject<DataProducerStat>(status!);
 
             return new MeetingMessage { Code = 200, Message = "GetDataProducerStats 成功", Data = data };
+        }
+
+        public async Task<MeetingMessage> RestartIce(string transportId)
+        {
+            if (Group == null || !Peer!.Transports.TryGetValue(transportId, out var transport))
+            {
+                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
+            }
+
+            if (!(transport is WebRtcTransport webRtcTransport))
+            {
+                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
+            }
+
+            var iceParameters = await webRtcTransport.RestartIceAsync();
+
+            return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
         #region CreateConsumer
@@ -729,7 +729,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> NewConsumerReturn(NewConsumerReturnRequest newConsumerReturnRequest)
         {
-            _logger.LogDebug($"NewConsumerReady() | [peerId:\"{newConsumerReturnRequest.PeerId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
+            _logger.LogDebug($"NewConsumerReturn() | [peerId:\"{newConsumerReturnRequest.PeerId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
 
             if (!_meetingManager.Peers.TryGetValue(newConsumerReturnRequest.PeerId, out var consumerPeer) ||
                 consumerPeer.Closed ||
