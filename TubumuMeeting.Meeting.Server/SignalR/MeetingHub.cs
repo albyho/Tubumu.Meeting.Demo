@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -41,6 +42,8 @@ namespace TubumuMeeting.Meeting.Server
         Task PeerHandled(MeetingMessage message);
 
         Task NewConsumer(MeetingMessage message);
+
+        Task NewAskFor(MeetingMessage message);
 
         Task ReceiveMessage(MeetingMessage message);
     }
@@ -130,14 +133,14 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!_meetingManager.PeerJoin(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities, joinRequest.DeviceInfo))
+            if (!_meetingManager.PeerJoin(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities, joinRequest.Sources, joinRequest.DeviceInfo))
             {
-                return new MeetingMessage { Code = 400, Message = "Join 失败(PeerJoin 失败)" };
+                return new MeetingMessage { Code = 400, Message = "Join 失败: PeerJoin 失败" };
             }
 
             if (!await _meetingManager.PeerEnterGroupAsync(UserId, joinRequest.GroupId))
             {
-                return new MeetingMessage { Code = 400, Message = "Join 失败(PeerEnterGroup 失败)" };
+                return new MeetingMessage { Code = 400, Message = "Join 失败: PeerEnterGroup 失败" };
             }
 
             foreach (var otherPeer in Group!.Peers.Values)
@@ -364,6 +367,41 @@ namespace TubumuMeeting.Meeting.Server
             await producer.ResumeAsync();
 
             return new MeetingMessage { Code = 200, Message = "ResumeProducer 成功" };
+        }
+
+        public async Task<MeetingMessage> AskForProduce(AskForProduceRequest askForProduceRequest)
+        {
+            if (Group == null || !Group.Peers.TryGetValue(askForProduceRequest.PeerId, out var otherPeer))
+            {
+                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败" };
+            }
+
+            if (otherPeer!.Sources.IsNullOrEmpty())
+            {
+                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: None sources" };
+            }
+
+            var askForSources = otherPeer!.Sources.Intersect(askForProduceRequest.Sources).ToArray();
+            if(askForSources.Length == 0)
+            {
+                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: None matched sources" };
+            }
+
+            // Message: newAskFor
+            var client = _hubContext.Clients.User(otherPeer.PeerId);
+            await client.NewAskFor(new MeetingMessage
+            {
+                Code = 200,
+                InternalCode = "newAskFor",
+                Message = "newAskFor",
+                Data = new
+                {
+                    PeerId = Peer!.PeerId,
+                    Sources = askForSources,
+                }
+            });
+
+            return new MeetingMessage { Code = 200, Message = "AskForProduce 成功" };
         }
 
         public MeetingMessage Consume(ConsumeRequest consumeRequest)

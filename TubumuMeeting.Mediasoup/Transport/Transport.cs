@@ -447,7 +447,7 @@ namespace TubumuMeeting.Mediasoup
                 data.Type,
                 data.ConsumableRtpParameters,
                 Channel,
-                AppData,
+                producerOptions.AppData,
                 producerOptions.Paused!.Value);
 
             Producers[producer.ProducerId] = producer;

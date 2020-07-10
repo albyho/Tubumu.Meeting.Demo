@@ -151,6 +151,7 @@ export default {
       result = await this.connection.invoke("Join", {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
         sctpCapabilities: null, // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
+        sources: ['mic', 'webcam'],
         groupId: "00000000-0000-0000-0000-000000000000"
       });
       if (result.code !== 200) {

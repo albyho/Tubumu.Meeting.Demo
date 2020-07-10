@@ -22,8 +22,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public Group? Group { get; set; }
 
-        public Dictionary<Guid, Room>? Rooms { get; } = new Dictionary<Guid, Room>();
-
         public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();
 
         public Dictionary<string, Producer> Producers { get; } = new Dictionary<string, Producer>();
@@ -33,6 +31,8 @@ namespace TubumuMeeting.Meeting.Server
         public Dictionary<string, DataProducer> DataProducers { get; } = new Dictionary<string, DataProducer>();
 
         public Dictionary<string, DataConsumer> DataConsumers { get; } = new Dictionary<string, DataConsumer>();
+
+        public string[]? Sources { get; set; }
 
         public Dictionary<string, object>? DeviceInfo { get; set; }
 

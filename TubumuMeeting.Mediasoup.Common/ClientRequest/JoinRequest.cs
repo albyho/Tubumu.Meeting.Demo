@@ -9,6 +9,8 @@ namespace TubumuMeeting.Mediasoup
 
         public SctpCapabilities? SctpCapabilities { get; set; }
 
+        public string[]? Sources { get; set; }
+
         public Dictionary<string, object>? DeviceInfo { get; set; }
 
         public Guid GroupId { get; set; }

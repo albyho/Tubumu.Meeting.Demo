@@ -41,8 +41,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<Guid, Group> Groups { get; } = new Dictionary<Guid, Group>();
 
-        public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
-
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
         public MeetingManager(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
@@ -104,27 +102,6 @@ namespace TubumuMeeting.Meeting.Server
 
         #endregion
 
-        #region Room
-
-        public async Task<Room> GetOrCreateRoom(Guid groupId, Guid roomId, string name)
-        {
-            Group group;
-            using (await _groupLocker.LockAsync())
-            {
-                if (Groups.TryGetValue(groupId, out group))
-                {
-                    _logger.LogError($"GetOrCreateRoom() | Group[{groupId}] is not exists.");
-                }
-
-                var room = CreateRoom(group, roomId, name);
-                Rooms[roomId] = room;
-
-                return room;
-            }
-        }
-
-        #endregion
-
         #region Peer
 
         public bool PeerHandle(string peerId, string name)
@@ -146,7 +123,7 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public bool PeerJoin(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, Dictionary<string, object>? deviceInfo)
+        public bool PeerJoin(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string[]? sources, Dictionary<string, object>? deviceInfo)
         {
             lock (_peerLocker)
             {
@@ -163,6 +140,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 peer.RtpCapabilities = rtpCapabilities;
                 peer.SctpCapabilities = sctpCapabilities;
+                peer.Sources = sources;
                 peer.DeviceInfo = deviceInfo;
                 peer.Joined = true;
                 return true;
@@ -241,12 +219,6 @@ namespace TubumuMeeting.Meeting.Server
 
             var group = new Group(_loggerFactory, router, groupId, name);
             return group;
-        }
-
-        private Room CreateRoom(Group group, Guid roomId, string name)
-        {
-            var room = new Room(_loggerFactory, group, roomId, name);
-            return room;
         }
 
         #endregion
