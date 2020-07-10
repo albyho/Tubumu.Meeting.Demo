@@ -146,7 +146,7 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public bool PeerJoin(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities)
+        public bool PeerJoin(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, Dictionary<string, object>? deviceInfo)
         {
             lock (_peerLocker)
             {
@@ -163,6 +163,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 peer.RtpCapabilities = rtpCapabilities;
                 peer.SctpCapabilities = sctpCapabilities;
+                peer.DeviceInfo = deviceInfo;
                 peer.Joined = true;
                 return true;
             }

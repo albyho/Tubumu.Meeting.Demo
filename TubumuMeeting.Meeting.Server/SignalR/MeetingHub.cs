@@ -68,13 +68,6 @@ namespace TubumuMeeting.Meeting.Server
             var handleResult = _meetingManager.PeerHandle(UserId, "Guest");
             if (handleResult)
             {
-                var httpContext = Context.GetHttpContext();
-                if (httpContext != null)
-                {
-                    var peer = _meetingManager.Peers[UserId];
-                    httpContext.Request.Query.FillToDictionary(peer.AppData);
-                }
-
                 return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
             }
 
@@ -90,7 +83,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private void ClosePeer()
         {
-            if(Group != null)
+            if (Group != null)
             {
                 foreach (var otherPeer in Group.Peers.Values)
                 {
@@ -137,7 +130,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!_meetingManager.PeerJoin(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities))
+            if (!_meetingManager.PeerJoin(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities, joinRequest.DeviceInfo))
             {
                 return new MeetingMessage { Code = 400, Message = "Join 失败(PeerJoin 失败)" };
             }
@@ -162,7 +155,8 @@ namespace TubumuMeeting.Meeting.Server
                     Code = 200,
                     InternalCode = "newPeer",
                     Message = "newPeer",
-                    Data = new { 
+                    Data = new
+                    {
                         Id = Peer!.PeerId,
                         Peer.DisplayName,
                     }
@@ -174,7 +168,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            if(Group == null)
+            if (Group == null)
             {
                 return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 失败" };
             }
@@ -396,7 +390,7 @@ namespace TubumuMeeting.Meeting.Server
             }
             else
             {
-                foreach(var producer in otherPeer.Producers.Values)
+                foreach (var producer in otherPeer.Producers.Values)
                 {
                     // 本 Peer 消费其他 Peer
                     CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
@@ -605,7 +599,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.ProducerId}\"]");
 
-            if(Group == null)
+            if (Group == null)
             {
                 _logger.LogError($"CreateConsumer() | [Group is null]");
                 return;

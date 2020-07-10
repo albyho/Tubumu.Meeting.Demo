@@ -19,15 +19,6 @@ namespace TubumuMeeting.Meeting.Server
                ?.HttpContext;
         }
 
-        public static T GetQueryParameterValue<T>(this IQueryCollection httpQuery, string queryParameterName)
-        {
-#pragma warning disable CS8603 // 可能的 null 引用返回。
-            return httpQuery.TryGetValue(queryParameterName, out var value) && value.Any()
-               ? (T)Convert.ChangeType(value.FirstOrDefault(), typeof(T))
-               : default(T);
-#pragma warning restore CS8603 // 可能的 null 引用返回。
-        }
-
         public static Dictionary<string, object> ToDictionary(this IQueryCollection httpQuery)
         {
             var dictionary = new Dictionary<string, object>();
