@@ -102,6 +102,8 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Events:</para>
         /// <para>@emits transportclose</para>
         /// <para>@emits dataproducerclose</para>
+        /// <para>@emits message - (message: Buffer, ppid: number)</para>
+        /// <para>@emits sctpsendbufferfull</para>
         /// <para>@emits @close</para>
         /// <para>@emits @dataproducerclose</para>
         /// <para>Observer events:</para>
@@ -245,6 +247,15 @@ namespace TubumuMeeting.Mediasoup
 
                         // Emit observer event.
                         Observer.Emit("close");
+
+                        break;
+                    }
+                case "sctpsendbufferfull":
+                    {
+                        Emit("sctpsendbufferfull");
+
+                        // Emit observer event.
+                        Observer.Emit("sctpsendbufferfull");
 
                         break;
                     }

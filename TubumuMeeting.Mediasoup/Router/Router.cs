@@ -245,6 +245,7 @@ namespace TubumuMeeting.Mediasoup
                 webRtcTransportOptions.EnableSctp,
                 webRtcTransportOptions.NumSctpStreams,
                 webRtcTransportOptions.MaxSctpMessageSize,
+                webRtcTransportOptions.MaxSctpSendBufferSize,
                 IsDataChannel = true
             };
 
@@ -325,6 +326,7 @@ namespace TubumuMeeting.Mediasoup
                 plainTransportOptions.EnableSctp,
                 plainTransportOptions.NumSctpStreams,
                 plainTransportOptions.MaxSctpMessageSize,
+                plainTransportOptions.MaxSctpSendBufferSize,
                 IsDataChannel = false,
                 plainTransportOptions.EnableSrtp,
                 plainTransportOptions.SrtpCryptoSuite
@@ -403,6 +405,7 @@ namespace TubumuMeeting.Mediasoup
                 pipeTransportOptions.EnableSctp,
                 pipeTransportOptions.NumSctpStreams,
                 pipeTransportOptions.MaxSctpMessageSize,
+                pipeTransportOptions.MaxSctpSendBufferSize,
                 IsDataChannel = false,
                 pipeTransportOptions.EnableRtx,
                 pipeTransportOptions.EnableSrtp,

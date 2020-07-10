@@ -68,6 +68,13 @@ namespace TubumuMeeting.Meeting.Server
             var handleResult = _meetingManager.PeerHandle(UserId, "Guest");
             if (handleResult)
             {
+                var httpContext = Context.GetHttpContext();
+                if (httpContext != null)
+                {
+                    var peer = _meetingManager.Peers[UserId];
+                    httpContext.Request.Query.FillToDictionary(peer.AppData);
+                }
+
                 return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
             }
 

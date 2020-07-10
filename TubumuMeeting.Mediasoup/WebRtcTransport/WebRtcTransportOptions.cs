@@ -52,6 +52,12 @@ namespace TubumuMeeting.Mediasoup
         public int? MaxSctpMessageSize { get; set; } = 262144;
 
         /// <summary>
+        /// Maximum SCTP send buffer used by DataConsumers.
+        /// Default 262144.
+        /// </summary>
+        public int? MaxSctpSendBufferSize { get; set; } = 262144;
+
+        /// <summary>
         /// Custom application data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; set; }

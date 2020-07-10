@@ -39,6 +39,12 @@ namespace TubumuMeeting.Mediasoup
         public int? MaxSctpMessageSize { get; set; } = 262144;
 
         /// <summary>
+        /// Maximum SCTP send buffer used by DataConsumers.
+        /// Default 262144.
+        /// </summary>
+        public int? MaxSctpSendBufferSize { get; set; } = 262144;
+
+        /// <summary>
         /// Enable SRTP. For this to work, connect() must be called
         /// with remote SRTP parameters. Default false.
         /// </summary>

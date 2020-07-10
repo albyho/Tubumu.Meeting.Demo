@@ -26,6 +26,12 @@ namespace TubumuMeeting.Mediasoup
         public int? MaxSctpMessageSize { get; set; } = 1073741823;
 
         /// <summary>
+        /// Maximum SCTP send buffer used by DataConsumers.
+        /// Default 1073741823.
+        /// </summary>
+        public int? MaxSctpSendBufferSize { get; set; } = 1073741823;
+
+        /// <summary>
         /// Enable RTX and NACK for RTP retransmission. Useful if both Routers are
         /// located in different hosts and there is packet lost in the link. For this
         /// to work, both PipeTransports must enable this setting. Default false.
