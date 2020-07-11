@@ -133,10 +133,9 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            // TODO: (alby)临时代码
-            await _meetingManager.GetOrCreateGroupAsync(joinRequest.GroupId, "Test");
+            // TODO: (alby)校验 Peer 是否有权限进入该 Group
 
-            if (!_meetingManager.PeerJoinAsync(UserId, 
+            if (!await _meetingManager.PeerJoinAsync(UserId, 
                 joinRequest.RtpCapabilities, 
                 joinRequest.SctpCapabilities, 
                 joinRequest.Sources,

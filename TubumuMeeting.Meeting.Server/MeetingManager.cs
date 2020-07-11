@@ -29,8 +29,6 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncLock _groupLocker = new AsyncLock();
 
-        private readonly object _roomLocker = new object();
-
         private readonly object _peerLocker = new object();
 
         private readonly object _peerGroupLocker = new object();
@@ -55,53 +53,6 @@ namespace TubumuMeeting.Meeting.Server
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
         }
 
-        #region Group
-
-        public async Task<Group> GetOrCreateGroupAsync(Guid groupId, string name)
-        {
-            Group group;
-
-            using (await _groupLocker.LockAsync())
-            {
-                if (Groups.TryGetValue(groupId, out group))
-                {
-                    return group;
-                }
-
-                group = await CreateGroupAsync(groupId, name);
-                Groups[groupId] = group;
-            }
-
-            return group;
-        }
-
-        public Group? GroupClose(Guid groupId)
-        {
-            using (_groupLocker.Lock())
-            {
-                if (Groups.TryGetValue(groupId, out var group))
-                {
-                    group.Close();
-                    Groups.Remove(groupId);
-
-                    lock (_peerGroupLocker)
-                    {
-                        foreach (var peer in group.Peers.Values)
-                        {
-                            peer.Group = null;
-                        }
-
-                        group.Peers.Clear();
-                    }
-                    return group;
-                }
-
-                return null;
-            }
-        }
-
-        #endregion
-
         #region Peer
 
         public bool PeerHandle(string peerId, string name)
@@ -123,34 +74,33 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public bool PeerJoinAsync(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string[]? sources, Guid groupId, Dictionary<string, object>? appData)
+        public async Task<bool> PeerJoinAsync(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string[]? sources, Guid groupId, Dictionary<string, object>? appData)
         {
-            lock (_peerLocker)
+            using (await _groupLocker.LockAsync())
             {
-                if (!Peers.TryGetValue(peerId, out var peer))
+                if (!Groups.TryGetValue(groupId, out var group))
                 {
-                    _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists.");
-                    return false;
+                    group = await CreateGroupAsync(groupId, "Default");
                 }
 
-                if (peer.Joined)
+                lock (_peerLocker)
                 {
-                    _logger.LogWarning($"PeerJoin() | Peer[{peerId}] is joined.");
-                }
-
-                peer.RtpCapabilities = rtpCapabilities;
-                peer.SctpCapabilities = sctpCapabilities;
-                peer.Sources = sources;
-                peer.AppData = appData;
-                peer.Joined = true;
-
-                using (_groupLocker.Lock())
-                {
-                    if (!Groups.TryGetValue(groupId, out var group))
+                    if (!Peers.TryGetValue(peerId, out var peer))
                     {
-                        _logger.LogError($"PeerJoin() | Group[{groupId}] is not exists.");
+                        _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists.");
                         return false;
                     }
+
+                    if (peer.Joined)
+                    {
+                        _logger.LogWarning($"PeerJoin() | Peer[{peerId}] is joined.");
+                    }
+
+                    peer.RtpCapabilities = rtpCapabilities;
+                    peer.SctpCapabilities = sctpCapabilities;
+                    peer.Sources = sources;
+                    peer.AppData = appData;
+                    peer.Joined = true;
 
                     lock (_peerGroupLocker)
                     {
@@ -176,7 +126,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 lock (_peerGroupLocker)
                 {
-                    if(peer.Group!=null)
+                    if (peer.Group != null)
                     {
                         peer.Group.Peers.Remove(peerId);
                         peer.Group = null;
