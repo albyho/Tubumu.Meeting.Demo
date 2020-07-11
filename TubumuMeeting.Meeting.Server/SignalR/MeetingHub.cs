@@ -133,14 +133,17 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!_meetingManager.PeerJoin(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities, joinRequest.Sources, joinRequest.DeviceInfo))
+            // TODO: (alby)临时代码
+            await _meetingManager.GetOrCreateGroupAsync(joinRequest.GroupId, "Test");
+
+            if (!_meetingManager.PeerJoinAsync(UserId, 
+                joinRequest.RtpCapabilities, 
+                joinRequest.SctpCapabilities, 
+                joinRequest.Sources,
+                joinRequest.GroupId,
+                joinRequest.AppData))
             {
                 return new MeetingMessage { Code = 400, Message = "Join 失败: PeerJoin 失败" };
-            }
-
-            if (!await _meetingManager.PeerEnterGroupAsync(UserId, joinRequest.GroupId))
-            {
-                return new MeetingMessage { Code = 400, Message = "Join 失败: PeerEnterGroup 失败" };
             }
 
             foreach (var otherPeer in Group!.Peers.Values)
@@ -382,9 +385,9 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             var askForSources = otherPeer!.Sources.Intersect(askForProduceRequest.Sources).ToArray();
-            if(askForSources.Length == 0)
+            if(askForSources.Length != askForProduceRequest.Sources.Length)
             {
-                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: None matched sources" };
+                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: Some sources doesn't exist." };
             }
 
             // Message: newAskFor

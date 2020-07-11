@@ -152,7 +152,8 @@ export default {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
         sctpCapabilities: null, // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
         sources: ['mic', 'webcam'],
-        groupId: "00000000-0000-0000-0000-000000000000"
+        groupId: "00000000-0000-0000-0000-000000000000",
+        appData: {}
       });
       if (result.code !== 200) {
         logger.error("processMessage() | Join failure.");

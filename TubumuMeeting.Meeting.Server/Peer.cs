@@ -34,7 +34,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public string[]? Sources { get; set; }
 
-        public Dictionary<string, object>? DeviceInfo { get; set; }
+        public Dictionary<string, object>? AppData { get; set; }
 
         public Peer(string peerId, string displayName)
         {

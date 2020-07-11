@@ -123,7 +123,7 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public bool PeerJoin(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string[]? sources, Dictionary<string, object>? deviceInfo)
+        public bool PeerJoinAsync(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string[]? sources, Guid groupId, Dictionary<string, object>? appData)
         {
             lock (_peerLocker)
             {
@@ -141,30 +141,14 @@ namespace TubumuMeeting.Meeting.Server
                 peer.RtpCapabilities = rtpCapabilities;
                 peer.SctpCapabilities = sctpCapabilities;
                 peer.Sources = sources;
-                peer.DeviceInfo = deviceInfo;
+                peer.AppData = appData;
                 peer.Joined = true;
-                return true;
-            }
-        }
-
-        public async Task<bool> PeerEnterGroupAsync(string peerId, Guid groupId)
-        {
-            // TODO: (alby)临时代码
-            await GetOrCreateGroupAsync(groupId, "Test");
-
-            lock (_peerLocker)
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    _logger.LogError($"PeerEnterGroupAsync() | Peer[{peerId}] is not exists.");
-                    return false;
-                }
 
                 using (_groupLocker.Lock())
                 {
                     if (!Groups.TryGetValue(groupId, out var group))
                     {
-                        _logger.LogError($"PeerEnterGroupAsync() | Group[{groupId}] is not exists.");
+                        _logger.LogError($"PeerJoin() | Group[{groupId}] is not exists.");
                         return false;
                     }
 
