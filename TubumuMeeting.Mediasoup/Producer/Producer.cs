@@ -84,6 +84,11 @@ namespace TubumuMeeting.Mediasoup
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
+        /// App custom data.
+        /// </summary>
+        public string? Source { get; set; }
+
+        /// <summary>
         /// Whether the Producer is closed.
         /// </summary>
         public bool Closed { get; private set; }

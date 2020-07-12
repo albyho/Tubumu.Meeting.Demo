@@ -6,6 +6,6 @@ namespace TubumuMeeting.Mediasoup
     {
         public string PeerId { get; set; }
 
-        public string[]? ProducerIds { get; set; }
+        public string[] Sources { get; set; }
     }
 }

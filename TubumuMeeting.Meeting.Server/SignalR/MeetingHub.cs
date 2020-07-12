@@ -302,6 +302,9 @@ namespace TubumuMeeting.Meeting.Server
                 AppData = produceRequest.AppData,
             });
 
+            // Store producer source
+            producer.Source = produceRequest.Source;
+
             // Store the Producer into the Peer data Object.
             Peer.Producers[producer.ProducerId] = producer;
 
@@ -378,13 +381,12 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "AskForProduce 失败" };
             }
 
-            if (otherPeer!.Sources.IsNullOrEmpty())
+            if (otherPeer.Sources.IsNullOrEmpty())
             {
                 return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: None sources" };
             }
 
-            var askForSources = otherPeer!.Sources.Intersect(askForProduceRequest.Sources).ToArray();
-            if(askForSources.Length != askForProduceRequest.Sources.Length)
+            if (askForProduceRequest.Sources.Except(otherPeer.Sources).Any())
             {
                 return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: Some sources doesn't exist." };
             }
@@ -399,7 +401,7 @@ namespace TubumuMeeting.Meeting.Server
                 Data = new
                 {
                     PeerId = Peer!.PeerId,
-                    Sources = askForSources,
+                    Sources = askForProduceRequest.Sources,
                 }
             });
 
@@ -408,33 +410,32 @@ namespace TubumuMeeting.Meeting.Server
 
         public MeetingMessage Consume(ConsumeRequest consumeRequest)
         {
-            // 只能消费本组
             if (Group == null || !Group.Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
             {
                 return new MeetingMessage { Code = 400, Message = "Consume 失败" };
             }
 
-            if (!consumeRequest.ProducerIds.IsNullOrEmpty())
+            if (otherPeer.Sources.IsNullOrEmpty())
             {
-                foreach (var producerId in consumeRequest.ProducerIds!)
-                {
-                    if (!otherPeer.Producers.TryGetValue(producerId, out var producer))
-                    {
-                        _logger.LogWarning($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", producerId:\"{producerId}\"]");
-                        continue;
-                    }
-
-                    // 本 Peer 消费其他 Peer
-                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
-                }
+                return new MeetingMessage { Code = 400, Message = "Consume 失败: None sources" };
             }
-            else
+
+            if (consumeRequest.Sources.Except(otherPeer.Sources).Any())
             {
-                foreach (var producer in otherPeer.Producers.Values)
+                return new MeetingMessage { Code = 400, Message = "Consume 失败: Some sources doesn't exist." };
+            }
+
+            foreach (var source in consumeRequest.Sources)
+            {
+                var producer = otherPeer.Producers.Values.FirstOrDefault(m => m.Source == source);
+                if (producer == null)
                 {
-                    // 本 Peer 消费其他 Peer
-                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                    _logger.LogWarning($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", source:\"{source}\"]");
+                    continue;
                 }
+
+                // 本 Peer 消费其他 Peer
+                CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             return new MeetingMessage { Code = 200, Message = "Consume 成功" };

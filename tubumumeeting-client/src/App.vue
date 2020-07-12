@@ -207,6 +207,7 @@ export default {
               transportId: this.sendTransport.id,
               kind,
               rtpParameters,
+              source: appData.source,
               appData
             });
             if (result.code !== 200) {
@@ -218,7 +219,7 @@ export default {
 
             await this.connection.invoke("Consume", {
               peerId: 29,
-              producerIds: [result.data.id]
+              sources: [ appData.source ]
             });
 
           } catch (error) {
