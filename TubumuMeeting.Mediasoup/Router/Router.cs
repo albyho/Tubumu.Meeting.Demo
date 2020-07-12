@@ -326,7 +326,7 @@ namespace TubumuMeeting.Mediasoup
                 plainTransportOptions.EnableSctp,
                 plainTransportOptions.NumSctpStreams,
                 plainTransportOptions.MaxSctpMessageSize,
-                plainTransportOptions.MaxSctpSendBufferSize,
+                plainTransportOptions.SctpSendBufferSize,
                 IsDataChannel = false,
                 plainTransportOptions.EnableSrtp,
                 plainTransportOptions.SrtpCryptoSuite

@@ -809,8 +809,10 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "NewConsumerReturn 失败" };
             }
 
-            // Now that we got the positive response from the remote Peer and, if
-            // video, resume the Consumer to ask for an efficient key frame.
+            // Now that we got the positive response from the remote endpoint, resume
+            // the Consumer so the remote endpoint will receive the a first RTP packet
+            // of this new stream once its PeerConnection is already ready to process
+            // and associate it.
             await consumer.ResumeAsync();
 
             // Message: consumerScore
