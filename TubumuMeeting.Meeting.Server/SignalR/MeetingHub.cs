@@ -104,7 +104,11 @@ namespace TubumuMeeting.Meeting.Server
                             Code = 200,
                             InternalCode = "peerLeaveRoom",
                             Message = "peerLeaveRoom",
-                            Data = new { PeerId = UserId }
+                            Data = new
+                            {
+                                RoomId = room.RoomId,
+                                PeerId = UserId
+                            }
                         }).ContinueWithOnFaultedHandleLog(_logger);
                     }
                 }
@@ -140,6 +144,7 @@ namespace TubumuMeeting.Meeting.Server
             if (!await _meetingManager.PeerJoinAsync(UserId,
                 joinRequest.RtpCapabilities,
                 joinRequest.SctpCapabilities,
+                joinRequest.DisplayName,
                 joinRequest.Sources,
                 joinRequest.GroupId,
                 joinRequest.AppData))
@@ -277,7 +282,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     // Notify the new Peer to all other Peers.
-                    // Message: newPeer
+                    // Message: peerJoinRoom
                     var client = _hubContext.Clients.User(otherPeer.PeerId);
                     client.ReceiveMessage(new MeetingMessage
                     {
@@ -286,7 +291,8 @@ namespace TubumuMeeting.Meeting.Server
                         Message = "peerJoinRoom",
                         Data = new
                         {
-                            Id = Peer!.PeerId,
+                            RoomId = room.RoomId,
+                            PeerId = Peer.PeerId,
                             Peer.DisplayName,
                             Sources = Peer.Sources,
                         }
@@ -316,7 +322,10 @@ namespace TubumuMeeting.Meeting.Server
                         Code = 200,
                         InternalCode = "peerLeaveRoom",
                         Message = "peerLeaveRoom",
-                        Data = new { PeerId = UserId }
+                        Data = new { 
+                            RoomId = room.RoomId, 
+                            PeerId = UserId 
+                        }
                     }).ContinueWithOnFaultedHandleLog(_logger);
                 }
             }

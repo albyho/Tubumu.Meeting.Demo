@@ -61,11 +61,11 @@ namespace TubumuMeeting.Meeting.Server
 
         #region Peer
 
-        public bool PeerHandle(string peerId, string name)
+        public bool PeerHandle(string peerId, string displayName)
         {
             PeerClose(peerId);
 
-            var peer = new Peer(peerId, name);
+            var peer = new Peer(peerId, displayName);
             lock (_peerLocker)
             {
                 if (Peers.TryGetValue(peerId, out var _))
@@ -80,7 +80,13 @@ namespace TubumuMeeting.Meeting.Server
             return true;
         }
 
-        public async Task<bool> PeerJoinAsync(string peerId, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string[]? sources, Guid groupId, Dictionary<string, object>? appData)
+        public async Task<bool> PeerJoinAsync(string peerId,
+            RtpCapabilities rtpCapabilities,
+            SctpCapabilities? sctpCapabilities,
+            string displayName,
+            string[]? sources, 
+            Guid groupId, 
+            Dictionary<string, object>? appData)
         {
             using (await _groupLocker.LockAsync())
             {
@@ -93,12 +99,13 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     if (!Peers.TryGetValue(peerId, out var peer))
                     {
-                        _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists.");
+                        _logger.LogError($"PeerJoinAsync() | Peer[{peerId}] is not exists.");
                         return false;
                     }
 
                     peer.RtpCapabilities = rtpCapabilities;
                     peer.SctpCapabilities = sctpCapabilities;
+                    peer.DisplayName = displayName;
                     peer.Sources = sources;
                     peer.AppData = appData;
 
@@ -125,7 +132,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     if (!group.Peers.TryGetValue(peerId, out var peer))
                     {
-                        _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists in Group:{groupId}.");
+                        _logger.LogError($"PeerJoinRoomsAsync() | Peer[{peerId}] is not exists in Group:{groupId}.");
                         return false;
                     }
 
@@ -157,7 +164,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
-                    _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists.");
+                    _logger.LogError($"PeerLeaveRooms() | Peer[{peerId}] is not exists.");
                     return false;
                 }
 

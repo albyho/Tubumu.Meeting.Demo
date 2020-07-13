@@ -10,7 +10,7 @@ namespace TubumuMeeting.Meeting.Server
     {
         public string PeerId { get; }
 
-        public string DisplayName { get; }
+        public string DisplayName { get; set; }
 
         public bool Equals(Peer other)
         {
