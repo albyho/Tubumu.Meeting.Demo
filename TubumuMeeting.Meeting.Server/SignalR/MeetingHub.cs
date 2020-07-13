@@ -133,11 +133,11 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            // TODO: (alby)校验 Peer 是否有权限进入该 Group
+            // TODO: (alby)校验 Peer 是否有权限进入该 Group；或者不出入 GroupId 自行获取 Peer 对应的 Group 。
 
-            if (!await _meetingManager.PeerJoinAsync(UserId, 
-                joinRequest.RtpCapabilities, 
-                joinRequest.SctpCapabilities, 
+            if (!await _meetingManager.PeerJoinAsync(UserId,
+                joinRequest.RtpCapabilities,
+                joinRequest.SctpCapabilities,
                 joinRequest.Sources,
                 joinRequest.GroupId,
                 joinRequest.AppData))
@@ -164,6 +164,7 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         Id = Peer!.PeerId,
                         Peer.DisplayName,
+                        Sources = joinRequest.Sources,
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             }
@@ -291,6 +292,17 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "Produce 失败" };
             }
 
+            if (!Peer!.Sources.Contains(produceRequest.Source))
+            {
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ produceRequest.Source }\" cannot be produce." };
+            }
+
+            // TODO: (alby)线程安全：避免重复 Produce 相同的 Sources
+            if (Peer!.Producers.Any(m => m.Value.Source == produceRequest.Source))
+            {
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ produceRequest.Source }\" is exists." };
+            }
+
             // Add peerId into appData to later get the associated Peer during
             // the 'loudest' event of the audioLevelObserver.
             produceRequest.AppData["peerId"] = Peer.PeerId;
@@ -374,40 +386,6 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ResumeProducer 成功" };
         }
 
-        public async Task<MeetingMessage> AskForProduce(AskForProduceRequest askForProduceRequest)
-        {
-            if (Group == null || !Group.Peers.TryGetValue(askForProduceRequest.PeerId, out var otherPeer))
-            {
-                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败" };
-            }
-
-            if (otherPeer.Sources.IsNullOrEmpty())
-            {
-                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: None sources" };
-            }
-
-            if (askForProduceRequest.Sources.Except(otherPeer.Sources).Any())
-            {
-                return new MeetingMessage { Code = 400, Message = "AskForProduce 失败: Some sources doesn't exist." };
-            }
-
-            // Message: newAskFor
-            var client = _hubContext.Clients.User(otherPeer.PeerId);
-            await client.NewAskFor(new MeetingMessage
-            {
-                Code = 200,
-                InternalCode = "newAskFor",
-                Message = "newAskFor",
-                Data = new
-                {
-                    PeerId = Peer!.PeerId,
-                    Sources = askForProduceRequest.Sources,
-                }
-            });
-
-            return new MeetingMessage { Code = 200, Message = "AskForProduce 成功" };
-        }
-
         public MeetingMessage Consume(ConsumeRequest consumeRequest)
         {
             if (Group == null || !Group.Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
@@ -417,7 +395,7 @@ namespace TubumuMeeting.Meeting.Server
 
             if (otherPeer.Sources.IsNullOrEmpty())
             {
-                return new MeetingMessage { Code = 400, Message = "Consume 失败: None sources" };
+                return new MeetingMessage { Code = 400, Message = "Consume 失败: None sources." };
             }
 
             if (consumeRequest.Sources.Except(otherPeer.Sources).Any())
@@ -430,6 +408,7 @@ namespace TubumuMeeting.Meeting.Server
                 var producer = otherPeer.Producers.Values.FirstOrDefault(m => m.Source == source);
                 if (producer == null)
                 {
+                    // TODO: (alby)请求 Peer 进行 Produce；Produce 成功后再让本 Peer 进行 CreateConsumer 操作。
                     _logger.LogWarning($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", source:\"{source}\"]");
                     continue;
                 }
