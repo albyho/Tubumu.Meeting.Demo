@@ -68,7 +68,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             ClosePeer();
 
-            var handleResult = _meetingManager.PeerHandle(UserId, "Guest");
+            var handleResult = _meetingManager.PeerHandle(UserId);
             if (handleResult)
             {
                 return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });

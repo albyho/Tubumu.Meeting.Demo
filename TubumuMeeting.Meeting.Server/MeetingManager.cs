@@ -61,11 +61,11 @@ namespace TubumuMeeting.Meeting.Server
 
         #region Peer
 
-        public bool PeerHandle(string peerId, string displayName)
+        public bool PeerHandle(string peerId)
         {
             PeerClose(peerId);
 
-            var peer = new Peer(peerId, displayName);
+            var peer = new Peer(peerId, "Guest");
             lock (_peerLocker)
             {
                 if (Peers.TryGetValue(peerId, out var _))
