@@ -7,24 +7,24 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public partial class Group : IEquatable<Group>
+    public partial class Room : IEquatable<Room>
     {
-        public Guid GroupId { get; }
+        public Guid RoomId { get; }
 
         public string Name { get; }
 
-        public bool Equals(Group other)
+        public bool Equals(Room other)
         {
-            return GroupId == other.GroupId;
+            return RoomId == other.RoomId;
         }
 
         public override int GetHashCode()
         {
-            return GroupId.GetHashCode();
+            return RoomId.GetHashCode();
         }
     }
 
-    public partial class Group
+    public partial class Room
     {
         /// <summary>
         /// Logger factory for create logger.
@@ -34,35 +34,33 @@ namespace TubumuMeeting.Meeting.Server
         /// <summary>
         /// Logger.
         /// </summary>
-        private readonly ILogger<Group> _logger;
+        private readonly ILogger<Room> _logger;
+
+        public Group Group { get; private set; }
 
         public bool Closed { get; private set; }
 
-        public Router Router { get; private set; }
-
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
-        public Group(ILoggerFactory loggerFactory, Router router, Guid groupId, string name)
+        public Room(ILoggerFactory loggerFactory, Group group, Guid roomId, string name)
         {
             _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<Group>();
+            _logger = _loggerFactory.CreateLogger<Room>();
 
-            GroupId = groupId;
+            Group = group;
+            RoomId = roomId;
             Name = name.IsNullOrWhiteSpace() ? "Default" : name;
             Closed = false;
-            Router = router;
         }
 
         public void Close()
         {
-            _logger.LogError($"Close() | Group: {GroupId}");
+            _logger.LogError($"Close() | Room: {RoomId}");
 
             if (Closed)
             {
                 return;
             }
-
-            Router.Close();
 
             Closed = true;
         }
