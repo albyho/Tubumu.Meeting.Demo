@@ -365,14 +365,14 @@ export default {
           break;
         }
 
-        case "newPeer": {
+        case "peerJoinRoom": {
           // eslint-disable-next-line no-unused-vars
           const peer = data.data;
 
           break;
         }
 
-				case 'peerClosed':
+				case 'peerLeaveRoom':
 				{
           // eslint-disable-next-line no-unused-vars
 					const { peerId } = data.data;
