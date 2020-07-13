@@ -40,6 +40,8 @@ namespace TubumuMeeting.Meeting.Server
 
         public Router Router { get; private set; }
 
+        public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
+
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
         public Group(ILoggerFactory loggerFactory, Router router, Guid groupId, string name)

@@ -36,9 +36,9 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Room> _logger;
 
-        public Group Group { get; private set; }
-
         public bool Closed { get; private set; }
+
+        public Group Group { get; private set; }
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 

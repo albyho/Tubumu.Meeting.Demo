@@ -6,21 +6,34 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public class Peer : IEquatable<Peer>
+    public partial class Peer : IEquatable<Peer>
     {
         public string PeerId { get; }
 
         public string DisplayName { get; }
 
-        public bool Closed { get; private set; }
+        public bool Equals(Peer other)
+        {
+            return PeerId == other.PeerId;
+        }
 
-        public bool Joined { get; set; }
+        public override int GetHashCode()
+        {
+            return PeerId.GetHashCode();
+        }
+    }
+
+    public partial class Peer
+    {
+        public bool Closed { get; private set; }
 
         public RtpCapabilities? RtpCapabilities { get; set; }
 
         public SctpCapabilities? SctpCapabilities { get; set; }
 
         public Group? Group { get; set; }
+
+        public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
 
         public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();
 
@@ -51,7 +64,6 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             Closed = true;
-            Joined = false;
             RtpCapabilities = null;
             SctpCapabilities = null;
 
@@ -63,16 +75,6 @@ namespace TubumuMeeting.Meeting.Server
         public Transport GetConsumerTransport()
         {
             return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
-        }
-
-        public bool Equals(Peer other)
-        {
-            return PeerId == other.PeerId;
-        }
-
-        public override int GetHashCode()
-        {
-            return PeerId.GetHashCode();
         }
     }
 }

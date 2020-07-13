@@ -33,11 +33,17 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly object _peerGroupLocker = new object();
 
+        private readonly object _roomLocker = new object();
+
+        private readonly object _peerRoomLocker = new object();
+
         #endregion
 
         public RtpCapabilities DefaultRtpCapabilities { get; private set; }
 
         public Dictionary<Guid, Group> Groups { get; } = new Dictionary<Guid, Group>();
+
+        public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
@@ -91,16 +97,10 @@ namespace TubumuMeeting.Meeting.Server
                         return false;
                     }
 
-                    if (peer.Joined)
-                    {
-                        _logger.LogWarning($"PeerJoin() | Peer[{peerId}] is joined.");
-                    }
-
                     peer.RtpCapabilities = rtpCapabilities;
                     peer.SctpCapabilities = sctpCapabilities;
                     peer.Sources = sources;
                     peer.AppData = appData;
-                    peer.Joined = true;
 
                     lock (_peerGroupLocker)
                     {
@@ -108,6 +108,74 @@ namespace TubumuMeeting.Meeting.Server
                         peer.Group = group;
                         return true;
                     }
+                }
+            }
+        }
+
+        public async Task<bool> PeerJoinRoomsAsync(string peerId, Guid groupId, Guid[] roomIds)
+        {
+            using (await _groupLocker.LockAsync())
+            {
+                if (!Groups.TryGetValue(groupId, out var group))
+                {
+                    group = await CreateGroupAsync(groupId, "Default");
+                }
+
+                lock (_peerGroupLocker)
+                {
+                    if (!group.Peers.TryGetValue(peerId, out var peer))
+                    {
+                        _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists in Group:{groupId}.");
+                        return false;
+                    }
+
+                    lock (_roomLocker)
+                    {
+                        foreach (var roomId in roomIds)
+                        {
+                            if (!group.Rooms.TryGetValue(roomId, out var room))
+                            {
+                                room = CreateRoom(group, roomId, "Default");
+                            }
+
+                            lock (_peerRoomLocker)
+                            {
+                                room.Peers[peerId] = peer;
+                                peer.Rooms[roomId] = room;
+                            }
+                        }
+
+                        return true;
+                    }
+                }
+            }
+        }
+
+        public bool PeerLeaveRooms(string peerId, Guid[] roomIds)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerJoin() | Peer[{peerId}] is not exists.");
+                    return false;
+                }
+
+                lock (_peerRoomLocker)
+                {
+                    var roomIdsToRemove = new List<Guid>();
+                    foreach (var room in peer.Rooms.Values.Where(m => roomIds.Contains(m.RoomId)))
+                    {
+                        room.Peers.Remove(peerId);
+                        roomIdsToRemove.Add(room.RoomId);
+                    }
+
+                    foreach (var roomId in roomIdsToRemove)
+                    {
+                        peer.Rooms.Remove(roomId);
+                    }
+
+                    return true;
                 }
             }
         }
@@ -131,6 +199,16 @@ namespace TubumuMeeting.Meeting.Server
                         peer.Group.Peers.Remove(peerId);
                         peer.Group = null;
                     }
+
+                    lock (_peerRoomLocker)
+                    {
+                        foreach (var room in peer.Rooms.Values)
+                        {
+                            room.Peers.Remove(peerId);
+                        }
+
+                        peer.Rooms.Clear();
+                    }
                 }
             }
         }
@@ -152,7 +230,15 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             var group = new Group(_loggerFactory, router, groupId, name);
+            Groups[groupId] = group;
             return group;
+        }
+
+        private Room CreateRoom(Group group, Guid roomId, string name)
+        {
+            var room = new Room(_loggerFactory, group, roomId, name);
+            Rooms[roomId] = room;
+            return room;
         }
 
         #endregion
