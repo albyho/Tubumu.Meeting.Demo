@@ -151,6 +151,7 @@ export default {
       result = await this.connection.invoke("Join", {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
         sctpCapabilities: null, // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
+        displayName: "Guest",
         sources: ['mic', 'webcam'],
         groupId: "00000000-0000-0000-0000-000000000000",
         appData: {}
@@ -172,7 +173,7 @@ export default {
         return;
       }
 
-      // CreateWebRtcTransport(生产), createSendTransport(生产)
+      // CreateWebRtcTransport(生产), createSendTransport
       this.sendTransport = this.mediasoupDevice.createSendTransport({
         id: result.data.id,
         iceParameters: result.data.iceParameters,
@@ -240,7 +241,7 @@ export default {
         sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
       });
 
-      // CreateWebRtcTransport(消费), createRecvTransport
+      // CreateWebRtcTransport(消费)成功, createRecvTransport
       this.recvTransport = this.mediasoupDevice.createRecvTransport({
         id: result.data.id,
         iceParameters: result.data.iceParameters,
@@ -263,6 +264,15 @@ export default {
             .catch(errback);
         }
       );
+
+      // createRecvTransport成功, JoinRooms
+      result = await this.connection.invoke("JoinRooms", {
+        roomId: ["00000000-0000-0000-0000-000000000000"]
+      });
+      if (result.code !== 200) {
+        logger.error("processMessage() | JoinRooms failure.");
+        return;
+      }
 
       if (this.mediasoupDevice.canProduce("audio")) {
         this.enableMic();
