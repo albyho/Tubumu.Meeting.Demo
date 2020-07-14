@@ -219,6 +219,7 @@ export default {
             callback({ id: result.data.id });
 
             await this.connection.invoke("Consume", {
+              roomId: "1",
               peerId: 29,
               sources: [ appData.source ]
             });
@@ -267,7 +268,7 @@ export default {
 
       // createRecvTransport成功, JoinRooms
       result = await this.connection.invoke("JoinRooms", {
-        roomId: ["00000000-0000-0000-0000-000000000000"]
+        roomIds: ["1"]
       });
       if (result.code !== 200) {
         logger.error("processMessage() | JoinRooms failure.");

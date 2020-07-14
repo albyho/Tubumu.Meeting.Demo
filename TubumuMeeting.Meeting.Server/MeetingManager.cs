@@ -43,7 +43,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<Guid, Group> Groups { get; } = new Dictionary<Guid, Group>();
 
-        public Dictionary<Guid, Room> Rooms { get; } = new Dictionary<Guid, Room>();
+        public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
@@ -119,7 +119,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> PeerJoinRoomsAsync(string peerId, Guid groupId, Guid[] roomIds)
+        public async Task<bool> PeerJoinRoomsAsync(string peerId, Guid groupId, string[] roomIds)
         {
             using (await _groupLocker.LockAsync())
             {
@@ -158,7 +158,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public bool PeerLeaveRooms(string peerId, Guid[] roomIds)
+        public bool PeerLeaveRooms(string peerId, string[] roomIds)
         {
             lock (_peerLocker)
             {
@@ -170,7 +170,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 lock (_peerRoomLocker)
                 {
-                    var roomIdsToRemove = new List<Guid>();
+                    var roomIdsToRemove = new List<string>();
                     foreach (var room in peer.Rooms.Values.Where(m => roomIds.Contains(m.RoomId)))
                     {
                         room.Peers.Remove(peerId);
@@ -241,9 +241,10 @@ namespace TubumuMeeting.Meeting.Server
             return group;
         }
 
-        private Room CreateRoom(Group group, Guid roomId, string name)
+        private Room CreateRoom(Group group, string roomId, string name)
         {
             var room = new Room(_loggerFactory, group, roomId, name);
+            group.Rooms[roomId] = room;
             Rooms[roomId] = room;
             return room;
         }

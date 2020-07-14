@@ -5,6 +5,6 @@ namespace TubumuMeeting.Mediasoup
 {
     public class JoinRoomsRequest
     {
-        public Guid[] RoomIds { get; set; }
+        public string[] RoomIds { get; set; }
     }
 }

@@ -451,7 +451,7 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = $"Consume 失败: You're not in Room:{consumeRequest.RoomId}" };
             }
 
-            if (room.Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
+            if (!room.Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
             {
                 return new MeetingMessage { Code = 400, Message = $"Consume 失败: Peer:{consumeRequest.PeerId} is not in Room:{consumeRequest.RoomId}" };
             }

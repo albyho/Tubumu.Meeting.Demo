@@ -5,7 +5,7 @@ namespace TubumuMeeting.Mediasoup
 {
     public class ConsumeRequest
     {
-        public Guid RoomId { get; set; }
+        public string RoomId { get; set; }
 
         public string PeerId { get; set; }
 
