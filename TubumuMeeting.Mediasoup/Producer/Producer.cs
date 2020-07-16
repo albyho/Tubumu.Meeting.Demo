@@ -84,7 +84,7 @@ namespace TubumuMeeting.Mediasoup
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
-        /// App custom data.
+        /// Source.
         /// </summary>
         public string? Source { get; set; }
 

@@ -65,8 +65,8 @@ namespace TubumuMeeting.Meeting.Server
             RtpCapabilities rtpCapabilities,
             SctpCapabilities? sctpCapabilities,
             string displayName,
-            string[]? sources, 
-            Guid groupId, 
+            string[]? sources,
+            Guid groupId,
             Dictionary<string, object>? appData)
         {
             PeerClose(peerId);
@@ -106,7 +106,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> PeerJoinRoomsAsync(string peerId, Guid groupId, string[] roomIds)
+        public async Task<RoomInterestedSources> PeerJoinRoomAsync(string peerId, Guid groupId, JoinRoomRequest joinRoomRequest)
         {
             using (await _groupLocker.LockAsync())
             {
@@ -120,54 +120,51 @@ namespace TubumuMeeting.Meeting.Server
                     if (!group.Peers.TryGetValue(peerId, out var peer))
                     {
                         _logger.LogError($"PeerJoinRoomsAsync() | Peer[{peerId}] is not exists in Group:{groupId}.");
-                        return false;
+                        return null;
                     }
 
                     lock (_roomLocker)
                     {
-                        foreach (var roomId in roomIds)
+                        if (!group.Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
                         {
-                            if (!group.Rooms.TryGetValue(roomId, out var room))
-                            {
-                                room = CreateRoom(group, roomId, "Default");
-                            }
-
-                            lock (_peerRoomLocker)
-                            {
-                                room.Peers[peerId] = peer;
-                                peer.Rooms[roomId] = room;
-                            }
+                            room = CreateRoom(group, joinRoomRequest.RoomId, "Default");
                         }
 
-                        return true;
+                        var roomInterestedSources = new RoomInterestedSources(room, joinRoomRequest.InterestedSources);
+
+                        lock (_peerRoomLocker)
+                        {
+                            room.Peers[peerId] = peer;
+                            peer.Rooms[joinRoomRequest.RoomId] = roomInterestedSources;
+                        }
+
+                        return roomInterestedSources;
                     }
                 }
             }
         }
 
-        public bool PeerLeaveRooms(string peerId, string[] roomIds)
+        public bool PeerLeaveRoom(string peerId, string roomId)
         {
             lock (_peerLocker)
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     _logger.LogError($"PeerLeaveRooms() | Peer[{peerId}] is not exists.");
+
                     return false;
                 }
 
                 lock (_peerRoomLocker)
                 {
                     var roomIdsToRemove = new List<string>();
-                    foreach (var room in peer.Rooms.Values.Where(m => roomIds.Contains(m.RoomId)))
+                    if (peer.Rooms.TryGetValue(roomId, out var room))
                     {
-                        room.Peers.Remove(peerId);
-                        roomIdsToRemove.Add(room.RoomId);
+                        room.Room.Peers.Remove(peerId);
+                        roomIdsToRemove.Add(room.Room.RoomId);
                     }
 
-                    foreach (var roomId in roomIdsToRemove)
-                    {
-                        peer.Rooms.Remove(roomId);
-                    }
+                    peer.Rooms.Remove(roomId);
 
                     return true;
                 }
@@ -196,7 +193,8 @@ namespace TubumuMeeting.Meeting.Server
                 peer.DataConsumers.Clear();
             }
         }
-            public void PeerClose(string peerId)
+
+        public void PeerClose(string peerId)
         {
             lock (_peerLocker)
             {
@@ -220,7 +218,7 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         foreach (var room in peer.Rooms.Values)
                         {
-                            room.Peers.Remove(peerId);
+                            room.Room.Peers.Remove(peerId);
                         }
 
                         peer.Rooms.Clear();

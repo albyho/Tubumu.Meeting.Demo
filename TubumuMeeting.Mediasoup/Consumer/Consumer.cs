@@ -49,7 +49,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        private ConsumerInternalData Internal { get; set; }
+        public ConsumerInternalData Internal { get; private set; }
 
         /// <summary>
         /// Consumer id.
@@ -84,6 +84,11 @@ namespace TubumuMeeting.Mediasoup
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
+
+        /// <summary>
+        /// Source.
+        /// </summary>
+        public string? Source { get; set; }
 
         /// <summary>
         /// Whether the Consumer is closed.

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace TubumuMeeting.Mediasoup
 {
-    public class JoinRoomsRequest
+    public class LeaveRoomRequest
     {
-        public string[] RoomIds { get; set; }
+        public string RoomId { get; set; }
     }
 }
