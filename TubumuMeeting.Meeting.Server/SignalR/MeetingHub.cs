@@ -68,13 +68,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             ClosePeer();
 
-            var handleResult = _meetingManager.PeerHandle(UserId);
-            if (handleResult)
-            {
-                return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
-            }
-
-            return Clients.Caller.PeerHandled(new MeetingMessage { Code = 400, Message = "连接失败" });
+            return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
@@ -90,13 +84,8 @@ namespace TubumuMeeting.Meeting.Server
             {
                 foreach (var room in Peer.Rooms.Values)
                 {
-                    foreach (var otherPeer in room.Peers.Values)
+                    foreach (var otherPeer in room.Peers.Values.Where(m => m.PeerId != UserId))
                     {
-                        if (otherPeer.PeerId == UserId)
-                        {
-                            continue;
-                        }
-
                         // Message: peerClosed
                         var client = _hubContext.Clients.User(otherPeer.PeerId);
                         client.ReceiveMessage(new MeetingMessage
@@ -111,13 +100,6 @@ namespace TubumuMeeting.Meeting.Server
                             }
                         }).ContinueWithOnFaultedHandleLog(_logger);
                     }
-                }
-
-                // Iterate and close all mediasoup Transport associated to this Peer, so all
-                // its Producers and Consumers will also be closed.
-                foreach (var transport in Peer!.Transports.Values)
-                {
-                    transport.Close();
                 }
             }
 
@@ -274,13 +256,8 @@ namespace TubumuMeeting.Meeting.Server
 
             foreach (var room in Peer.Rooms.Values)
             {
-                foreach (var otherPeer in room.Peers.Values)
+                foreach (var otherPeer in room.Peers.Values.Where(m => m.PeerId != UserId))
                 {
-                    if (otherPeer.PeerId == UserId)
-                    {
-                        continue;
-                    }
-
                     // Notify the new Peer to all other Peers.
                     // Message: peerJoinRoom
                     var client = _hubContext.Clients.User(otherPeer.PeerId);
@@ -307,13 +284,8 @@ namespace TubumuMeeting.Meeting.Server
         {
             foreach (var room in Peer.Rooms.Values.Where(m => leaveRoomsRequest.RoomIds.Contains(m.RoomId)))
             {
-                foreach (var otherPeer in room.Peers.Values)
+                foreach (var otherPeer in room.Peers.Values.Where(m => m.PeerId != UserId))
                 {
-                    if (otherPeer.PeerId == UserId)
-                    {
-                        continue;
-                    }
-
                     // Notify the new Peer to all other Peers.
                     // Message: peerLeaveRoom
                     var client = _hubContext.Clients.User(otherPeer.PeerId);
@@ -322,9 +294,10 @@ namespace TubumuMeeting.Meeting.Server
                         Code = 200,
                         InternalCode = "peerLeaveRoom",
                         Message = "peerLeaveRoom",
-                        Data = new { 
-                            RoomId = room.RoomId, 
-                            PeerId = UserId 
+                        Data = new
+                        {
+                            RoomId = room.RoomId,
+                            PeerId = UserId
                         }
                     }).ContinueWithOnFaultedHandleLog(_logger);
                 }
@@ -335,6 +308,11 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "LeaveRooms 失败: PeerLeaveRooms 失败" };
             }
 
+            if (!Peer.Rooms.Any())
+            {
+                _meetingManager.PeerCleanup(UserId);
+            }
+
             return new MeetingMessage { Code = 200, Message = "LeaveRooms 成功" };
         }
 
@@ -342,7 +320,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             if (!Peer.Rooms.Any())
             {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Not in any room." };
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} is not in any rooms." };
             }
 
             if (!Peer.Transports.TryGetValue(produceRequest.TransportId, out var transport))
@@ -356,16 +334,22 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             // TODO: (alby)线程安全：避免重复 Produce 相同的 Sources
-            if (Peer!.Producers.Any(m => m.Value.Source == produceRequest.Source))
+            var producer = Peer!.Producers.Values.FirstOrDefault(m => m.Source == produceRequest.Source);
+            if (producer != null)
             {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ produceRequest.Source }\" is exists." };
+                return new MeetingMessage
+                {
+                    Code = 201,
+                    Message = "Produce 成功",
+                    Data = new ProduceResult { Id = producer.ProducerId }
+                };
             }
 
             // Add peerId into appData to later get the associated Peer during
             // the 'loudest' event of the audioLevelObserver.
             produceRequest.AppData["peerId"] = Peer.PeerId;
 
-            var producer = await transport.ProduceAsync(new ProducerOptions
+            producer = await transport.ProduceAsync(new ProducerOptions
             {
                 Kind = produceRequest.Kind,
                 RtpParameters = produceRequest.RtpParameters,
@@ -444,7 +428,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ResumeProducer 成功" };
         }
 
-        public MeetingMessage Consume(ConsumeRequest consumeRequest)
+        public async Task<MeetingMessage> Consume(ConsumeRequest consumeRequest)
         {
             if (!Peer.Rooms.TryGetValue(consumeRequest.RoomId, out var room))
             {
@@ -472,7 +456,20 @@ namespace TubumuMeeting.Meeting.Server
                 if (producer == null)
                 {
                     // TODO: (alby)请求 Peer 进行 Produce；Produce 成功后再让本 Peer 进行 CreateConsumer 操作。
-                    _logger.LogWarning($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", source:\"{source}\"]");
+                    _logger.LogDebug($"Consume() | None producer: [peerId:\"{consumeRequest.PeerId}\", source:\"{source}\"]");
+                    // Message: newAskFor
+                    var client = _hubContext.Clients.User(otherPeer.PeerId);
+                    await client.NewAskFor(new MeetingMessage
+                    {
+                        Code = 200,
+                        InternalCode = "newAskFor",
+                        Message = "newAskFor",
+                        Data = new
+                        {
+                            RoomId = consumeRequest.RoomId,
+                            Source = source,
+                        }
+                    });
                     continue;
                 }
 
@@ -560,7 +557,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             if (!Peer.Rooms.Any())
             {
-                return new MeetingMessage { Code = 400, Message = $"ProduceData 失败: Not in any room." };
+                return new MeetingMessage { Code = 400, Message = $"ProduceData 失败: Peer:{Peer.PeerId} is not in any rooms." };
             }
 
             if (!Peer.Transports.TryGetValue(produceDataRequest.TransportId, out var transport))
@@ -584,13 +581,8 @@ namespace TubumuMeeting.Meeting.Server
             // Create a server-side DataConsumer for each Peer.
             foreach (var room in Peer.Rooms.Values)
             {
-                foreach (var otherPeer in room.Peers.Values)
+                foreach (var otherPeer in room.Peers.Values.Where(m => m.PeerId != UserId))
                 {
-                    if (otherPeer.PeerId == UserId)
-                    {
-                        continue;
-                    }
-
                     // 其他 Peer 消费本 Peer
                     CreateDataConsumer(otherPeer, Peer, dataProducer).ContinueWithOnFaultedHandleLog(_logger);
                 }

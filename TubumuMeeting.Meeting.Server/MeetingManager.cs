@@ -61,25 +61,6 @@ namespace TubumuMeeting.Meeting.Server
 
         #region Peer
 
-        public bool PeerHandle(string peerId)
-        {
-            PeerClose(peerId);
-
-            var peer = new Peer(peerId, "Guest");
-            lock (_peerLocker)
-            {
-                if (Peers.TryGetValue(peerId, out var _))
-                {
-                    _logger.LogError($"PeerHandle() | Peer[{peerId}] is exists.");
-                    return false;
-                }
-
-                Peers[peerId] = peer;
-            }
-
-            return true;
-        }
-
         public async Task<bool> PeerJoinAsync(string peerId,
             RtpCapabilities rtpCapabilities,
             SctpCapabilities? sctpCapabilities,
@@ -88,6 +69,8 @@ namespace TubumuMeeting.Meeting.Server
             Guid groupId, 
             Dictionary<string, object>? appData)
         {
+            PeerClose(peerId);
+
             using (await _groupLocker.LockAsync())
             {
                 if (!Groups.TryGetValue(groupId, out var group))
@@ -97,17 +80,21 @@ namespace TubumuMeeting.Meeting.Server
 
                 lock (_peerLocker)
                 {
-                    if (!Peers.TryGetValue(peerId, out var peer))
+                    if (Peers.TryGetValue(peerId, out var peer))
                     {
-                        _logger.LogError($"PeerJoinAsync() | Peer[{peerId}] is not exists.");
+                        _logger.LogError($"PeerJoinAsync() | Peer[{peerId}] has already in Group:{groupId}.");
                         return false;
                     }
 
-                    peer.RtpCapabilities = rtpCapabilities;
-                    peer.SctpCapabilities = sctpCapabilities;
-                    peer.DisplayName = displayName;
-                    peer.Sources = sources;
-                    peer.AppData = appData;
+                    peer = new Peer(peerId, displayName)
+                    {
+                        RtpCapabilities = rtpCapabilities,
+                        SctpCapabilities = sctpCapabilities,
+                        Sources = sources,
+                        AppData = appData
+                    };
+
+                    Peers[peerId] = peer;
 
                     lock (_peerGroupLocker)
                     {
@@ -187,7 +174,29 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public void PeerClose(string peerId)
+        public void PeerCleanup(string peerId)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerCleanup() | Peer[{peerId}] is not exists.");
+                }
+
+                peer.Producers.ForEach(m => m.Value.Close());
+                peer.Producers.Clear();
+
+                peer.Consumers.ForEach(m => m.Value.Close());
+                peer.Consumers.Clear();
+
+                peer.DataProducers.ForEach(m => m.Value.Close());
+                peer.DataProducers.Clear();
+
+                peer.DataConsumers.ForEach(m => m.Value.Close());
+                peer.DataConsumers.Clear();
+            }
+        }
+            public void PeerClose(string peerId)
         {
             lock (_peerLocker)
             {

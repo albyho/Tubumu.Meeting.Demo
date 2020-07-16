@@ -70,7 +70,6 @@ export default {
       mediasoupDevice: null,
       sendTransport: null,
       recvTransport: null,
-      consumers: new Map(),
       webcams: {},
       audioDevices: {},
       webcamProducer: null,
@@ -80,7 +79,10 @@ export default {
       forceVP9: false,
       localVideoStream: null,
       remoteVideoStream: null,
-      remoteAudioStream: null
+      remoteAudioStream: null,
+      rooms: new Map(),
+      peers: new Map(),
+      consumers: new Map()
     };
   },
   mounted() {
