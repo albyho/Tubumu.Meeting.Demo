@@ -43,8 +43,6 @@ namespace TubumuMeeting.Meeting.Server
 
         Task NewConsumer(MeetingMessage message);
 
-        Task NewAskFor(MeetingMessage message);
-
         Task ReceiveMessage(MeetingMessage message);
     }
 
@@ -285,7 +283,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
                 });
 
-                foreach (var interestedSource in otherPeer.Rooms[joinRoomRequest.RoomId].InterestedSources)
+                foreach (var interestedSource in otherPeer.Rooms[joinRoomRequest.RoomId].InterestedSources.Where(m => Peer.Sources.Contains(m)))
                 {
                     var producer = Peer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
                     if (producer != null)
@@ -348,12 +346,19 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
-            if (!Peer.Rooms.TryGetValue(produceRequest.RoomId, out var room))
+            if(produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
             {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} is not in any rooms." };
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} AppData[\"source\"] is null." };
             }
+            var source = sourceObj.ToString();
 
-            if (!Peer.Rooms.Any())
+            if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("roomId", out var roomIdObj))
+            {
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} AppData[\"roomId\"] is null." };
+            }
+            var roomId = roomIdObj.ToString();
+
+            if (!Peer.Rooms.TryGetValue(roomId, out var room))
             {
                 return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} is not in any rooms." };
             }
@@ -363,16 +368,16 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "Produce 失败" };
             }
 
-            if (!Peer!.Sources.Contains(produceRequest.Source))
+            if (!Peer!.Sources.Contains(source))
             {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ produceRequest.Source }\" cannot be produce." };
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ source }\" cannot be produce." };
             }
 
             // TODO: (alby)线程安全：避免重复 Produce 相同的 Sources
-            var producer = Peer!.Producers.Values.FirstOrDefault(m => m.Source == produceRequest.Source);
+            var producer = Peer!.Producers.Values.FirstOrDefault(m => m.Source == source);
             if (producer != null)
             {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ produceRequest.Source }\" is exists." };
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ source }\" is exists." };
             }
 
             // Add peerId into appData to later get the associated Peer during
@@ -387,7 +392,7 @@ namespace TubumuMeeting.Meeting.Server
             });
 
             // Store producer source
-            producer.Source = produceRequest.Source;
+            producer.Source = source;
 
             // Store the Producer into the Peer data Object.
             Peer.Producers[producer.ProducerId] = producer;
@@ -415,13 +420,10 @@ namespace TubumuMeeting.Meeting.Server
 
             foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
             {
-                foreach (var interestedSource in otherPeer.Rooms[produceRequest.RoomId].InterestedSources)
+                if (otherPeer.Rooms[roomId].InterestedSources.Any(m => m == producer.Source))
                 {
-                    if (producer.Source == interestedSource)
-                    {
-                        // 其他 Peer 消费本 Peer
-                        CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
-                    }
+                    // 其他 Peer 消费本 Peer
+                    CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
                 }
             }
 

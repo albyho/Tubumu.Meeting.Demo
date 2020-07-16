@@ -210,7 +210,6 @@ export default {
               transportId: this.sendTransport.id,
               kind,
               rtpParameters,
-              source: appData.source,
               appData
             });
             if (result.code !== 200) {
@@ -219,13 +218,6 @@ export default {
               return;
             }
             callback({ id: result.data.id });
-
-            await this.connection.invoke("Consume", {
-              roomId: "1",
-              peerId: 29,
-              sources: [ appData.source ]
-            });
-
           } catch (error) {
             errback(error);
           }
@@ -268,21 +260,25 @@ export default {
         }
       );
 
-      // createRecvTransport成功, JoinRooms
-      result = await this.connection.invoke("JoinRooms", {
-        roomIds: ["1"]
+      // createRecvTransport成功, JoinRoom
+      result = await this.connection.invoke("JoinRoom", {
+        roomId: "1",
+        interestedSources: ["mic", "webcam"]
       });
       if (result.code !== 200) {
-        logger.error("processMessage() | JoinRooms failure.");
+        logger.error("processMessage() | JoinRoom failure.");
         return;
       }
 
-      if (this.mediasoupDevice.canProduce("audio")) {
-        this.enableMic();
-      }
-
-      if (this.mediasoupDevice.canProduce("video")) {
-        this.enableWebcam();
+      const needsProduces = result.data;
+      if(needsProduces && needsProduces.needsProduceSources) {
+        for(let i = 0; i< needsProduces.needsProduceSources.length; i++) {
+          if(needsProduces.needsProduceSources[i] === "mic" && this.mediasoupDevice.canProduce("audio")) {
+            this.enableMic();
+          } else if(needsProduces.needsProduceSources[i] === "webcam" && this.mediasoupDevice.canProduce("video")) {
+            this.enableWebcam();
+          }
+        }
       }
     },
     async processNewConsumer(data) {
@@ -483,7 +479,7 @@ export default {
             opusStereo: 1,
             opusDtx: 1
           },
-          appData: { source: "mic" }
+          appData: { source: "mic", roomId: "1" }
         });
 
         this.micProducer.on("transportclose", () => {
@@ -598,9 +594,7 @@ export default {
           encodings,
           codecOptions,
           codec,
-          appData: {
-            source: "webcam"
-          }
+          appData: { source: "webcam", roomId: "1" }
         });
 
         this.webcamProducer.on("transportclose", () => {
