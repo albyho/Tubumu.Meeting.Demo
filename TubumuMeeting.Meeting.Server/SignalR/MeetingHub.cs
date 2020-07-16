@@ -119,8 +119,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            // TODO: (alby)校验 Peer 是否有权限进入该 Group；或者不输入 GroupId 自行获取 Peer 对应的 Group 。
-
             if (!await _meetingManager.PeerJoinAsync(UserId,
                 joinRequest.RtpCapabilities,
                 joinRequest.SctpCapabilities,
@@ -248,21 +246,18 @@ namespace TubumuMeeting.Meeting.Server
             var room = await _meetingManager.PeerJoinRoomAsync(UserId, Peer.Group.GroupId, joinRoomRequest);
             if (room == null)
             {
-                return new MeetingMessage { Code = 400, Message = "JoinRooms 失败: PeerJoinRoom 失败" };
+                return new MeetingMessage { Code = 400, Message = "JoinRoom 失败: PeerJoinRoom 失败" };
             }
 
-            // (1)、消费：遍历房间内所有 Peer 的所有 Producer，匹配本人的 InterestedSources，则主动消费。
-            // (2)、生产：遍历房间内所有 Peer，如果有任意 Peer 对本人能够提供但又没有对应 Producer 的 Sources，则生产。否则消费。
+            // 1、消费：遍历房间内其他 Peer 的所有 Producer，匹配本人的 InterestedSources，则主动消费。
+            // 2、生产：遍历房间内其他 Peer 在本房间的 InterestedSources，如果本 Peer 已经生产则让其消费，否则告知客户端进行生产。
             var needsProduceSources = new HashSet<string>();
             foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
             {
-                foreach (var producer in otherPeer.Producers.Values)
+                foreach (var producer in otherPeer.Producers.Values.Where(m => room.InterestedSources.Contains(m.Source)))
                 {
-                    if (!Peer.Consumers.Any(m => m.Value.Internal.ProducerId == producer.ProducerId) && room.InterestedSources.Contains(producer.Source))
-                    {
-                        // 本 Peer 消费其他 Peer
-                        CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
-                    }
+                    // 本 Peer 消费其他 Peer
+                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
                 }
 
                 // Notify the new Peer to all other Peers.
@@ -293,6 +288,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
                     else
                     {
+                        // 需要生产相应的 Producer 供其他 Peer 消费
                         needsProduceSources.Add(interestedSource);
                     }
                 }
@@ -303,14 +299,14 @@ namespace TubumuMeeting.Meeting.Server
                 RoomId = joinRoomRequest.RoomId,
                 NeedsProduceSources = needsProduceSources,
             };
-            return new MeetingMessage { Code = 200, Message = "JoinRooms 成功", Data = needsProduces };
+            return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = needsProduces };
         }
 
         public MeetingMessage LeaveRoom(LeaveRoomRequest leaveRoomsRequest)
         {
             if (!Peer.Rooms.TryGetValue(leaveRoomsRequest.RoomId, out var room))
             {
-                return new MeetingMessage { Code = 200, Message = "LeaveRooms 成功" };
+                return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
             }
 
             foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
@@ -329,16 +325,32 @@ namespace TubumuMeeting.Meeting.Server
                         PeerId = UserId
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
+
+                // Note: 其他 Peer 客户端自行关闭相应的 Consumer 。
             }
 
             if (!_meetingManager.PeerLeaveRoom(UserId, leaveRoomsRequest.RoomId))
             {
-                return new MeetingMessage { Code = 400, Message = "LeaveRooms 失败: PeerLeaveRooms 失败" };
+                return new MeetingMessage { Code = 400, Message = "LeaveRooms 失败: PeerLeaveRoom 失败" };
             }
 
-            if (!Peer.Rooms.Any())
+            var producersToClose = new List<Producer>();
+            var consumers = from ri in Peer.Rooms.Values
+                            from p in ri.Room.Peers.Values
+                            from pc in p.Consumers.Values
+                            select pc;
+            foreach(var producer in Peer.Producers.Values)
             {
-                _meetingManager.PeerCleanup(UserId);
+                if(consumers.All(m=>m.Internal.ProducerId != producer.ProducerId))
+                {
+                    producersToClose.Add(producer);
+                }
+            }
+
+            foreach(var producerToClose in producersToClose)
+            {
+                producerToClose.Close();
+                Peer.Producers.Remove(producerToClose.ProducerId);
             }
 
             return new MeetingMessage { Code = 200, Message = "LeaveRooms 成功" };
@@ -346,7 +358,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
-            if(produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
+            if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
             {
                 return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} AppData[\"source\"] is null." };
             }
@@ -360,12 +372,12 @@ namespace TubumuMeeting.Meeting.Server
 
             if (!Peer.Rooms.TryGetValue(roomId, out var room))
             {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} is not in any rooms." };
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} is not in Room:{roomId}." };
             }
 
             if (!Peer.Transports.TryGetValue(produceRequest.TransportId, out var transport))
             {
-                return new MeetingMessage { Code = 400, Message = "Produce 失败" };
+                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Transport:{produceRequest.TransportId} is not exists." };
             }
 
             if (!Peer!.Sources.Contains(source))
@@ -418,13 +430,11 @@ namespace TubumuMeeting.Meeting.Server
                 _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
             });
 
-            foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
+            // 如果在本房间的其他 Peer 的 InterestedSources 匹配该 Producer 则消费
+            foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId && m.Rooms[roomId].InterestedSources.Any(m => m == producer.Source)))
             {
-                if (otherPeer.Rooms[roomId].InterestedSources.Any(m => m == producer.Source))
-                {
-                    // 其他 Peer 消费本 Peer
-                    CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
-                }
+                // 其他 Peer 消费本 Peer
+                CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             return new MeetingMessage
@@ -569,7 +579,7 @@ namespace TubumuMeeting.Meeting.Server
             // Store the Producer into the protoo Peer data Object.
             Peer.DataProducers[dataProducer.DataProducerId] = dataProducer;
 
-            // ProduceData 和 Produce 不同，前者可以让客户端消费。
+            // ProduceData 和 Produce 不同，前者可以让客户端立即消费。
             // Create a server-side DataConsumer for each Peer.
             foreach (var room in Peer.Rooms.Values)
             {

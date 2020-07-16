@@ -86,7 +86,7 @@ namespace TubumuMeeting.Meeting.Server
                         return false;
                     }
 
-                    peer = new Peer(peerId, displayName)
+                    peer = new Peer(peerId, displayName, group)
                     {
                         RtpCapabilities = rtpCapabilities,
                         SctpCapabilities = sctpCapabilities,
@@ -99,7 +99,6 @@ namespace TubumuMeeting.Meeting.Server
                     lock (_peerGroupLocker)
                     {
                         group.Peers[peerId] = peer;
-                        peer.Group = group;
                         return true;
                     }
                 }
@@ -171,29 +170,6 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public void PeerCleanup(string peerId)
-        {
-            lock (_peerLocker)
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    _logger.LogError($"PeerCleanup() | Peer[{peerId}] is not exists.");
-                }
-
-                peer.Producers.ForEach(m => m.Value.Close());
-                peer.Producers.Clear();
-
-                peer.Consumers.ForEach(m => m.Value.Close());
-                peer.Consumers.Clear();
-
-                peer.DataProducers.ForEach(m => m.Value.Close());
-                peer.DataProducers.Clear();
-
-                peer.DataConsumers.ForEach(m => m.Value.Close());
-                peer.DataConsumers.Clear();
-            }
-        }
-
         public void PeerClose(string peerId)
         {
             lock (_peerLocker)
@@ -208,11 +184,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 lock (_peerGroupLocker)
                 {
-                    if (peer.Group != null)
-                    {
-                        peer.Group.Peers.Remove(peerId);
-                        peer.Group = null;
-                    }
+                    peer.Group.Peers.Remove(peerId);
 
                     lock (_peerRoomLocker)
                     {

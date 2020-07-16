@@ -31,7 +31,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public SctpCapabilities? SctpCapabilities { get; set; }
 
-        public Group? Group { get; set; }
+        public Group Group { get; private set; }
 
         public Dictionary<string, RoomInterestedSources> Rooms { get; } = new Dictionary<string, RoomInterestedSources>();
 
@@ -49,10 +49,11 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, object>? AppData { get; set; }
 
-        public Peer(string peerId, string displayName)
+        public Peer(string peerId, string displayName, Group group)
         {
             PeerId = peerId;
             DisplayName = displayName.IsNullOrWhiteSpace() ? "Guest" : displayName;
+            Group = group;
             Closed = false;
         }
 
