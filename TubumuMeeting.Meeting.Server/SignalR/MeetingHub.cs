@@ -339,15 +339,15 @@ namespace TubumuMeeting.Meeting.Server
                             from p in ri.Room.Peers.Values
                             from pc in p.Consumers.Values
                             select pc;
-            foreach(var producer in Peer.Producers.Values)
+            foreach (var producer in Peer.Producers.Values)
             {
-                if(consumers.All(m=>m.Internal.ProducerId != producer.ProducerId))
+                if (consumers.All(m => m.Internal.ProducerId != producer.ProducerId))
                 {
                     producersToClose.Add(producer);
                 }
             }
 
-            foreach(var producerToClose in producersToClose)
+            foreach (var producerToClose in producersToClose)
             {
                 producerToClose.Close();
                 Peer.Producers.Remove(producerToClose.ProducerId);
@@ -579,7 +579,6 @@ namespace TubumuMeeting.Meeting.Server
             // Store the Producer into the protoo Peer data Object.
             Peer.DataProducers[dataProducer.DataProducerId] = dataProducer;
 
-            // ProduceData 和 Produce 不同，前者可以让客户端立即消费。
             // Create a server-side DataConsumer for each Peer.
             foreach (var room in Peer.Rooms.Values)
             {
