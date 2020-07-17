@@ -254,30 +254,24 @@ namespace TubumuMeeting.Meeting.Server
             var needsProduceSources = new HashSet<string>();
             foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
             {
-                foreach (var producer in otherPeer.Producers.Values.Where(m => room.InterestedSources.Contains(m.Source)))
+                // 本 Peer 消费或其他 Peer 需要生产
+                var otherPeerNeedsProduceSources = new HashSet<string>();
+                foreach (var interestedSource in room.InterestedSources.Where(m => otherPeer.Sources.Contains(m)))
                 {
-                    // 本 Peer 消费其他 Peer
-                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                    var producer = otherPeer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
+                    if (producer != null)
+                    {
+                        // 本 Peer 消费其他 Peer
+                        CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                    }
+                    else
+                    {
+                        // 需要生产相应的 Producer 供其他 Peer 消费
+                        otherPeerNeedsProduceSources.Add(interestedSource);
+                    }
                 }
 
-                // Notify the new Peer to all other Peers.
-                // Message: peerJoinRoom
-                var client = _hubContext.Clients.User(otherPeer.PeerId);
-                await client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "peerJoinRoom",
-                    Message = "peerJoinRoom",
-                    Data = new
-                    {
-                        RoomId = room.Room.RoomId,
-                        PeerId = Peer.PeerId,
-                        Peer.DisplayName,
-                        Sources = Peer.Sources,
-                        InterestedSources = room.InterestedSources,
-                    }
-                });
-
+                // 其他 Peer 消费或本 Peer 需要生产
                 foreach (var interestedSource in otherPeer.Rooms[joinRoomRequest.RoomId].InterestedSources.Where(m => Peer.Sources.Contains(m)))
                 {
                     var producer = Peer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
@@ -292,6 +286,25 @@ namespace TubumuMeeting.Meeting.Server
                         needsProduceSources.Add(interestedSource);
                     }
                 }
+
+                // Notify the new Peer to all other Peers.
+                // Message: peerJoinRoom
+                var client = _hubContext.Clients.User(otherPeer.PeerId);
+                client.ReceiveMessage(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = "peerJoinRoom",
+                    Message = "peerJoinRoom",
+                    Data = new
+                    {
+                        RoomId = room.Room.RoomId,
+                        PeerId = Peer.PeerId,
+                        Peer.DisplayName,
+                        Sources = Peer.Sources,
+                        InterestedSources = room.InterestedSources,
+                        NeedsProduceSources = otherPeerNeedsProduceSources,
+                    }
+                }).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             var needsProduces = new

@@ -93,8 +93,11 @@ export default {
       try {
         const { peerId } = querystring.parse(location.search.replace("?", ""));
         const accessTokens = [
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMjkiLCJnIjoi5Yy76ZmiIiwibmJmIjoxNTg0MzQ5MDQ2LCJleHAiOjE1ODY5NDEwNDYsImlzcyI6Imlzc3VlciIsImF1ZCI6ImF1ZGllbmNlIn0._bGG1SOF9WqY8TIErRkxsh9_l_mFB_5JcGrKO1GyQ0E",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTg3IiwiZyI6IuWMu-mZoiIsIm5iZiI6MTU4NzcxNzU2NSwiZXhwIjoxNTkwMzA5NTY1LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.qjvvJB8EHaerbeKnrmfnN3BJ5jh4R_pG99oS1I7ZAvw"
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.5w00ixg06pRPxcdbtbmRVI6Wy_Ta9qsSJc3D7PE3chQ",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMiIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.q2tKWUa6i4u0VpZDhA8Fw92NoV_g9YQeWD-OeF7fAvU",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMyIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.ekjd10Bortc1q34Ani1F_Gw9KQwS4qRFIU715pE1lGo",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNCIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.6hZ4GtamurlemceCV7I5vT-UQkbszRxys5h8QOiOhcE",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.nV4fr0tYGDR7zsykNoFYERdVSUPSqmhGdOkPqBjK1qw"
         ];
 
         const host = "https://192.168.0.124:5001";
@@ -270,12 +273,12 @@ export default {
         return;
       }
 
-      const needsProduces = result.data;
-      if(needsProduces && needsProduces.needsProduceSources) {
-        for(let i = 0; i< needsProduces.needsProduceSources.length; i++) {
-          if(needsProduces.needsProduceSources[i] === "mic" && this.mediasoupDevice.canProduce("audio")) {
+      const joinRoomData = result.data;
+      if(joinRoomData && joinRoomData.needsProduceSources) {
+        for(let i = 0; i< joinRoomData.needsProduceSources.length; i++) {
+          if(joinRoomData.needsProduceSources[i] === "mic" && this.mediasoupDevice.canProduce("audio")) {
             this.enableMic();
-          } else if(needsProduces.needsProduceSources[i] === "webcam" && this.mediasoupDevice.canProduce("video")) {
+          } else if(joinRoomData.needsProduceSources[i] === "webcam" && this.mediasoupDevice.canProduce("video")) {
             this.enableWebcam();
           }
         }
@@ -366,8 +369,16 @@ export default {
 
         case "peerJoinRoom": {
           // eslint-disable-next-line no-unused-vars
-          const peer = data.data;
-
+          const peerJoinRoomData = data.data;
+          if(peerJoinRoomData && peerJoinRoomData.needsProduceSources) {
+            for(let i = 0; i< peerJoinRoomData.needsProduceSources.length; i++) {
+              if(peerJoinRoomData.needsProduceSources[i] === "mic" && this.mediasoupDevice.canProduce("audio")) {
+                this.enableMic();
+              } else if(peerJoinRoomData.needsProduceSources[i] === "webcam" && this.mediasoupDevice.canProduce("video")) {
+                this.enableWebcam();
+              }
+            }
+          }
           break;
         }
 
