@@ -172,7 +172,7 @@ namespace TubumuMeeting.Meeting.Server
                 if (traceData.Type == TransportTraceEventType.BWE && traceData.Direction == TraceEventDirection.Out)
                 {
                     // Message: downlinkBwe
-                    var client = _hubContext.Clients.User(peerId.ToString());
+                    var client = _hubContext.Clients.User(peerId);
                     client.ReceiveMessage(new MeetingMessage
                     {
                         Code = 200,
@@ -416,7 +416,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var data = (ProducerScore[])score!;
                 // Message: producerScore
-                var client = _hubContext.Clients.User(peerId.ToString());
+                var client = _hubContext.Clients.User(peerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,

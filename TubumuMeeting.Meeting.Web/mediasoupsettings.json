@@ -7,7 +7,7 @@
   },
   "MediasoupSettings": {
     "WorkerSettings": {
-      "LogLevel": "error",
+      "LogLevel": "debug",
       "LogTags": [
         "info",
         "ice",
