@@ -105,7 +105,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<RoomInterestedSources> PeerJoinRoomAsync(string peerId, Guid groupId, JoinRoomRequest joinRoomRequest)
+        public async Task<RoomInterestedSources?> PeerJoinRoomAsync(string peerId, Guid groupId, JoinRoomRequest joinRoomRequest)
         {
             using (await _groupLocker.LockAsync())
             {

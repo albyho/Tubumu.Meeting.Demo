@@ -51,7 +51,7 @@ namespace TubumuMeeting.Mediasoup
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
-        /// Whether the DataConsumer is closed.
+        /// Whether the Router is closed.
         /// </summary>
         public bool Closed { get; private set; }
 
