@@ -85,11 +85,11 @@ export default {
       consumers: new Map()
     };
   },
-  mounted() {
-    this.run();
+  async mounted() {
+    await this.run();
   },
   methods: {
-    run() {
+    async run() {
       try {
         const { peerId } = querystring.parse(location.search.replace("?", ""));
         const accessTokens = [
@@ -119,27 +119,19 @@ export default {
           // })
           .build();
 
-        this.connection.on("PeerHandled", async data => {
-          await this.processPeerHandled(data);
-        });
         this.connection.on("NewConsumer", async data => {
           await this.processNewConsumer(data);
         });
         this.connection.on("ReceiveMessage", async data => {
           await this.processMessage(data);
         });
-        this.connection.start().catch(err => logger.error(err));
+        await this.connection.start();
+        await this.process();
       } catch (e) {
         logger.debug(e.message);
       }
     },
-    async processPeerHandled(data) {
-      if (data.code !== 200) {
-        logger.error(data.message);
-        return;
-      }
-
-      // 连接成功, GetRouterRtpCapabilities
+    async process() {
       let result = await this.connection.invoke("GetRouterRtpCapabilities");
       if (result.code !== 200) {
         logger.error("processMessage() | GetRouterRtpCapabilities failure.");

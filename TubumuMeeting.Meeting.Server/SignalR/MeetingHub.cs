@@ -39,8 +39,6 @@ namespace TubumuMeeting.Meeting.Server
 
     public interface IPeer
     {
-        Task PeerHandled(MeetingMessage message);
-
         Task NewConsumer(MeetingMessage message);
 
         Task ReceiveMessage(MeetingMessage message);
@@ -66,7 +64,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             ClosePeer();
 
-            return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
+            return base.OnConnectedAsync();
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
@@ -82,22 +80,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 foreach (var room in Peer.Rooms.Values)
                 {
-                    foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
-                    {
-                        // Message: peerClosed
-                        var client = _hubContext.Clients.User(otherPeer.PeerId);
-                        client.ReceiveMessage(new MeetingMessage
-                        {
-                            Code = 200,
-                            InternalCode = "peerLeaveRoom",
-                            Message = "peerLeaveRoom",
-                            Data = new
-                            {
-                                RoomId = room.Room.RoomId,
-                                PeerId = UserId
-                            }
-                        }).ContinueWithOnFaultedHandleLog(_logger);
-                    }
+                    PeerLeaveRoom(Peer, room.Room.RoomId);
                 }
             }
 
@@ -317,7 +300,12 @@ namespace TubumuMeeting.Meeting.Server
 
         public MeetingMessage LeaveRoom(LeaveRoomRequest leaveRoomsRequest)
         {
-            if (!Peer.Rooms.TryGetValue(leaveRoomsRequest.RoomId, out var room))
+            return PeerLeaveRoom(Peer, leaveRoomsRequest.RoomId);
+        }
+
+        private MeetingMessage PeerLeaveRoom(Peer peer, string roomId)
+        {
+            if (!peer.Rooms.TryGetValue(roomId, out var room))
             {
                 return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
             }
@@ -342,7 +330,7 @@ namespace TubumuMeeting.Meeting.Server
                 // Note: 其他 Peer 客户端自行关闭相应的 Consumer 。
             }
 
-            if (!_meetingManager.PeerLeaveRoom(UserId, leaveRoomsRequest.RoomId))
+            if (!_meetingManager.PeerLeaveRoom(UserId, roomId))
             {
                 return new MeetingMessage { Code = 400, Message = "LeaveRooms 失败: PeerLeaveRoom 失败" };
             }
@@ -865,7 +853,7 @@ namespace TubumuMeeting.Meeting.Server
 
             // Now that we got the positive response from the remote endpoint, resume
             // the Consumer so the remote endpoint will receive the a first RTP packet
-            // of this new stream once its PeerConnection is already ready to process
+            // of this new stream once its PeerConnection is already ready to process 
             // and associate it.
             await consumer.ResumeAsync();
 
