@@ -81,6 +81,11 @@ namespace TubumuMeeting.Mediasoup
         private readonly Channel _channel;
 
         /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
+        private readonly PayloadChannel _payloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
@@ -147,6 +152,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits resume</para>
         /// <para>@emits score - (score: ConsumerScore)</para>
         /// <para>@emits layerschange - (layers: ConsumerLayers | undefined)</para>
+        /// <para>@emits rtp - (packet: Buffer)</para>
         /// <para>@emits trace - (trace: ConsumerTraceEventData)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
@@ -166,6 +172,7 @@ namespace TubumuMeeting.Mediasoup
             RtpParameters rtpParameters,
             ConsumerType type,
             Channel channel,
+            PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             bool paused,
             bool producerPaused,
@@ -184,6 +191,7 @@ namespace TubumuMeeting.Mediasoup
             Type = type;
 
             _channel = channel;
+            _payloadChannel = payloadChannel;
             AppData = appData;
             Paused = paused;
             ProducerPaused = producerPaused;
@@ -371,6 +379,7 @@ namespace TubumuMeeting.Mediasoup
         private void HandleWorkerNotifications()
         {
             _channel.MessageEvent += OnChannelMessage;
+            _payloadChannel.MessageEvent += OnPayloadChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -488,6 +497,34 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        private void OnPayloadChannelMessage(string targetId, string @event, NotifyData notifyData, ArraySegment<byte> payload)
+        {
+            if (targetId != ConsumerId)
+            {
+                return;
+            }
+
+            switch (@event)
+            {
+                case "rtp":
+                    {
+                        if (Closed)
+                            break;
+
+                        Emit("rtp", payload);
+
+                        break;
+                    }
+
+                default:
+                    {
+                        _logger.LogError($"ignoring unknown event \"{@event}\"");
+                        break;
+                    }
+            }
+        }
     }
+
+    #endregion
 }
+

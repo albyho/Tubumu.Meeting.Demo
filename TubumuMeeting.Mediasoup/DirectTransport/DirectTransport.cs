@@ -20,6 +20,7 @@ namespace TubumuMeeting.Mediasoup
 
         /// <summary>
         /// <para>Events:</para>
+        /// <para>@emits rtcp - (packet: Buffer)</para>
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
@@ -123,11 +124,17 @@ namespace TubumuMeeting.Mediasoup
             throw new NotImplementedException("ConsumeAsync() not implemented in DirectTransport");
         }
 
+        public void SendRtcp(byte[] rtcpPacket)
+        {
+            PayloadChannel.Notify("transport.sendRtcp", Internal, null, rtcpPacket);
+        }
+
         #region Event Handlers
 
         private void HandleWorkerNotifications()
         {
             Channel.MessageEvent += OnChannelMessage;
+            PayloadChannel.MessageEvent += OnPayloadChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -154,6 +161,33 @@ namespace TubumuMeeting.Mediasoup
                 default:
                     {
                         _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        break;
+                    }
+            }
+        }
+
+        private void OnPayloadChannelMessage(string targetId, string @event, NotifyData notifyData, ArraySegment<byte> payload)
+        {
+            if (targetId != Internal.TransportId)
+            {
+                return;
+            }
+
+            switch (@event)
+            {
+                case "rtcp":
+                    {
+                        if (Closed)
+                            break;
+
+                        Emit("rtcp", payload);
+
+                        break;
+                    }
+
+                default:
+                    {
+                        _logger.LogError($"ignoring unknown event \"{@event}\"");
                         break;
                     }
             }

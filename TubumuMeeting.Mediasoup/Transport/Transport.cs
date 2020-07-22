@@ -447,6 +447,7 @@ namespace TubumuMeeting.Mediasoup
                 data.Type,
                 data.ConsumableRtpParameters,
                 Channel,
+                PayloadChannel,
                 producerOptions.AppData,
                 producerOptions.Paused!.Value);
 
@@ -547,6 +548,7 @@ namespace TubumuMeeting.Mediasoup
                 data.RtpParameters,
                 data.Type,
                 Channel,
+                PayloadChannel,
                 AppData,
                 responseData.Paused,
                 responseData.ProducerPaused,

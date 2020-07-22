@@ -241,7 +241,6 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            //_logger.LogError($"ConsumerSocketOnData: {buffer}");
             var netstring = new Netstring(_recvBuffer.Value);
             try
             {
@@ -262,13 +261,14 @@ namespace TubumuMeeting.Mediasoup
 
                             // 68 = 'D' (a debug log).
                             case 'D':
-                                //if (!payloadString.Contains("(trace)"))
-                                _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
+                                if (!payloadString.Contains("(trace)"))
+                                    _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
+                                if(!payloadString.Contains("no suitable Producer"))
+                                    _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 69 = 'E' (an error log).
@@ -278,12 +278,10 @@ namespace TubumuMeeting.Mediasoup
 
                             // 88 = 'X' (a dump log).
                             case 'X':
-                                // eslint-disable-next-line no-console
                                 _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             default:
-                                // eslint-disable-next-line no-console
                                 _logger.LogWarning($"ConsumerSocketOnData() | worker[pid:{_processId}] unexpected data:{ payloadString }");
                                 break;
                         }

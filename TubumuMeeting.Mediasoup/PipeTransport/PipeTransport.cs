@@ -36,9 +36,9 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
-        /// <para>@emits newconsumer - (producer: Producer)</para>
+        /// <para>@emits newconsumer - (consumer: Consumer)</para>
         /// <para>@emits newdataproducer - (dataProducer: DataProducer)</para>
-        /// <para>@emits newdataconsumer - (dataProducer: DataProducer)</para>
+        /// <para>@emits newdataconsumer - (dataConsumer: DataConsumer)</para>
         /// <para>@emits sctpstatechange - (sctpState: SctpState)</para>
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>   
         /// </summary>
@@ -202,6 +202,7 @@ namespace TubumuMeeting.Mediasoup
                 data.RtpParameters,
                 data.Type,
                 Channel,
+                PayloadChannel,
                 AppData,
                 responseData.Paused,
                 responseData.ProducerPaused,

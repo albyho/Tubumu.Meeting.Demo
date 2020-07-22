@@ -79,6 +79,11 @@ namespace TubumuMeeting.Mediasoup
         private readonly Channel _channel;
 
         /// <summary>
+        /// Channel instance.
+        /// </summary>
+        private readonly PayloadChannel _payloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
@@ -139,6 +144,7 @@ namespace TubumuMeeting.Mediasoup
             ProducerType type,
             RtpParameters consumableRtpParameters,
             Channel channel,
+            PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             bool paused
             )
@@ -155,6 +161,7 @@ namespace TubumuMeeting.Mediasoup
             ConsumableRtpParameters = consumableRtpParameters;
 
             _channel = channel;
+            _payloadChannel = payloadChannel;
             AppData = appData;
             Paused = paused;
 
@@ -283,6 +290,15 @@ namespace TubumuMeeting.Mediasoup
             };
 
             return _channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, Internal, reqData);
+        }
+
+        /// <summary>
+        /// Send RTP packet (just valid for Producers created on a DirectTransport).
+        /// </summary>
+        /// <param name="rtpPacket"></param>
+        public void send(byte[] rtpPacket)
+        {
+            _payloadChannel.Notify("producer.send", Internal, null, rtpPacket);
         }
 
         #region Event Handlers

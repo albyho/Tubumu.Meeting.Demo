@@ -44,9 +44,9 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
-        /// <para>@emits newconsumer - (producer: Producer)</para>
+        /// <para>@emits newconsumer - (consumer: Consumer)</para>
         /// <para>@emits newdataproducer - (dataProducer: DataProducer)</para>
-        /// <para>@emits newdataconsumer - (dataProducer: DataProducer)</para>
+        /// <para>@emits newdataconsumer - (dataConsumer: DataConsumer)</para>
         /// <para>@emits icestatechange - (iceState: IceState)</para>
         /// <para>@emits iceselectedtuplechange - (iceSelectedTuple: TransportTuple)</para>
         /// <para>@emits dtlsstatechange - (dtlsState: DtlsState)</para>

@@ -74,6 +74,8 @@ namespace TubumuMeeting.Meeting.Server
             return base.OnDisconnectedAsync(exception);
         }
 
+        #region Private
+
         private void ClosePeer()
         {
             if (Peer != null)
@@ -82,14 +84,16 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     PeerLeaveRoom(Peer, room.Room.RoomId);
                 }
-            }
 
-            _meetingManager.PeerClose(UserId);
+                _meetingManager.PeerClose(Peer.PeerId);
+            }
         }
 
         private string UserId => Context.User.Identity.Name;
 
         private Peer? Peer => _meetingManager.Peers.TryGetValue(UserId, out var peer) ? peer : null;
+
+        #endregion
     }
 
     public partial class MeetingHub
@@ -301,60 +305,6 @@ namespace TubumuMeeting.Meeting.Server
         public MeetingMessage LeaveRoom(LeaveRoomRequest leaveRoomsRequest)
         {
             return PeerLeaveRoom(Peer!, leaveRoomsRequest.RoomId);
-        }
-
-        private MeetingMessage PeerLeaveRoom(Peer peer, string roomId)
-        {
-            if (!peer.Rooms.TryGetValue(roomId, out var room))
-            {
-                return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
-            }
-
-            foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
-            {
-                // Notify the new Peer to all other Peers.
-                // Message: peerLeaveRoom
-                var client = _hubContext.Clients.User(otherPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "peerLeaveRoom",
-                    Message = "peerLeaveRoom",
-                    Data = new
-                    {
-                        RoomId = room.Room.RoomId,
-                        PeerId = UserId
-                    }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-
-                // Note: 其他 Peer 客户端自行关闭相应的 Consumer 。
-            }
-
-            if (!_meetingManager.PeerLeaveRoom(UserId, roomId))
-            {
-                return new MeetingMessage { Code = 400, Message = "LeaveRooms 失败: PeerLeaveRoom 失败" };
-            }
-
-            var producersToClose = new List<Producer>();
-            var consumers = from ri in Peer!.Rooms.Values
-                            from p in ri.Room.Peers.Values
-                            from pc in p.Consumers.Values
-                            select pc;
-            foreach (var producer in Peer.Producers.Values)
-            {
-                if (consumers.All(m => m.Internal.ProducerId != producer.ProducerId))
-                {
-                    producersToClose.Add(producer);
-                }
-            }
-
-            foreach (var producerToClose in producersToClose)
-            {
-                producerToClose.Close();
-                Peer.Producers.Remove(producerToClose.ProducerId);
-            }
-
-            return new MeetingMessage { Code = 200, Message = "LeaveRooms 成功" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
@@ -971,6 +921,64 @@ namespace TubumuMeeting.Meeting.Server
             {
                 _logger.LogWarning($"CreateDataConsumer() | [error:\"{ex}\"]");
             }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private MeetingMessage PeerLeaveRoom(Peer peer, string roomId)
+        {
+            if (!peer.Rooms.TryGetValue(roomId, out var room))
+            {
+                return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
+            }
+
+            foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
+            {
+                // Notify the new Peer to all other Peers.
+                // Message: peerLeaveRoom
+                var client = _hubContext.Clients.User(otherPeer.PeerId);
+                client.ReceiveMessage(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = "peerLeaveRoom",
+                    Message = "peerLeaveRoom",
+                    Data = new
+                    {
+                        RoomId = room.Room.RoomId,
+                        PeerId = UserId
+                    }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+
+                // Note: 其他 Peer 客户端自行关闭相应的 Consumer 。
+            }
+
+            if (!_meetingManager.PeerLeaveRoom(UserId, roomId))
+            {
+                return new MeetingMessage { Code = 400, Message = "LeaveRooms 失败: PeerLeaveRoom 失败" };
+            }
+
+            var producersToClose = new List<Producer>();
+            var consumers = from ri in Peer!.Rooms.Values
+                            from p in ri.Room.Peers.Values
+                            from pc in p.Consumers.Values
+                            select pc;
+            foreach (var producer in Peer.Producers.Values)
+            {
+                if (consumers.All(m => m.Internal.ProducerId != producer.ProducerId))
+                {
+                    producersToClose.Add(producer);
+                }
+            }
+
+            foreach (var producerToClose in producersToClose)
+            {
+                producerToClose.Close();
+                Peer.Producers.Remove(producerToClose.ProducerId);
+            }
+
+            return new MeetingMessage { Code = 200, Message = "LeaveRooms 成功" };
         }
 
         #endregion

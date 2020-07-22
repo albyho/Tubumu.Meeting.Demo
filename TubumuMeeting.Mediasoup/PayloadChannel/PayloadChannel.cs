@@ -122,7 +122,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        public void Notify(string @event, object @internal, NotifyData data, byte[] payload)
+        public void Notify(string @event, object @internal, NotifyData? data, byte[] payload)
         {
             _logger.LogDebug($"notify() [event:{@event}]");
 
