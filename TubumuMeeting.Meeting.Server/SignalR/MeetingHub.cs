@@ -49,13 +49,13 @@ namespace TubumuMeeting.Meeting.Server
     {
         private readonly ILogger<MeetingHub> _logger;
         private readonly MediasoupOptions _mediasoupOptions;
-        private readonly MeetingManager _meetingManager;
+        private readonly Lobby _lobby;
         private readonly IHubContext<MeetingHub, IPeer> _hubContext;
 
-        public MeetingHub(ILogger<MeetingHub> logger, MeetingManager meetingManager, MediasoupOptions mediasoupOptions, IHubContext<MeetingHub, IPeer> hubContext)
+        public MeetingHub(ILogger<MeetingHub> logger, Lobby meetingManager, MediasoupOptions mediasoupOptions, IHubContext<MeetingHub, IPeer> hubContext)
         {
             _logger = logger;
-            _meetingManager = meetingManager;
+            _lobby = meetingManager;
             _mediasoupOptions = mediasoupOptions;
             _hubContext = hubContext;
         }
@@ -85,13 +85,13 @@ namespace TubumuMeeting.Meeting.Server
                     PeerLeaveRoom(Peer, room.Room.RoomId);
                 }
 
-                _meetingManager.PeerClose(Peer.PeerId);
+                _lobby.PeerClose(Peer.PeerId);
             }
         }
 
         private string UserId => Context.User.Identity.Name;
 
-        private Peer? Peer => _meetingManager.Peers.TryGetValue(UserId, out var peer) ? peer : null;
+        private Peer? Peer => _lobby.Peers.TryGetValue(UserId, out var peer) ? peer : null;
 
         #endregion
     }
@@ -100,13 +100,13 @@ namespace TubumuMeeting.Meeting.Server
     {
         public MeetingMessage GetRouterRtpCapabilities()
         {
-            var rtpCapabilities = _meetingManager.DefaultRtpCapabilities;
+            var rtpCapabilities = _lobby.DefaultRtpCapabilities;
             return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!await _meetingManager.PeerJoinAsync(UserId,
+            if (!await _lobby.PeerJoinAsync(UserId,
                 joinRequest.RtpCapabilities,
                 joinRequest.SctpCapabilities,
                 joinRequest.DisplayName,
@@ -230,7 +230,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> JoinRoom(JoinRoomRequest joinRoomRequest)
         {
-            var room = await _meetingManager.PeerJoinRoomAsync(UserId, Peer!.Group.GroupId, joinRoomRequest);
+            var room = await _lobby.PeerJoinRoomAsync(UserId, Peer!.Group.GroupId, joinRoomRequest);
             if (room == null)
             {
                 return new MeetingMessage { Code = 400, Message = "JoinRoom 失败: PeerJoinRoom 失败" };
@@ -793,7 +793,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             _logger.LogDebug($"NewConsumerReturn() | [peerId:\"{newConsumerReturnRequest.PeerId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
 
-            if (!_meetingManager.Peers.TryGetValue(newConsumerReturnRequest.PeerId, out var consumerPeer) ||
+            if (!_lobby.Peers.TryGetValue(newConsumerReturnRequest.PeerId, out var consumerPeer) ||
                 consumerPeer.Closed ||
                 !consumerPeer.Consumers.TryGetValue(newConsumerReturnRequest.ConsumerId, out var consumer) ||
                 consumer.Closed)
@@ -954,7 +954,7 @@ namespace TubumuMeeting.Meeting.Server
                 // Note: 其他 Peer 客户端自行关闭相应的 Consumer 。
             }
 
-            if (!_meetingManager.PeerLeaveRoom(UserId, roomId))
+            if (!_lobby.PeerLeaveRoom(UserId, roomId))
             {
                 return new MeetingMessage { Code = 400, Message = "LeaveRooms 失败: PeerLeaveRoom 失败" };
             }

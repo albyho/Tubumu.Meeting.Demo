@@ -9,7 +9,7 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public class MeetingManager
+    public class Lobby
     {
         #region Private Fields
 
@@ -21,7 +21,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <summary>
         /// Logger
         /// </summary>
-        private readonly ILogger<MeetingManager> _logger;
+        private readonly ILogger<Lobby> _logger;
 
         private readonly MediasoupOptions _mediasoupOptions;
 
@@ -47,10 +47,10 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
-        public MeetingManager(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
+        public Lobby(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
         {
             _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<MeetingManager>();
+            _logger = _loggerFactory.CreateLogger<Lobby>();
             _mediasoupOptions = mediasoupOptions;
             _mediasoupServer = mediasoupServer;
 
@@ -58,8 +58,6 @@ namespace TubumuMeeting.Meeting.Server
             // This may throw.
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
         }
-
-        #region Peer
 
         public async Task<bool> PeerJoinAsync(string peerId,
             RtpCapabilities rtpCapabilities,
@@ -198,8 +196,6 @@ namespace TubumuMeeting.Meeting.Server
                 }
             }
         }
-
-        #endregion
 
         #region Private Methods
 

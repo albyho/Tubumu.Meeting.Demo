@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton(mediasoupOptions);
             services.AddSingleton<MediasoupServer>();
             services.AddTransient<Worker>();
-            services.AddSingleton<MeetingManager>();
+            services.AddSingleton<Lobby>();
             return services;
         }
     }
