@@ -36,6 +36,8 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Room> _logger;
 
+        private readonly object _roomLocker = new object();
+
         public bool Closed { get; private set; }
 
         public Group Group { get; private set; }
@@ -51,6 +53,45 @@ namespace TubumuMeeting.Meeting.Server
             RoomId = roomId;
             Name = name.IsNullOrWhiteSpace() ? "Default" : name;
             Closed = false;
+        }
+
+        public RoomInterestedSources PeerJoinRoom(Peer peer, string[] interestedSources)
+        {
+            lock (_roomLocker)
+            {
+                if (Peers.TryGetValue(peer.PeerId, out var _))
+                {
+                    throw new Exception($"PeerJoinRoom() | Peer:{peer.PeerId} was already in Room:{RoomId}");
+                }
+
+                if (peer.Rooms.TryGetValue(RoomId, out var _))
+                {
+                    throw new Exception($"PeerLeaveRoom() | peer.Rooms[{RoomId}] is exists");
+                }
+
+                Peers[peer.PeerId] = peer;
+                return peer.JoinRoom(this, interestedSources);
+            }
+        }
+
+        public bool PeerLeaveRoom(Peer peer)
+        {
+            lock (_roomLocker)
+            {
+                if (!Peers.TryGetValue(peer.PeerId, out var _))
+                {
+                    throw new Exception($"PeerLeaveRoom() | Peer:{peer.PeerId} is not in Room:{RoomId}");
+                }
+
+                if (peer.Rooms.TryGetValue(RoomId, out var _))
+                {
+                    throw new Exception($"PeerLeaveRoom() | peer.Rooms[{RoomId}] is exists");
+                }
+
+                Peers.Remove(peer.PeerId);
+
+                return true;
+            }
         }
 
         public void Close()

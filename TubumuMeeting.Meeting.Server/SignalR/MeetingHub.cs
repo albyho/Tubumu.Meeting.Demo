@@ -78,20 +78,12 @@ namespace TubumuMeeting.Meeting.Server
 
         private void ClosePeer()
         {
-            if (Peer != null)
-            {
-                foreach (var room in Peer.Rooms.Values)
-                {
-                    PeerLeaveRoom(Peer, room.Room.RoomId);
-                }
-
-                _lobby.PeerClose(Peer.PeerId);
-            }
+            _lobby.PeerLeaveGroup(UserId);
         }
 
         private string UserId => Context.User.Identity.Name;
 
-        private Peer? Peer => _lobby.Peers.TryGetValue(UserId, out var peer) ? peer : null;
+        //private Peer? Peer => _lobby.Peers.TryGetValue(UserId, out var peer) ? peer : null;
 
         #endregion
     }
@@ -104,14 +96,14 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
-        public async Task<MeetingMessage> Join(JoinRequest joinRequest)
+        public async Task<MeetingMessage> JoinGroupGroup(JoinRequest joinRequest)
         {
-            if (!await _lobby.PeerJoinAsync(UserId, joinRequest))
+            if (!await _lobby.PeerJoinGroupAsync(UserId, joinRequest))
             {
-                return new MeetingMessage { Code = 400, Message = "Join 失败" };
+                return new MeetingMessage { Code = 400, Message = "JoinGroup 失败" };
             }
 
-            return new MeetingMessage { Code = 200, Message = "Join 成功" };
+            return new MeetingMessage { Code = 200, Message = "JoinGroup 成功" };
         }
 
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
@@ -142,6 +134,9 @@ namespace TubumuMeeting.Meeting.Server
             {
                 return new MeetingMessage { Code = 400, Message = "CreateWebRtcTransport 失败" };
             }
+
+            // Store the WebRtcTransport into the Peer data Object.
+            Peer!.Transports[transport.TransportId] = transport;
 
             transport.On("sctpstatechange", sctpState =>
             {
@@ -186,9 +181,6 @@ namespace TubumuMeeting.Meeting.Server
                 }
             });
 
-            // Store the WebRtcTransport into the Peer data Object.
-            Peer!.Transports[transport.TransportId] = transport;
-
             // If set, apply max incoming bitrate limit.
             if (webRtcTransportSettings.MaximumIncomingBitrate.HasValue && webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
             {
@@ -222,9 +214,9 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
         }
 
-        public async Task<MeetingMessage> JoinRoom(JoinRoomRequest joinRoomRequest)
+        public MeetingMessage JoinRoom(JoinRoomRequest joinRoomRequest)
         {
-            var room = await _lobby.PeerJoinRoomAsync(UserId, Peer!.Group.GroupId, joinRoomRequest);
+            var room = _lobby.PeerJoinRoom(UserId, joinRoomRequest);
             if (room == null)
             {
                 return new MeetingMessage { Code = 400, Message = "JoinRoom 失败: PeerJoinRoom 失败" };

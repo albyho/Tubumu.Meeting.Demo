@@ -29,21 +29,13 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncLock _groupLocker = new AsyncLock();
 
-        private readonly object _peerLocker = new object();
-
-        private readonly object _peerGroupLocker = new object();
-
-        private readonly object _roomLocker = new object();
-
-        private readonly object _peerRoomLocker = new object();
+        private readonly AsyncLock _peerLocker = new AsyncLock();
 
         #endregion
 
         public RtpCapabilities DefaultRtpCapabilities { get; private set; }
 
-        public Dictionary<Guid, Group> Groups { get; } = new Dictionary<Guid, Group>();
-
-        public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
+        private Dictionary<Guid, Group> Groups { get; } = new Dictionary<Guid, Group>();
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
@@ -59,9 +51,9 @@ namespace TubumuMeeting.Meeting.Server
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
         }
 
-        public async Task<bool> PeerJoinAsync(string peerId, JoinRequest joinRequest)
+        public async Task<bool> PeerJoinGroupAsync(string peerId, JoinRequest joinRequest)
         {
-            PeerClose(peerId);
+            PeerLeaveGroup(peerId);
 
             using (await _groupLocker.LockAsync())
             {
@@ -70,15 +62,9 @@ namespace TubumuMeeting.Meeting.Server
                     group = await CreateGroupAsync(joinRequest.GroupId, "Default");
                 }
 
-                lock (_peerLocker)
+                using (_peerLocker.Lock())
                 {
-                    if (Peers.TryGetValue(peerId, out var peer))
-                    {
-                        _logger.LogError($"PeerJoinAsync() | Peer[{peerId}] has already in Group:{joinRequest.GroupId}.");
-                        return false;
-                    }
-
-                    peer = new Peer(peerId, joinRequest.DisplayName, group)
+                    var peer = new Peer(peerId, joinRequest.DisplayName)
                     {
                         RtpCapabilities = joinRequest.RtpCapabilities,
                         SctpCapabilities = joinRequest.SctpCapabilities,
@@ -86,109 +72,169 @@ namespace TubumuMeeting.Meeting.Server
                         AppData = joinRequest.AppData
                     };
 
+                    peer.JoinGroup(group);
                     Peers[peerId] = peer;
-
-                    lock (_peerGroupLocker)
-                    {
-                        group.Peers[peerId] = peer;
-                        return true;
-                    }
-                }
-            }
-        }
-
-        public async Task<RoomInterestedSources?> PeerJoinRoomAsync(string peerId, Guid groupId, JoinRoomRequest joinRoomRequest)
-        {
-            using (await _groupLocker.LockAsync())
-            {
-                if (!Groups.TryGetValue(groupId, out var group))
-                {
-                    group = await CreateGroupAsync(groupId, "Default");
-                }
-
-                lock (_peerGroupLocker)
-                {
-                    if (!group.Peers.TryGetValue(peerId, out var peer))
-                    {
-                        _logger.LogError($"PeerJoinRoomsAsync() | Peer[{peerId}] is not exists in Group:{groupId}.");
-                        return null;
-                    }
-
-                    lock (_roomLocker)
-                    {
-                        if (!group.Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
-                        {
-                            room = CreateRoom(group, joinRoomRequest.RoomId, "Default");
-                        }
-
-                        var roomInterestedSources = new RoomInterestedSources(room, joinRoomRequest.InterestedSources);
-
-                        lock (_peerRoomLocker)
-                        {
-                            room.Peers[peerId] = peer;
-                            peer.Rooms[joinRoomRequest.RoomId] = roomInterestedSources;
-                        }
-
-                        return roomInterestedSources;
-                    }
-                }
-            }
-        }
-
-        public bool PeerLeaveRoom(string peerId, string roomId)
-        {
-            lock (_peerLocker)
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    _logger.LogError($"PeerLeaveRooms() | Peer[{peerId}] is not exists.");
-
-                    return false;
-                }
-
-                lock (_peerRoomLocker)
-                {
-                    var roomIdsToRemove = new List<string>();
-                    if (peer.Rooms.TryGetValue(roomId, out var room))
-                    {
-                        room.Room.Peers.Remove(peerId);
-                        roomIdsToRemove.Add(room.Room.RoomId);
-                    }
-
-                    peer.Rooms.Remove(roomId);
 
                     return true;
                 }
             }
         }
 
-        public void PeerClose(string peerId)
+        public bool PeerLeaveGroup(string peerId)
         {
-            lock (_peerLocker)
+            using (_peerLocker.Lock())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
-                    return;
+                    return true;
                 }
 
-                peer.Close();
                 Peers.Remove(peerId);
 
-                lock (_peerGroupLocker)
-                {
-                    peer.Group.Peers.Remove(peerId);
-
-                    lock (_peerRoomLocker)
-                    {
-                        foreach (var room in peer.Rooms.Values)
-                        {
-                            room.Room.Peers.Remove(peerId);
-                        }
-
-                        peer.Rooms.Clear();
-                    }
-                }
+                return true;
             }
+        }
+
+        public RoomInterestedSources? PeerJoinRoom(string peerId, JoinRoomRequest joinRoomRequest)
+        {
+            using (_peerLocker.Lock())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerJoinRoom() | Peer:{peerId} is not exists.");
+                    return null;
+                }
+
+                if (peer.Group == null)
+                {
+                    _logger.LogError($"PeerJoinRoom() | Peer:{peerId} is not in any Group.");
+                    return null;
+                }
+
+                return peer.Group.PeerJoinRoom(peer, joinRoomRequest);
+            }
+        }
+
+        public bool PeerLeaveRoom(string peerId, string roomId)
+        {
+            using (_peerLocker.Lock())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerLeaveRoom() | Peer[{peerId}] is not exists.");
+
+                    return false;
+                }
+
+                return peer.LeaveRoom(roomId);
+            }
+        }
+
+        public async Task<CreateWebRtcTransportResult> CreateWebRtcTransportAsync(string peerId, CreateWebRtcTransportRequest createWebRtcTransportRequest)
+        {
+            using (await _peerLocker.LockAsync())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    throw new Exception($"CreateWebRtcTransportAsync() | Peer:{peer.PeerId} is not exists");
+                }
+
+                var t = await peer.Group.CreateWebRtcTransportAsync(peer, createWebRtcTransportRequest);
+            }
+
+
+            var webRtcTransportSettings = _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings;
+            var webRtcTransportOptions = new WebRtcTransportOptions
+            {
+                ListenIps = webRtcTransportSettings.ListenIps,
+                InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate,
+                MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize,
+                EnableSctp = createWebRtcTransportRequest.SctpCapabilities != null,
+                NumSctpStreams = createWebRtcTransportRequest.SctpCapabilities?.NumStreams,
+                AppData = new Dictionary<string, object>
+                {
+                    { "Consuming", createWebRtcTransportRequest.Consuming },
+                    { "Producing", createWebRtcTransportRequest.Producing },
+                },
+            };
+
+            if (createWebRtcTransportRequest.ForceTcp)
+            {
+                webRtcTransportOptions.EnableUdp = false;
+                webRtcTransportOptions.EnableTcp = true;
+            }
+
+            var transport = await Peer!.Group.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
+            if (transport == null)
+            {
+                throw new Exception($"CreateWebRtcTransportAsync() | Peer:{peer.PeerId} was already in Group:{GroupId}");
+            }
+
+            // Store the WebRtcTransport into the Peer data Object.
+            Peer!.Transports[transport.TransportId] = transport;
+
+            transport.On("sctpstatechange", sctpState =>
+            {
+                _logger.LogDebug($"WebRtcTransport \"sctpstatechange\" event [sctpState:{sctpState}]");
+            });
+
+            transport.On("dtlsstatechange", value =>
+            {
+                var dtlsState = (DtlsState)value!;
+                if (dtlsState == DtlsState.Failed || dtlsState == DtlsState.Closed)
+                {
+                    _logger.LogWarning($"WebRtcTransport dtlsstatechange event [dtlsState:{value}]");
+                }
+            });
+
+            // NOTE: For testing.
+            //await transport.EnableTraceEventAsync(new[] { TransportTraceEventType.Probation, TransportTraceEventType.BWE });
+            //await transport.EnableTraceEventAsync(new[] { TransportTraceEventType.BWE });
+
+            transport.On("trace", trace =>
+            {
+                var traceData = (TransportTraceEventData)trace!;
+                _logger.LogDebug($"transport \"trace\" event [transportId:{transport.TransportId}, trace:{traceData.Type.GetEnumStringValue()}]");
+
+                if (traceData.Type == TransportTraceEventType.BWE && traceData.Direction == TraceEventDirection.Out)
+                {
+                    // Message: downlinkBwe
+                    var client = _hubContext.Clients.User(peerId);
+                    client.ReceiveMessage(new MeetingMessage
+                    {
+                        Code = 200,
+                        InternalCode = "downlinkBwe",
+                        Message = "downlinkBwe",
+                        Data = new
+                        {
+                            DesiredBitrate = traceData.Info["desiredBitrate"],
+                            EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"],
+                            AvailableBitrate = traceData.Info["availableBitrate"]
+                        }
+                    }).ContinueWithOnFaultedHandleLog(_logger);
+                }
+            });
+
+            // If set, apply max incoming bitrate limit.
+            if (webRtcTransportSettings.MaximumIncomingBitrate.HasValue && webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
+            {
+                // Fire and forget
+                transport.SetMaxIncomingBitrateAsync(webRtcTransportSettings.MaximumIncomingBitrate.Value).ContinueWithOnFaultedHandleLog(_logger);
+            }
+
+            return new MeetingMessage
+            {
+                Code = 200,
+                Message = "CreateWebRtcTransport 成功",
+                Data = new CreateWebRtcTransportResult
+                {
+                    Id = transport.TransportId,
+                    IceParameters = transport.IceParameters,
+                    IceCandidates = transport.IceCandidates,
+                    DtlsParameters = transport.DtlsParameters,
+                    SctpParameters = transport.SctpParameters,
+                }
+            };
         }
 
         #region Private Methods
@@ -208,14 +254,6 @@ namespace TubumuMeeting.Meeting.Server
             var group = new Group(_loggerFactory, router, groupId, name);
             Groups[groupId] = group;
             return group;
-        }
-
-        private Room CreateRoom(Group group, string roomId, string name)
-        {
-            var room = new Room(_loggerFactory, group, roomId, name);
-            group.Rooms[roomId] = room;
-            Rooms[roomId] = room;
-            return room;
         }
 
         #endregion
