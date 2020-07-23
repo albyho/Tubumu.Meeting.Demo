@@ -59,37 +59,31 @@ namespace TubumuMeeting.Meeting.Server
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
         }
 
-        public async Task<bool> PeerJoinAsync(string peerId,
-            RtpCapabilities rtpCapabilities,
-            SctpCapabilities? sctpCapabilities,
-            string displayName,
-            string[]? sources,
-            Guid groupId,
-            Dictionary<string, object>? appData)
+        public async Task<bool> PeerJoinAsync(string peerId, JoinRequest joinRequest)
         {
             PeerClose(peerId);
 
             using (await _groupLocker.LockAsync())
             {
-                if (!Groups.TryGetValue(groupId, out var group))
+                if (!Groups.TryGetValue(joinRequest.GroupId, out var group))
                 {
-                    group = await CreateGroupAsync(groupId, "Default");
+                    group = await CreateGroupAsync(joinRequest.GroupId, "Default");
                 }
 
                 lock (_peerLocker)
                 {
                     if (Peers.TryGetValue(peerId, out var peer))
                     {
-                        _logger.LogError($"PeerJoinAsync() | Peer[{peerId}] has already in Group:{groupId}.");
+                        _logger.LogError($"PeerJoinAsync() | Peer[{peerId}] has already in Group:{joinRequest.GroupId}.");
                         return false;
                     }
 
-                    peer = new Peer(peerId, displayName, group)
+                    peer = new Peer(peerId, joinRequest.DisplayName, group)
                     {
-                        RtpCapabilities = rtpCapabilities,
-                        SctpCapabilities = sctpCapabilities,
-                        Sources = sources,
-                        AppData = appData
+                        RtpCapabilities = joinRequest.RtpCapabilities,
+                        SctpCapabilities = joinRequest.SctpCapabilities,
+                        Sources = joinRequest.Sources,
+                        AppData = joinRequest.AppData
                     };
 
                     Peers[peerId] = peer;

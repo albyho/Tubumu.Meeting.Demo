@@ -106,15 +106,9 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!await _lobby.PeerJoinAsync(UserId,
-                joinRequest.RtpCapabilities,
-                joinRequest.SctpCapabilities,
-                joinRequest.DisplayName,
-                joinRequest.Sources,
-                joinRequest.GroupId,
-                joinRequest.AppData))
+            if (!await _lobby.PeerJoinAsync(UserId, joinRequest))
             {
-                return new MeetingMessage { Code = 400, Message = "Join 失败: PeerJoin 失败" };
+                return new MeetingMessage { Code = 400, Message = "Join 失败" };
             }
 
             return new MeetingMessage { Code = 200, Message = "Join 成功" };
