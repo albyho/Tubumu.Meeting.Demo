@@ -1103,7 +1103,7 @@ namespace TubumuMeeting.Mediasoup
             else if (a != null && b == null)
             {
                 // b 为 null的情况下，确保不存在于 a
-                var got = a.TryGetValue("packetization-mode", out var _);
+                var got = a.ContainsKey("packetization-mode");
                 if (got)
                 {
                     return false;
@@ -1112,7 +1112,7 @@ namespace TubumuMeeting.Mediasoup
             else if (a == null && b != null)
             {
                 // a 为 null的情况下，确保不存在于 b
-                var got = b.TryGetValue("packetization-mode", out var _);
+                var got = b.ContainsKey("packetization-mode");
                 if (got)
                 {
                     return false;
