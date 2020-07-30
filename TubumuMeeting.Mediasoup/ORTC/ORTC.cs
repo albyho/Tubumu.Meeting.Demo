@@ -380,13 +380,13 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // ssrc is optional.
-            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 ssrc 的数据类型。在强类型语言中不需要。
 
             // rid is optional.
-            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 rid 的数据类型。在强类型语言中不需要。
 
             // rtx is optional.
-            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 rtx 的数据类型。在强类型语言中不需要。
             if (encoding.Rtx != null)
             {
                 // RTX ssrc is mandatory if rtx is present.
@@ -1045,9 +1045,19 @@ namespace TubumuMeeting.Mediasoup
 
             var consumableEncodings = consumableParams.Encodings.DeepClone<List<RtpEncodingParameters>>();
 
-            foreach (var encoding in consumableEncodings)
+            var baseSsrc = Utils.GenerateRandomNumber();
+            var baseRtxSsrc = Utils.GenerateRandomNumber();
+
+            for (var i = 0; i < consumableEncodings.Count; ++i)
             {
-                if (!enableRtx)
+                var encoding = consumableEncodings[i];
+                encoding.Ssrc = (uint)(baseSsrc + i);
+
+                if (enableRtx)
+                {
+                    encoding.Rtx = new Rtx { Ssrc = (uint)(baseRtxSsrc + i) };
+                }
+                else
                 {
                     // 在 Node.js 实现中，delete 了 rtx 。
                     encoding.Rtx = null;

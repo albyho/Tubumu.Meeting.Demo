@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -56,7 +56,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Map of pending sent requests.
         /// </summary>
-        private readonly Dictionary<int, Sent> _sents = new Dictionary<int, Sent>();
+        private readonly ConcurrentDictionary<int, Sent> _sents = new ConcurrentDictionary<int, Sent>();
 
         /// <summary>
         /// Buffer for reading messages from the worker.
@@ -141,7 +141,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> RequestAsync(MethodId methodId, object? @internal = null, object? data = null)
         {
             var method = methodId.GetEnumStringValue();
-            var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1); // TODO: (alby)线程同步
+            var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1); // TODO: (alby)线程同步, 使用 Interlocked.Increment 也不太合适。
 
             _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
 
@@ -170,16 +170,18 @@ namespace TubumuMeeting.Mediasoup
                 RequestMessage = requestMesssge,
                 Resolve = data =>
                 {
-                    if (!_sents.Remove(id))
+                    if (!_sents.TryRemove(id, out var _))
                     {
+                        tcs.TrySetException(new Exception($"Received response does not match any sent request [id:{id}]"));
                         return;
                     }
                     tcs.TrySetResult(data);
                 },
                 Reject = e =>
                 {
-                    if (!_sents.Remove(id))
+                    if (!_sents.TryRemove(id, out var _))
                     {
+                        tcs.TrySetException(new Exception($"Received response does not match any sent request [id:{id}]"));
                         return;
                     }
                     tcs.TrySetException(e);
@@ -189,9 +191,12 @@ namespace TubumuMeeting.Mediasoup
                     tcs.TrySetException(new InvalidStateException("Channel closed"));
                 },
             };
-            _sents.Add(id, sent);
+            if (!_sents.TryAdd(id, sent))
+            {
+                throw new Exception($"Error add sent request [id:{id}]");
+            }
 
-            tcs.WithTimeout(TimeSpan.FromSeconds(15 + (0.1 * _sents.Count)), () => _sents.Remove(id));
+            tcs.WithTimeout(TimeSpan.FromSeconds(15 + (0.1 * _sents.Count)), () => _sents.TryRemove(id, out var _));
 
             Loop.Default.Sync(() =>
             {
@@ -203,14 +208,14 @@ namespace TubumuMeeting.Mediasoup
                         if (ex != null)
                         {
                             _logger.LogError(ex, "_producerSocket.Write() | error");
-                            tcs.TrySetException(ex);
+                            sent.Reject(ex);
                         }
                     });
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "_producerSocket.Write() | error");
-                    tcs.TrySetException(ex);
+                    sent.Reject(ex);
                 }
             });
 
@@ -267,7 +272,7 @@ namespace TubumuMeeting.Mediasoup
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                if(!payloadString.Contains("no suitable Producer"))
+                                if (!payloadString.Contains("no suitable Producer"))
                                     _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
