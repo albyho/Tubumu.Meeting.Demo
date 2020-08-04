@@ -94,6 +94,16 @@ namespace TubumuMeeting.Mediasoup
         public bool Closed { get; private set; }
 
         /// <summary>
+        /// Buffered amount threshold.
+        /// </summary>
+        public int BufferedAmountLowThreshold { get; private set; }
+
+        /// <summary>
+        /// Buffered amount.
+        /// </summary>
+        private int _bufferedAmount;
+
+        /// <summary>
         /// Observer instance.
         /// </summary>
         public EventEmitter Observer { get; } = new EventEmitter();
@@ -104,6 +114,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits dataproducerclose</para>
         /// <para>@emits message - (message: Buffer, ppid: number)</para>
         /// <para>@emits sctpsendbufferfull</para>
+        /// <para>@emits bufferedamountlow - (bufferedAmount: number)</para>
         /// <para>@emits @close</para>
         /// <para>@emits @dataproducerclose</para>
         /// <para>Observer events:</para>
@@ -213,6 +224,14 @@ namespace TubumuMeeting.Mediasoup
             return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, Internal);
         }
 
+        public Task<string?> GetBufferedAmountAsync()
+        {
+            _logger.LogDebug("GetBufferedAmountAsync()");
+
+            // 返回的是 JSON 格式，取其 bufferedAmount 属性。
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_BUFFERED_AMOUNT, Internal);
+        }
+
         #region Event Handlers
 
         private void HandleWorkerNotifications()
@@ -254,14 +273,25 @@ namespace TubumuMeeting.Mediasoup
                     {
                         Emit("sctpsendbufferfull");
 
-                        // Emit observer event.
-                        Observer.Emit("sctpsendbufferfull");
+                        break;
+                    }
+                case "bufferedamount":
+                    {
+                        var bufferedAmount = Int32.Parse(data);
+                        var previousBufferedAmount = _bufferedAmount;
+
+                        _bufferedAmount = bufferedAmount;
+
+                        if (previousBufferedAmount > BufferedAmountLowThreshold && _bufferedAmount <= BufferedAmountLowThreshold)
+                        {
+                            Emit("bufferedamountlow", bufferedAmount);
+                        }
 
                         break;
                     }
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | ignoring unknown event \"{@event}\" in channel listener");
                         break;
                     }
             }
@@ -293,7 +323,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
-                        _logger.LogError($"OnPayloadChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnPayloadChannelMessage() | ignoring unknown event \"{@event}\" in payload channel listener");
                         break;
                     }
             }
