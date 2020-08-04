@@ -59,9 +59,9 @@ namespace TubumuMeeting.Meeting.Server
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
         }
 
-        public async Task<bool> PeerJoinAsync(string peerId, JoinRequest joinRequest)
+        public async Task<bool> PeerJoinGroupAsync(string peerId, JoinRequest joinRequest)
         {
-            PeerLeave(peerId);
+            PeerLeaveGroup(peerId);
 
             using (await _groupLocker.LockAsync())
             {
@@ -162,7 +162,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public void PeerLeave(string peerId)
+        public void PeerLeaveGroup(string peerId)
         {
             lock (_peerLocker)
             {

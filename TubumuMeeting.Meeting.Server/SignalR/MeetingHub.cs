@@ -85,7 +85,7 @@ namespace TubumuMeeting.Meeting.Server
                     PeerLeaveRoom(Peer, room.Room.RoomId);
                 }
 
-                _scheduler.PeerLeave(Peer.PeerId);
+                _scheduler.PeerLeaveGroup(Peer.PeerId);
             }
         }
 
@@ -106,7 +106,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!await _scheduler.PeerJoinAsync(UserId, joinRequest))
+            if (!await _scheduler.PeerJoinGroupAsync(UserId, joinRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "Join 失败" };
             }

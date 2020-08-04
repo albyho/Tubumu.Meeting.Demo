@@ -93,7 +93,7 @@ namespace Tubumu.Core.Extensions
             switch (task.Status)
             {
                 case TaskStatus.RanToCompletion:
-                    return resultSetter.TrySetResult(task is Task<TResult> ? ((Task<TResult>)task).Result : default);
+                    return resultSetter.TrySetResult(task is Task<TResult> taskLocal ? taskLocal.Result : default);
                 case TaskStatus.Faulted:
                     return resultSetter.TrySetException(task.Exception.InnerExceptions);
                 case TaskStatus.Canceled:
