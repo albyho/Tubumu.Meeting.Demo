@@ -9,7 +9,7 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public class Lobby
+    public class Scheduler
     {
         #region Private Fields
 
@@ -21,7 +21,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <summary>
         /// Logger
         /// </summary>
-        private readonly ILogger<Lobby> _logger;
+        private readonly ILogger<Scheduler> _logger;
 
         private readonly MediasoupOptions _mediasoupOptions;
 
@@ -47,10 +47,10 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
-        public Lobby(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
+        public Scheduler(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
         {
             _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<Lobby>();
+            _logger = _loggerFactory.CreateLogger<Scheduler>();
             _mediasoupOptions = mediasoupOptions;
             _mediasoupServer = mediasoupServer;
 
@@ -61,7 +61,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PeerJoinAsync(string peerId, JoinRequest joinRequest)
         {
-            PeerClose(peerId);
+            PeerLeave(peerId);
 
             using (await _groupLocker.LockAsync())
             {
@@ -162,7 +162,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public void PeerClose(string peerId)
+        public void PeerLeave(string peerId)
         {
             lock (_peerLocker)
             {

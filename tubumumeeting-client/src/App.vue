@@ -5,21 +5,17 @@
       <el-main>
         <video id="localVideo" :srcObject.prop="localVideoStream" autoplay="autoplay" />
         <video id="remoteVideo" :srcObject.prop="remoteVideoStream" autoplay="autoplay" />
-        <audio
-          id="remoteAudio"
-          :srcObject.prop="remoteAudioStream"
-          autoplay="autoplay"
-        />
+        <audio id="remoteAudio" :srcObject.prop="remoteAudioStream" autoplay="autoplay" />
       </el-main>
     </el-container>
   </div>
 </template>
 
 <script>
-import Logger from "./lib/Logger";
-import querystring from "querystring";
-import * as mediasoupClient from "mediasoup-client";
-import * as signalR from "@microsoft/signalr";
+import Logger from './lib/Logger';
+import querystring from 'querystring';
+import * as mediasoupClient from 'mediasoup-client';
+import * as signalR from '@microsoft/signalr';
 
 const VIDEO_CONSTRAINS = {
   qvga: { width: { ideal: 320 }, height: { ideal: 240 } },
@@ -39,7 +35,7 @@ const WEBCAM_SIMULCAST_ENCODINGS = [
 
 // Used for VP9 webcam video.
 const WEBCAM_KSVC_ENCODINGS = [
-  { scalabilityMode: "S3T3_KEY" }
+  { scalabilityMode: 'S3T3_KEY' }
 ];
 
 // Used for simulcast screen sharing.
@@ -57,12 +53,12 @@ const SCREEN_SHARING_SVC_ENCODINGS =
 	{ scalabilityMode: 'S3T3', dtx: true }
 ];
 
-const logger = new Logger("App");
+const logger = new Logger('App');
 
-localStorage.setItem("debug", "mediasoup-client:* tubumumeeting-client:*");
+localStorage.setItem('debug', 'mediasoup-client:* tubumumeeting-client:*');
 
 export default {
-  name: "app",
+  name: 'app',
   components: {},
   data() {
     return {
@@ -91,16 +87,16 @@ export default {
   methods: {
     async run() {
       try {
-        const { peerId } = querystring.parse(location.search.replace("?", ""));
+        const { peerId } = querystring.parse(location.search.replace('?', ''));
         const accessTokens = [
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.5w00ixg06pRPxcdbtbmRVI6Wy_Ta9qsSJc3D7PE3chQ",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMiIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.q2tKWUa6i4u0VpZDhA8Fw92NoV_g9YQeWD-OeF7fAvU",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMyIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.ekjd10Bortc1q34Ani1F_Gw9KQwS4qRFIU715pE1lGo",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNCIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.6hZ4GtamurlemceCV7I5vT-UQkbszRxys5h8QOiOhcE",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.nV4fr0tYGDR7zsykNoFYERdVSUPSqmhGdOkPqBjK1qw"
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.5w00ixg06pRPxcdbtbmRVI6Wy_Ta9qsSJc3D7PE3chQ',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMiIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.q2tKWUa6i4u0VpZDhA8Fw92NoV_g9YQeWD-OeF7fAvU',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMyIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.ekjd10Bortc1q34Ani1F_Gw9KQwS4qRFIU715pE1lGo',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNCIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.6hZ4GtamurlemceCV7I5vT-UQkbszRxys5h8QOiOhcE',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.nV4fr0tYGDR7zsykNoFYERdVSUPSqmhGdOkPqBjK1qw'
         ];
 
-        const host = "https://192.168.0.124:5001";
+        const host = 'https://192.168.0.124:5001';
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
@@ -119,10 +115,10 @@ export default {
           // })
           .build();
 
-        this.connection.on("NewConsumer", async data => {
+        this.connection.on('NewConsumer', async data => {
           await this.processNewConsumer(data);
         });
-        this.connection.on("ReceiveMessage", async data => {
+        this.connection.on('ReceiveMessage', async data => {
           await this.processMessage(data);
         });
         await this.connection.start();
@@ -132,9 +128,9 @@ export default {
       }
     },
     async process() {
-      let result = await this.connection.invoke("GetRouterRtpCapabilities");
+      let result = await this.connection.invoke('GetRouterRtpCapabilities');
       if (result.code !== 200) {
-        logger.error("processMessage() | GetRouterRtpCapabilities failure.");
+        logger.error('processMessage() | GetRouterRtpCapabilities failure.');
         return;
       }
 
@@ -145,28 +141,28 @@ export default {
       });
 
       // GetRouterRtpCapabilities 成功, Join
-      result = await this.connection.invoke("Join", {
+      result = await this.connection.invoke('Join', {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
         sctpCapabilities: null, // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
-        displayName: "Guest",
+        displayName: 'Guest',
         sources: ['mic', 'webcam'],
-        groupId: "00000000-0000-0000-0000-000000000000",
+        groupId: '00000000-0000-0000-0000-000000000000',
         appData: {}
       });
       if (result.code !== 200) {
-        logger.error("processMessage() | Join failure.");
+        logger.error('processMessage() | Join failure.');
         return;
       }
 
       // Join成功，CreateWebRtcTransport(生产) 
-      result = await this.connection.invoke("CreateWebRtcTransport", {
+      result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
         producing: true,
         consuming: false,
         sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
       });
       if (result.code !== 200) {
-        logger.error("processMessage() | CreateWebRtcTransport failure.");
+        logger.error('processMessage() | CreateWebRtcTransport failure.');
         return;
       }
 
@@ -182,11 +178,11 @@ export default {
       });
 
       this.sendTransport.on(
-        "connect",
+        'connect',
         ({ dtlsParameters }, callback, errback) => {
-          logger.debug("sendTransport.on connect dtls: %o", dtlsParameters);
+          logger.debug('sendTransport.on connect dtls: %o', dtlsParameters);
           this.connection
-            .invoke("ConnectWebRtcTransport", {
+            .invoke('ConnectWebRtcTransport', {
               transportId: this.sendTransport.id,
               dtlsParameters
             })
@@ -196,12 +192,12 @@ export default {
       );
 
       this.sendTransport.on(
-        "produce",
+        'produce',
         // eslint-disable-next-line no-unused-vars
         async ({ kind, rtpParameters, appData }, callback, errback) => {
-          logger.debug("sendTransport.on produce");
+          logger.debug('sendTransport.on produce');
           try {
-            const result = await this.connection.invoke("Produce", {
+            const result = await this.connection.invoke('Produce', {
               transportId: this.sendTransport.id,
               kind,
               rtpParameters,
@@ -219,12 +215,12 @@ export default {
         }
       );
 
-      this.sendTransport.on("connectionstatechange", state => {
+      this.sendTransport.on('connectionstatechange', state => {
         logger.debug(`connectionstatechange: ${state}`);
       });
 
       // createSendTransport 成功, CreateWebRtcTransport(消费)
-      result = await this.connection.invoke("CreateWebRtcTransport", {
+      result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
         producing: false,
         consuming: true,
@@ -242,11 +238,11 @@ export default {
       });
 
       this.recvTransport.on(
-        "connect",
+        'connect',
         ({ dtlsParameters }, callback, errback) => {
-          logger.debug("recvTransport.on connect dtls: %o", dtlsParameters);
+          logger.debug('recvTransport.on connect dtls: %o', dtlsParameters);
           this.connection
-            .invoke("ConnectWebRtcTransport", {
+            .invoke('ConnectWebRtcTransport', {
               transportId: this.recvTransport.id,
               dtlsParameters
             })
@@ -256,21 +252,21 @@ export default {
       );
 
       // createRecvTransport成功, JoinRoom
-      result = await this.connection.invoke("JoinRoom", {
-        roomId: "1",
-        interestedSources: ["mic", "webcam"]
+      result = await this.connection.invoke('JoinRoom', {
+        roomId: '1',
+        interestedSources: ['mic', 'webcam']
       });
       if (result.code !== 200) {
-        logger.error("processMessage() | JoinRoom failure.");
+        logger.error('processMessage() | JoinRoom failure.');
         return;
       }
 
       const joinRoomData = result.data;
       if(joinRoomData && joinRoomData.needsProduceSources) {
         for(let i = 0; i< joinRoomData.needsProduceSources.length; i++) {
-          if(joinRoomData.needsProduceSources[i] === "mic" && this.mediasoupDevice.canProduce("audio")) {
+          if(joinRoomData.needsProduceSources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
             this.enableMic();
-          } else if(joinRoomData.needsProduceSources[i] === "webcam" && this.mediasoupDevice.canProduce("video")) {
+          } else if(joinRoomData.needsProduceSources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
             this.enableWebcam();
           }
         }
@@ -299,7 +295,7 @@ export default {
       // Store in the map.
       this.consumers.set(consumer.id, consumer);
 
-      consumer.on("transportclose", () => {
+      consumer.on('transportclose', () => {
         this.consumers.delete(consumer.id);
       });
 
@@ -313,7 +309,7 @@ export default {
       );
 
       /*
-      if (kind === "audio") {
+      if (kind === 'audio') {
         consumer.volume = 0;
 
         const stream = new MediaStream();
@@ -322,7 +318,7 @@ export default {
 
         if (!stream.getAudioTracks()[0]) {
           throw new Error(
-            "request.newConsumer | given stream has no audio track"
+            'request.newConsumer | given stream has no audio track'
           );
         }
       }
@@ -331,7 +327,7 @@ export default {
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
 
-      if (kind === "video") {
+      if (kind === 'video') {
         this.remoteVideoStream = stream;
       } else {
         this.remoteAudioStream = stream;
@@ -339,34 +335,34 @@ export default {
 
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
-      const result = await this.connection.invoke("NewConsumerReturn", {
+      const result = await this.connection.invoke('NewConsumerReturn', {
         peerId: data.data.consumerPeerId,
         consumerId: id
       });
 
       if (result.code !== 200) {
-        logger.error("processNewConsumer() | NewConsumerReturn.");
+        logger.error('processNewConsumer() | NewConsumerReturn.');
         return;
       }
     },
     async processMessage(data) {
-      logger.debug("processMessage() | %o", data);
+      logger.debug('processMessage() | %o', data);
       switch (data.internalCode) {
-        case "producerScore": {
+        case 'producerScore': {
           // eslint-disable-next-line no-unused-vars
           const { producerId, score } = data.data;
 
           break;
         }
 
-        case "peerJoinRoom": {
+        case 'peerJoinRoom': {
           // eslint-disable-next-line no-unused-vars
           const peerJoinRoomData = data.data;
           if(peerJoinRoomData && peerJoinRoomData.needsProduceSources) {
             for(let i = 0; i< peerJoinRoomData.needsProduceSources.length; i++) {
-              if(peerJoinRoomData.needsProduceSources[i] === "mic" && this.mediasoupDevice.canProduce("audio")) {
+              if(peerJoinRoomData.needsProduceSources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
                 this.enableMic();
-              } else if(peerJoinRoomData.needsProduceSources[i] === "webcam" && this.mediasoupDevice.canProduce("video")) {
+              } else if(peerJoinRoomData.needsProduceSources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
                 this.enableWebcam();
               }
             }
@@ -389,7 +385,7 @@ export default {
 					break;
 				}
 
-        case "consumerClosed": {
+        case 'consumerClosed': {
           const { consumerId } = data.data;
           const consumer = this.consumers.get(consumerId);
 
@@ -401,7 +397,7 @@ export default {
           break;
         }
 
-        case "consumerPaused": {
+        case 'consumerPaused': {
           const { consumerId } = data.data;
           const consumer = this.consumers.get(consumerId);
 
@@ -410,7 +406,7 @@ export default {
           break;
         }
 
-        case "consumerResumed": {
+        case 'consumerResumed': {
           const { consumerId } = data.data;
           const consumer = this.consumers.get(consumerId);
 
@@ -419,7 +415,7 @@ export default {
           break;
         }
 
-        case "consumerLayersChanged": {
+        case 'consumerLayersChanged': {
           // eslint-disable-next-line no-unused-vars
           const { consumerId, spatialLayer, temporalLayer } = data.data;
           const consumer = this.consumers.get(consumerId);
@@ -429,7 +425,7 @@ export default {
           break;
         }
 
-        case "consumerScore": {
+        case 'consumerScore': {
           const { consumerId } = data.data;
           const consumer = this.consumers.get(consumerId);
 
@@ -439,16 +435,16 @@ export default {
         }
 
         default: {
-          logger.error('unknown protoo data.method "%s"', data.internalCode);
+          logger.error('unknown data.internalCode "%s"', data.internalCode);
         }
       }
     },
     async enableMic() {
-      logger.debug("enableMic()");
+      logger.debug('enableMic()');
 
       if (this.micProducer) return;
-      if (this.mediasoupDevice && !this.mediasoupDevice.canProduce("audio")) {
-        logger.error("enableMic() | cannot produce audio");
+      if (this.mediasoupDevice && !this.mediasoupDevice.canProduce('audio')) {
+        logger.error('enableMic() | cannot produce audio');
         return;
       }
 
@@ -459,14 +455,14 @@ export default {
 
         const device = this.audioDevices[deviceId];
 
-        if (!device) throw new Error("no audio devices");
+        if (!device) throw new Error('no audio devices');
 
         logger.debug(
-          "enableMic() | new selected audio device [device:%o]",
+          'enableMic() | new selected audio device [device:%o]',
           device
         );
 
-        logger.debug("enableMic() | calling getUserMedia()");
+        logger.debug('enableMic() | calling getUserMedia()');
 
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -482,32 +478,32 @@ export default {
             opusStereo: 1,
             opusDtx: 1
           },
-          appData: { source: "mic", roomId: "1" }
+          appData: { source: 'mic', roomId: '1' }
         });
 
-        this.micProducer.on("transportclose", () => {
+        this.micProducer.on('transportclose', () => {
           this.micProducer = null;
         });
 
-        this.micProducer.on("trackended", () => {
+        this.micProducer.on('trackended', () => {
           this.disableMic().catch(() => {});
         });
 
         this.micProducer.volume = 0;
       } catch (error) {
-        console.log("enableMic() failed:%o", error);
-        logger.error("enableMic() failed:%o", error);
+        console.log('enableMic() failed:%o', error);
+        logger.error('enableMic() failed:%o', error);
         if (track) track.stop();
       }
     },
     async disableMic() {
-      logger.debug("disableMic()");
+      logger.debug('disableMic()');
       if (!this.micProducer) return;
 
       this.micProducer.close();
 
       try {
-        await this.connection.invoke("closeProducer", {
+        await this.connection.invoke('closeProducer', {
           producerId: this.micProducer.id
         });
       } catch (error) {
@@ -517,11 +513,11 @@ export default {
       this.micProducer = null;
     },
     async enableWebcam() {
-      logger.debug("enableWebcam()");
+      logger.debug('enableWebcam()');
 
       if (this.webcamProducer) return;
-      if (this.mediasoupDevice && !this.mediasoupDevice.canProduce("video")) {
-        logger.error("enableWebcam() | cannot produce video");
+      if (this.mediasoupDevice && !this.mediasoupDevice.canProduce('video')) {
+        logger.error('enableWebcam() | cannot produce video');
 
         return;
       }
@@ -533,14 +529,14 @@ export default {
 
         const device = this.webcams[deviceId];
 
-        if (!device) throw new Error("no webcam devices");
+        if (!device) throw new Error('no webcam devices');
 
         logger.debug(
-          "_setWebcamProducer() | new selected webcam [device:%o]",
+          '_setWebcamProducer() | new selected webcam [device:%o]',
           device
         );
 
-        logger.debug("_setWebcamProducer() | calling getUserMedia()");
+        logger.debug('_setWebcamProducer() | calling getUserMedia()');
 
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -584,10 +580,10 @@ export default {
         if (this.useSimulcast) {
           // If VP9 is the only available video codec then use SVC.
           const firstVideoCodec = this.mediasoupDevice.rtpCapabilities.codecs.find(
-            c => c.kind === "video"
+            c => c.kind === 'video'
           );
 
-          if (firstVideoCodec.mimeType.toLowerCase() === "video/vp9")
+          if (firstVideoCodec.mimeType.toLowerCase() === 'video/vp9')
             encodings = WEBCAM_KSVC_ENCODINGS;
           else encodings = WEBCAM_SIMULCAST_ENCODINGS;
         }
@@ -597,33 +593,33 @@ export default {
           encodings,
           codecOptions,
           codec,
-          appData: { source: "webcam", roomId: "1" }
+          appData: { source: 'webcam', roomId: '1' }
         });
 
-        this.webcamProducer.on("transportclose", () => {
+        this.webcamProducer.on('transportclose', () => {
           this.webcamProducer = null;
         });
 
-        this.webcamProducer.on("trackended", () => {
+        this.webcamProducer.on('trackended', () => {
           this.disableWebcam().catch(() => {});
         });
 
-        logger.debug("_setWebcamProducer() succeeded");
+        logger.debug('_setWebcamProducer() succeeded');
       } catch (error) {
-        logger.error("_setWebcamProducer() failed:%o", error);
+        logger.error('_setWebcamProducer() failed:%o', error);
 
         if (track) track.stop();
       }
     },
     async disableWebcam() {
-      logger.debug("disableWebcam()");
+      logger.debug('disableWebcam()');
 
       if (!this.webcamProducer) return;
 
       this.webcamProducer.close();
 
       try {
-        await this.connection.invoke("closeProducer", {
+        await this.connection.invoke('closeProducer', {
           producerId: this.webcamProducer.id
         });
       } catch (error) {
@@ -633,71 +629,71 @@ export default {
       this.webcamProducer = null;
     },
     async _updateAudioDevices() {
-      logger.debug("_updateAudioDevices()");
+      logger.debug('_updateAudioDevices()');
 
       // Reset the list.
       this.audioDevices = {};
 
       try {
-        logger.debug("_updateAudioDevices() | calling enumerateDevices()");
+        logger.debug('_updateAudioDevices() | calling enumerateDevices()');
 
         const devices = await navigator.mediaDevices.enumerateDevices();
 
         for (const device of devices) {
-          if (device.kind !== "audioinput") continue;
+          if (device.kind !== 'audioinput') continue;
 
           this.audioDevices[device.deviceId] = device;
         }
       } catch (error) {
-        logger.error("_updateAudioDevices() failed:%o", error);
+        logger.error('_updateAudioDevices() failed:%o', error);
       }
     },
     async _updateWebcams() {
-      logger.debug("_updateWebcams()");
+      logger.debug('_updateWebcams()');
 
       // Reset the list.
       this.webcams = {};
 
       try {
-        logger.debug("_updateWebcams() | calling enumerateDevices()");
+        logger.debug('_updateWebcams() | calling enumerateDevices()');
 
         const devices = await navigator.mediaDevices.enumerateDevices();
 
         for (const device of devices) {
-          if (device.kind !== "videoinput") continue;
+          if (device.kind !== 'videoinput') continue;
 
           this.webcams[device.deviceId] = device;
         }
       } catch (error) {
-        logger.error("_updateWebcams() failed:%o", error);
+        logger.error('_updateWebcams() failed:%o', error);
       }
     },
     async _getAudioDeviceId() {
-      logger.debug("_getAudioDeviceId()");
+      logger.debug('_getAudioDeviceId()');
 
       try {
-        logger.debug("_getAudioDeviceId() | calling _updateAudioDeviceId()");
+        logger.debug('_getAudioDeviceId() | calling _updateAudioDeviceId()');
 
         await this._updateAudioDevices();
 
         const audioDevices = Object.values(this.audioDevices);
         return audioDevices[0] ? audioDevices[0].deviceId : null;
       } catch (error) {
-        logger.error("_getAudioDeviceId() failed:%o", error);
+        logger.error('_getAudioDeviceId() failed:%o', error);
       }
     },
     async _getWebcamDeviceId() {
-      logger.debug("_getWebcamDeviceId()");
+      logger.debug('_getWebcamDeviceId()');
 
       try {
-        logger.debug("_getWebcamDeviceId() | calling _updateWebcams()");
+        logger.debug('_getWebcamDeviceId() | calling _updateWebcams()');
 
         await this._updateWebcams();
 
         const webcams = Object.values(this.webcams);
         return webcams[0] ? webcams[0].deviceId : null;
       } catch (error) {
-        logger.error("_getWebcamDeviceId() failed:%o", error);
+        logger.error('_getWebcamDeviceId() failed:%o', error);
       }
     }
   }
@@ -712,7 +708,7 @@ body {
 }
 
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

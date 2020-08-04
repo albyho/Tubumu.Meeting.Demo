@@ -67,5 +67,4 @@ namespace Tubumu.Core.Json
             token.WriteTo(writer);
         }
     }
-
 }

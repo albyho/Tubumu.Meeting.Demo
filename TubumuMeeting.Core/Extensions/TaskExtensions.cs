@@ -13,6 +13,56 @@ namespace Tubumu.Core.Extensions
         }
 
         /// <summary>
+        /// Returns a task that completes as the original task completes or when a timeout expires,
+        /// whichever happens first.
+        /// </summary>
+        /// <param name="task">The task to wait for.</param>
+        /// <param name="timeout">The maximum time to wait.</param>
+        /// <returns>
+        /// A task that completes with the result of the specified <paramref name="task"/> or
+        /// faults with a <see cref="TimeoutException"/> if <paramref name="timeout"/> elapses first.
+        /// </returns>
+        public static async Task WithTimeout(this Task task, TimeSpan timeout, Action cancelled = null)
+        {
+            using (var timerCancellation = new CancellationTokenSource())
+            {
+                Task timeoutTask = Task.Delay(timeout, timerCancellation.Token);
+                Task firstCompletedTask = await Task.WhenAny(task, timeoutTask).ConfigureAwait(false);
+                if (firstCompletedTask == timeoutTask)
+                {
+                    if(cancelled == null)
+                    {
+                        throw new TimeoutException();
+                    }
+                    cancelled();
+                }
+
+                // The timeout did not elapse, so cancel the timer to recover system resources.
+                timerCancellation.Cancel();
+
+                // re-throw any exceptions from the completed task.
+                await task.ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Returns a task that completes as the original task completes or when a timeout expires,
+        /// whichever happens first.
+        /// </summary>
+        /// <typeparam name="T">The type of value returned by the original task.</typeparam>
+        /// <param name="task">The task to wait for.</param>
+        /// <param name="timeout">The maximum time to wait.</param>
+        /// <returns>
+        /// A task that completes with the result of the specified <paramref name="task"/> or
+        /// faults with a <see cref="TimeoutException"/> if <paramref name="timeout"/> elapses first.
+        /// </returns>
+        public static async Task<T> WithTimeout<T>(this Task<T> task, TimeSpan timeout, Action cancelled = null)
+        {
+            await WithTimeout((Task)task, timeout, cancelled).ConfigureAwait(false);
+            return task.GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Creates a new Task that mirrors the supplied task but that will be canceled after the specified timeout.
         /// </summary>
         /// <typeparam name="TResult">Specifies the type of data contained in the task.</typeparam>

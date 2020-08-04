@@ -1210,7 +1210,7 @@ namespace TubumuMeeting.Mediasoup
                 return false;
             }
 
-            var apiInteger = Int32.Parse(apt.ToString());
+            var apiInteger = Convert.ToInt32(apt);
             if (payloadType != apiInteger)
             {
                 return false;
