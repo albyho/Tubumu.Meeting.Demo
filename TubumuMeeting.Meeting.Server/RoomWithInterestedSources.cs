@@ -7,13 +7,13 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public partial class RoomInterestedSources : IEquatable<RoomInterestedSources>
+    public partial class RoomWithInterestedSources : IEquatable<RoomWithInterestedSources>
     {
         public Room Room { get; }
 
         public string[] InterestedSources { get; }
 
-        public bool Equals(RoomInterestedSources other)
+        public bool Equals(RoomWithInterestedSources other)
         {
             return Room.RoomId == other.Room.RoomId;
         }
@@ -23,7 +23,7 @@ namespace TubumuMeeting.Meeting.Server
             return Room.RoomId.GetHashCode();
         }
 
-        public RoomInterestedSources(Room room, string[] interestedSources)
+        public RoomWithInterestedSources(Room room, string[] interestedSources)
         {
             Room = room;
             InterestedSources = interestedSources;

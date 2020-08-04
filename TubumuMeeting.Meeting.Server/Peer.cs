@@ -33,7 +33,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Group Group { get; private set; }
 
-        public Dictionary<string, RoomInterestedSources> Rooms { get; } = new Dictionary<string, RoomInterestedSources>();
+        public Dictionary<string, RoomWithInterestedSources> Rooms { get; } = new Dictionary<string, RoomWithInterestedSources>();
 
         public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();
 

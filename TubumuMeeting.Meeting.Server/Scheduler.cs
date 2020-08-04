@@ -97,7 +97,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<RoomInterestedSources?> PeerJoinRoomAsync(string peerId, Guid groupId, JoinRoomRequest joinRoomRequest)
+        public async Task<RoomWithInterestedSources?> PeerJoinRoomAsync(string peerId, Guid groupId, JoinRoomRequest joinRoomRequest)
         {
             using (await _groupLocker.LockAsync())
             {
@@ -121,15 +121,15 @@ namespace TubumuMeeting.Meeting.Server
                             room = CreateRoom(group, joinRoomRequest.RoomId, "Default");
                         }
 
-                        var roomInterestedSources = new RoomInterestedSources(room, joinRoomRequest.InterestedSources);
+                        var peerInterestedSourcesInRoom = new RoomWithInterestedSources(room, joinRoomRequest.InterestedSources);
 
                         lock (_peerRoomLocker)
                         {
                             room.Peers[peerId] = peer;
-                            peer.Rooms[joinRoomRequest.RoomId] = roomInterestedSources;
+                            peer.Rooms[joinRoomRequest.RoomId] = peerInterestedSourcesInRoom;
                         }
 
-                        return roomInterestedSources;
+                        return peerInterestedSourcesInRoom;
                     }
                 }
             }
