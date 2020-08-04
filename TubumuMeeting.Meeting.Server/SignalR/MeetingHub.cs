@@ -237,34 +237,40 @@ namespace TubumuMeeting.Meeting.Server
             {
                 // 本 Peer 消费或其他 Peer 需要生产
                 var otherPeerNeedsProduceSources = new HashSet<string>();
-                foreach (var interestedSource in room.InterestedSources.Where(m => otherPeer.Sources.Contains(m)))
+                if(!otherPeer.Sources.IsNullOrEmpty())
                 {
-                    var producer = otherPeer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
-                    if (producer != null)
+                    foreach (var interestedSource in room.InterestedSources.Where(m => otherPeer.Sources.Contains(m)))
                     {
-                        // 本 Peer 消费其他 Peer
-                        CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
-                    }
-                    else
-                    {
-                        // 需要生产相应的 Producer 供其他 Peer 消费
-                        otherPeerNeedsProduceSources.Add(interestedSource);
+                        var producer = otherPeer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
+                        if (producer != null)
+                        {
+                            // 本 Peer 消费其他 Peer
+                            CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                        }
+                        else
+                        {
+                            // 需要生产相应的 Producer 供其他 Peer 消费
+                            otherPeerNeedsProduceSources.Add(interestedSource);
+                        }
                     }
                 }
 
                 // 其他 Peer 消费或本 Peer 需要生产
-                foreach (var interestedSource in otherPeer.Rooms[joinRoomRequest.RoomId].InterestedSources.Where(m => Peer.Sources.Contains(m)))
+                if(!Peer.Sources.IsNullOrEmpty())
                 {
-                    var producer = Peer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
-                    if (producer != null)
+                    foreach (var interestedSource in otherPeer.Rooms[joinRoomRequest.RoomId].InterestedSources.Where(m => Peer.Sources.Contains(m)))
                     {
-                        // 其他 Peer 消费本 Peer
-                        CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
-                    }
-                    else
-                    {
-                        // 需要生产相应的 Producer 供其他 Peer 消费
-                        needsProduceSources.Add(interestedSource);
+                        var producer = Peer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
+                        if (producer != null)
+                        {
+                            // 其他 Peer 消费本 Peer
+                            CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
+                        }
+                        else
+                        {
+                            // 需要生产相应的 Producer 供其他 Peer 消费
+                            needsProduceSources.Add(interestedSource);
+                        }
                     }
                 }
 
@@ -325,7 +331,7 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = $"Produce 失败: Transport:{produceRequest.TransportId} is not exists." };
             }
 
-            if (!Peer!.Sources.Contains(source))
+            if (Peer!.Sources == null || !Peer!.Sources.Contains(source))
             {
                 return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ source }\" cannot be produce." };
             }
