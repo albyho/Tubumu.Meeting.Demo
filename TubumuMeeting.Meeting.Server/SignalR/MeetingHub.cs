@@ -954,11 +954,6 @@ namespace TubumuMeeting.Meeting.Server
                 }).ContinueWithOnFaultedHandleLog(_logger);
             }
 
-            if (!_scheduler.PeerLeaveRoom(UserId, roomId))
-            {
-                return new MeetingMessage { Code = 400, Message = "LeaveRoom 失败: PeerLeaveRoom 失败" };
-            }
-
             var producersToClose = new List<Producer>();
             var consumers = from ri in Peer!.Rooms.Values  // Peer 所在的所有房间
                             from p in ri.Room.Peers.Values // 的包括本 Peer 在内的所有 Peer
@@ -977,6 +972,11 @@ namespace TubumuMeeting.Meeting.Server
             {
                 producerToClose.Close();
                 Peer.Producers.Remove(producerToClose.ProducerId);
+            }
+
+            if (!_scheduler.PeerLeaveRoom(UserId, roomId))
+            {
+                return new MeetingMessage { Code = 400, Message = "LeaveRoom 失败: PeerLeaveRoom 失败" };
             }
 
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
