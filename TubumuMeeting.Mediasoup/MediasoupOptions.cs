@@ -104,7 +104,7 @@ namespace TubumuMeeting.Mediasoup
                     },
                     InitialAvailableOutgoingBitrate = 1000 * 1000,
                     MinimumAvailableOutgoingBitrate = 600 * 1000,
-                    MaxSctpMessageSize = 262144,
+                    MaxSctpMessageSize = 256 * 1024,
                     MaximumIncomingBitrate = 1500 * 1000,
                 }
             }

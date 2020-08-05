@@ -228,14 +228,17 @@ namespace TubumuMeeting.Web
                 });
             });
 
-            try
+            var consulSettings = Configuration.GetSection("ConsulSettings").Get<ConsulSettings>();
+            if (consulSettings.Enabled)
             {
-                var consulSettings = Configuration.GetSection("ConsulSettings").Get<ConsulSettings>();
-                app.UseConsul(lifetime, consulSettings);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "UseConsul()");
+                try
+                {
+                    app.UseConsul(lifetime, consulSettings);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "UseConsul()");
+                }
             }
         }
     }

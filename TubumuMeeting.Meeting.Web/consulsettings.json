@@ -1,5 +1,6 @@
 {
   "ConsulSettings": {
+    "Enabled": false,
     "ServiceName": "TubumuMeeting",
     "ServiceIP": "192.168.0.124",
     "ServicePort": 5001,
