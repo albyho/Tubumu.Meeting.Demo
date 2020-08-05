@@ -936,7 +936,6 @@ namespace TubumuMeeting.Meeting.Server
 
             foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
             {
-                // Notify the new Peer to all other Peers.
                 // Message: peerLeaveRoom
                 var client = _hubContext.Clients.User(otherPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
@@ -950,8 +949,6 @@ namespace TubumuMeeting.Meeting.Server
                         PeerId = UserId
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
-
-                // Note: 其他 Peer 客户端自行关闭相应的 Consumer 。
             }
 
             if (!_scheduler.PeerLeaveRoom(UserId, roomId))
@@ -959,10 +956,12 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "LeaveRoom 失败: PeerLeaveRoom 失败" };
             }
 
+            // TODO: (alby)如果只有本房间消费的 Producer，则关闭所有 Peer 的 Producer 对应的所有 Consumer 。然后，其他 Peer 的 Producer 如果只有本 Peer 在本房间消费，也应该关闭。
+            // 问题：Consumer 并不知道在哪个房间消费。
             var producersToClose = new List<Producer>();
-            var consumers = from ri in Peer!.Rooms.Values
-                            from p in ri.Room.Peers.Values
-                            from pc in p.Consumers.Values
+            var consumers = from ri in Peer!.Rooms.Values  // Peer 所有的所有房间
+                            from p in ri.Room.Peers.Values // 的包括本 Peer 在内的所有 Peer
+                            from pc in p.Consumers.Values  // 的 Consumeer
                             select pc;
             foreach (var producer in Peer.Producers.Values)
             {
