@@ -245,7 +245,7 @@ namespace TubumuMeeting.Meeting.Server
                         if (producer != null)
                         {
                             // 本 Peer 消费其他 Peer
-                            CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
+                            CreateConsumer(Peer!, otherPeer, producer, joinRoomRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
                         }
                         else
                         {
@@ -264,7 +264,7 @@ namespace TubumuMeeting.Meeting.Server
                         if (producer != null)
                         {
                             // 其他 Peer 消费本 Peer
-                            CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
+                            CreateConsumer(otherPeer, Peer!, producer, joinRoomRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
                         }
                         else
                         {
@@ -385,7 +385,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId && m.Rooms[roomId].InterestedSources.Any(m => m == producer.Source)))
             {
                 // 其他 Peer 消费本 Peer
-                CreateConsumer(otherPeer, Peer!, producer).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(otherPeer, Peer!, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             return new MeetingMessage
@@ -631,7 +631,7 @@ namespace TubumuMeeting.Meeting.Server
 
         #region CreateConsumer
 
-        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
+        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer, string roomId)
         {
             _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.ProducerId}\"]");
 
@@ -674,6 +674,9 @@ namespace TubumuMeeting.Meeting.Server
                 _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
                 return;
             }
+
+            // Store RoomId
+            consumer.RoomId = roomId;
 
             // Store producer source
             consumer.Source = producer.Source;
@@ -956,21 +959,20 @@ namespace TubumuMeeting.Meeting.Server
                 return new MeetingMessage { Code = 400, Message = "LeaveRoom 失败: PeerLeaveRoom 失败" };
             }
 
-            // TODO: (alby)如果只有本房间消费的 Producer，则关闭所有 Peer 的 Producer 对应的所有 Consumer 。然后，其他 Peer 的 Producer 如果只有本 Peer 在本房间消费，也应该关闭。
-            // 问题：Consumer 并不知道在哪个房间消费。
             var producersToClose = new List<Producer>();
-            var consumers = from ri in Peer!.Rooms.Values  // Peer 所有的所有房间
+            var consumers = from ri in Peer!.Rooms.Values  // Peer 所在的所有房间
                             from p in ri.Room.Peers.Values // 的包括本 Peer 在内的所有 Peer
-                            from pc in p.Consumers.Values  // 的 Consumeer
+                            from pc in p.Consumers.Values  // 的 Consumer
                             select pc;
             foreach (var producer in Peer.Producers.Values)
             {
-                if (consumers.All(m => m.Internal.ProducerId != producer.ProducerId))
+                if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId && m.RoomId != roomId))
                 {
                     producersToClose.Add(producer);
                 }
             }
 
+            // Producer 关闭后会触发相应的 Consumer `producerclose` 事件，从而拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
             foreach (var producerToClose in producersToClose)
             {
                 producerToClose.Close();
