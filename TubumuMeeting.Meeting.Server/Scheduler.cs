@@ -148,11 +148,9 @@ namespace TubumuMeeting.Meeting.Server
 
                 lock (_peerRoomLocker)
                 {
-                    var roomIdsToRemove = new List<string>();
                     if (peer.Rooms.TryGetValue(roomId, out var room))
                     {
                         room.Room.Peers.Remove(peerId);
-                        roomIdsToRemove.Add(room.Room.RoomId);
                     }
 
                     peer.Rooms.Remove(roomId);
