@@ -78,7 +78,7 @@ namespace TubumuMeeting.Meeting.Server
                         return false;
                     }
 
-                    peer = new Peer(peerId, joinRequest.DisplayName, group)
+                    peer = new Peer(group, peerId, joinRequest.DisplayName)
                     {
                         RtpCapabilities = joinRequest.RtpCapabilities,
                         SctpCapabilities = joinRequest.SctpCapabilities,

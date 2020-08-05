@@ -49,11 +49,11 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, object>? AppData { get; set; }
 
-        public Peer(string peerId, string displayName, Group group)
+        public Peer(Group group, string peerId, string displayName)
         {
+            Group = group;
             PeerId = peerId;
             DisplayName = displayName.IsNullOrWhiteSpace() ? "Guest" : displayName;
-            Group = group;
             Closed = false;
         }
 
