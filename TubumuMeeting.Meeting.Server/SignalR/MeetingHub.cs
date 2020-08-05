@@ -48,16 +48,16 @@ namespace TubumuMeeting.Meeting.Server
     public partial class MeetingHub : Hub<IPeer>
     {
         private readonly ILogger<MeetingHub> _logger;
+        private readonly IHubContext<MeetingHub, IPeer> _hubContext;
         private readonly MediasoupOptions _mediasoupOptions;
         private readonly Scheduler _scheduler;
-        private readonly IHubContext<MeetingHub, IPeer> _hubContext;
 
-        public MeetingHub(ILogger<MeetingHub> logger, Scheduler meetingManager, MediasoupOptions mediasoupOptions, IHubContext<MeetingHub, IPeer> hubContext)
+        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, Scheduler scheduler, MediasoupOptions mediasoupOptions)
         {
             _logger = logger;
-            _scheduler = meetingManager;
-            _mediasoupOptions = mediasoupOptions;
             _hubContext = hubContext;
+            _scheduler = scheduler;
+            _mediasoupOptions = mediasoupOptions;
         }
 
         public override Task OnConnectedAsync()
@@ -237,7 +237,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 // 本 Peer 消费或其他 Peer 需要生产
                 var otherPeerNeedsProduceSources = new HashSet<string>();
-                if(!otherPeer.Sources.IsNullOrEmpty())
+                if (!otherPeer.Sources.IsNullOrEmpty())
                 {
                     foreach (var interestedSource in room.InterestedSources.Where(m => otherPeer.Sources.Contains(m)))
                     {
@@ -256,7 +256,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 // 其他 Peer 消费或本 Peer 需要生产
-                if(!Peer.Sources.IsNullOrEmpty())
+                if (!Peer.Sources.IsNullOrEmpty())
                 {
                     foreach (var interestedSource in otherPeer.Rooms[joinRoomRequest.RoomId].InterestedSources.Where(m => Peer.Sources.Contains(m)))
                     {
