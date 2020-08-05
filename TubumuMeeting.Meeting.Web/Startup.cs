@@ -188,8 +188,12 @@ namespace TubumuMeeting.Web
             }
             else
             {
+                app.UseHsts();
                 app.UseHttpsRedirection();
             }
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.UseRouting();
 

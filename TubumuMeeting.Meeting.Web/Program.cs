@@ -16,11 +16,13 @@ namespace TubumuMeeting.Web
             Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder =>
             {
-                var mediasoupconfig = new ConfigurationBuilder()
+                var configs = new ConfigurationBuilder()
+                    .AddJsonFile("Hosting.json", optional: false)
                     .AddJsonFile("mediasoupsettings.json", optional: false)
                     .AddJsonFile("consulsettings.json", optional: false)
                     .Build();
-                webBuilder.UseConfiguration(mediasoupconfig);
+
+                webBuilder.UseConfiguration(configs);
                 webBuilder.UseStartup<Startup>();
             });
     }
