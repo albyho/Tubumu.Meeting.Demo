@@ -198,8 +198,6 @@ namespace TubumuMeeting.Web
 
             app.UseCors("DefaultPolicy");
 
-            app.UseMediasoup();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGet("/", async context =>
