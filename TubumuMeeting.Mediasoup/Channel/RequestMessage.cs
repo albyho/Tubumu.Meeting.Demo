@@ -4,7 +4,7 @@ namespace TubumuMeeting.Mediasoup
 {
     public class RequestMessage
     {
-        public int Id { get; set; }
+        public uint Id { get; set; }
 
         public string Method { get; set; }
 
@@ -19,7 +19,7 @@ namespace TubumuMeeting.Mediasoup
     /*
     public class ResponseMessage
     {
-        public int? Id { get; set; }
+        public uint? Id { get; set; }
 
         public string? TargetId { get; set; }
 

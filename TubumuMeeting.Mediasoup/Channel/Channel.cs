@@ -51,12 +51,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Next id for messages sent to the worker process.
         /// </summary>
-        private int _nextId = 0;
+        private uint _nextId = 0;
 
         /// <summary>
         /// Map of pending sent requests.
         /// </summary>
-        private readonly ConcurrentDictionary<int, Sent> _sents = new ConcurrentDictionary<int, Sent>();
+        private readonly ConcurrentDictionary<uint, Sent> _sents = new ConcurrentDictionary<uint, Sent>();
 
         /// <summary>
         /// Buffer for reading messages from the worker.
@@ -141,7 +141,7 @@ namespace TubumuMeeting.Mediasoup
         public Task<string?> RequestAsync(MethodId methodId, object? @internal = null, object? data = null)
         {
             var method = methodId.GetEnumStringValue();
-            var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1); // TODO: (alby)线程同步, 使用 Interlocked.Increment 也不太合适。
+            var id = InterlockedExtensions.Increment(ref _nextId);
 
             _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
 
@@ -349,7 +349,7 @@ namespace TubumuMeeting.Mediasoup
         private void ProcessMessage(string payload)
         {
             var msg = JObject.Parse(payload);
-            var id = msg["id"].Value(0);
+            var id = msg["id"].Value((uint)0);
             var accepted = msg["accepted"].Value(false);
             var targetId = msg["targetId"].Value(String.Empty);
             var @event = msg["event"].Value(string.Empty);

@@ -78,7 +78,7 @@ namespace TubumuMeeting.Meeting.Server
                         return false;
                     }
 
-                    peer = new Peer(group, peerId, joinRequest.DisplayName)
+                    peer = new Peer(_loggerFactory, _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings, group, peerId, joinRequest.DisplayName)
                     {
                         RtpCapabilities = joinRequest.RtpCapabilities,
                         SctpCapabilities = joinRequest.SctpCapabilities,
@@ -94,6 +94,34 @@ namespace TubumuMeeting.Meeting.Server
                         return true;
                     }
                 }
+            }
+        }
+
+        public Task<WebRtcTransport> PeerCreateWebRtcTransportAsync(string peerId, CreateWebRtcTransportRequest createWebRtcTransportRequest)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"CreateWebRtcTransport() | Peer[{peerId}] is not exists.");
+                    throw new Exception($"Peer[{peerId}] is not exists");
+                }
+
+                return peer.CreateWebRtcTransport(createWebRtcTransportRequest);
+            }
+        }
+
+        public Task<bool> PeerConnectWebRtcTransportAsync(string peerId, ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"CreateWebRtcTransport() | Peer[{peerId}] is not exists.");
+                    throw new Exception($"Peer[{peerId}] is not exists");
+                }
+
+                return peer.ConnectWebRtcTransport(connectWebRtcTransportRequest);
             }
         }
 

@@ -116,33 +116,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            var webRtcTransportSettings = _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings;
-            var webRtcTransportOptions = new WebRtcTransportOptions
-            {
-                ListenIps = webRtcTransportSettings.ListenIps,
-                InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate,
-                MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize,
-                EnableSctp = createWebRtcTransportRequest.SctpCapabilities != null,
-                NumSctpStreams = createWebRtcTransportRequest.SctpCapabilities?.NumStreams,
-                AppData = new Dictionary<string, object>
-                {
-                    { "Consuming", createWebRtcTransportRequest.Consuming },
-                    { "Producing", createWebRtcTransportRequest.Producing },
-                },
-            };
-
-            if (createWebRtcTransportRequest.ForceTcp)
-            {
-                webRtcTransportOptions.EnableUdp = false;
-                webRtcTransportOptions.EnableTcp = true;
-            }
-
-            var transport = await Peer!.Group.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
-            if (transport == null)
-            {
-                return new MeetingMessage { Code = 400, Message = "CreateWebRtcTransport 失败" };
-            }
-
+            var transport = await _scheduler.PeerCreateWebRtcTransportAsync(UserId, createWebRtcTransportRequest);
             transport.On("sctpstatechange", sctpState =>
             {
                 _logger.LogDebug($"WebRtcTransport \"sctpstatechange\" event [sctpState:{sctpState}]");
@@ -186,16 +160,6 @@ namespace TubumuMeeting.Meeting.Server
                 }
             });
 
-            // Store the WebRtcTransport into the Peer data Object.
-            Peer!.Transports[transport.TransportId] = transport;
-
-            // If set, apply max incoming bitrate limit.
-            if (webRtcTransportSettings.MaximumIncomingBitrate.HasValue && webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
-            {
-                // Fire and forget
-                transport.SetMaxIncomingBitrateAsync(webRtcTransportSettings.MaximumIncomingBitrate.Value).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
             return new MeetingMessage
             {
                 Code = 200,
@@ -213,12 +177,11 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            if (!Peer!.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
+            if (!await _scheduler.PeerConnectWebRtcTransportAsync(UserId, connectWebRtcTransportRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "ConnectWebRtcTransport 失败" };
             }
 
-            await transport.ConnectAsync(connectWebRtcTransportRequest.DtlsParameters);
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
         }
 
@@ -649,7 +612,7 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             // Must take the Transport the remote Peer is using for consuming.
-            var transport = consumerPeer.GetConsumerTransport();
+            var transport = consumerPeer.GetConsumingTransport();
             // This should not happen.
             if (transport == null)
             {
@@ -847,7 +810,7 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             // Must take the Transport the remote Peer is using for consuming.
-            var transport = dataConsumerPeer.GetConsumerTransport();
+            var transport = dataConsumerPeer.GetConsumingTransport();
             // This should not happen.
             if (transport == null)
             {
