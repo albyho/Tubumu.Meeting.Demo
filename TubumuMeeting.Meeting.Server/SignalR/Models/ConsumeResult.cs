@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using TubumuMeeting.Mediasoup;
-
-namespace TubumuMeeting.Meeting.Server
+﻿namespace TubumuMeeting.Meeting.Server
 {
     public class ConsumeResult
     {
-        public Peer Peer {get;set;}
+        public Peer Peer { get; set; }
 
         public PeerProducer[] ExistsProducers { get; set; }
 

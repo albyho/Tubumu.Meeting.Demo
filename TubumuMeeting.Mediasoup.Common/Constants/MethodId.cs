@@ -123,7 +123,7 @@ namespace TubumuMeeting.Mediasoup
 
         [EnumStringValue("dataProducer.getStats")]
         DATA_PRODUCER_GET_STATS,
-        
+
         [EnumStringValue("dataConsumer.dump")]
         DATA_CONSUMER_CLOSE,
 

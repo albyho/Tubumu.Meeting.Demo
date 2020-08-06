@@ -30,7 +30,7 @@ namespace Tubumu.Core.Extensions
                 Task firstCompletedTask = await Task.WhenAny(task, timeoutTask).ConfigureAwait(false);
                 if (firstCompletedTask == timeoutTask)
                 {
-                    if(cancelled == null)
+                    if (cancelled == null)
                     {
                         throw new TimeoutException();
                     }

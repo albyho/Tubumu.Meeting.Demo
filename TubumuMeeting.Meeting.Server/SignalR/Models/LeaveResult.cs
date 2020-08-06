@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace TubumuMeeting.Meeting.Server
+﻿namespace TubumuMeeting.Meeting.Server
 {
     public class LeaveResult
     {

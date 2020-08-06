@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
@@ -325,7 +324,7 @@ namespace TubumuMeeting.Meeting.Server
                     comsumePaddingsToRemove.Add(comsumePadding);
 
                     // 其他 Peer 消费本 Peer
-                    if(Peers.TryGetValue(comsumePadding.PeerId, out var otherPeer))
+                    if (Peers.TryGetValue(comsumePadding.PeerId, out var otherPeer))
                     {
                         peerRoomIds.Add(new PeerRoomId
                         {
@@ -335,7 +334,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
                 }
 
-                foreach(var consumePaddingToRemove in comsumePaddingsToRemove)
+                foreach (var consumePaddingToRemove in comsumePaddingsToRemove)
                 {
                     peer.ConsumePaddings.Remove(consumePaddingToRemove);
                 }
