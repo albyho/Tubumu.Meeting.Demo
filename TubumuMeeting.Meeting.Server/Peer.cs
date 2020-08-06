@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
@@ -263,7 +264,42 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> CloseProduceAsync(string producerId)
+        public async Task<bool> CloseProducerAsync(string producerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Producers.TryGetValue(producerId, out var producer))
+                {
+                    throw new Exception($"CloseProduce 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                }
+
+                producer.Close();
+                Producers.Remove(producerId);
+                return true;
+            }
+        }
+
+        public async Task<bool> PauseProducerAsync(string producerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Producers.TryGetValue(producerId, out var producer))
+                {
+                    throw new Exception($"CloseProduce 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                }
+
+                await producer.PauseAsync();
+                return true;
+            }
+        }
+
+        public async Task<bool> ResumeProducerAsync(string producerId)
         {
             CheckClosed();
             using (await _locker.LockAsync())
@@ -273,9 +309,131 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"CloseProduce 失败: Peer:{PeerId} has no Producer:{producerId}.");
                 }
 
-                producer.Close();
-                Producers.Remove(producerId);
+                await producer.ResumeAsync();
                 return true;
+            }
+        }
+
+        public async Task<bool> CloseConsumerAsync(string consumerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Consumers.TryGetValue(consumerId, out var consumer))
+                {
+                    throw new Exception($"CloseConsumer 失败: Peer:{PeerId} has no Cmonsumer:{consumerId}.");
+                }
+
+                consumer.Close();
+                Consumers.Remove(consumerId);
+                return true;
+            }
+        }
+
+        public async Task<bool> PauseConsumerAsync(string consumerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Consumers.TryGetValue(consumerId, out var consumer))
+                {
+                    throw new Exception($"PauseProduce 失败: Peer:{PeerId} has no Consumer:{consumerId}.");
+                }
+
+                await consumer.PauseAsync();
+                return true;
+            }
+        }
+
+        public async Task<bool> ResumeConsumerAsync(string consumerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Consumers.TryGetValue(consumerId, out var consumer))
+                {
+                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Consumer:{consumerId}.");
+                }
+
+                await consumer.ResumeAsync();
+                return true;
+            }
+        }
+
+        public async Task<bool> SetConsumerPreferedLayersAsync(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
+                {
+                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Consumer:{setConsumerPreferedLayersRequest.ConsumerId}.");
+                }
+
+                await consumer.SetPreferredLayersAsync(setConsumerPreferedLayersRequest);
+                return true;
+            }
+        }
+
+        public async Task<bool> SetConsumerPriorityAsync(SetConsumerPriorityRequest setConsumerPriorityRequest)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
+                {
+                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Consumer:{setConsumerPriorityRequest.ConsumerId}.");
+                }
+
+                await consumer.SetPriorityAsync(setConsumerPriorityRequest.Priority);
+                return true;
+            }
+        }
+
+        public async Task<bool> RequestConsumerKeyFrameAsync(string consumerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Consumers.TryGetValue(consumerId, out var consumer))
+                {
+                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Producer:{consumerId}.");
+                }
+
+                await consumer.RequestKeyFrameAsync();
+                return true;
+            }
+        }
+
+        public async Task<TransportStat> GetTransportStats(string transportId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Transports.TryGetValue(transportId, out var transport))
+                {
+                    throw new Exception($"GetTransportStats 失败: Peer:{PeerId} has no Transport:{transportId}.");
+                }
+
+                var status = await transport.GetStatsAsync();
+                // TODO: (alby)考虑不进行反序列化
+                // TODO: (alby)实际上有 WebTransportStat、PlainTransportStat、PipeTransportStat 和 DirectTransportStat。这里反序列化后会丢失数据。
+                var data = JsonConvert.DeserializeObject<TransportStat>(status!);
+                return data;
             }
         }
 

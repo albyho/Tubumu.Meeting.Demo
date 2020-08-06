@@ -193,7 +193,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var joinRoomResult = await _scheduler.PeerJoinRoomAsync(UserId, joinRoomRequest);
 
-            foreach(var otherPeer in joinRoomResult.OtherPeers)
+            foreach (var otherPeer in joinRoomResult.OtherPeers)
             {
                 // Notify the new Peer to all other Peers.
                 // Message: peerJoinRoom
@@ -256,7 +256,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var inviteProduceResult = _scheduler.PeerInviteProduce(UserId, inviteProduceRequest);
 
-            foreach(var existsProducer in inviteProduceResult.ExistsProducers)
+            foreach (var existsProducer in inviteProduceResult.ExistsProducers)
             {
                 // 其他 Peer 消费本 Peer
                 CreateConsumer(existsProducer.Peer, inviteProduceResult.Peer, existsProducer.Producer, inviteProduceRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
@@ -305,112 +305,92 @@ namespace TubumuMeeting.Meeting.Server
             };
         }
 
-        public Task<MeetingMessage> CloseProducer(string producerId)
+        public async Task<MeetingMessage> CloseProducer(string producerId)
         {
-            if (!Peer!.Producers.TryGetValue(producerId, out var producer))
+            if (!await _scheduler.PeerCloseProducerAsync(UserId, producerId))
             {
-                return Task.FromResult(new MeetingMessage { Code = 400, Message = "CloseProducer 失败" });
+                return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
 
-            producer.Close();
-            Peer.Producers.Remove(producerId);
-
-            return Task.FromResult(new MeetingMessage { Code = 200, Message = "CloseProducer 成功" });
+            return new MeetingMessage { Code = 200, Message = "CloseProducer 成功" };
         }
 
         public async Task<MeetingMessage> PauseProducer(string producerId)
         {
-            if (!Peer!.Producers.TryGetValue(producerId, out var producer))
+            if (!await _scheduler.PeerPauseProducerAsync(UserId, producerId))
             {
-                return new MeetingMessage { Code = 400, Message = "PauseProducer 失败" };
+                return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
-
-            await producer.PauseAsync();
 
             return new MeetingMessage { Code = 200, Message = "PauseProducer 成功" };
         }
 
         public async Task<MeetingMessage> ResumeProducer(string producerId)
         {
-            if (!Peer!.Producers.TryGetValue(producerId, out var producer))
+            if (!await _scheduler.PeerResumeProducerAsync(UserId, producerId))
             {
-                return new MeetingMessage { Code = 400, Message = "ResumeProducer 失败" };
+                return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
-
-            await producer.ResumeAsync();
 
             return new MeetingMessage { Code = 200, Message = "ResumeProducer 成功" };
         }
 
-        public Task<MeetingMessage> CloseConsumer(string consumerId)
+        public async Task<MeetingMessage> CloseConsumer(string consumerId)
         {
-            if (!Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!await _scheduler.PeerCloseConsumerAsync(UserId, consumerId))
             {
-                return Task.FromResult(new MeetingMessage { Code = 400, Message = "CloseConsumer 失败" });
+                return new MeetingMessage { Code = 400, Message = "CloseConsumer 失败" };
             }
 
-            consumer.Close();
-            Peer.Consumers.Remove(consumerId);
-
-            return Task.FromResult(new MeetingMessage { Code = 200, Message = "CloseConsumer 成功" });
+            return new MeetingMessage { Code = 200, Message = "CloseConsumer 成功" };
         }
 
         public async Task<MeetingMessage> PauseConsumer(string consumerId)
         {
-            if (!Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!await _scheduler.PeerPauseConsumerAsync(UserId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "PauseConsumer 失败" };
             }
-
-            await consumer.PauseAsync();
 
             return new MeetingMessage { Code = 200, Message = "PauseConsumer 成功" };
         }
 
         public async Task<MeetingMessage> ResumeConsumer(string consumerId)
         {
-            if (!Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!await _scheduler.PeerResumeConsumerAsync(UserId, consumerId))
             {
-                return new MeetingMessage { Code = 400, Message = "ResumeConsumer 失败" };
+                return new MeetingMessage { Code = 400, Message = "PauseConsumer 失败" };
             }
 
-            await consumer.ResumeAsync();
-
-            return new MeetingMessage { Code = 200, Message = "ResumeConsumer 成功" };
+            return new MeetingMessage { Code = 200, Message = "PauseConsumer 成功" };
         }
 
         public async Task<MeetingMessage> SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            if (!Peer!.Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
+            if (!await _scheduler.SetConsumerPreferedLayers(UserId, setConsumerPreferedLayersRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "SetConsumerPreferedLayers 失败" };
             }
-
-            await consumer.SetPreferredLayersAsync(setConsumerPreferedLayersRequest);
 
             return new MeetingMessage { Code = 200, Message = "SetConsumerPreferedLayers 成功" };
         }
 
         public async Task<MeetingMessage> SetConsumerPriority(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            if (!Peer!.Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
+            if (!await _scheduler.SetConsumerPriority(UserId, setConsumerPriorityRequest))
             {
-                return new MeetingMessage { Code = 400, Message = "SetConsumerPriority 失败" };
+                return new MeetingMessage { Code = 400, Message = "SetConsumerPreferedLayers 失败" };
             }
-
-            await consumer.SetPriorityAsync(setConsumerPriorityRequest.Priority);
 
             return new MeetingMessage { Code = 200, Message = "SetConsumerPriority 成功" };
         }
 
         public async Task<MeetingMessage> RequestConsumerKeyFrame(string consumerId)
         {
-            if (!Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!await _scheduler.RequestConsumerKeyFrame(UserId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "RequestConsumerKeyFrame 失败" };
             }
-
-            await consumer.RequestKeyFrameAsync();
 
             return new MeetingMessage { Code = 200, Message = "RequestConsumerKeyFrame 成功" };
         }
