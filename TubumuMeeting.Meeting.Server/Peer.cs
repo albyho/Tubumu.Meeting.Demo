@@ -437,6 +437,66 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        public async Task<ProducerStat> GetProducerStats(string producerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Producers.TryGetValue(producerId, out var producer))
+                {
+                    throw new Exception($"GetProducerStats 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                }
+
+                var status = await producer.GetStatsAsync();
+                // TODO: (alby)考虑不进行反序列化
+                var data = JsonConvert.DeserializeObject<ProducerStat>(status!);
+                return data;
+            }
+        }
+
+        public async Task<ConsumerStat> GetConsumerStats(string consumerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Consumers.TryGetValue(consumerId, out var consumer))
+                {
+                    throw new Exception($"GetConsumerStats 失败: Peer:{PeerId} has no Consumers:{consumerId}.");
+                }
+
+                var status = await consumer.GetStatsAsync();
+                // TODO: (alby)考虑不进行反序列化
+                var data = JsonConvert.DeserializeObject<ConsumerStat>(status!);
+                return data;
+            }
+        }
+
+        public async Task<IceParameters?> RestartIce(string transportId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                CheckClosed();
+
+                if (Transports.TryGetValue(transportId, out var transport))
+                {
+                    throw new Exception($"RestartIce 失败: Peer:{PeerId} has no Transport:{transportId}.");
+                }
+
+                if (!(transport is WebRtcTransport webRtcTransport))
+                {
+                    throw new Exception($"RestartIce 失败: Peer:{PeerId} has no Transport:{transportId}.");
+                }
+
+                var iceParameters = await webRtcTransport.RestartIceAsync();
+                return iceParameters;
+            }
+        }
+
         /// <summary>
         /// 关闭其他房间无人消费的 Producer
         /// </summary>
