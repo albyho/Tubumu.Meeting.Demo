@@ -80,7 +80,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeer in peerLeaveResult.OtherPeers)
             {
                 // Message: peerLeaveRoom
-                var client = _hubContext.Clients.User(otherPeer.Peer.PeerId);
+                var client = _hubContext.Clients.User(otherPeer.PeerId.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -88,7 +88,7 @@ namespace TubumuMeeting.Meeting.Server
                     Message = "peerLeaveRoom",
                     Data = new
                     {
-                        RoomId = otherPeer.Room.RoomId,
+                        RoomId = otherPeer.RoomId.RoomId,
                         PeerId = peerLeaveResult.Peer.PeerId
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
@@ -252,17 +252,34 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
         }
 
-        public MeetingMessage Consume(ConsumeRequest inviteProduceRequest)
+        public MeetingMessage Consume(ConsumeRequest consumeRequest)
         {
-            var inviteProduceResult = _scheduler.PeerConsume(UserId, inviteProduceRequest);
+            var consumeResult = _scheduler.PeerConsume(UserId, consumeRequest);
 
-            foreach (var existsProducer in inviteProduceResult.ExistsProducers)
+            foreach (var existsProducer in consumeResult.ExistsProducers)
             {
-                // 其他 Peer 消费本 Peer
-                CreateConsumer(existsProducer.Peer, inviteProduceResult.Peer, existsProducer.Producer, inviteProduceRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                // 本 Peer 消费其他 Peer
+                CreateConsumer(existsProducer.Peer, consumeResult.Peer, existsProducer.Producer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
-            return new MeetingMessage { Code = 200, Message = "PeerConsume 成功" };
+            foreach(var produceSource in consumeResult.ProduceSources)
+            {
+                // Message: produceSource
+                var client = _hubContext.Clients.User(consumeResult.Peer.PeerId);
+                client.ReceiveMessage(new MeetingMessage
+                {
+                    Code = 200,
+                    InternalCode = "produceSource",
+                    Message = "produceSource",
+                    Data = new
+                    {
+                        RoomId = consumeResult.RoomId,
+                        ProduceSources = consumeResult.ProduceSources
+                    }
+                }).ContinueWithOnFaultedHandleLog(_logger);
+            }
+
+            return new MeetingMessage { Code = 200, Message = "Consume 成功" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)

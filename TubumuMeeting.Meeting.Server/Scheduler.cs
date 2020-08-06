@@ -94,7 +94,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
 
-                var otherPeers = new List<PeerRoom>();
+                var otherPeers = new List<PeerIdRoomId>();
                 lock (_peerRoomLocker)
                 {
                     // 从所有房间退出
@@ -102,10 +102,10 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         peer.CloseProducersNoConsumers(room.RoomId);
                         var otherPeersInRoom = room.Peers.Values.Where(m => m.PeerId != peerId);
-                        var otherPeerRoomsInRoom = otherPeersInRoom.Select(m => new PeerRoom
+                        var otherPeerRoomsInRoom = otherPeersInRoom.Select(m => new PeerIdRoomId
                         {
-                            Peer = m,
-                            Room = room
+                            PeerId = m,
+                            RoomId = room
                         });
                         otherPeers.AddRange(otherPeerRoomsInRoom);
                         foreach (var otherPeer in otherPeersInRoom)
@@ -230,7 +230,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public ConsumeResult PeerConsume(string peerId, ConsumeRequest inviteProduceRequest)
+        public ConsumeResult PeerConsume(string peerId, ConsumeRequest consumeRequest)
         {
             using (_peerLocker.Lock())
             {
@@ -240,29 +240,29 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
 
-                if (!Peers.TryGetValue(inviteProduceRequest.PeerId, out var otherPeer))
+                if (!Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
                 {
-                    _logger.LogError($"PeerInviteProduce() | Peer:{inviteProduceRequest.PeerId} is not exists.");
-                    throw new Exception($"Peer:{inviteProduceRequest.PeerId} is not exists.");
+                    _logger.LogError($"PeerInviteProduce() | Peer:{consumeRequest.PeerId} is not exists.");
+                    throw new Exception($"Peer:{consumeRequest.PeerId} is not exists.");
                 }
 
                 lock (_peerRoomLocker)
                 {
-                    if (!peer.Rooms.TryGetValue(inviteProduceRequest.RoomId, out var room))
+                    if (!peer.Rooms.TryGetValue(consumeRequest.RoomId, out var room))
                     {
-                        _logger.LogError($"PeerInviteProduce() | Peer:{peerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
-                        throw new Exception($"Peer:{peerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
+                        _logger.LogError($"PeerInviteProduce() | Peer:{peerId} is not exists in Room:{consumeRequest.RoomId}.");
+                        throw new Exception($"Peer:{peerId} is not exists in Room:{consumeRequest.RoomId}.");
                     }
 
-                    if (!room.Peers.ContainsKey(inviteProduceRequest.PeerId))
+                    if (!room.Peers.ContainsKey(consumeRequest.PeerId))
                     {
-                        _logger.LogError($"PeerInviteProduce() | Peer:{inviteProduceRequest.PeerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
-                        throw new Exception($"Peer:{inviteProduceRequest.PeerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
+                        _logger.LogError($"PeerInviteProduce() | Peer:{consumeRequest.PeerId} is not exists in Room:{consumeRequest.RoomId}.");
+                        throw new Exception($"Peer:{consumeRequest.PeerId} is not exists in Room:{consumeRequest.RoomId}.");
                     }
 
                     var existsProducers = new List<PeerProducer>();
-                    var inviteProduceSources = new List<string>();
-                    foreach (var source in inviteProduceRequest.Sources)
+                    var produceSources = new List<string>();
+                    foreach (var source in consumeRequest.Sources)
                     {
                         var producer = otherPeer.Producers.Values.Where(m => m.Source == source).FirstOrDefault();
                         // 如果 Source 有对应的 Producer，直接消费。
@@ -271,7 +271,7 @@ namespace TubumuMeeting.Meeting.Server
                             var consumer = peer.Consumers.Values.Where(m => m.Internal.ProducerId == producer.ProducerId).FirstOrDefault();
                             if (consumer != null)
                             {
-                                // 如果本 Peer 已经消费了对应 Producer，忽略。
+                                // 如果本 Peer 已经消费了对应 Producer，忽略以避免重复消费。
                                 continue;
                             }
                             existsProducers.Add(new PeerProducer
@@ -282,11 +282,11 @@ namespace TubumuMeeting.Meeting.Server
                             continue;
                         }
                         // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
-                        inviteProduceSources.Add(source!);
-                        otherPeer.ConsumerPaddings[source!] = new PeerRoom
+                        produceSources.Add(source!);
+                        otherPeer.ConsumerPaddings[source!] = new PeerIdRoomId
                         {
-                            Room = room,
-                            Peer = peer,
+                            RoomId = room.RoomId,
+                            PeerId = peer.PeerId,
                         };
                     }
 
@@ -294,7 +294,7 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         Peer = peer,
                         ExistsProducers = existsProducers.ToArray(),
-                        InviteProduceSources = inviteProduceSources.ToArray(),
+                        ProduceSources = produceSources.ToArray(),
                     };
                 }
             }

@@ -10,6 +10,8 @@ namespace TubumuMeeting.Meeting.Server
 
         public PeerProducer[] ExistsProducers { get; set; }
 
-        public string[] InviteProduceSources { get; set; }
+        public string RoomId { get; set; }
+
+        public string[] ProduceSources { get; set; }
     }
 }

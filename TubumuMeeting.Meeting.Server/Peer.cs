@@ -65,7 +65,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, DataConsumer> DataConsumers { get; } = new Dictionary<string, DataConsumer>();  // TODO: (alby)改为私有
 
-        public Dictionary<string, PeerRoom> ConsumerPaddings = new Dictionary<string, PeerRoom>();  // TODO: (alby)改为私有
+        public Dictionary<string, PeerIdRoomId> ConsumerPaddings = new Dictionary<string, PeerIdRoomId>();  // TODO: (alby)改为私有
 
         public string[] Sources { get; private set; }
 
