@@ -13,8 +13,6 @@ namespace TubumuMeeting.Mediasoup
 
         public string[]? Sources { get; set; }
 
-        public Guid GroupId { get; set; }
-
         public Dictionary<string, object>? AppData { get; set; }
     }
 }

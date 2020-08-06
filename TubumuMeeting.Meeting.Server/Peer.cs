@@ -50,8 +50,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public SctpCapabilities? SctpCapabilities { get; set; }
 
-        public Guid GroupId { get; private set; }
-
         private Router _router { get; set; }
 
         public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();  // TODO: (alby)改为私有
@@ -72,12 +70,11 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, object> AppData { get; private set; }
 
-        public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Guid groupId, Router router, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
+        public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Router router, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Peer>();
             _webRtcTransportSettings = webRtcTransportSettings;
-            GroupId = groupId;
             _router = router;
             PeerId = peerId;
             DisplayName = displayName.IsNullOrWhiteSpace() ? "Guest" : displayName;

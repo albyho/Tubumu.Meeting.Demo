@@ -40,13 +40,15 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool Closed { get; private set; }
 
+        public Router Router { get; private set; }
+
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
-        public Room(ILoggerFactory loggerFactory, string roomId, string name)
+        public Room(ILoggerFactory loggerFactory, Router router, string roomId, string name)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<Room>();
-
+            Router = router;
             RoomId = roomId;
             Name = name.IsNullOrWhiteSpace() ? "Default" : name;
             Closed = false;
@@ -66,6 +68,7 @@ namespace TubumuMeeting.Meeting.Server
                     return;
                 }
 
+                Router.Close();
                 Closed = true;
             }
         }
