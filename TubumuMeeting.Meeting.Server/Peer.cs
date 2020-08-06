@@ -263,6 +263,22 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        public async Task<bool> CloseProduceAsync(string producerId)
+        {
+            CheckClosed();
+            using (await _locker.LockAsync())
+            {
+                if (Producers.TryGetValue(producerId, out var producer))
+                {
+                    throw new Exception($"CloseProduce 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                }
+
+                producer.Close();
+                Producers.Remove(producerId);
+                return true;
+            }
+        }
+
         /// <summary>
         /// 关闭其他房间无人消费的 Producer
         /// </summary>

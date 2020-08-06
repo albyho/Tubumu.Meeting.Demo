@@ -306,10 +306,23 @@ namespace TubumuMeeting.Meeting.Server
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
-                    _logger.LogError($"ProduceAsync() | Peer:{peerId} is not exists.");
+                    _logger.LogError($"PeerProduceAsync() | Peer:{peerId} is not exists.");
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
                 return await peer.ProduceAsync(produceRequest);
+            }
+        }
+
+        public async Task<bool> PeerCloseProducer(string peerId, string producerId)
+        {
+            using (await _peerLocker.LockAsync())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerCloseProducer() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                return await peer.CloseProduceAsync(producerId);
             }
         }
 
