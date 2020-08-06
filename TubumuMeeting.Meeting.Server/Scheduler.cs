@@ -230,7 +230,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public InviteProduceResult PeerInviteProduce(string peerId, InviteProduceRequest inviteProduceRequest)
+        public ConsumeResult PeerConsume(string peerId, ConsumeRequest inviteProduceRequest)
         {
             using (_peerLocker.Lock())
             {
@@ -290,7 +290,7 @@ namespace TubumuMeeting.Meeting.Server
                         };
                     }
 
-                    return new InviteProduceResult
+                    return new ConsumeResult
                     {
                         Peer = peer,
                         ExistsProducers = existsProducers.ToArray(),
@@ -335,7 +335,7 @@ namespace TubumuMeeting.Meeting.Server
                     _logger.LogError($"PeerPauseProducer() | Peer:{peerId} is not exists.");
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
-                return await peer.PauseProduceAsync(producerId);
+                return await peer.PauseProducerAsync(producerId);
             }
         }
 
@@ -348,7 +348,7 @@ namespace TubumuMeeting.Meeting.Server
                     _logger.LogError($"PeerResumeProducer() | Peer:{peerId} is not exists.");
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
-                return await peer.ResumeProduceAsync(producerId);
+                return await peer.ResumeProducerAsync(producerId);
             }
         }
 
@@ -391,7 +391,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> SetConsumerPreferedLayers(string peerId, SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
+        public async Task<bool> SetConsumerPreferedLayersAsync(string peerId, SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
             using (await _peerLocker.LockAsync())
             {
@@ -404,7 +404,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> SetConsumerPriority(string peerId, SetConsumerPriorityRequest setConsumerPriorityRequest)
+        public async Task<bool> SetConsumerPriorityAsync(string peerId, SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
             using (await _peerLocker.LockAsync())
             {
@@ -417,7 +417,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> RequestConsumerKeyFrame(string peerId, string consumerId)
+        public async Task<bool> RequestConsumerKeyFrameAsync(string peerId, string consumerId)
         {
             using (await _peerLocker.LockAsync())
             {
@@ -427,6 +427,58 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
                 return await peer.RequestConsumerKeyFrameAsync(consumerId);
+            }
+        }
+
+        public async Task<TransportStat> GetTransportStatsAsync(string peerId, string transportId)
+        {
+            using (await _peerLocker.LockAsync())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"GetTransportStats() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                return await peer.GetTransportStatsAsync(transportId);
+            }
+        }
+
+        public async Task<ProducerStat> GetProducerStatsAsync(string peerId, string producerId)
+        {
+            using (await _peerLocker.LockAsync())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"GetProducerStats() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                return await peer.GetProducerStatsAsync(producerId);
+            }
+        }
+
+        public async Task<ConsumerStat> GetConsumerStatsAsync(string peerId, string consumerId)
+        {
+            using (await _peerLocker.LockAsync())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"GetConsumerStats() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                return await peer.GetConsumerStatsAsync(consumerId);
+            }
+        }
+
+        public async Task<IceParameters?> RestartIceAsync(string peerId, string transportId)
+        {
+            using (await _peerLocker.LockAsync())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"RestartIce() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                return await peer.RestartIceAsync(transportId);
             }
         }
 

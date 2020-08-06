@@ -417,7 +417,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<TransportStat> GetTransportStats(string transportId)
+        public async Task<TransportStat> GetTransportStatsAsync(string transportId)
         {
             CheckClosed();
             using (await _locker.LockAsync())
@@ -437,7 +437,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<ProducerStat> GetProducerStats(string producerId)
+        public async Task<ProducerStat> GetProducerStatsAsync(string producerId)
         {
             CheckClosed();
             using (await _locker.LockAsync())
@@ -456,7 +456,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<ConsumerStat> GetConsumerStats(string consumerId)
+        public async Task<ConsumerStat> GetConsumerStatsAsync(string consumerId)
         {
             CheckClosed();
             using (await _locker.LockAsync())
@@ -475,7 +475,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<IceParameters?> RestartIce(string transportId)
+        public async Task<IceParameters?> RestartIceAsync(string transportId)
         {
             CheckClosed();
             using (await _locker.LockAsync())

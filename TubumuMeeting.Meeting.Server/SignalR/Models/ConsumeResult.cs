@@ -4,7 +4,7 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public class InviteProduceResult
+    public class ConsumeResult
     {
         public Peer Peer {get;set;}
 

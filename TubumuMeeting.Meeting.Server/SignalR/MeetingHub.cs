@@ -108,7 +108,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
-        public async Task<MeetingMessage> Join(JoinRequest joinRequest)
+        public MeetingMessage Join(JoinRequest joinRequest)
         {
             if (!_scheduler.PeerJoin(UserId, joinRequest))
             {
@@ -252,9 +252,9 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
         }
 
-        public MeetingMessage InviteProduce(InviteProduceRequest inviteProduceRequest)
+        public MeetingMessage Consume(ConsumeRequest inviteProduceRequest)
         {
-            var inviteProduceResult = _scheduler.PeerInviteProduce(UserId, inviteProduceRequest);
+            var inviteProduceResult = _scheduler.PeerConsume(UserId, inviteProduceRequest);
 
             foreach (var existsProducer in inviteProduceResult.ExistsProducers)
             {
@@ -262,7 +262,7 @@ namespace TubumuMeeting.Meeting.Server
                 CreateConsumer(existsProducer.Peer, inviteProduceResult.Peer, existsProducer.Producer, inviteProduceRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
-            return new MeetingMessage { Code = 200, Message = "InviteProduce 成功" };
+            return new MeetingMessage { Code = 200, Message = "PeerConsume 成功" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
@@ -367,7 +367,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            if (!await _scheduler.SetConsumerPreferedLayers(UserId, setConsumerPreferedLayersRequest))
+            if (!await _scheduler.SetConsumerPreferedLayersAsync(UserId, setConsumerPreferedLayersRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "SetConsumerPreferedLayers 失败" };
             }
@@ -377,7 +377,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> SetConsumerPriority(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            if (!await _scheduler.SetConsumerPriority(UserId, setConsumerPriorityRequest))
+            if (!await _scheduler.SetConsumerPriorityAsync(UserId, setConsumerPriorityRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "SetConsumerPreferedLayers 失败" };
             }
@@ -387,7 +387,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> RequestConsumerKeyFrame(string consumerId)
         {
-            if (!await _scheduler.RequestConsumerKeyFrame(UserId, consumerId))
+            if (!await _scheduler.RequestConsumerKeyFrameAsync(UserId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "RequestConsumerKeyFrame 失败" };
             }
@@ -397,60 +397,25 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> GetTransportStats(string transportId)
         {
-            if (!Peer!.Transports.TryGetValue(transportId, out var transport))
-            {
-                return new MeetingMessage { Code = 400, Message = "GetTransportStats 失败" };
-            }
-
-            var status = await transport.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            // TODO: (alby)实际上有 WebTransportStat、PlainTransportStat、PipeTransportStat 和 DirectTransportStat。这里反序列化后会丢失数据。
-            var data = JsonConvert.DeserializeObject<TransportStat>(status!);
-
+            var data = await _scheduler.GetTransportStatsAsync(UserId, transportId);
             return new MeetingMessage { Code = 200, Message = "GetTransportStats 成功", Data = data };
         }
 
         public async Task<MeetingMessage> GetProducerStats(string producerId)
         {
-            if (!Peer!.Producers.TryGetValue(producerId, out var producer))
-            {
-                return new MeetingMessage { Code = 400, Message = "GetProducerStats 失败" };
-            }
-            var status = await producer.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<ProducerStat>(status!);
-
+            var data = await _scheduler.GetProducerStatsAsync(UserId, producerId);
             return new MeetingMessage { Code = 200, Message = "GetProducerStats 成功", Data = data };
         }
 
         public async Task<MeetingMessage> GetConsumerStats(string consumerId)
         {
-            if (!Peer!.Consumers.TryGetValue(consumerId, out var consumer))
-            {
-                return new MeetingMessage { Code = 400, Message = "GetConsumerStats 失败" };
-            }
-
-            var status = await consumer.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<ConsumerStat>(status!);
-
+            var data = await _scheduler.GetConsumerStatsAsync(UserId, consumerId);
             return new MeetingMessage { Code = 200, Message = "GetConsumerStats 成功", Data = data };
         }
 
         public async Task<MeetingMessage> RestartIce(string transportId)
         {
-            if (!Peer!.Transports.TryGetValue(transportId, out var transport))
-            {
-                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
-            }
-
-            if (!(transport is WebRtcTransport webRtcTransport))
-            {
-                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
-            }
-
-            var iceParameters = await webRtcTransport.RestartIceAsync();
-
+            var iceParameters = await _scheduler.RestartIceAsync(UserId, transportId);
             return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
