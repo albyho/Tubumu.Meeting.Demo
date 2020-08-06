@@ -49,15 +49,13 @@ namespace TubumuMeeting.Meeting.Server
     {
         private readonly ILogger<MeetingHub> _logger;
         private readonly IHubContext<MeetingHub, IPeer> _hubContext;
-        private readonly MediasoupOptions _mediasoupOptions;
         private readonly Scheduler _scheduler;
 
-        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, Scheduler scheduler, MediasoupOptions mediasoupOptions)
+        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, Scheduler scheduler)
         {
             _logger = logger;
             _hubContext = hubContext;
             _scheduler = scheduler;
-            _mediasoupOptions = mediasoupOptions;
         }
 
         public override Task OnConnectedAsync()
@@ -82,7 +80,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 foreach (var room in Peer.Rooms.Values)
                 {
-                    PeerLeaveRoom(Peer, room.Room.RoomId);
+                    PeerLeaveRoom(Peer, room.RoomId);
                 }
 
                 _scheduler.PeerLeaveGroup(Peer.PeerId);
@@ -187,56 +185,10 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> JoinRoom(JoinRoomRequest joinRoomRequest)
         {
-            var room = await _scheduler.PeerJoinRoomAsync(UserId, Peer!.Group.GroupId, joinRoomRequest);
-            if (room == null)
+            var joinRoomResult = await _scheduler.PeerJoinRoomAsync(UserId, joinRoomRequest);
+
+            foreach(var otherPeer in joinRoomResult.OtherPeers)
             {
-                return new MeetingMessage { Code = 400, Message = "JoinRoom 失败: PeerJoinRoom 失败" };
-            }
-
-            // 1、消费：遍历房间内其他 Peer 的所有 Producer，匹配本人的 InterestedSources，则主动消费。
-            // 2、生产：遍历房间内其他 Peer 在本房间的 InterestedSources，如果本 Peer 已经生产则让其消费，否则告知客户端进行生产。
-            var needsProduceSources = new HashSet<string>();
-            foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
-            {
-                // 本 Peer 消费或其他 Peer 需要生产
-                var otherPeerNeedsProduceSources = new HashSet<string>();
-                if (!otherPeer.Sources.IsNullOrEmpty())
-                {
-                    foreach (var interestedSource in room.InterestedSources.Where(m => otherPeer.Sources.Contains(m)))
-                    {
-                        var producer = otherPeer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
-                        if (producer != null)
-                        {
-                            // 本 Peer 消费其他 Peer
-                            CreateConsumer(Peer!, otherPeer, producer, joinRoomRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
-                        }
-                        else
-                        {
-                            // 需要生产相应的 Producer 供其他 Peer 消费
-                            otherPeerNeedsProduceSources.Add(interestedSource);
-                        }
-                    }
-                }
-
-                // 其他 Peer 消费或本 Peer 需要生产
-                if (!Peer.Sources.IsNullOrEmpty())
-                {
-                    foreach (var interestedSource in otherPeer.Rooms[joinRoomRequest.RoomId].InterestedSources.Where(m => Peer.Sources.Contains(m)))
-                    {
-                        var producer = Peer.Producers.Where(m => m.Value.Source == interestedSource).Select(m => m.Value).FirstOrDefault();
-                        if (producer != null)
-                        {
-                            // 其他 Peer 消费本 Peer
-                            CreateConsumer(otherPeer, Peer!, producer, joinRoomRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
-                        }
-                        else
-                        {
-                            // 需要生产相应的 Producer 供其他 Peer 消费
-                            needsProduceSources.Add(interestedSource);
-                        }
-                    }
-                }
-
                 // Notify the new Peer to all other Peers.
                 // Message: peerJoinRoom
                 var client = _hubContext.Clients.User(otherPeer.PeerId);
@@ -247,22 +199,27 @@ namespace TubumuMeeting.Meeting.Server
                     Message = "peerJoinRoom",
                     Data = new
                     {
-                        RoomId = room.Room.RoomId,
-                        PeerId = Peer.PeerId,
+                        RoomId = joinRoomRequest.RoomId,
+                        PeerId = joinRoomResult.Peer.PeerId,
                         Peer.DisplayName,
                         Sources = Peer.Sources,
-                        InterestedSources = room.InterestedSources,
-                        NeedsProduceSources = otherPeerNeedsProduceSources,
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             }
 
-            var needsProduces = new
+            var otherPeers = joinRoomResult.OtherPeers.Select(m => new
             {
                 RoomId = joinRoomRequest.RoomId,
-                NeedsProduceSources = needsProduceSources,
+                PeerId = joinRoomResult.Peer.PeerId,
+                Peer.DisplayName,
+                Sources = Peer.Sources,
+            });
+            var data = new
+            {
+                RoomId = joinRoomRequest.RoomId,
+                OtherPeers = otherPeers,
             };
-            return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = needsProduces };
+            return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = data };
         }
 
         public MeetingMessage LeaveRoom(LeaveRoomRequest leaveRoomRequest)
@@ -270,58 +227,29 @@ namespace TubumuMeeting.Meeting.Server
             return PeerLeaveRoom(Peer!, leaveRoomRequest.RoomId);
         }
 
+        public MeetingMessage InviteProduce(InviteProduceRequest inviteProduceRequest)
+        {
+            var inviteProduceResult = _scheduler.PeerInviteProduce(UserId, inviteProduceRequest);
+
+            foreach(var existsProducer in inviteProduceResult.ExistsProducers)
+            {
+                // 其他 Peer 消费本 Peer
+                CreateConsumer(existsProducer.Peer, inviteProduceResult.Peer, existsProducer.Producer, inviteProduceRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+            }
+
+            return new MeetingMessage { Code = 200, Message = "InviteProduce 成功" };
+        }
+
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
-            if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
-            {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer!.PeerId} AppData[\"source\"] is null." };
-            }
-            var source = sourceObj.ToString();
+            var producer = await _scheduler.ProduceAsync(UserId, produceRequest);
 
-            if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("roomId", out var roomIdObj))
-            {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer!.PeerId} AppData[\"roomId\"] is null." };
-            }
-            var roomId = roomIdObj.ToString();
-
-            if (!Peer!.Rooms.TryGetValue(roomId, out var room))
-            {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Peer:{Peer.PeerId} is not in Room:{roomId}." };
-            }
-
-            if (!Peer.Transports.TryGetValue(produceRequest.TransportId, out var transport))
-            {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Transport:{produceRequest.TransportId} is not exists." };
-            }
-
-            if (Peer!.Sources == null || !Peer!.Sources.Contains(source))
-            {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ source }\" cannot be produce." };
-            }
-
-            // TODO: (alby)线程安全：避免重复 Produce 相同的 Sources
-            var producer = Peer!.Producers.Values.FirstOrDefault(m => m.Source == source);
-            if (producer != null)
-            {
-                return new MeetingMessage { Code = 400, Message = $"Produce 失败: Source \"{ source }\" is exists." };
-            }
-
-            // Add peerId into appData to later get the associated Peer during
-            // the 'loudest' event of the audioLevelObserver.
-            produceRequest.AppData["peerId"] = Peer.PeerId;
-
-            producer = await transport.ProduceAsync(new ProducerOptions
-            {
-                Kind = produceRequest.Kind,
-                RtpParameters = produceRequest.RtpParameters,
-                AppData = produceRequest.AppData,
-            });
-
-            // Store producer source
-            producer.Source = source;
-
-            // Store the Producer into the Peer data Object.
-            Peer.Producers[producer.ProducerId] = producer;
+            // 如果在本房间的其他 Peer 的 InterestedSources 匹配该 Producer 则消费
+            //foreach (var otherPeer in room.Peers.Values.Where(m => m.PeerId != UserId && m.Rooms[roomId].InterestedSources.Any(m => m == producer.Source)))
+            //{
+            //    // 其他 Peer 消费本 Peer
+            //    CreateConsumer(otherPeer, Peer!, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
+            //}
 
             // Set Producer events.
             var peerId = Peer.PeerId;
@@ -343,13 +271,6 @@ namespace TubumuMeeting.Meeting.Server
                 var data = (ProducerVideoOrientation)videoOrientation!;
                 _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
             });
-
-            // 如果在本房间的其他 Peer 的 InterestedSources 匹配该 Producer 则消费
-            foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId && m.Rooms[roomId].InterestedSources.Any(m => m == producer.Source)))
-            {
-                // 其他 Peer 消费本 Peer
-                CreateConsumer(otherPeer, Peer!, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
-            }
 
             return new MeetingMessage
             {
@@ -494,14 +415,11 @@ namespace TubumuMeeting.Meeting.Server
             Peer.DataProducers[dataProducer.DataProducerId] = dataProducer;
 
             // Create a server-side DataConsumer for each Peer.
-            foreach (var room in Peer.Rooms.Values)
-            {
-                foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
-                {
-                    // 其他 Peer 消费本 Peer
-                    CreateDataConsumer(otherPeer, Peer, dataProducer).ContinueWithOnFaultedHandleLog(_logger);
-                }
-            }
+            //foreach (var otherPeer in Peer.Group.Peers.Values)
+            //{
+            //    // 其他 Peer 消费本 Peer
+            //    CreateDataConsumer(otherPeer, Peer, dataProducer).ContinueWithOnFaultedHandleLog(_logger);
+            //}
 
             return new MeetingMessage { Code = 200, Message = "ProduceData 成功" };
         }
@@ -606,10 +524,10 @@ namespace TubumuMeeting.Meeting.Server
             //   server-side Consumer (when resuming it).
 
             // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
-            if (consumerPeer.RtpCapabilities == null || !Peer!.Group.Router.CanConsume(producer.ProducerId, consumerPeer.RtpCapabilities))
-            {
-                return;
-            }
+            //if (consumerPeer.RtpCapabilities == null || !Peer!.Group.Router.CanConsume(producer.ProducerId, consumerPeer.RtpCapabilities))
+            //{
+            //    return;
+            //}
 
             // Must take the Transport the remote Peer is using for consuming.
             var transport = consumerPeer.GetConsumingTransport();
@@ -895,12 +813,9 @@ namespace TubumuMeeting.Meeting.Server
 
         private MeetingMessage PeerLeaveRoom(Peer peer, string roomId)
         {
-            if (!peer.Rooms.TryGetValue(roomId, out var room))
-            {
-                return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
-            }
+            var leaveRoomResult = _scheduler.PeerLeaveRoom(peer.PeerId, roomId);
 
-            foreach (var otherPeer in room.Room.Peers.Values.Where(m => m.PeerId != UserId))
+            foreach (var otherPeer in leaveRoomResult.OtherPeers)
             {
                 // Message: peerLeaveRoom
                 var client = _hubContext.Clients.User(otherPeer.PeerId);
@@ -911,35 +826,10 @@ namespace TubumuMeeting.Meeting.Server
                     Message = "peerLeaveRoom",
                     Data = new
                     {
-                        RoomId = room.Room.RoomId,
-                        PeerId = UserId
+                        RoomId = roomId,
+                        PeerId = peer.PeerId
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
-            var producersToClose = new List<Producer>();
-            var consumers = from ri in Peer!.Rooms.Values  // Peer 所在的所有房间
-                            from p in ri.Room.Peers.Values // 的包括本 Peer 在内的所有 Peer
-                            from pc in p.Consumers.Values  // 的 Consumer
-                            select pc;
-            foreach (var producer in Peer.Producers.Values)
-            {
-                if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId && m.RoomId != roomId))
-                {
-                    producersToClose.Add(producer);
-                }
-            }
-
-            // Producer 关闭后会触发相应的 Consumer `producerclose` 事件，从而拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
-            foreach (var producerToClose in producersToClose)
-            {
-                producerToClose.Close();
-                Peer.Producers.Remove(producerToClose.ProducerId);
-            }
-
-            if (!_scheduler.PeerLeaveRoom(UserId, roomId))
-            {
-                return new MeetingMessage { Code = 400, Message = "LeaveRoom 失败: PeerLeaveRoom 失败" };
             }
 
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };

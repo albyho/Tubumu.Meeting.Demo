@@ -4,8 +4,6 @@ namespace TubumuMeeting.Mediasoup
 {
     public class ProduceRequest
     {
-        public string TransportId { get; set; }
-
         public MediaKind Kind { get; set; }
 
         public RtpParameters RtpParameters { get; set; }

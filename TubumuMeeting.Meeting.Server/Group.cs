@@ -31,12 +31,9 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILoggerFactory _loggerFactory;
 
-        /// <summary>
-        /// Logger.
-        /// </summary>
-        private readonly ILogger<Group> _logger;
+        private readonly object _groupLocker = new object();
 
-        public bool Closed { get; private set; }
+        private readonly object _peerLocker = new object();
 
         public Router Router { get; private set; }
 
@@ -46,27 +43,35 @@ namespace TubumuMeeting.Meeting.Server
 
         public Group(ILoggerFactory loggerFactory, Router router, Guid groupId, string name)
         {
-            _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<Group>();
-
             GroupId = groupId;
             Name = name.IsNullOrWhiteSpace() ? "Default" : name;
-            Closed = false;
             Router = router;
         }
 
-        public void Close()
+        public Room CreateRoom(string roomId, string name)
         {
-            _logger.LogError($"Close() | Group: {GroupId}");
-
-            if (Closed)
+            lock(_groupLocker)
             {
-                return;
+                var room = new Room(_loggerFactory, roomId, name);
+                Rooms[roomId] = room;
+                return room;
             }
+        }
 
-            Router.Close();
+        public void PeerJoinGroup(Peer peer)
+        {
+            lock (_peerLocker)
+            {
+                Peers[peer.PeerId] = peer;
+            }
+        }
 
-            Closed = true;
+        public void PeerLeaveGroup(string peerId)
+        {
+            lock (_peerLocker)
+            {
+                Peers.Remove(peerId);
+            }
         }
     }
 }

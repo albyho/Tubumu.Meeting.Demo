@@ -36,18 +36,17 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Room> _logger;
 
-        public bool Closed { get; private set; }
+        private readonly object _locker = new object();
 
-        public Group Group { get; private set; }
+        public bool Closed { get; private set; }
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
-        public Room(ILoggerFactory loggerFactory, Group group, string roomId, string name)
+        public Room(ILoggerFactory loggerFactory, string roomId, string name)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<Room>();
 
-            Group = group;
             RoomId = roomId;
             Name = name.IsNullOrWhiteSpace() ? "Default" : name;
             Closed = false;
@@ -55,14 +54,28 @@ namespace TubumuMeeting.Meeting.Server
 
         public void Close()
         {
-            _logger.LogError($"Close() | Room: {RoomId}");
+            _logger.LogError($"Close() | Room:{RoomId}");
 
+            CheckClosed();
+            lock (_locker)
+            {
+                CheckClosed();
+
+                if (Closed)
+                {
+                    return;
+                }
+
+                Closed = true;
+            }
+        }
+
+        private void CheckClosed()
+        {
             if (Closed)
             {
-                return;
+                throw new Exception("Room was closed");
             }
-
-            Closed = true;
         }
     }
 }

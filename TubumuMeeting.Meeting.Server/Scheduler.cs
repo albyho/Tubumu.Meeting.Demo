@@ -31,8 +31,6 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly object _peerLocker = new object();
 
-        private readonly object _peerGroupLocker = new object();
-
         private readonly object _roomLocker = new object();
 
         private readonly object _peerRoomLocker = new object();
@@ -61,8 +59,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PeerJoinGroupAsync(string peerId, JoinRequest joinRequest)
         {
-            PeerLeaveGroup(peerId);
-
             using (await _groupLocker.LockAsync())
             {
                 if (!Groups.TryGetValue(joinRequest.GroupId, out var group))
@@ -74,114 +70,26 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     if (Peers.TryGetValue(peerId, out var peer))
                     {
-                        _logger.LogError($"PeerJoinAsync() | Peer[{peerId}] has already in Group:{joinRequest.GroupId}.");
+                        _logger.LogError($"PeerJoinAsync() | Peer:{peerId} has already in Group:{joinRequest.GroupId}.");
                         return false;
                     }
 
-                    peer = new Peer(_loggerFactory, _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings, group, peerId, joinRequest.DisplayName)
+                    peer = new Peer(_loggerFactory,
+                        _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings,
+                        group.GroupId,
+                        group.Router,
+                        peerId,
+                        joinRequest.DisplayName,
+                        joinRequest.Sources,
+                        joinRequest.AppData
+                        )
                     {
                         RtpCapabilities = joinRequest.RtpCapabilities,
                         SctpCapabilities = joinRequest.SctpCapabilities,
-                        Sources = joinRequest.Sources,
-                        AppData = joinRequest.AppData
                     };
 
                     Peers[peerId] = peer;
-
-                    lock (_peerGroupLocker)
-                    {
-                        group.Peers[peerId] = peer;
-                        return true;
-                    }
-                }
-            }
-        }
-
-        public Task<WebRtcTransport> PeerCreateWebRtcTransportAsync(string peerId, CreateWebRtcTransportRequest createWebRtcTransportRequest)
-        {
-            lock (_peerLocker)
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    _logger.LogError($"CreateWebRtcTransport() | Peer[{peerId}] is not exists.");
-                    throw new Exception($"Peer[{peerId}] is not exists");
-                }
-
-                return peer.CreateWebRtcTransport(createWebRtcTransportRequest);
-            }
-        }
-
-        public Task<bool> PeerConnectWebRtcTransportAsync(string peerId, ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
-        {
-            lock (_peerLocker)
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    _logger.LogError($"CreateWebRtcTransport() | Peer[{peerId}] is not exists.");
-                    throw new Exception($"Peer[{peerId}] is not exists");
-                }
-
-                return peer.ConnectWebRtcTransport(connectWebRtcTransportRequest);
-            }
-        }
-
-        public async Task<RoomWithInterestedSources?> PeerJoinRoomAsync(string peerId, Guid groupId, JoinRoomRequest joinRoomRequest)
-        {
-            using (await _groupLocker.LockAsync())
-            {
-                if (!Groups.TryGetValue(groupId, out var group))
-                {
-                    group = await CreateGroupAsync(groupId, "Default");
-                }
-
-                lock (_peerGroupLocker)
-                {
-                    if (!group.Peers.TryGetValue(peerId, out var peer))
-                    {
-                        _logger.LogError($"PeerJoinRoomsAsync() | Peer[{peerId}] is not exists in Group:{groupId}.");
-                        return null;
-                    }
-
-                    lock (_roomLocker)
-                    {
-                        if (!group.Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
-                        {
-                            room = CreateRoom(group, joinRoomRequest.RoomId, "Default");
-                        }
-
-                        var peerInterestedSourcesInRoom = new RoomWithInterestedSources(room, joinRoomRequest.InterestedSources);
-
-                        lock (_peerRoomLocker)
-                        {
-                            room.Peers[peerId] = peer;
-                            peer.Rooms[joinRoomRequest.RoomId] = peerInterestedSourcesInRoom;
-                        }
-
-                        return peerInterestedSourcesInRoom;
-                    }
-                }
-            }
-        }
-
-        public bool PeerLeaveRoom(string peerId, string roomId)
-        {
-            lock (_peerLocker)
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    _logger.LogError($"PeerLeaveRooms() | Peer[{peerId}] is not exists.");
-
-                    return false;
-                }
-
-                lock (_peerRoomLocker)
-                {
-                    if (peer.Rooms.TryGetValue(roomId, out var room))
-                    {
-                        room.Room.Peers.Remove(peerId);
-                    }
-
-                    peer.Rooms.Remove(roomId);
+                    group.PeerJoinGroup(peer);
 
                     return true;
                 }
@@ -197,23 +105,211 @@ namespace TubumuMeeting.Meeting.Server
                     return;
                 }
 
-                peer.Close();
-                Peers.Remove(peerId);
-
-                lock (_peerGroupLocker)
+                lock (_peerRoomLocker)
                 {
-                    peer.Group.Peers.Remove(peerId);
-
-                    lock (_peerRoomLocker)
+                    foreach (var room in peer.Rooms.Values)
                     {
-                        foreach (var room in peer.Rooms.Values)
+                        room.Peers.Remove(peerId);
+                    }
+
+                    peer.Rooms.Clear();
+                }
+
+                peer.Close();
+
+                Peers.Remove(peerId);
+            }
+        }
+
+        public Task<WebRtcTransport> PeerCreateWebRtcTransportAsync(string peerId, CreateWebRtcTransportRequest createWebRtcTransportRequest)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"CreateWebRtcTransport() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists");
+                }
+
+                return peer.CreateWebRtcTransportAsync(createWebRtcTransportRequest);
+            }
+        }
+
+        public Task<bool> PeerConnectWebRtcTransportAsync(string peerId, ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"CreateWebRtcTransport() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists");
+                }
+
+                return peer.ConnectWebRtcTransportAsync(connectWebRtcTransportRequest);
+            }
+        }
+
+        public async Task<JoinRoomResult> PeerJoinRoomAsync(string peerId, JoinRoomRequest joinRoomRequest)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerJoinRoomAsync() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                using(_groupLocker.Lock())
+                {
+                    if (!Groups.TryGetValue(peer.GroupId, out var group))
+                    {
+                        _logger.LogError($"PeerJoinRoomAsync() | Group:{peer.GroupId} is not exists.");
+                        throw new Exception($"Group:{peer.GroupId} is not exists.");
+                    }
+
+                    lock (_roomLocker)
+                    {
+                        if (!group.Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
                         {
-                            room.Room.Peers.Remove(peerId);
+                            room = group.CreateRoom(joinRoomRequest.RoomId, "Default");
+                            Rooms[room.RoomId] = room;
                         }
 
-                        peer.Rooms.Clear();
+                        lock (_peerRoomLocker)
+                        {
+                            room.Peers[peerId] = peer;
+                            peer.Rooms[joinRoomRequest.RoomId] = room;
+
+                            var otherPeers = room.Peers.Values.Where(m => m.PeerId != peerId).ToArray();
+                            return new JoinRoomResult
+                            {
+                                Peer = peer,
+                                OtherPeers = otherPeers,
+                            };
+                        }
                     }
                 }
+            }
+        }
+
+        public LeaveRoomResult PeerLeaveRoom(string peerId, string roomId)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerLeaveRoom() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+
+                lock (_peerRoomLocker)
+                {
+                    if (!peer.Rooms.TryGetValue(roomId, out var room))
+                    {
+                        _logger.LogError($"PeerLeaveRoom() | Peer:{peerId} is not exists in Room:{roomId}.");
+                        throw new Exception($"Peer:{peerId} is not exists in Room:{roomId}.");
+                    }
+
+                    // 离开 Room 之前，先关闭将无人消费的 Producer
+                    peer.CloseProducersNoConsumers(roomId);
+
+                    var otherPeers = room.Peers.Values.Where(m => m.PeerId != peerId).ToArray();
+                    foreach (var otherPeer in otherPeers)
+                    {
+                        otherPeer.CloseProducersNoConsumers(roomId, peer.PeerId);
+                    }
+
+                    room.Peers.Remove(peerId);
+                    peer.Rooms.Remove(roomId);
+
+                    return new LeaveRoomResult
+                    {
+                        Peer = peer,
+                        OtherPeers = otherPeers,
+                    };
+                }
+            }
+        }
+
+        public InviteProduceResult PeerInviteProduce(string peerId, InviteProduceRequest inviteProduceRequest)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"PeerInviteProduce() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+
+                if (!Peers.TryGetValue(inviteProduceRequest.PeerId, out var otherPeer))
+                {
+                    _logger.LogError($"PeerInviteProduce() | Peer:{inviteProduceRequest.PeerId} is not exists.");
+                    throw new Exception($"Peer:{inviteProduceRequest.PeerId} is not exists.");
+                }
+
+                lock (_peerRoomLocker)
+                {
+                    if (!peer.Rooms.TryGetValue(inviteProduceRequest.RoomId, out var room))
+                    {
+                        _logger.LogError($"PeerInviteProduce() | Peer:{peerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
+                        throw new Exception($"Peer:{peerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
+                    }
+
+                    if (!room.Peers.ContainsKey(inviteProduceRequest.PeerId))
+                    {
+                        _logger.LogError($"PeerInviteProduce() | Peer:{inviteProduceRequest.PeerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
+                        throw new Exception($"Peer:{inviteProduceRequest.PeerId} is not exists in Room:{inviteProduceRequest.RoomId}.");
+                    }
+
+                    var existsProducers = new List<PeerProducer>();
+                    var inviteProduceSources = new List<string>();
+                    foreach (var source in inviteProduceRequest.Sources)
+                    {
+                        var producer = otherPeer.Producers.Values.Where(m => m.Source == source).FirstOrDefault();
+                        // 如果 Source 有对应的 Producer，直接消费。
+                        if (source != null)
+                        {
+                            var consumer = peer.Consumers.Values.Where(m => m.Internal.ProducerId == producer.ProducerId).FirstOrDefault();
+                            if (consumer != null)
+                            {
+                                // 如果本 Peer 已经消费了对应 Producer，忽略。
+                                continue;
+                            }
+                            existsProducers.Add(new PeerProducer
+                            {
+                                Peer = otherPeer,
+                                Producer = producer,
+                            });
+                            continue;
+                        }
+                        // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
+                        inviteProduceSources.Add(source!);
+                        otherPeer.ConsumerPaddings[source!] = new PeerRoom
+                        {
+                            Room = room,
+                            Peer = peer,
+                        };
+                    }
+
+                    return new InviteProduceResult
+                    {
+                        Peer = peer,
+                        ExistsProducers = existsProducers.ToArray(),
+                        InviteProduceSources = inviteProduceSources.ToArray(),
+                    };
+                }
+            }
+        }
+
+        public Task<Producer> ProduceAsync(string peerId,ProduceRequest produceRequest)
+        {
+            lock (_peerLocker)
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"ProduceAsync() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                return peer.ProduceAsync(produceRequest);
             }
         }
 
@@ -234,14 +330,6 @@ namespace TubumuMeeting.Meeting.Server
             var group = new Group(_loggerFactory, router, groupId, name);
             Groups[groupId] = group;
             return group;
-        }
-
-        private Room CreateRoom(Group group, string roomId, string name)
-        {
-            var room = new Room(_loggerFactory, group, roomId, name);
-            group.Rooms[roomId] = room;
-            Rooms[roomId] = room;
-            return room;
         }
 
         #endregion
