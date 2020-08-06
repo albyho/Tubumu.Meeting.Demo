@@ -7,6 +7,6 @@ namespace TubumuMeeting.Meeting.Server
     {
         public Peer Peer { get; set; }
 
-        public PeerIdRoomId[] OtherPeers { get; set; }
+        public PeerRoom[] OtherPeerRooms { get; set; }
     }
 }

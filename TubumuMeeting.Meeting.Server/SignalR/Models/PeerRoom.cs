@@ -4,10 +4,10 @@ using System.Text;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    public class PeerIdRoomId
+    public class PeerRoom
     {
-        public string RoomId { get; set; }
+        public Peer Peer { get; set; }
 
-        public string PeerId { get; set; }
+        public Room Room { get; set; }
     }
 }

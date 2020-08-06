@@ -76,11 +76,11 @@ namespace TubumuMeeting.Meeting.Server
 
         private void Leave()
         {
-            var peerLeaveResult = _scheduler.PeerLeave(UserId);
-            foreach (var otherPeer in peerLeaveResult.OtherPeers)
+            var peerLeaveResult = _scheduler.Leave(UserId);
+            foreach (var otherPeer in peerLeaveResult.OtherPeerRooms)
             {
                 // Message: peerLeaveRoom
-                var client = _hubContext.Clients.User(otherPeer.PeerId.PeerId);
+                var client = _hubContext.Clients.User(otherPeer.Peer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
                 {
                     Code = 200,
@@ -88,7 +88,7 @@ namespace TubumuMeeting.Meeting.Server
                     Message = "peerLeaveRoom",
                     Data = new
                     {
-                        RoomId = otherPeer.RoomId.RoomId,
+                        RoomId = otherPeer.Room.RoomId,
                         PeerId = peerLeaveResult.Peer.PeerId
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
@@ -110,7 +110,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public MeetingMessage Join(JoinRequest joinRequest)
         {
-            if (!_scheduler.PeerJoin(UserId, joinRequest))
+            if (!_scheduler.Join(UserId, joinRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "Join 失败" };
             }
@@ -120,7 +120,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            var transport = await _scheduler.PeerCreateWebRtcTransportAsync(UserId, createWebRtcTransportRequest);
+            var transport = await _scheduler.CreateWebRtcTransportAsync(UserId, createWebRtcTransportRequest);
             transport.On("sctpstatechange", sctpState =>
             {
                 _logger.LogDebug($"WebRtcTransport \"sctpstatechange\" event [sctpState:{sctpState}]");
@@ -181,7 +181,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            if (!await _scheduler.PeerConnectWebRtcTransportAsync(UserId, connectWebRtcTransportRequest))
+            if (!await _scheduler.ConnectWebRtcTransportAsync(UserId, connectWebRtcTransportRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "ConnectWebRtcTransport 失败" };
             }
@@ -191,7 +191,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> JoinRoom(JoinRoomRequest joinRoomRequest)
         {
-            var joinRoomResult = await _scheduler.PeerJoinRoomAsync(UserId, joinRoomRequest);
+            var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, joinRoomRequest);
 
             foreach (var otherPeer in joinRoomResult.OtherPeers)
             {
@@ -230,7 +230,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public MeetingMessage LeaveRoom(LeaveRoomRequest leaveRoomRequest)
         {
-            var leaveRoomResult = _scheduler.PeerLeaveRoom(UserId, leaveRoomRequest.RoomId);
+            var leaveRoomResult = _scheduler.LeaveRoom(UserId, leaveRoomRequest.RoomId);
 
             foreach (var otherPeer in leaveRoomResult.OtherPeers)
             {
@@ -254,7 +254,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public MeetingMessage Consume(ConsumeRequest consumeRequest)
         {
-            var consumeResult = _scheduler.PeerConsume(UserId, consumeRequest);
+            var consumeResult = _scheduler.Consume(UserId, consumeRequest);
 
             foreach (var existsProducer in consumeResult.ExistsProducers)
             {
@@ -262,36 +262,33 @@ namespace TubumuMeeting.Meeting.Server
                 CreateConsumer(existsProducer.Peer, consumeResult.Peer, existsProducer.Producer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
-            foreach(var produceSource in consumeResult.ProduceSources)
+            // Message: produceSources
+            var client = _hubContext.Clients.User(consumeResult.Peer.PeerId);
+            client.ReceiveMessage(new MeetingMessage
             {
-                // Message: produceSource
-                var client = _hubContext.Clients.User(consumeResult.Peer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
+                Code = 200,
+                InternalCode = "produceSources",
+                Message = "produceSources",
+                Data = new
                 {
-                    Code = 200,
-                    InternalCode = "produceSource",
-                    Message = "produceSource",
-                    Data = new
-                    {
-                        RoomId = consumeResult.RoomId,
-                        ProduceSources = consumeResult.ProduceSources
-                    }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            }
+                    RoomId = consumeResult.RoomId,
+                    ProduceSources = consumeResult.ProduceSources
+                }
+            }).ContinueWithOnFaultedHandleLog(_logger);
 
             return new MeetingMessage { Code = 200, Message = "Consume 成功" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
-            var producer = await _scheduler.PeerProduceAsync(UserId, produceRequest);
+            var produceResult = await _scheduler.ProduceAsync(UserId, produceRequest);
+            var producer = produceResult.Producer;
 
-            // 如果在本房间的其他 Peer 的 InterestedSources 匹配该 Producer 则消费
-            //foreach (var otherPeer in room.Peers.Values.Where(m => m.PeerId != UserId && m.Rooms[roomId].InterestedSources.Any(m => m == producer.Source)))
-            //{
-            //    // 其他 Peer 消费本 Peer
-            //    CreateConsumer(otherPeer, Peer!, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
-            //}
+            foreach (var item in produceResult.PeerRoomIds)
+            {
+                // 其他 Peer 消费本 Peer
+                CreateConsumer(item.Peer, produceResult.Peer, produceResult.Producer, item.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+            }
 
             // Set Producer events.
             var peerId = UserId;
@@ -318,13 +315,13 @@ namespace TubumuMeeting.Meeting.Server
             {
                 Code = 200,
                 Message = "Produce 成功",
-                Data = new ProduceResult { Id = producer.ProducerId }
+                Data = new { Id = producer.ProducerId }
             };
         }
 
         public async Task<MeetingMessage> CloseProducer(string producerId)
         {
-            if (!await _scheduler.PeerCloseProducerAsync(UserId, producerId))
+            if (!await _scheduler.CloseProducerAsync(UserId, producerId))
             {
                 return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
@@ -334,7 +331,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> PauseProducer(string producerId)
         {
-            if (!await _scheduler.PeerPauseProducerAsync(UserId, producerId))
+            if (!await _scheduler.PauseProducerAsync(UserId, producerId))
             {
                 return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
@@ -344,7 +341,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ResumeProducer(string producerId)
         {
-            if (!await _scheduler.PeerResumeProducerAsync(UserId, producerId))
+            if (!await _scheduler.ResumeProducerAsync(UserId, producerId))
             {
                 return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
@@ -354,7 +351,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> CloseConsumer(string consumerId)
         {
-            if (!await _scheduler.PeerCloseConsumerAsync(UserId, consumerId))
+            if (!await _scheduler.CloseConsumerAsync(UserId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "CloseConsumer 失败" };
             }
@@ -364,7 +361,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> PauseConsumer(string consumerId)
         {
-            if (!await _scheduler.PeerPauseConsumerAsync(UserId, consumerId))
+            if (!await _scheduler.PauseConsumerAsync(UserId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "PauseConsumer 失败" };
             }
@@ -374,7 +371,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ResumeConsumer(string consumerId)
         {
-            if (!await _scheduler.PeerResumeConsumerAsync(UserId, consumerId))
+            if (!await _scheduler.ResumeConsumerAsync(UserId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "PauseConsumer 失败" };
             }
@@ -442,54 +439,18 @@ namespace TubumuMeeting.Meeting.Server
         {
             _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.ProducerId}\"]");
 
-            // Optimization:
-            // - Create the server-side Consumer. If video, do it paused.
-            // - Tell its Peer about it and wait for its response.
-            // - Upon receipt of the response, resume the server-side Consumer.
-            // - If video, this will mean a single key frame requested by the
-            //   server-side Consumer (when resuming it).
-
-            // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
-            //if (consumerPeer.RtpCapabilities == null || !Peer!.Group.Router.CanConsume(producer.ProducerId, consumerPeer.RtpCapabilities))
-            //{
-            //    return;
-            //}
-
-            // Must take the Transport the remote Peer is using for consuming.
-            var transport = consumerPeer.GetConsumingTransport();
-            // This should not happen.
-            if (transport == null)
-            {
-                _logger.LogWarning("CreateConsumer() | Transport for consuming not found");
-                return;
-            }
-
             // Create the Consumer in paused mode.
             Consumer consumer;
 
             try
             {
-                consumer = await transport.ConsumeAsync(new ConsumerOptions
-                {
-                    ProducerId = producer.ProducerId,
-                    RtpCapabilities = consumerPeer.RtpCapabilities,
-                    Paused = producer.Kind == MediaKind.Video
-                });
+                consumer = await _scheduler.ConsumeAsync(consumerPeer.PeerId, producer, roomId);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
                 return;
             }
-
-            // Store RoomId
-            consumer.RoomId = roomId;
-
-            // Store producer source
-            consumer.Source = producer.Source;
-
-            // Store the Consumer into the consumerPeer data Object.
-            consumerPeer.Consumers[consumer.ConsumerId] = consumer;
 
             consumer.On("score", (score) =>
             {
@@ -589,7 +550,6 @@ namespace TubumuMeeting.Meeting.Server
                         Type = consumer.Type,
                         AppData = producer.AppData,
                         ProducerPaused = consumer.ProducerPaused,
-                        ConsumerPeerId = consumerPeer.PeerId, // 为了方便 NewConsumerReturn 查找 Consumer
                     }
                 });
             }
@@ -603,33 +563,11 @@ namespace TubumuMeeting.Meeting.Server
         {
             _logger.LogDebug($"NewConsumerReturn() | [peerId:\"{newConsumerReturnRequest.PeerId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
 
-            if (!_scheduler.Peers.TryGetValue(newConsumerReturnRequest.PeerId, out var consumerPeer) ||
-                consumerPeer.Closed ||
-                !consumerPeer.Consumers.TryGetValue(newConsumerReturnRequest.ConsumerId, out var consumer) ||
-                consumer.Closed)
-            {
-                return new MeetingMessage { Code = 400, Message = "NewConsumerReturn 失败" };
-            }
-
             // Now that we got the positive response from the remote endpoint, resume
             // the Consumer so the remote endpoint will receive the a first RTP packet
             // of this new stream once its PeerConnection is already ready to process 
             // and associate it.
-            await consumer.ResumeAsync();
-
-            // Message: consumerScore
-            var client = _hubContext.Clients.User(consumerPeer.PeerId);
-            client.ReceiveMessage(new MeetingMessage
-            {
-                Code = 200,
-                InternalCode = "consumerScore",
-                Message = "consumerScore",
-                Data = new
-                {
-                    ConsumerId = consumer.ConsumerId,
-                    Score = consumer.Score,
-                }
-            }).ContinueWithOnFaultedHandleLog(_logger);
+            await _scheduler.ResumeConsumerAsync(UserId, newConsumerReturnRequest.ConsumerId);
 
             return new MeetingMessage { Code = 200, Message = "NewConsumerReturn 成功" };
         }

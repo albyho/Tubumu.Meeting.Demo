@@ -65,7 +65,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, DataConsumer> DataConsumers { get; } = new Dictionary<string, DataConsumer>();  // TODO: (alby)改为私有
 
-        public Dictionary<string, PeerIdRoomId> ConsumerPaddings = new Dictionary<string, PeerIdRoomId>();  // TODO: (alby)改为私有
+        public List<ConsumePadding> ConsumePaddings = new List<ConsumePadding>();  // TODO: (alby)改为私有
 
         public string[] Sources { get; private set; }
 
@@ -261,6 +261,51 @@ namespace TubumuMeeting.Meeting.Server
                 Producers[producer.ProducerId] = producer;
 
                 return producer;
+            }
+        }
+
+        public async Task<Consumer> ConsumeAsync(Producer producer, string roomId)
+        {
+            CheckClosed();
+            using (_locker.Lock())
+            {
+                CheckClosed();
+
+                if (RtpCapabilities == null || _router.CanConsume(producer.ProducerId, RtpCapabilities))
+                {
+                    _logger.LogWarning("ConsumeAsync() | Can not consume.");
+                    throw new Exception($"Consume 失败: Peer:{PeerId} Can not consume.");
+                }
+
+                var transport = Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
+
+                // This should not happen.
+                if (transport == null)
+                {
+                    _logger.LogWarning("CreateConsumer() | Transport for consuming not found");
+                    throw new Exception($"Consume 失败: Peer:{PeerId} Transport for consuming not found.");
+                }
+
+                // Create the Consumer in paused mode.
+                Consumer consumer;
+
+                consumer = await transport.ConsumeAsync(new ConsumerOptions
+                {
+                    ProducerId = producer.ProducerId,
+                    RtpCapabilities = RtpCapabilities,
+                    Paused = producer.Kind == MediaKind.Video
+                });
+
+                // Store RoomId
+                consumer.RoomId = roomId;
+
+                // Store producer source
+                consumer.Source = producer.Source;
+
+                // Store the Consumer into the consumerPeer data Object.
+                Consumers[consumer.ConsumerId] = consumer;
+
+                return consumer;
             }
         }
 
