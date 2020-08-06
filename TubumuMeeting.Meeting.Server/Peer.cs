@@ -94,7 +94,6 @@ namespace TubumuMeeting.Meeting.Server
                 CheckClosed();
 
                 Closed = true;
-                Rooms.Clear();
 
                 RtpCapabilities = null;
                 SctpCapabilities = null;
@@ -120,17 +119,17 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (!(createWebRtcTransportRequest.Consuming ^ createWebRtcTransportRequest.Producing))
                 {
-                    throw new Exception("Consumer or Producing");
+                    throw new Exception("CreateWebRtcTransportAsync() | Consumer or Producing");
                 }
 
-                if (createWebRtcTransportRequest.Consuming && Transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value))
+                if (createWebRtcTransportRequest.Consuming && HasConsumingTransport())
                 {
-                    throw new Exception("Consuming transport exists");
+                    throw new Exception("CreateWebRtcTransportAsync() | Consuming transport exists");
                 }
 
-                if (createWebRtcTransportRequest.Producing && Transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value))
+                if (createWebRtcTransportRequest.Producing && HasProducingTransport())
                 {
-                    throw new Exception("Producing transport exists");
+                    throw new Exception("CreateWebRtcTransportAsync() | Producing transport exists");
                 }
 
                 var webRtcTransportOptions = new WebRtcTransportOptions
@@ -157,7 +156,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (transport == null)
                 {
-                    throw new Exception("Router.CreateWebRtcTransport faild");
+                    throw new Exception("CreateWebRtcTransportAsync() | Router.CreateWebRtcTransport faild");
                 }
                 // Store the WebRtcTransport into the Peer data Object.
                 Transports[transport.TransportId] = transport;
@@ -187,7 +186,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (!Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
                 {
-                    throw new Exception($"Transport:{connectWebRtcTransportRequest.TransportId} is not exists");
+                    throw new Exception($"ConnectWebRtcTransportAsync() | Transport:{connectWebRtcTransportRequest.TransportId} is not exists");
                 }
 
                 await transport.ConnectAsync(connectWebRtcTransportRequest.DtlsParameters);
@@ -209,37 +208,37 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
                 {
-                    throw new Exception($"Produce 失败: Peer:{PeerId} AppData[\"source\"] is null.");
+                    throw new Exception($"ProduceAsync() | Peer:{PeerId} AppData[\"source\"] is null.");
                 }
                 var source = sourceObj.ToString();
 
                 if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("roomId", out var roomIdObj))
                 {
-                    throw new Exception($"Produce 失败: Peer:{PeerId} AppData[\"roomId\"] is null.");
+                    throw new Exception($"ProduceAsync() | Peer:{ PeerId} AppData[\"roomId\"] is null.");
                 }
                 var roomId = roomIdObj.ToString();
 
                 if (!Rooms.TryGetValue(roomId, out var room))
                 {
-                    throw new Exception($"Produce 失败: Peer:{PeerId} is not in Room:{roomId}.");
+                    throw new Exception($"ProduceAsync() | Peer:{ PeerId} is not in Room:{roomId}.");
                 }
 
-                var transport = Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value).FirstOrDefault();
+                var transport = GetProducingTransport();
                 if (transport == null)
                 {
-                    throw new Exception($"Produce 失败: Transport:Producing is not exists.");
+                    throw new Exception($"ProduceAsync() | Transport:Producing is not exists.");
                 }
 
                 if (Sources == null || !Sources.Contains(source))
                 {
-                    throw new Exception($"Produce 失败: Source:\"{ source }\" cannot be produce.");
+                    throw new Exception($"ProduceAsync() | Source:\"{ source }\" cannot be produce.");
                 }
 
                 // TODO: (alby)线程安全：避免重复 Produce 相同的 Sources
                 var producer = Producers.Values.FirstOrDefault(m => m.Source == source);
                 if (producer != null)
                 {
-                    throw new Exception($"Produce 失败: Source:\"{ source }\" is exists.");
+                    throw new Exception($"ProduceAsync() | Source:\"{ source }\" is exists.");
                 }
 
                 // Add peerId into appData to later get the associated Peer during
@@ -276,12 +275,12 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Consume 失败: Peer:{PeerId} Can not consume.");
                 }
 
-                var transport = Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
+                var transport = GetConsumingTransport();
 
                 // This should not happen.
                 if (transport == null)
                 {
-                    _logger.LogWarning("CreateConsumer() | Transport for consuming not found");
+                    _logger.LogWarning("ConsumeAsync() | Transport for consuming not found");
                     throw new Exception($"Consume 失败: Peer:{PeerId} Transport for consuming not found.");
                 }
 
@@ -317,7 +316,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Producers.TryGetValue(producerId, out var producer))
                 {
-                    throw new Exception($"CloseProduce 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                    throw new Exception($"CloseProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
 
                 producer.Close();
@@ -335,7 +334,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Producers.TryGetValue(producerId, out var producer))
                 {
-                    throw new Exception($"CloseProduce 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                    throw new Exception($"PauseProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
 
                 await producer.PauseAsync();
@@ -350,7 +349,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 if (Producers.TryGetValue(producerId, out var producer))
                 {
-                    throw new Exception($"CloseProduce 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                    throw new Exception($"ResumeProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
 
                 await producer.ResumeAsync();
@@ -367,7 +366,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Consumers.TryGetValue(consumerId, out var consumer))
                 {
-                    throw new Exception($"CloseConsumer 失败: Peer:{PeerId} has no Cmonsumer:{consumerId}.");
+                    throw new Exception($"CloseConsumerAsync() | Peer:{PeerId} has no Cmonsumer:{consumerId}.");
                 }
 
                 consumer.Close();
@@ -385,7 +384,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Consumers.TryGetValue(consumerId, out var consumer))
                 {
-                    throw new Exception($"PauseProduce 失败: Peer:{PeerId} has no Consumer:{consumerId}.");
+                    throw new Exception($"PauseConsumerAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
 
                 await consumer.PauseAsync();
@@ -402,7 +401,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Consumers.TryGetValue(consumerId, out var consumer))
                 {
-                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Consumer:{consumerId}.");
+                    throw new Exception($"ResumeConsumerAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
 
                 await consumer.ResumeAsync();
@@ -419,7 +418,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
                 {
-                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Consumer:{setConsumerPreferedLayersRequest.ConsumerId}.");
+                    throw new Exception($"SetConsumerPreferedLayersAsync() | Peer:{PeerId} has no Consumer:{setConsumerPreferedLayersRequest.ConsumerId}.");
                 }
 
                 await consumer.SetPreferredLayersAsync(setConsumerPreferedLayersRequest);
@@ -436,7 +435,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
                 {
-                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Consumer:{setConsumerPriorityRequest.ConsumerId}.");
+                    throw new Exception($"SetConsumerPriorityAsync() | Peer:{PeerId} has no Consumer:{setConsumerPriorityRequest.ConsumerId}.");
                 }
 
                 await consumer.SetPriorityAsync(setConsumerPriorityRequest.Priority);
@@ -453,7 +452,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Consumers.TryGetValue(consumerId, out var consumer))
                 {
-                    throw new Exception($"ResumeProduce 失败: Peer:{PeerId} has no Producer:{consumerId}.");
+                    throw new Exception($"RequestConsumerKeyFrameAsync() | Peer:{PeerId} has no Producer:{consumerId}.");
                 }
 
                 await consumer.RequestKeyFrameAsync();
@@ -470,7 +469,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Transports.TryGetValue(transportId, out var transport))
                 {
-                    throw new Exception($"GetTransportStats 失败: Peer:{PeerId} has no Transport:{transportId}.");
+                    throw new Exception($"GetTransportStatsAsync() | Peer:{PeerId} has no Transport:{transportId}.");
                 }
 
                 var status = await transport.GetStatsAsync();
@@ -490,7 +489,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Producers.TryGetValue(producerId, out var producer))
                 {
-                    throw new Exception($"GetProducerStats 失败: Peer:{PeerId} has no Producer:{producerId}.");
+                    throw new Exception($"GetProducerStatsAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
 
                 var status = await producer.GetStatsAsync();
@@ -509,7 +508,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Consumers.TryGetValue(consumerId, out var consumer))
                 {
-                    throw new Exception($"GetConsumerStats 失败: Peer:{PeerId} has no Consumers:{consumerId}.");
+                    throw new Exception($"GetConsumerStatsAsync() | Peer:{PeerId} has no Consumers:{consumerId}.");
                 }
 
                 var status = await consumer.GetStatsAsync();
@@ -528,12 +527,12 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (Transports.TryGetValue(transportId, out var transport))
                 {
-                    throw new Exception($"RestartIce 失败: Peer:{PeerId} has no Transport:{transportId}.");
+                    throw new Exception($"RestartIceAsync() | Peer:{PeerId} has no Transport:{transportId}.");
                 }
 
                 if (!(transport is WebRtcTransport webRtcTransport))
                 {
-                    throw new Exception($"RestartIce 失败: Peer:{PeerId} has no Transport:{transportId}.");
+                    throw new Exception($"RestartIceAsync() | Peer:{PeerId} has no Transport:{transportId}.");
                 }
 
                 var iceParameters = await webRtcTransport.RestartIceAsync();
@@ -611,25 +610,26 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public Transport GetProducingTransport()
+        #region Private Methods
+
+        private Transport GetProducingTransport()
         {
-            CheckClosed();
-            using (_locker.Lock())
-            {
-                CheckClosed();
-                return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value).FirstOrDefault();
-            }
+            return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value).FirstOrDefault();
         }
 
-        public Transport GetConsumingTransport()
+        private Transport GetConsumingTransport()
         {
-            CheckClosed();
-            using (_locker.Lock())
-            {
-                CheckClosed();
+            return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
+        }
 
-                return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
-            }
+        private bool HasProducingTransport()
+        {
+            return Transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value);
+        }
+
+        private bool HasConsumingTransport()
+        {
+            return Transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value);
         }
 
         private void CheckClosed()
@@ -639,5 +639,7 @@ namespace TubumuMeeting.Meeting.Server
                 throw new Exception("Peer was closed");
             }
         }
+
+        #endregion
     }
 }
