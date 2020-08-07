@@ -548,7 +548,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             using (_locker.Lock())
             {
-                var producersToClose = new List<Producer>();
+                var producersToClose = new HashSet<Producer>();
                 var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
                                 from p in ri.Peers.Values           // 的包括本 Peer 在内的所有 Peer
                                 from pc in p.Consumers.Values       // 的 Consumer
@@ -583,7 +583,7 @@ namespace TubumuMeeting.Meeting.Server
             using (_locker.Lock())
             {
                 // 关闭无人消费的本 Peer 的 Producer
-                var producersToClose = new List<Producer>();
+                var producersToClose = new HashSet<Producer>();
                 var otherPeers = from ri in Rooms.Values        // Peer 所在的所有房间
                                  from p in ri.Peers.Values      // 的包括本 Peer 在内的所有 Peer
                                  where !(ri.RoomId == excludeRoomId && p.PeerId == excludePeerId)   // 除指定 Room 里的指定 Peer
@@ -594,7 +594,7 @@ namespace TubumuMeeting.Meeting.Server
                     foreach (var producer in Producers.Values)
                     {
                         // 如果没有消费 producer，则关闭。
-                        if (!otherPeer.Consumers.Values.Any(m => m.Internal.ProducerId == producer.ProducerId))
+                        if (!otherPeer.Consumers.Values.Any(m => m.Internal.ProducerId == producer.ProducerId && !(m.RoomId == excludeRoomId && otherPeer.PeerId == excludePeerId)))
                         {
                             producersToClose.Add(producer);
                         }

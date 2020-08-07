@@ -30,7 +30,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncLock _roomLocker = new AsyncLock();
 
-        private readonly object _peerRoomLocker = new object();
+        private readonly AsyncLock _peerRoomLocker = new AsyncLock();  // 直接或间接访问 peer.Rooms 或 room.Peers 需上锁。
 
         private Router _router;
 
@@ -54,7 +54,7 @@ namespace TubumuMeeting.Meeting.Server
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
         }
 
-        public bool Join(string peerId, JoinRequest joinRequest)
+        public async Task<bool> Join(string peerId, JoinRequest joinRequest)
         {
             using (_peerLocker.Lock())
             {
@@ -62,6 +62,19 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     _logger.LogError($"PeerJoinAsync() | Peer:{peerId} was joined.");
                     return false;
+                }
+
+                if (_router == null)
+                {
+                    // Router media codecs.
+                    var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
+
+                    // Create a mediasoup Router.
+                    var worker = _mediasoupServer.GetWorker();
+                    _router = await worker.CreateRouterAsync(new RouterOptions
+                    {
+                        MediaCodecs = mediaCodecs
+                    });
                 }
 
                 peer = new Peer(_loggerFactory,
@@ -94,7 +107,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 var otherPeers = new List<PeerRoom>();
-                lock (_peerRoomLocker)
+                using (_peerRoomLocker.Lock())
                 {
                     // 从所有房间退出
                     foreach (var room in peer.Rooms.Values)
@@ -174,7 +187,7 @@ namespace TubumuMeeting.Meeting.Server
                         Rooms[room.RoomId] = room;
                     }
 
-                    lock (_peerRoomLocker)
+                    using (_peerRoomLocker.Lock())
                     {
                         room.Peers[peerId] = peer;
                         peer.Rooms[joinRoomRequest.RoomId] = room;
@@ -200,7 +213,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
 
-                lock (_peerRoomLocker)
+                using (_peerRoomLocker.Lock())
                 {
                     if (!peer.Rooms.TryGetValue(roomId, out var room))
                     {
@@ -245,7 +258,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Peer:{consumeRequest.PeerId} is not exists.");
                 }
 
-                lock (_peerRoomLocker)
+                using (_peerRoomLocker.Lock())
                 {
                     if (!peer.Rooms.TryGetValue(consumeRequest.RoomId, out var room))
                     {
@@ -310,43 +323,46 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
 
-                var producer = await peer.ProduceAsync(produceRequest);
-                if (producer == null)
+                using (await _peerRoomLocker.LockAsync())
                 {
-                    _logger.LogError($"ProduceAsync() | Peer:{peerId} is not exists.");
-                    throw new Exception($"Peer:{peerId} produce faild.");
-                }
-
-                var comsumePaddingsToRemove = new List<ConsumePadding>();
-                var peerRoomIds = new List<PeerRoomId>();
-                foreach (var comsumePadding in peer.ConsumePaddings.Where(m => m.Source == producer.Source))
-                {
-                    comsumePaddingsToRemove.Add(comsumePadding);
-
-                    // 其他 Peer 消费本 Peer
-                    if (Peers.TryGetValue(comsumePadding.PeerId, out var otherPeer))
+                    var producer = await peer.ProduceAsync(produceRequest);
+                    if (producer == null)
                     {
-                        peerRoomIds.Add(new PeerRoomId
-                        {
-                            Peer = otherPeer,
-                            RoomId = comsumePadding.RoomId,
-                        });
+                        _logger.LogError($"ProduceAsync() | Peer:{peerId} is not exists.");
+                        throw new Exception($"Peer:{peerId} produce faild.");
                     }
+
+                    var comsumePaddingsToRemove = new List<ConsumePadding>();
+                    var peerRoomIds = new List<PeerRoomId>();
+                    foreach (var comsumePadding in peer.ConsumePaddings.Where(m => m.Source == producer.Source))
+                    {
+                        comsumePaddingsToRemove.Add(comsumePadding);
+
+                        // 其他 Peer 消费本 Peer
+                        if (Peers.TryGetValue(comsumePadding.PeerId, out var otherPeer))
+                        {
+                            peerRoomIds.Add(new PeerRoomId
+                            {
+                                Peer = otherPeer,
+                                RoomId = comsumePadding.RoomId,
+                            });
+                        }
+                    }
+
+                    foreach (var consumePaddingToRemove in comsumePaddingsToRemove)
+                    {
+                        peer.ConsumePaddings.Remove(consumePaddingToRemove);
+                    }
+
+                    var produceResult = new ProduceResult
+                    {
+                        Peer = peer,
+                        Producer = producer,
+                        PeerRoomIds = peerRoomIds.ToArray(),
+                    };
+
+                    return produceResult;
                 }
-
-                foreach (var consumePaddingToRemove in comsumePaddingsToRemove)
-                {
-                    peer.ConsumePaddings.Remove(consumePaddingToRemove);
-                }
-
-                var produceResult = new ProduceResult
-                {
-                    Peer = peer,
-                    Producer = producer,
-                    PeerRoomIds = peerRoomIds.ToArray(),
-                };
-
-                return produceResult;
             }
         }
 
@@ -552,19 +568,6 @@ namespace TubumuMeeting.Meeting.Server
 
         private async Task<Room> CreateRoom(string roomId, string name)
         {
-            if (_router == null)
-            {
-                // Router media codecs.
-                var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
-
-                // Create a mediasoup Router.
-                var worker = _mediasoupServer.GetWorker();
-                _router = await worker.CreateRouterAsync(new RouterOptions
-                {
-                    MediaCodecs = mediaCodecs
-                });
-            }
-
             var room = new Room(_loggerFactory, _router, roomId, name);
             Rooms[roomId] = room;
             return room;

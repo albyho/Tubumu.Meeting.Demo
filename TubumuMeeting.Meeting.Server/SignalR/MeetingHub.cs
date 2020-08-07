@@ -75,8 +75,8 @@ namespace TubumuMeeting.Meeting.Server
 
         private void Leave()
         {
-            var peerLeaveResult = _scheduler.Leave(UserId);
-            foreach (var otherPeer in peerLeaveResult.OtherPeerRooms)
+            var leaveResult = _scheduler.Leave(UserId);
+            foreach (var otherPeer in leaveResult.OtherPeerRooms)
             {
                 // Message: peerLeaveRoom
                 var client = _hubContext.Clients.User(otherPeer.Peer.PeerId);
@@ -88,7 +88,7 @@ namespace TubumuMeeting.Meeting.Server
                     Data = new
                     {
                         RoomId = otherPeer.Room.RoomId,
-                        PeerId = peerLeaveResult.Peer.PeerId
+                        PeerId = leaveResult.Peer.PeerId
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             }
@@ -107,9 +107,9 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
-        public MeetingMessage Join(JoinRequest joinRequest)
+        public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (!_scheduler.Join(UserId, joinRequest))
+            if (!await _scheduler.Join(UserId, joinRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "Join 失败" };
             }
@@ -194,7 +194,6 @@ namespace TubumuMeeting.Meeting.Server
 
             foreach (var otherPeer in joinRoomResult.OtherPeers)
             {
-                // Notify the new Peer to all other Peers.
                 // Message: peerJoinRoom
                 var client = _hubContext.Clients.User(otherPeer.PeerId);
                 client.ReceiveMessage(new MeetingMessage
