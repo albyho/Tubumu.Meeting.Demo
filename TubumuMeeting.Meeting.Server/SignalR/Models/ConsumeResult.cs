@@ -2,7 +2,7 @@
 {
     public class ConsumeResult
     {
-        public Peer Peer { get; set; }
+        public Peer SelfPeer { get; set; }
 
         public PeerProducer[] ExistsProducers { get; set; }
 

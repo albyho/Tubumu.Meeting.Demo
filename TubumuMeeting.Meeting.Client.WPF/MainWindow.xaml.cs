@@ -195,7 +195,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 Dictionary<string, object> appdata = JsonConvert.DeserializeObject<Dictionary<string, object>>(strappdata);
 
                 ProduceRequest request = new ProduceRequest();
-                request.TransportId = Marshal.PtrToStringAnsi(param1);
+                //request.TransportId = Marshal.PtrToStringAnsi(param1);
                 request.Kind = (Marshal.PtrToStringAnsi(param2) == "audio") ? MediaKind.Audio : MediaKind.Video;
                 request.RtpParameters = rtpParameters;
                 request.AppData = appdata;

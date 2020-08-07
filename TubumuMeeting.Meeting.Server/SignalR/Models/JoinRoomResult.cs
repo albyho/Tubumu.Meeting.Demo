@@ -2,7 +2,7 @@
 {
     public class JoinRoomResult
     {
-        public Peer Peer { get; set; }
+        public Peer SelfPeer { get; set; }
 
         public Peer[] PeersInRoom { get; set; }
     }

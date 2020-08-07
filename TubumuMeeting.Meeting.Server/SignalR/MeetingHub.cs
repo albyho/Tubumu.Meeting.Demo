@@ -88,7 +88,7 @@ namespace TubumuMeeting.Meeting.Server
                     Data = new
                     {
                         RoomId = otherPeer.Room.RoomId,
-                        PeerId = leaveResult.Peer.PeerId
+                        PeerId = leaveResult.SelfPeer.PeerId
                     }
                 }).ContinueWithOnFaultedHandleLog(_logger);
             }
@@ -194,7 +194,7 @@ namespace TubumuMeeting.Meeting.Server
 
             foreach (var peer in joinRoomResult.PeersInRoom)
             {
-                if(peer.PeerId != joinRoomResult.Peer.PeerId)
+                if(peer.PeerId != joinRoomResult.SelfPeer.PeerId)
                 {
                     // Message: peerJoinRoom
                     var client = _hubContext.Clients.User(peer.PeerId);
@@ -206,9 +206,9 @@ namespace TubumuMeeting.Meeting.Server
                         Data = new
                         {
                             RoomId = joinRoomRequest.RoomId,
-                            PeerId = joinRoomResult.Peer.PeerId,
-                            DisplayName = joinRoomResult.Peer.DisplayName,
-                            Sources = joinRoomResult.Peer.Sources,
+                            PeerId = joinRoomResult.SelfPeer.PeerId,
+                            DisplayName = joinRoomResult.SelfPeer.DisplayName,
+                            Sources = joinRoomResult.SelfPeer.Sources,
                         }
                     }).ContinueWithOnFaultedHandleLog(_logger);
                 }
@@ -260,11 +260,11 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var existsProducer in consumeResult.ExistsProducers)
             {
                 // 本 Peer 消费其他 Peer
-                CreateConsumer(existsProducer.Peer, consumeResult.Peer, existsProducer.Producer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(existsProducer.Peer, consumeResult.SelfPeer, existsProducer.Producer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Message: produceSources
-            var client = _hubContext.Clients.User(consumeResult.Peer.PeerId);
+            var client = _hubContext.Clients.User(consumeResult.SelfPeer.PeerId);
             client.ReceiveMessage(new MeetingMessage
             {
                 Code = 200,

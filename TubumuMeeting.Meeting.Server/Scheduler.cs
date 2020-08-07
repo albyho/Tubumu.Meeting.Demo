@@ -136,7 +136,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 return new LeaveResult
                 {
-                    Peer = peer,
+                    SelfPeer = peer,
                     OtherPeerRooms = otherPeers.ToArray(),
                 };
             }
@@ -195,7 +195,7 @@ namespace TubumuMeeting.Meeting.Server
                         var peersInRoom = room.Peers.Values.ToArray();
                         return new JoinRoomResult
                         {
-                            Peer = peer,
+                            SelfPeer = peer,
                             PeersInRoom = peersInRoom,
                         };
                     }
@@ -235,7 +235,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     return new LeaveRoomResult
                     {
-                        Peer = peer,
+                        SelfPeer = peer,
                         OtherPeers = otherPeers,
                     };
                 }
@@ -305,7 +305,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     return new ConsumeResult
                     {
-                        Peer = peer,
+                        SelfPeer = peer,
                         ExistsProducers = existsProducers.ToArray(),
                         ProduceSources = produceSources.ToArray(),
                     };
