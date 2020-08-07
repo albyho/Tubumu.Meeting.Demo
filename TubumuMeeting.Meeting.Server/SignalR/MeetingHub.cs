@@ -119,7 +119,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage
             {
                 Code = 200,
-                Message = "CreateWebRtcTransport 成功",
+                Message = $"CreateWebRtcTransport 成功({(createWebRtcTransportRequest.Producing ? "Producing" : "Consuming")})",
                 Data = new CreateWebRtcTransportResult
                 {
                     TransportId = transport.TransportId,

@@ -63,6 +63,7 @@ export default {
   components: {},
   data() {
     return {
+      peerId: null,
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
@@ -89,6 +90,7 @@ export default {
     async run() {
       try {
         const { peerId } = querystring.parse(location.search.replace('?', ''));
+        this.peerId = peerId;
         const accessTokens = [
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.5w00ixg06pRPxcdbtbmRVI6Wy_Ta9qsSJc3D7PE3chQ',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMiIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.q2tKWUa6i4u0VpZDhA8Fw92NoV_g9YQeWD-OeF7fAvU',
@@ -264,6 +266,15 @@ export default {
 
       const joinRoomData = result.data;
       logger.debug('Peers:%o', joinRoomData.peers);
+
+      if(this.peerId === '0') {
+        if(this.mediasoupDevice.canProduce('audio')) {
+          this.enableMic();
+        }
+        if(this.mediasoupDevice.canProduce('video')) {
+          this.enableWebcam();
+        }
+      }
     },
     async processNewConsumer(data) {
       const {
