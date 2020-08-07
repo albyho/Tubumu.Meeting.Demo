@@ -8,10 +8,10 @@ namespace TubumuMeeting.Meeting.Server
 
         public Producer Producer { get; set; }
 
-        public PeerRoomId[] PeerRoomIds { get; set; }
+        public PeerWithRoomId[] OtherPeerRoomIds { get; set; }
     }
 
-    public class PeerRoomId
+    public class PeerWithRoomId
     {
         public Peer Peer { get; set; }
 

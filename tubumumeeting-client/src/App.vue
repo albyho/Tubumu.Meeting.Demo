@@ -55,7 +55,8 @@ const SCREEN_SHARING_SVC_ENCODINGS =
 
 const logger = new Logger('App');
 
-localStorage.setItem('debug', 'mediasoup-client:* tubumumeeting-client:*');
+// 'mediasoup-client:* tubumumeeting-client:*'
+localStorage.setItem('debug', 'tubumumeeting-client:*');
 
 export default {
   name: 'app',
@@ -115,22 +116,19 @@ export default {
           // })
           .build();
 
-        this.connection.on('NewConsumer', async data => {
-          await this.processNewConsumer(data);
-        });
-        this.connection.on('ReceiveMessage', async data => {
-          await this.processMessage(data);
+        this.connection.on('Notify', async data => {
+          await this.processNotification(data);
         });
         await this.connection.start();
-        await this.process();
+        await this.start();
       } catch (e) {
         logger.debug(e.message);
       }
     },
-    async process() {
+    async start() {
       let result = await this.connection.invoke('GetRouterRtpCapabilities');
       if (result.code !== 200) {
-        logger.error('processMessage() | GetRouterRtpCapabilities failure.');
+        logger.error('processNotification() | GetRouterRtpCapabilities failure.');
         return;
       }
 
@@ -149,7 +147,7 @@ export default {
         appData: {}
       });
       if (result.code !== 200) {
-        logger.error('processMessage() | Join failure.');
+        logger.error('processNotification() | Join failure.');
         return;
       }
 
@@ -161,7 +159,7 @@ export default {
         sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
       });
       if (result.code !== 200) {
-        logger.error('processMessage() | CreateWebRtcTransport failure.');
+        logger.error('processNotification() | CreateWebRtcTransport failure.');
         return;
       }
 
@@ -179,7 +177,7 @@ export default {
       this.sendTransport.on(
         'connect',
         ({ dtlsParameters }, callback, errback) => {
-          logger.debug('sendTransport.on connect dtls: %o', dtlsParameters);
+          logger.debug('sendTransport.on() connect dtls: %o', dtlsParameters);
           this.connection
             .invoke('ConnectWebRtcTransport', {
               transportId: this.sendTransport.id,
@@ -195,7 +193,7 @@ export default {
         // appData 需要包含 roomId 和 source
         // eslint-disable-next-line no-unused-vars
         async ({ kind, rtpParameters, appData }, callback, errback) => {
-          logger.debug('sendTransport.on produce');
+          logger.debug('sendTransport.on() produce, appData: %o', appData);
           try {
             const result = await this.connection.invoke('Produce', {
               transportId: this.sendTransport.id,
@@ -216,7 +214,7 @@ export default {
       );
 
       this.sendTransport.on('connectionstatechange', state => {
-        logger.debug(`connectionstatechange: ${state}`);
+        logger.debug(`sendTransport.on() connectionstatechange: ${state}`);
       });
 
       // createSendTransport 成功, CreateWebRtcTransport(消费)
@@ -229,7 +227,7 @@ export default {
 
       // CreateWebRtcTransport(消费)成功, createRecvTransport
       this.recvTransport = this.mediasoupDevice.createRecvTransport({
-        id: result.data.id,
+        id: result.data.transportId,
         iceParameters: result.data.iceParameters,
         iceCandidates: result.data.iceCandidates,
         dtlsParameters: result.data.dtlsParameters,
@@ -240,7 +238,7 @@ export default {
       this.recvTransport.on(
         'connect',
         ({ dtlsParameters }, callback, errback) => {
-          logger.debug('recvTransport.on connect dtls: %o', dtlsParameters);
+          logger.debug('recvTransport.on() connect dtls: %o', dtlsParameters);
           this.connection
             .invoke('ConnectWebRtcTransport', {
               transportId: this.recvTransport.id,
@@ -251,12 +249,16 @@ export default {
         }
       );
 
+      this.recvTransport.on('connectionstatechange', state => {
+        logger.debug(`recvTransport.on() connectionstatechange: ${state}`);
+      });
+
       // createRecvTransport成功, JoinRoom
       result = await this.connection.invoke('JoinRoom', {
         roomId: '1'
       });
       if (result.code !== 200) {
-        logger.error('processMessage() | JoinRoom failure.');
+        logger.error('processNotification() | JoinRoom failure.');
         return;
       }
 
@@ -271,17 +273,18 @@ export default {
         kind,
         rtpParameters,
         //type, // mediasoup-client 的 Transport.ts 不使用该参数
-        appData
+        producerAppData,
         //producerPaused // mediasoup-client 的 Transport.ts 不使用该参数
-      } = data.data;
+      } = data;
 
       const consumer = await this.recvTransport.consume({
-        consumerId,
+        id: consumerId,
         producerId,
         kind,
         rtpParameters,
-        appData: { ...appData, peerId:producerPeerId } // Trick.
+        appData: { ...producerAppData, producerPeerId } // Trick.
       });
+      logger.debug('recvTransport.consume() Consumer: %o', consumer);
 
       // Store in the map.
       this.consumers.set(consumer.id, consumer);
@@ -318,6 +321,7 @@ export default {
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
 
+      logger.debug('recvTransport.consume() stream');
       if (kind === 'video') {
         this.remoteVideoStream = stream;
       } else {
@@ -326,6 +330,7 @@ export default {
 
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
+      logger.debug('recvTransport.consume() NewConsumerReturn');
       const result = await this.connection.invoke('NewConsumerReturn', {
         consumerId
       });
@@ -335,9 +340,14 @@ export default {
         return;
       }
     },
-    async processMessage(data) {
-      logger.debug('processMessage() | %o', data);
-      switch (data.internalCode) {
+    async processNotification(data) {
+      logger.debug('processNotification() | %o', data);
+      switch (data.type) {
+        case 'newConsumer': {
+            await this.processNewConsumer(data.data);
+            
+            break;
+        }
         case 'producerScore': {
           // eslint-disable-next-line no-unused-vars
           const { producerId, score } = data.data;

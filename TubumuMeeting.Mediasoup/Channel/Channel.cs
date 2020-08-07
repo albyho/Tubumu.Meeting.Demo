@@ -272,7 +272,7 @@ namespace TubumuMeeting.Mediasoup
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                //if (!payloadString.Contains("no suitable Producer"))
+                                if (!payloadString.Contains("no suitable Producer"))
                                     _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 

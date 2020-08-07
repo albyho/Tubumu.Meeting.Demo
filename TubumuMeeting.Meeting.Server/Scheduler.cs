@@ -280,8 +280,7 @@ namespace TubumuMeeting.Meeting.Server
                         // 如果 Source 有对应的 Producer，直接消费。
                         if (producer != null)
                         {
-                            var consumer = peer.Consumers.Values.Where(m => m.Internal.ProducerId == producer.ProducerId).FirstOrDefault();
-                            if (consumer != null)
+                            if (peer.Consumers.Values.Any(m => m.Internal.ProducerId == producer.ProducerId))
                             {
                                 // 如果本 Peer 已经消费了对应 Producer，忽略以避免重复消费。
                                 continue;
@@ -335,7 +334,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     var comsumePaddingsToRemove = new List<ConsumePadding>();
-                    var peerRoomIds = new List<PeerRoomId>();
+                    var otherPeerRoomIds = new List<PeerWithRoomId>();
                     foreach (var comsumePadding in peer.ConsumePaddings.Where(m => m.Source == producer.Source))
                     {
                         comsumePaddingsToRemove.Add(comsumePadding);
@@ -343,7 +342,7 @@ namespace TubumuMeeting.Meeting.Server
                         // 其他 Peer 消费本 Peer
                         if (Peers.TryGetValue(comsumePadding.PeerId, out var otherPeer))
                         {
-                            peerRoomIds.Add(new PeerRoomId
+                            otherPeerRoomIds.Add(new PeerWithRoomId
                             {
                                 Peer = otherPeer,
                                 RoomId = comsumePadding.RoomId,
@@ -360,7 +359,7 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         SelfPeer = peer,
                         Producer = producer,
-                        PeerRoomIds = peerRoomIds.ToArray(),
+                        OtherPeerRoomIds = otherPeerRoomIds.ToArray(),
                     };
 
                     return produceResult;
@@ -565,6 +564,20 @@ namespace TubumuMeeting.Meeting.Server
                 return await peer.RestartIceAsync(transportId);
             }
         }
+
+        public void RemoveConsumer(string peerId, string consumerId)
+        {
+            using (_peerLocker.Lock())
+            {
+                if (!Peers.TryGetValue(peerId, out var peer))
+                {
+                    _logger.LogError($"RequestConsumerKeyFrameAsync() | Peer:{peerId} is not exists.");
+                    throw new Exception($"Peer:{peerId} is not exists.");
+                }
+                peer.RemoveConsumer(consumerId);
+            }
+        }
+
 
         #region Private Methods
 

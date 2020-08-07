@@ -88,10 +88,17 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         public void Close()
         {
-            CheckClosed();
+            if(Closed)
+            {
+                return;
+            }
+
             using (_locker.Lock())
             {
-                CheckClosed();
+                if (Closed)
+                {
+                    return;
+                }
 
                 Closed = true;
 
@@ -285,9 +292,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 // Create the Consumer in paused mode.
-                Consumer consumer;
-
-                consumer = await transport.ConsumeAsync(new ConsumerOptions
+                var consumer = await transport.ConsumeAsync(new ConsumerOptions
                 {
                     ProducerId = producer.ProducerId,
                     RtpCapabilities = RtpCapabilities,
@@ -607,6 +612,17 @@ namespace TubumuMeeting.Meeting.Server
                     producerToClose.Close();
                     Producers.Remove(producerToClose.ProducerId);
                 }
+            }
+        }
+
+        public void RemoveConsumer(string consumerId)
+        {
+            CheckClosed();
+            using (_locker.Lock())
+            {
+                CheckClosed();
+
+                Consumers.Remove(consumerId);
             }
         }
 

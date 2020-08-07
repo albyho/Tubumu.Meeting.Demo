@@ -11,38 +11,6 @@ using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    /// <summary>
-    /// MeetingMessage
-    /// </summary>
-    public class MeetingMessage
-    {
-        public int Code { get; set; } = 200;
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string? InternalCode { get; set; }
-
-        public string Message { get; set; } = "Success";
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public object? Data { get; set; }
-
-        public static string Stringify(int code, string message, string? data = null)
-        {
-            if (data == null)
-            {
-                return $"{{\"code\":{code},\"message\":\"{message}\"}}";
-            }
-            return $"{{\"code\":{code},\"message\":\"{message}\",\"data\":{data}}}";
-        }
-    }
-
-    public interface IPeer
-    {
-        Task NewConsumer(MeetingMessage message);
-
-        Task ReceiveMessage(MeetingMessage message);
-    }
-
     [Authorize]
     public partial class MeetingHub : Hub<IPeer>
     {
@@ -81,18 +49,7 @@ namespace TubumuMeeting.Meeting.Server
                 foreach (var otherPeer in leaveResult.OtherPeerRooms)
                 {
                     // Message: peerLeaveRoom
-                    var client = _hubContext.Clients.User(otherPeer.Peer.PeerId);
-                    client.ReceiveMessage(new MeetingMessage
-                    {
-                        Code = 200,
-                        InternalCode = "peerLeaveRoom",
-                        Message = "peerLeaveRoom",
-                        Data = new
-                        {
-                            RoomId = otherPeer.Room.RoomId,
-                            PeerId = leaveResult.SelfPeer.PeerId
-                        }
-                    }).ContinueWithOnFaultedHandleLog(_logger);
+                    SendMessage(otherPeer.Peer.PeerId, "peerLeaveRoom", new { RoomId = otherPeer.Room.RoomId, PeerId = leaveResult.SelfPeer.PeerId });
                 }
             }
         }
@@ -150,19 +107,12 @@ namespace TubumuMeeting.Meeting.Server
                 if (traceData.Type == TransportTraceEventType.BWE && traceData.Direction == TraceEventDirection.Out)
                 {
                     // Message: downlinkBwe
-                    var client = _hubContext.Clients.User(peerId);
-                    client.ReceiveMessage(new MeetingMessage
+                    SendMessage(peerId, "downlinkBwe", new
                     {
-                        Code = 200,
-                        InternalCode = "downlinkBwe",
-                        Message = "downlinkBwe",
-                        Data = new
-                        {
-                            DesiredBitrate = traceData.Info["desiredBitrate"],
-                            EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"],
-                            AvailableBitrate = traceData.Info["availableBitrate"]
-                        }
-                    }).ContinueWithOnFaultedHandleLog(_logger);
+                        DesiredBitrate = traceData.Info["desiredBitrate"],
+                        EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"],
+                        AvailableBitrate = traceData.Info["availableBitrate"]
+                    });
                 }
             });
 
@@ -200,20 +150,13 @@ namespace TubumuMeeting.Meeting.Server
                 if (peer.PeerId != joinRoomResult.SelfPeer.PeerId)
                 {
                     // Message: peerJoinRoom
-                    var client = _hubContext.Clients.User(peer.PeerId);
-                    client.ReceiveMessage(new MeetingMessage
+                    SendMessage(peer.PeerId, "peerJoinRoom", new
                     {
-                        Code = 200,
-                        InternalCode = "peerJoinRoom",
-                        Message = "peerJoinRoom",
-                        Data = new
-                        {
-                            RoomId = joinRoomRequest.RoomId,
-                            PeerId = joinRoomResult.SelfPeer.PeerId,
-                            DisplayName = joinRoomResult.SelfPeer.DisplayName,
-                            Sources = joinRoomResult.SelfPeer.Sources,
-                        }
-                    }).ContinueWithOnFaultedHandleLog(_logger);
+                        RoomId = joinRoomRequest.RoomId,
+                        PeerId = joinRoomResult.SelfPeer.PeerId,
+                        DisplayName = joinRoomResult.SelfPeer.DisplayName,
+                        Sources = joinRoomResult.SelfPeer.Sources,
+                    });
                 }
             }
 
@@ -239,18 +182,11 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeer in leaveRoomResult.OtherPeers)
             {
                 // Message: peerLeaveRoom
-                var client = _hubContext.Clients.User(otherPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
+                SendMessage(otherPeer.PeerId, "peerLeaveRoom", new
                 {
-                    Code = 200,
-                    InternalCode = "peerLeaveRoom",
-                    Message = "peerLeaveRoom",
-                    Data = new
-                    {
-                        RoomId = leaveRoomRequest.RoomId,
-                        PeerId = UserId
-                    }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                    RoomId = leaveRoomRequest.RoomId,
+                    PeerId = UserId
+                });
             }
 
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
@@ -267,47 +203,34 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             // Message: produceSources
-            var client = _hubContext.Clients.User(consumeResult.TargetPeerId);
-            client.ReceiveMessage(new MeetingMessage
+            SendMessage(consumeResult.TargetPeerId, "produceSources", new
             {
-                Code = 200,
-                InternalCode = "produceSources",
-                Message = "produceSources",
-                Data = new
-                {
-                    RoomId = consumeResult.RoomId,
-                    ProduceSources = consumeResult.ProduceSources
-                }
-            }).ContinueWithOnFaultedHandleLog(_logger);
+                RoomId = consumeResult.RoomId,
+                ProduceSources = consumeResult.ProduceSources
+            });
 
             return new MeetingMessage { Code = 200, Message = "Consume 成功" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
-            var produceResult = await _scheduler.ProduceAsync(UserId, produceRequest);
+            var peerId = UserId;
+            var produceResult = await _scheduler.ProduceAsync(peerId, produceRequest);
             var producer = produceResult.Producer;
 
-            foreach (var item in produceResult.PeerRoomIds)
+            foreach (var otherPeerWithRoomId in produceResult.OtherPeerRoomIds)
             {
                 // 其他 Peer 消费本 Peer
-                CreateConsumer(item.Peer, produceResult.SelfPeer, produceResult.Producer, item.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(otherPeerWithRoomId.Peer, produceResult.SelfPeer, produceResult.Producer, otherPeerWithRoomId.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Set Producer events.
-            var peerId = UserId;
             producer.On("score", score =>
             {
                 var data = (ProducerScore[])score!;
                 // Message: producerScore
-                var client = _hubContext.Clients.User(peerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "producerScore",
-                    Message = "producerScore",
-                    Data = new { ProducerId = producer.ProducerId, Score = data }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessage(peerId, "producerScore", new { ProducerId = producer.ProducerId, Score = data });
+
             });
             producer.On("videoorientationchange", videoOrientation =>
             {
@@ -460,63 +383,35 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var data = (ConsumerScore)score!;
                 // Message: consumerScore
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerScore",
-                    Message = "consumerScore",
-                    Data = new { ConsumerId = consumer.ConsumerId, Score = data }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessage(consumerPeer.PeerId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = data });
             });
 
             // Set Consumer events.
             consumer.On("transportclose", _ =>
             {
                 // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.ConsumerId);
+                consumerPeer.RemoveConsumer(consumer.ConsumerId);
             });
 
             consumer.On("producerclose", _ =>
             {
                 // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.ConsumerId);
+                consumerPeer.RemoveConsumer(consumer.ConsumerId);
 
                 // Message: consumerClosed
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerClosed",
-                    Message = "consumerClosed",
-                    Data = new { ConsumerId = consumer.ConsumerId }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessage(consumerPeer.PeerId, "consumerClosed", new { ConsumerId = consumer.ConsumerId });
             });
 
             consumer.On("producerpause", _ =>
             {
                 // Message: consumerPaused
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerPaused",
-                    Message = "consumerPaused",
-                    Data = new { ConsumerId = consumer.ConsumerId }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessage(consumerPeer.PeerId, "consumerPaused", new { ConsumerId = consumer.ConsumerId });
             });
 
             consumer.On("producerresume", _ =>
             {
                 // Message: consumerResumed
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerResumed",
-                    Message = "consumerResumed",
-                    Data = new { ConsumerId = consumer.ConsumerId }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessage(consumerPeer.PeerId, "consumerResumed", new { ConsumerId = consumer.ConsumerId });
             });
 
             consumer.On("layerschange", layers =>
@@ -524,43 +419,22 @@ namespace TubumuMeeting.Meeting.Server
                 var data = (ConsumerLayers?)layers;
 
                 // Message: consumerLayersChanged
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerLayersChanged",
-                    Message = "consumerLayersChanged",
-                    Data = new { ConsumerId = consumer.ConsumerId, SpatialLayer = data != null ? (int?)data.SpatialLayer : null, TemporalLayer = data != null ? (int?)data.TemporalLayer : null }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendMessage(consumerPeer.PeerId, "consumerLayersChanged", new { ConsumerId = consumer.ConsumerId });
             });
 
             // Send a request to the remote Peer with Consumer parameters.
-            try
+            // Message: newConsumer
+            SendMessage(consumerPeer.PeerId, "newConsumer", new
             {
-                // Message: newConsumer
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                await client.NewConsumer(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "newConsumer",
-                    Message = "newConsumer",
-                    Data = new
-                    {
-                        ProducerPeerId = producerPeer.PeerId,
-                        Kind = consumer.Kind,
-                        ProducerId = producer.ProducerId,
-                        ConsumerId = consumer.ConsumerId,
-                        RtpParameters = consumer.RtpParameters,
-                        Type = consumer.Type,
-                        AppData = producer.AppData,
-                        ProducerPaused = consumer.ProducerPaused,
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
-            }
+                ProducerPeerId = producerPeer.PeerId,
+                Kind = consumer.Kind,
+                ProducerId = producer.ProducerId,
+                ConsumerId = consumer.ConsumerId,
+                RtpParameters = consumer.RtpParameters,
+                Type = consumer.Type,
+                ProducerAppData = producer.AppData,
+                ProducerPaused = consumer.ProducerPaused,
+            });
         }
 
         public async Task<MeetingMessage> NewConsumerReturn(NewConsumerReturnRequest newConsumerReturnRequest)
@@ -574,22 +448,22 @@ namespace TubumuMeeting.Meeting.Server
             var consumer = await _scheduler.ResumeConsumerAsync(UserId, newConsumerReturnRequest.ConsumerId);
 
             // Message: consumerScore
-            var client = _hubContext.Clients.User(UserId);
-            client.ReceiveMessage(new MeetingMessage
-            {
-                Code = 200,
-                InternalCode = "consumerScore",
-                Message = "consumerScore",
-                Data = new
-                {
-                    ConsumerId = consumer.ConsumerId,
-                    Score = consumer.Score,
-                }
-            }).ContinueWithOnFaultedHandleLog(_logger);
+            SendMessage(UserId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = consumer.Score });
 
             return new MeetingMessage { Code = 200, Message = "NewConsumerReturn 成功" };
         }
 
         #endregion
+
+        private void SendMessage(string peerId, string type, object data)
+        {
+            if (type == "consumerLayersChanged" || type == "consumerScore" || type == "producerScore") return;
+            var client = _hubContext.Clients.User(peerId);
+            client.Notify(new MeetingNotification
+            {
+                Type = type,
+                Data = data
+            }).ContinueWithOnFaultedHandleLog(_logger);
+        }
     }
 }
