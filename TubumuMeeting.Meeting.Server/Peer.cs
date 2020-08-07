@@ -46,36 +46,38 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool Closed { get; private set; }
 
-        public RtpCapabilities? RtpCapabilities { get; set; }
+        private readonly Router _router;
 
-        public SctpCapabilities? SctpCapabilities { get; set; }
+        private readonly RtpCapabilities _rtpCapabilities;
 
-        private Router _router { get; set; }
+        private readonly SctpCapabilities? _sctpCapabilities;
 
-        public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();  // TODO: (alby)改为私有
+        public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
 
-        public Dictionary<string, Transport> Transports { get; } = new Dictionary<string, Transport>();  // TODO: (alby)改为私有
+        private readonly Dictionary<string, Transport> _transports = new Dictionary<string, Transport>();
 
-        public Dictionary<string, Producer> Producers { get; } = new Dictionary<string, Producer>(); // TODO: (alby)改为私有
+        private readonly Dictionary<string, Producer> _producers = new Dictionary<string, Producer>();
 
-        public Dictionary<string, Consumer> Consumers { get; } = new Dictionary<string, Consumer>(); // TODO: (alby)改为私有
+        private readonly Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();
 
-        public Dictionary<string, DataProducer> DataProducers { get; } = new Dictionary<string, DataProducer>();  // TODO: (alby)改为私有
+        private readonly Dictionary<string, DataProducer> _dataProducers = new Dictionary<string, DataProducer>();
 
-        public Dictionary<string, DataConsumer> DataConsumers { get; } = new Dictionary<string, DataConsumer>();  // TODO: (alby)改为私有
+        private readonly Dictionary<string, DataConsumer> _dataConsumers = new Dictionary<string, DataConsumer>();
 
-        public List<ConsumePadding> ConsumePaddings = new List<ConsumePadding>();  // TODO: (alby)改为私有
+        public List<ConsumePadding> ConsumePaddings { get; set; } = new List<ConsumePadding>();  // TODO: (alby)只在 Scheduler 的 _peerRoomLocker 之内使用，考虑改为私有。
 
         public string[] Sources { get; private set; }
 
         public Dictionary<string, object> AppData { get; private set; }
 
-        public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Router router, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
+        public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Router router, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Peer>();
             _webRtcTransportSettings = webRtcTransportSettings;
             _router = router;
+            _rtpCapabilities = rtpCapabilities;
+            _sctpCapabilities = sctpCapabilities;
             PeerId = peerId;
             DisplayName = displayName.IsNullOrWhiteSpace() ? "Guest" : displayName;
             Sources = sources ?? new string[0];
@@ -88,7 +90,7 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         public void Close()
         {
-            if(Closed)
+            if (Closed)
             {
                 return;
             }
@@ -102,13 +104,10 @@ namespace TubumuMeeting.Meeting.Server
 
                 Closed = true;
 
-                RtpCapabilities = null;
-                SctpCapabilities = null;
-
                 // Iterate and close all mediasoup Transport associated to this Peer, so all
                 // its Producers and Consumers will also be closed.
-                Transports.Values.ForEach(m => m.Close());
-                Transports.Clear();
+                _transports.Values.ForEach(m => m.Close());
+                _transports.Clear();
             }
         }
 
@@ -166,7 +165,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception("CreateWebRtcTransportAsync() | Router.CreateWebRtcTransport faild");
                 }
                 // Store the WebRtcTransport into the Peer data Object.
-                Transports[transport.TransportId] = transport;
+                _transports[transport.TransportId] = transport;
 
                 // If set, apply max incoming bitrate limit.
                 if (_webRtcTransportSettings.MaximumIncomingBitrate.HasValue && _webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
@@ -191,7 +190,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (!Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
+                if (!_transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
                 {
                     throw new Exception($"ConnectWebRtcTransportAsync() | Transport:{connectWebRtcTransportRequest.TransportId} is not exists");
                 }
@@ -242,7 +241,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 // TODO: (alby)线程安全：避免重复 Produce 相同的 Sources
-                var producer = Producers.Values.FirstOrDefault(m => m.Source == source);
+                var producer = _producers.Values.FirstOrDefault(m => m.Source == source);
                 if (producer != null)
                 {
                     throw new Exception($"ProduceAsync() | Source:\"{ source }\" is exists.");
@@ -263,7 +262,7 @@ namespace TubumuMeeting.Meeting.Server
                 producer.Source = source;
 
                 // Store the Producer into the Peer data Object.
-                Producers[producer.ProducerId] = producer;
+                _producers[producer.ProducerId] = producer;
 
                 return producer;
             }
@@ -276,7 +275,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (RtpCapabilities == null || !_router.CanConsume(producer.ProducerId, RtpCapabilities))
+                if (_rtpCapabilities == null || !_router.CanConsume(producer.ProducerId, _rtpCapabilities))
                 {
                     _logger.LogWarning("ConsumeAsync() | Can not consume.");
                     throw new Exception($"Consume 失败: Peer:{PeerId} Can not consume.");
@@ -295,7 +294,7 @@ namespace TubumuMeeting.Meeting.Server
                 var consumer = await transport.ConsumeAsync(new ConsumerOptions
                 {
                     ProducerId = producer.ProducerId,
-                    RtpCapabilities = RtpCapabilities,
+                    RtpCapabilities = _rtpCapabilities,
                     Paused = producer.Kind == MediaKind.Video
                 });
 
@@ -306,7 +305,7 @@ namespace TubumuMeeting.Meeting.Server
                 consumer.Source = producer.Source;
 
                 // Store the Consumer into the consumerPeer data Object.
-                Consumers[consumer.ConsumerId] = consumer;
+                _consumers[consumer.ConsumerId] = consumer;
 
                 return consumer;
             }
@@ -319,13 +318,13 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Producers.TryGetValue(producerId, out var producer))
+                if (_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"CloseProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
 
                 producer.Close();
-                Producers.Remove(producerId);
+                _producers.Remove(producerId);
                 return true;
             }
         }
@@ -337,7 +336,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Producers.TryGetValue(producerId, out var producer))
+                if (_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"PauseProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
@@ -352,7 +351,7 @@ namespace TubumuMeeting.Meeting.Server
             CheckClosed();
             using (await _locker.LockAsync())
             {
-                if (Producers.TryGetValue(producerId, out var producer))
+                if (_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"ResumeProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
@@ -369,13 +368,13 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Consumers.TryGetValue(consumerId, out var consumer))
+                if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"CloseConsumerAsync() | Peer:{PeerId} has no Cmonsumer:{consumerId}.");
                 }
 
                 consumer.Close();
-                Consumers.Remove(consumerId);
+                _consumers.Remove(consumerId);
                 return true;
             }
         }
@@ -387,7 +386,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Consumers.TryGetValue(consumerId, out var consumer))
+                if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"PauseConsumerAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
@@ -404,7 +403,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (!Consumers.TryGetValue(consumerId, out var consumer))
+                if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"ResumeConsumerAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
@@ -421,7 +420,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
+                if (_consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
                 {
                     throw new Exception($"SetConsumerPreferedLayersAsync() | Peer:{PeerId} has no Consumer:{setConsumerPreferedLayersRequest.ConsumerId}.");
                 }
@@ -438,7 +437,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
+                if (_consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
                 {
                     throw new Exception($"SetConsumerPriorityAsync() | Peer:{PeerId} has no Consumer:{setConsumerPriorityRequest.ConsumerId}.");
                 }
@@ -455,7 +454,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Consumers.TryGetValue(consumerId, out var consumer))
+                if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"RequestConsumerKeyFrameAsync() | Peer:{PeerId} has no Producer:{consumerId}.");
                 }
@@ -472,7 +471,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Transports.TryGetValue(transportId, out var transport))
+                if (_transports.TryGetValue(transportId, out var transport))
                 {
                     throw new Exception($"GetTransportStatsAsync() | Peer:{PeerId} has no Transport:{transportId}.");
                 }
@@ -492,7 +491,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Producers.TryGetValue(producerId, out var producer))
+                if (_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"GetProducerStatsAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
@@ -511,7 +510,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Consumers.TryGetValue(consumerId, out var consumer))
+                if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"GetConsumerStatsAsync() | Peer:{PeerId} has no Consumers:{consumerId}.");
                 }
@@ -530,7 +529,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (Transports.TryGetValue(transportId, out var transport))
+                if (_transports.TryGetValue(transportId, out var transport))
                 {
                     throw new Exception($"RestartIceAsync() | Peer:{PeerId} has no Transport:{transportId}.");
                 }
@@ -556,11 +555,11 @@ namespace TubumuMeeting.Meeting.Server
                 var producersToClose = new HashSet<Producer>();
                 var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
                                 from p in ri.Peers.Values           // 的包括本 Peer 在内的所有 Peer
-                                from pc in p.Consumers.Values       // 的 Consumer
+                                from pc in p._consumers.Values       // 的 Consumer
                                 where ri.RoomId != excludeRoomId    // 排除房间
                                 select pc;
 
-                foreach (var producer in Producers.Values)
+                foreach (var producer in _producers.Values)
                 {
                     // 如果其他 Room 中没有消费 producer，则关闭。
                     if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId && m.RoomId == excludeRoomId))
@@ -573,7 +572,7 @@ namespace TubumuMeeting.Meeting.Server
                 foreach (var producerToClose in producersToClose)
                 {
                     producerToClose.Close();
-                    Producers.Remove(producerToClose.ProducerId);
+                    _producers.Remove(producerToClose.ProducerId);
                 }
             }
         }
@@ -596,10 +595,10 @@ namespace TubumuMeeting.Meeting.Server
 
                 foreach (var otherPeer in otherPeers)
                 {
-                    foreach (var producer in Producers.Values)
+                    foreach (var producer in _producers.Values)
                     {
                         // 如果没有消费 producer，则关闭。
-                        if (!otherPeer.Consumers.Values.Any(m => m.Internal.ProducerId == producer.ProducerId && !(m.RoomId == excludeRoomId && otherPeer.PeerId == excludePeerId)))
+                        if (!otherPeer._consumers.Values.Any(m => m.Internal.ProducerId == producer.ProducerId && !(m.RoomId == excludeRoomId && otherPeer.PeerId == excludePeerId)))
                         {
                             producersToClose.Add(producer);
                         }
@@ -610,19 +609,35 @@ namespace TubumuMeeting.Meeting.Server
                 foreach (var producerToClose in producersToClose)
                 {
                     producerToClose.Close();
-                    Producers.Remove(producerToClose.ProducerId);
+                    _producers.Remove(producerToClose.ProducerId);
                 }
             }
         }
 
         public void RemoveConsumer(string consumerId)
         {
-            CheckClosed();
+            // 在 Closed 的情况下也允许删除
             using (_locker.Lock())
             {
-                CheckClosed();
+                _consumers.Remove(consumerId);
+            }
+        }
 
-                Consumers.Remove(consumerId);
+        public Producer? GetProducerBySource(string source)
+        {
+            // 在 Closed 的情况下也允许获取
+            using (_locker.Lock())
+            {
+                return _producers.Values.Where(m => m.Source == source).FirstOrDefault();
+            }
+        }
+
+        public Consumer? GetConsumerByProducerId(string producerId)
+        {
+            // 在 Closed 的情况下也允许获取
+            using (_locker.Lock())
+            {
+                return _consumers.Values.Where(m => m.Internal.ProducerId == producerId).FirstOrDefault();
             }
         }
 
@@ -630,22 +645,22 @@ namespace TubumuMeeting.Meeting.Server
 
         private Transport GetProducingTransport()
         {
-            return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value).FirstOrDefault();
+            return _transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value).FirstOrDefault();
         }
 
         private Transport GetConsumingTransport()
         {
-            return Transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
+            return _transports.Values.Where(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value).FirstOrDefault();
         }
 
         private bool HasProducingTransport()
         {
-            return Transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value);
+            return _transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Producing", out var value) && (bool)value);
         }
 
         private bool HasConsumingTransport()
         {
-            return Transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value);
+            return _transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value);
         }
 
         private void CheckClosed()

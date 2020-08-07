@@ -80,15 +80,13 @@ namespace TubumuMeeting.Meeting.Server
                 peer = new Peer(_loggerFactory,
                     _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings,
                     _router,
+                    joinRequest.RtpCapabilities,
+                    joinRequest.SctpCapabilities,
                     peerId,
                     joinRequest.DisplayName,
                     joinRequest.Sources,
                     joinRequest.AppData
-                    )
-                {
-                    RtpCapabilities = joinRequest.RtpCapabilities,
-                    SctpCapabilities = joinRequest.SctpCapabilities,
-                };
+                    );
 
                 Peers[peerId] = peer;
 
@@ -276,11 +274,11 @@ namespace TubumuMeeting.Meeting.Server
                     var produceSources = new List<string>();
                     foreach (var source in consumeRequest.Sources)
                     {
-                        var producer = targetPeer.Producers.Values.Where(m => m.Source == source).FirstOrDefault();
+                        var producer = targetPeer.GetProducerBySource(source); // TODO: (alby)考虑边界情况
                         // 如果 Source 有对应的 Producer，直接消费。
                         if (producer != null)
                         {
-                            if (peer.Consumers.Values.Any(m => m.Internal.ProducerId == producer.ProducerId))
+                            if (peer.GetConsumerByProducerId(producer.ProducerId) != null) // TODO: (alby)考虑边界情况
                             {
                                 // 如果本 Peer 已经消费了对应 Producer，忽略以避免重复消费。
                                 continue;
