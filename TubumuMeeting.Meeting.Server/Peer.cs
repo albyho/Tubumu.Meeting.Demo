@@ -269,7 +269,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckClosed();
 
-                if (RtpCapabilities == null || _router.CanConsume(producer.ProducerId, RtpCapabilities))
+                if (RtpCapabilities == null || !_router.CanConsume(producer.ProducerId, RtpCapabilities))
                 {
                     _logger.LogWarning("ConsumeAsync() | Can not consume.");
                     throw new Exception($"Consume 失败: Peer:{PeerId} Can not consume.");
@@ -392,20 +392,20 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> ResumeConsumerAsync(string consumerId)
+        public async Task<Consumer> ResumeConsumerAsync(string consumerId)
         {
             CheckClosed();
             using (await _locker.LockAsync())
             {
                 CheckClosed();
 
-                if (Consumers.TryGetValue(consumerId, out var consumer))
+                if (!Consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"ResumeConsumerAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
 
                 await consumer.ResumeAsync();
-                return true;
+                return consumer;
             }
         }
 

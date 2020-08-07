@@ -76,21 +76,24 @@ namespace TubumuMeeting.Meeting.Server
         private void Leave()
         {
             var leaveResult = _scheduler.Leave(UserId);
-            foreach (var otherPeer in leaveResult.OtherPeerRooms)
+            if (leaveResult != null)
             {
-                // Message: peerLeaveRoom
-                var client = _hubContext.Clients.User(otherPeer.Peer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
+                foreach (var otherPeer in leaveResult.OtherPeerRooms)
                 {
-                    Code = 200,
-                    InternalCode = "peerLeaveRoom",
-                    Message = "peerLeaveRoom",
-                    Data = new
+                    // Message: peerLeaveRoom
+                    var client = _hubContext.Clients.User(otherPeer.Peer.PeerId);
+                    client.ReceiveMessage(new MeetingMessage
                     {
-                        RoomId = otherPeer.Room.RoomId,
-                        PeerId = leaveResult.SelfPeer.PeerId
-                    }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                        Code = 200,
+                        InternalCode = "peerLeaveRoom",
+                        Message = "peerLeaveRoom",
+                        Data = new
+                        {
+                            RoomId = otherPeer.Room.RoomId,
+                            PeerId = leaveResult.SelfPeer.PeerId
+                        }
+                    }).ContinueWithOnFaultedHandleLog(_logger);
+                }
             }
         }
 
@@ -169,7 +172,7 @@ namespace TubumuMeeting.Meeting.Server
                 Message = "CreateWebRtcTransport 成功",
                 Data = new CreateWebRtcTransportResult
                 {
-                    Id = transport.TransportId,
+                    TransportId = transport.TransportId,
                     IceParameters = transport.IceParameters,
                     IceCandidates = transport.IceCandidates,
                     DtlsParameters = transport.DtlsParameters,
@@ -194,7 +197,7 @@ namespace TubumuMeeting.Meeting.Server
 
             foreach (var peer in joinRoomResult.PeersInRoom)
             {
-                if(peer.PeerId != joinRoomResult.SelfPeer.PeerId)
+                if (peer.PeerId != joinRoomResult.SelfPeer.PeerId)
                 {
                     // Message: peerJoinRoom
                     var client = _hubContext.Clients.User(peer.PeerId);
@@ -260,11 +263,11 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var existsProducer in consumeResult.ExistsProducers)
             {
                 // 本 Peer 消费其他 Peer
-                CreateConsumer(existsProducer.Peer, consumeResult.SelfPeer, existsProducer.Producer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(consumeResult.SelfPeer, existsProducer.Peer, existsProducer.Producer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Message: produceSources
-            var client = _hubContext.Clients.User(consumeResult.SelfPeer.PeerId);
+            var client = _hubContext.Clients.User(consumeResult.TargetPeerId);
             client.ReceiveMessage(new MeetingMessage
             {
                 Code = 200,
@@ -288,7 +291,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var item in produceResult.PeerRoomIds)
             {
                 // 其他 Peer 消费本 Peer
-                CreateConsumer(item.Peer, produceResult.Peer, produceResult.Producer, item.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(item.Peer, produceResult.SelfPeer, produceResult.Producer, item.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Set Producer events.
@@ -372,12 +375,12 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ResumeConsumer(string consumerId)
         {
-            if (!await _scheduler.ResumeConsumerAsync(UserId, consumerId))
+            if (await _scheduler.ResumeConsumerAsync(UserId, consumerId) == null)
             {
-                return new MeetingMessage { Code = 400, Message = "PauseConsumer 失败" };
+                return new MeetingMessage { Code = 400, Message = "ResumeConsumer 失败" };
             }
 
-            return new MeetingMessage { Code = 200, Message = "PauseConsumer 成功" };
+            return new MeetingMessage { Code = 200, Message = "ResumeConsumer 成功" };
         }
 
         public async Task<MeetingMessage> SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
@@ -543,10 +546,10 @@ namespace TubumuMeeting.Meeting.Server
                     Message = "newConsumer",
                     Data = new
                     {
-                        PeerId = producerPeer.PeerId,
+                        ProducerPeerId = producerPeer.PeerId,
                         Kind = consumer.Kind,
                         ProducerId = producer.ProducerId,
-                        Id = consumer.ConsumerId,
+                        ConsumerId = consumer.ConsumerId,
                         RtpParameters = consumer.RtpParameters,
                         Type = consumer.Type,
                         AppData = producer.AppData,
@@ -562,13 +565,27 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> NewConsumerReturn(NewConsumerReturnRequest newConsumerReturnRequest)
         {
-            _logger.LogDebug($"NewConsumerReturn() | [peerId:\"{newConsumerReturnRequest.PeerId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
+            _logger.LogDebug($"NewConsumerReturn() | [peerId:\"{UserId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
 
             // Now that we got the positive response from the remote endpoint, resume
             // the Consumer so the remote endpoint will receive the a first RTP packet
             // of this new stream once its PeerConnection is already ready to process 
             // and associate it.
-            await _scheduler.ResumeConsumerAsync(UserId, newConsumerReturnRequest.ConsumerId);
+            var consumer = await _scheduler.ResumeConsumerAsync(UserId, newConsumerReturnRequest.ConsumerId);
+
+            // Message: consumerScore
+            var client = _hubContext.Clients.User(UserId);
+            client.ReceiveMessage(new MeetingMessage
+            {
+                Code = 200,
+                InternalCode = "consumerScore",
+                Message = "consumerScore",
+                Data = new
+                {
+                    ConsumerId = consumer.ConsumerId,
+                    Score = consumer.Score,
+                }
+            }).ContinueWithOnFaultedHandleLog(_logger);
 
             return new MeetingMessage { Code = 200, Message = "NewConsumerReturn 成功" };
         }

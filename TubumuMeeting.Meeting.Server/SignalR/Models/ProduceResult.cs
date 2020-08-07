@@ -4,7 +4,7 @@ namespace TubumuMeeting.Meeting.Server
 {
     public class ProduceResult
     {
-        public Peer Peer { get; set; }
+        public Peer SelfPeer { get; set; }
 
         public Producer Producer { get; set; }
 

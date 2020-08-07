@@ -8,6 +8,8 @@
 
         public string RoomId { get; set; }
 
+        public string TargetPeerId { get; set; }
+
         public string[] ProduceSources { get; set; }
     }
 }

@@ -146,7 +146,6 @@ export default {
         sctpCapabilities: null, // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
         displayName: 'Guest',
         sources: ['mic', 'webcam'],
-        groupId: '00000000-0000-0000-0000-000000000000',
         appData: {}
       });
       if (result.code !== 200) {
@@ -168,7 +167,7 @@ export default {
 
       // CreateWebRtcTransport(生产), createSendTransport
       this.sendTransport = this.mediasoupDevice.createSendTransport({
-        id: result.data.id,
+        id: result.data.transportId,
         iceParameters: result.data.iceParameters,
         iceCandidates: result.data.iceCandidates,
         dtlsParameters: result.data.dtlsParameters,
@@ -193,6 +192,7 @@ export default {
 
       this.sendTransport.on(
         'produce',
+        // appData 需要包含 roomId 和 source
         // eslint-disable-next-line no-unused-vars
         async ({ kind, rtpParameters, appData }, callback, errback) => {
           logger.debug('sendTransport.on produce');
@@ -253,8 +253,7 @@ export default {
 
       // createRecvTransport成功, JoinRoom
       result = await this.connection.invoke('JoinRoom', {
-        roomId: '1',
-        interestedSources: ['mic', 'webcam']
+        roomId: '1'
       });
       if (result.code !== 200) {
         logger.error('processMessage() | JoinRoom failure.');
@@ -262,21 +261,13 @@ export default {
       }
 
       const joinRoomData = result.data;
-      if(joinRoomData && joinRoomData.needsProduceSources) {
-        for(let i = 0; i< joinRoomData.needsProduceSources.length; i++) {
-          if(joinRoomData.needsProduceSources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
-            this.enableMic();
-          } else if(joinRoomData.needsProduceSources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
-            this.enableWebcam();
-          }
-        }
-      }
+      logger.debug('Peers:%o', joinRoomData.peers);
     },
     async processNewConsumer(data) {
       const {
-        peerId,
+        producerPeerId,
         producerId,
-        id,
+        consumerId,
         kind,
         rtpParameters,
         //type, // mediasoup-client 的 Transport.ts 不使用该参数
@@ -285,11 +276,11 @@ export default {
       } = data.data;
 
       const consumer = await this.recvTransport.consume({
-        id,
+        consumerId,
         producerId,
         kind,
         rtpParameters,
-        appData: { ...appData, peerId } // Trick.
+        appData: { ...appData, peerId:producerPeerId } // Trick.
       });
 
       // Store in the map.
@@ -336,8 +327,7 @@ export default {
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
       const result = await this.connection.invoke('NewConsumerReturn', {
-        peerId: data.data.consumerPeerId,
-        consumerId: id
+        consumerId
       });
 
       if (result.code !== 200) {
@@ -357,16 +347,11 @@ export default {
 
         case 'peerJoinRoom': {
           // eslint-disable-next-line no-unused-vars
-          const peerJoinRoomData = data.data;
-          if(peerJoinRoomData && peerJoinRoomData.needsProduceSources) {
-            for(let i = 0; i< peerJoinRoomData.needsProduceSources.length; i++) {
-              if(peerJoinRoomData.needsProduceSources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
-                this.enableMic();
-              } else if(peerJoinRoomData.needsProduceSources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
-                this.enableWebcam();
-              }
-            }
-          }
+          const peer = data.data;
+          const {roomId, peerId, sources } = peer;
+          
+          await this.consume(roomId, peerId, sources);
+
           break;
         }
 
@@ -378,6 +363,20 @@ export default {
 					break;
         }
         
+        case 'produceSources':
+        {
+          const { /*roomId, */produceSources } = data.data;
+          for(let i =0; i < produceSources.length; i++){
+            if(produceSources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
+              this.enableMic();
+            } else if(produceSources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
+              this.enableWebcam();
+            }
+          }
+
+          break;
+        }
+
         case 'downlinkBwe':
 				{
 					logger.debug('\'downlinkBwe\' event:%o', data.data);
@@ -437,6 +436,17 @@ export default {
         default: {
           logger.error('unknown data.internalCode "%s"', data.internalCode);
         }
+      }
+    },
+    async consume(roomId, peerId, sources) {
+      const result = await this.connection.invoke('Consume', {
+        roomId,
+        peerId,
+        sources
+      });
+      if (result.code !== 200) {
+        logger.error('consume() | consume failure.');
+        return;
       }
     },
     async enableMic() {

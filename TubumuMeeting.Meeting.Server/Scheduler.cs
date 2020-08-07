@@ -102,8 +102,8 @@ namespace TubumuMeeting.Meeting.Server
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
-                    _logger.LogError($"PeerLeave() | Peer:{peerId} is not exists.");
-                    throw new Exception($"Peer:{peerId} is not exists.");
+                    _logger.LogWarning($"PeerLeave() | Peer:{peerId} is not exists.");
+                    return null;
                 }
 
                 var otherPeers = new List<PeerRoom>();
@@ -252,7 +252,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
 
-                if (!Peers.TryGetValue(consumeRequest.PeerId, out var otherPeer))
+                if (!Peers.TryGetValue(consumeRequest.PeerId, out var targetPeer))
                 {
                     _logger.LogError($"Consume() | Peer:{consumeRequest.PeerId} is not exists.");
                     throw new Exception($"Peer:{consumeRequest.PeerId} is not exists.");
@@ -276,9 +276,9 @@ namespace TubumuMeeting.Meeting.Server
                     var produceSources = new List<string>();
                     foreach (var source in consumeRequest.Sources)
                     {
-                        var producer = otherPeer.Producers.Values.Where(m => m.Source == source).FirstOrDefault();
+                        var producer = targetPeer.Producers.Values.Where(m => m.Source == source).FirstOrDefault();
                         // 如果 Source 有对应的 Producer，直接消费。
-                        if (source != null)
+                        if (producer != null)
                         {
                             var consumer = peer.Consumers.Values.Where(m => m.Internal.ProducerId == producer.ProducerId).FirstOrDefault();
                             if (consumer != null)
@@ -288,14 +288,14 @@ namespace TubumuMeeting.Meeting.Server
                             }
                             existsProducers.Add(new PeerProducer
                             {
-                                Peer = otherPeer,
+                                Peer = targetPeer,
                                 Producer = producer,
                             });
                             continue;
                         }
                         // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
                         produceSources.Add(source!);
-                        otherPeer.ConsumePaddings.Add(new ConsumePadding
+                        targetPeer.ConsumePaddings.Add(new ConsumePadding
                         {
                             RoomId = room.RoomId,
                             PeerId = peer.PeerId,
@@ -307,6 +307,8 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         SelfPeer = peer,
                         ExistsProducers = existsProducers.ToArray(),
+                        RoomId = consumeRequest.RoomId,
+                        TargetPeerId = consumeRequest.PeerId,
                         ProduceSources = produceSources.ToArray(),
                     };
                 }
@@ -356,7 +358,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     var produceResult = new ProduceResult
                     {
-                        Peer = peer,
+                        SelfPeer = peer,
                         Producer = producer,
                         PeerRoomIds = peerRoomIds.ToArray(),
                     };
@@ -460,7 +462,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<bool> ResumeConsumerAsync(string peerId, string consumerId)
+        public async Task<Consumer> ResumeConsumerAsync(string peerId, string consumerId)
         {
             using (await _peerLocker.LockAsync())
             {
