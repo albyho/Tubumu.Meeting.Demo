@@ -321,7 +321,7 @@ export default {
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
 
-      logger.debug('recvTransport.consume() stream');
+      logger.debug('recvTransport.consume() stream: %o', stream);
       if (kind === 'video') {
         this.remoteVideoStream = stream;
       } else {
