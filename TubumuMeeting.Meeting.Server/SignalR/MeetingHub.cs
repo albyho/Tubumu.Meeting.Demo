@@ -192,26 +192,29 @@ namespace TubumuMeeting.Meeting.Server
         {
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, joinRoomRequest);
 
-            foreach (var otherPeer in joinRoomResult.OtherPeers)
+            foreach (var peer in joinRoomResult.PeersInRoom)
             {
-                // Message: peerJoinRoom
-                var client = _hubContext.Clients.User(otherPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
+                if(peer.PeerId != joinRoomResult.Peer.PeerId)
                 {
-                    Code = 200,
-                    InternalCode = "peerJoinRoom",
-                    Message = "peerJoinRoom",
-                    Data = new
+                    // Message: peerJoinRoom
+                    var client = _hubContext.Clients.User(peer.PeerId);
+                    client.ReceiveMessage(new MeetingMessage
                     {
-                        RoomId = joinRoomRequest.RoomId,
-                        PeerId = joinRoomResult.Peer.PeerId,
-                        DisplayName = joinRoomResult.Peer.DisplayName,
-                        Sources = joinRoomResult.Peer.Sources,
-                    }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                        Code = 200,
+                        InternalCode = "peerJoinRoom",
+                        Message = "peerJoinRoom",
+                        Data = new
+                        {
+                            RoomId = joinRoomRequest.RoomId,
+                            PeerId = joinRoomResult.Peer.PeerId,
+                            DisplayName = joinRoomResult.Peer.DisplayName,
+                            Sources = joinRoomResult.Peer.Sources,
+                        }
+                    }).ContinueWithOnFaultedHandleLog(_logger);
+                }
             }
 
-            var otherPeers = joinRoomResult.OtherPeers.Select(m => new
+            var peers = joinRoomResult.PeersInRoom.Select(m => new
             {
                 RoomId = joinRoomRequest.RoomId,
                 PeerId = m.PeerId,
@@ -221,7 +224,7 @@ namespace TubumuMeeting.Meeting.Server
             var data = new
             {
                 RoomId = joinRoomRequest.RoomId,
-                OtherPeers = otherPeers,
+                Peers = peers,
             };
             return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = data };
         }

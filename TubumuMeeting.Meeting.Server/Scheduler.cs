@@ -192,11 +192,11 @@ namespace TubumuMeeting.Meeting.Server
                         room.Peers[peerId] = peer;
                         peer.Rooms[joinRoomRequest.RoomId] = room;
 
-                        var otherPeers = room.Peers.Values.Where(m => m.PeerId != peerId).ToArray();
+                        var peersInRoom = room.Peers.Values.ToArray();
                         return new JoinRoomResult
                         {
                             Peer = peer,
-                            OtherPeers = otherPeers,
+                            PeersInRoom = peersInRoom,
                         };
                     }
                 }
