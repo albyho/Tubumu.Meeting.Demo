@@ -1,6 +1,6 @@
 ﻿namespace TubumuMeeting.Meeting.Server
 {
-    public class ConsumeResult
+    public class PullResult
     {
         public Peer SelfPeer { get; set; }
 

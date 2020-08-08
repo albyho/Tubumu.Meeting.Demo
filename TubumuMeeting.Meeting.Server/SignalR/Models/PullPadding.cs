@@ -1,6 +1,6 @@
 ﻿namespace TubumuMeeting.Meeting.Server
 {
-    public class ConsumePadding
+    public class PullPadding
     {
         public string RoomId { get; set; }
 

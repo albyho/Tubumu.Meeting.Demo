@@ -365,14 +365,14 @@ if(this.peerId !== '0') {
         return;
       }
     },
-    async consume(roomId, peerId, sources) {
-      const result = await this.connection.invoke('Consume', {
+    async pull(roomId, peerId, sources) {
+      const result = await this.connection.invoke('Pull', {
         roomId,
         peerId,
         sources
       });
       if (result.code !== 200) {
-        logger.error('consume() | consume failure.');
+        logger.error('pull() | pull failure.');
         return;
       }
     },
@@ -396,7 +396,7 @@ if(this.peerId !== '0') {
           const peer = data.data;
           const {roomId, peerId, sources } = peer;
           
-          await this.consume(roomId, peerId, sources);
+          await this.pull(roomId, peerId, sources);
 
           break;
         }

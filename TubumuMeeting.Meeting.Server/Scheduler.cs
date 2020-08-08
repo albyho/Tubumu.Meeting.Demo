@@ -242,7 +242,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public ConsumeResult Consume(string peerId, ConsumeRequest consumeRequest)
+        public PullResult Pull(string peerId, ConsumeRequest consumeRequest)
         {
             using (_peersLocker.Lock())
             {
@@ -294,7 +294,7 @@ namespace TubumuMeeting.Meeting.Server
                         }
                         // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
                         produceSources.Add(source!);
-                        targetPeer.ConsumePaddings.Add(new ConsumePadding
+                        targetPeer.PullPaddings.Add(new PullPadding
                         {
                             RoomId = room.RoomId,
                             PeerId = peer.PeerId,
@@ -302,7 +302,7 @@ namespace TubumuMeeting.Meeting.Server
                         });
                     }
 
-                    return new ConsumeResult
+                    return new PullResult
                     {
                         SelfPeer = peer,
                         ExistsProducers = existsProducers.ToArray(),
@@ -333,26 +333,26 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"Peer:{peerId} produce faild.");
                     }
 
-                    var comsumePaddingsToRemove = new List<ConsumePadding>();
+                    var pullPaddingsToRemove = new List<PullPadding>();
                     var otherPeerRoomIds = new List<PeerWithRoomId>();
-                    foreach (var comsumePadding in peer.ConsumePaddings.Where(m => m.Source == producer.Source))
+                    foreach (var pullPadding in peer.PullPaddings.Where(m => m.Source == producer.Source))
                     {
-                        comsumePaddingsToRemove.Add(comsumePadding);
+                        pullPaddingsToRemove.Add(pullPadding);
 
                         // 其他 Peer 消费本 Peer
-                        if (Peers.TryGetValue(comsumePadding.PeerId, out var otherPeer))
+                        if (Peers.TryGetValue(pullPadding.PeerId, out var otherPeer))
                         {
                             otherPeerRoomIds.Add(new PeerWithRoomId
                             {
                                 Peer = otherPeer,
-                                RoomId = comsumePadding.RoomId,
+                                RoomId = pullPadding.RoomId,
                             });
                         }
                     }
 
-                    foreach (var consumePaddingToRemove in comsumePaddingsToRemove)
+                    foreach (var consumePaddingToRemove in pullPaddingsToRemove)
                     {
-                        peer.ConsumePaddings.Remove(consumePaddingToRemove);
+                        peer.PullPaddings.Remove(consumePaddingToRemove);
                     }
 
                     var produceResult = new ProduceResult

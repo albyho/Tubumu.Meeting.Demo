@@ -192,9 +192,9 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
         }
 
-        public MeetingMessage Consume(ConsumeRequest consumeRequest)
+        public MeetingMessage Pull(ConsumeRequest consumeRequest)
         {
-            var consumeResult = _scheduler.Consume(UserId, consumeRequest);
+            var consumeResult = _scheduler.Pull(UserId, consumeRequest);
 
             foreach (var existsProducer in consumeResult.ExistsProducers)
             {
