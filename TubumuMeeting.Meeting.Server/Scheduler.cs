@@ -334,7 +334,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     var pullPaddingsToRemove = new List<PullPadding>();
-                    var otherPeerRoomIds = new List<PeerWithRoomId>();
+                    var pullPaddingPeerRoomIds = new List<PeerWithRoomId>();
                     foreach (var pullPadding in peer.PullPaddings.Where(m => m.Source == producer.Source))
                     {
                         pullPaddingsToRemove.Add(pullPadding);
@@ -342,7 +342,7 @@ namespace TubumuMeeting.Meeting.Server
                         // 其他 Peer 消费本 Peer
                         if (Peers.TryGetValue(pullPadding.PeerId, out var otherPeer))
                         {
-                            otherPeerRoomIds.Add(new PeerWithRoomId
+                            pullPaddingPeerRoomIds.Add(new PeerWithRoomId
                             {
                                 Peer = otherPeer,
                                 RoomId = pullPadding.RoomId,
@@ -359,7 +359,7 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         SelfPeer = peer,
                         Producer = producer,
-                        OtherPeerRoomIds = otherPeerRoomIds.ToArray(),
+                        PullPaddingPeerRoomIds = pullPaddingPeerRoomIds.ToArray(),
                     };
 
                     return produceResult;

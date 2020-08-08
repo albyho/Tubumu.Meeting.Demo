@@ -218,10 +218,10 @@ namespace TubumuMeeting.Meeting.Server
             var produceResult = await _scheduler.ProduceAsync(peerId, produceRequest);
             var producer = produceResult.Producer;
 
-            foreach (var otherPeerWithRoomId in produceResult.OtherPeerRoomIds)
+            foreach (var pullPaddingPeerWithRoomId in produceResult.PullPaddingPeerRoomIds)
             {
                 // 其他 Peer 消费本 Peer
-                CreateConsumer(otherPeerWithRoomId.Peer, produceResult.SelfPeer, produceResult.Producer, otherPeerWithRoomId.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(pullPaddingPeerWithRoomId.Peer, produceResult.SelfPeer, produceResult.Producer, pullPaddingPeerWithRoomId.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Set Producer events.

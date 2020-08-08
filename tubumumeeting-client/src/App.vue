@@ -166,7 +166,7 @@ export default {
         return;
       }
 
-if(this.peerId !== '0') {
+if(this.peerId/*this.peerId !== '0'*/) {
       // Join成功，CreateWebRtcTransport(生产) 
       result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
@@ -281,14 +281,14 @@ if(this.peerId !== '0') {
       const joinRoomData = result.data;
       logger.debug('Peers:%o', joinRoomData.peers);
 
-      // if(this.peerId === '0') {
-      //   if(this.mediasoupDevice.canProduce('audio')) {
-      //     this.enableMic();
-      //   }
-      //   if(this.mediasoupDevice.canProduce('video')) {
-      //     this.enableWebcam();
-      //   }
-      // }
+      if(this.peerId === '0') {
+        if(this.mediasoupDevice.canProduce('audio')) {
+          this.enableMic();
+        }
+        if(this.mediasoupDevice.canProduce('video')) {
+          this.enableWebcam();
+        }
+      }
     },
     async processNewConsumer(data) {
       const {
@@ -359,7 +359,6 @@ if(this.peerId !== '0') {
       const result = await this.connection.invoke('NewConsumerReturn', {
         consumerId
       });
-
       if (result.code !== 200) {
         logger.error('processNewConsumer() | NewConsumerReturn.');
         return;
