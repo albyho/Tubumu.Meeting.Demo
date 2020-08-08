@@ -209,7 +209,7 @@ namespace TubumuMeeting.Meeting.Server
                 ProduceSources = consumeResult.ProduceSources
             });
 
-            return new MeetingMessage { Code = 200, Message = "Consume 成功" };
+            return new MeetingMessage { Code = 200, Message = "Pull 成功" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
