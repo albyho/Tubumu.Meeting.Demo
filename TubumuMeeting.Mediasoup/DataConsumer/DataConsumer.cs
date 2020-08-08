@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
@@ -92,16 +94,6 @@ namespace TubumuMeeting.Mediasoup
         /// Whether the DataConsumer is closed.
         /// </summary>
         public bool Closed { get; private set; }
-
-        /// <summary>
-        /// Buffered amount threshold.
-        /// </summary>
-        public int BufferedAmountLowThreshold { get; private set; }
-
-        /// <summary>
-        /// Buffered amount.
-        /// </summary>
-        private int _bufferedAmount;
 
         /// <summary>
         /// Observer instance.
@@ -224,6 +216,92 @@ namespace TubumuMeeting.Mediasoup
             return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, Internal);
         }
 
+        /// <summary>
+        /// Set buffered amount low threshold.
+        /// </summary>
+        /// <param name=""></param>
+        /// <param name=""></param>
+        /// <returns></returns>
+        public async Task SetBufferedAmountLowThreshold(uint threshold)
+	    {
+            _logger.LogDebug($"SetBufferedAmountLowThreshold() [threshold:{threshold}]");
+
+            var reqData = new { Threshold = threshold };
+            await _channel.RequestAsync(MethodId.DATA_CONSUMER_SET_BUFFERED_AMOUNT_LOW_THRESHOLD, Internal, reqData);
+        }
+
+        /// <summary>
+        /// Send data (just valid for DataProducers created on a DirectTransport).
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="ppid"></param>
+        /// <returns></returns>
+        public Task SendAsync(string message, int? ppid)
+        {
+            _logger.LogDebug("SendAsync()");
+
+            /*
+             * +-------------------------------+----------+
+             * | Value                         | SCTP     |
+             * |                               | PPID     |
+             * +-------------------------------+----------+
+             * | WebRTC String                 | 51       |
+             * | WebRTC Binary Partial         | 52       |
+             * | (Deprecated)                  |          |
+             * | WebRTC Binary                 | 53       |
+             * | WebRTC String Partial         | 54       |
+             * | (Deprecated)                  |          |
+             * | WebRTC String Empty           | 56       |
+             * | WebRTC Binary Empty           | 57       |
+             * +-------------------------------+----------+
+             */
+
+            if (ppid == null)
+            {
+                ppid = !message.IsNullOrEmpty() ? 51 : 56;
+            }
+
+            // Ensure we honor PPIDs.
+            if (ppid == 56)
+            {
+                message = " ";
+            }
+
+            var requestData = new NotifyData { PPID = ppid.Value };
+
+            _payloadChannel.Notify("dataConsumer.send", Internal, requestData, Encoding.UTF8.GetBytes(message));
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Send data (just valid for DataProducers created on a DirectTransport).
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="ppid"></param>
+        /// <returns></returns>
+        public Task SendAsync(byte[] message, int? ppid)
+        {
+            _logger.LogDebug("SendAsync()");
+
+            if (ppid == null)
+            {
+                ppid = !message.IsNullOrEmpty() ? 53 : 57;
+            }
+
+            // Ensure we honor PPIDs.
+            if (ppid == 57)
+            {
+                message = new byte[1];
+            }
+
+            var requestData = new NotifyData { PPID = ppid.Value };
+
+            _payloadChannel.Notify("dataConsumer.send", Internal, requestData, message);
+
+            return Task.CompletedTask;
+        }
+
         public Task<string?> GetBufferedAmountAsync()
         {
             _logger.LogDebug("GetBufferedAmountAsync()");
@@ -278,14 +356,8 @@ namespace TubumuMeeting.Mediasoup
                 case "bufferedamount":
                     {
                         var bufferedAmount = Int32.Parse(data);
-                        var previousBufferedAmount = _bufferedAmount;
 
-                        _bufferedAmount = bufferedAmount;
-
-                        if (previousBufferedAmount > BufferedAmountLowThreshold && _bufferedAmount <= BufferedAmountLowThreshold)
-                        {
-                            Emit("bufferedamountlow", bufferedAmount);
-                        }
+                        Emit("bufferedamountlow", bufferedAmount);
 
                         break;
                     }
