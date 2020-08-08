@@ -26,9 +26,9 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly MediasoupServer _mediasoupServer;
 
-        private readonly AsyncLock _peerLocker = new AsyncLock();
+        private readonly AsyncLock _peersLocker = new AsyncLock();
 
-        private readonly AsyncLock _roomLocker = new AsyncLock();
+        private readonly AsyncLock _roomsLocker = new AsyncLock();
 
         private readonly AsyncLock _peerRoomLocker = new AsyncLock();  // 直接或间接访问 peer.Rooms 或 room.Peers 需上锁。
 
@@ -56,7 +56,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> Join(string peerId, JoinRequest joinRequest)
         {
-            using (_peerLocker.Lock())
+            using (_peersLocker.Lock())
             {
                 if (Peers.TryGetValue(peerId, out var peer))
                 {
@@ -94,20 +94,20 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public LeaveResult Leave(string peerId)
+        public LeaveResult? Leave(string peerId)
         {
-            using (_peerLocker.Lock())
+            using (_peersLocker.Lock())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
-                    _logger.LogWarning($"PeerLeave() | Peer:{peerId} is not exists.");
+                    // _logger.LogWarning($"PeerLeave() | Peer:{peerId} is not exists.");
                     return null;
                 }
 
-                var otherPeers = new List<PeerRoom>();
                 using (_peerRoomLocker.Lock())
                 {
                     // 从所有房间退出
+                    var otherPeers = new List<PeerRoom>();
                     foreach (var room in peer.Rooms.Values)
                     {
                         peer.CloseProducersNoConsumers(room.RoomId);
@@ -127,22 +127,22 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     peer.Rooms.Clear();
+                    peer.Close();
+
+                    Peers.Remove(peerId);
+
+                    return new LeaveResult
+                    {
+                        SelfPeer = peer,
+                        OtherPeerRooms = otherPeers.ToArray(),
+                    };
                 }
-
-                peer.Close();
-                Peers.Remove(peerId);
-
-                return new LeaveResult
-                {
-                    SelfPeer = peer,
-                    OtherPeerRooms = otherPeers.ToArray(),
-                };
             }
         }
 
         public Task<WebRtcTransport> CreateWebRtcTransportAsync(string peerId, CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            using (_peerLocker.Lock())
+            using (_peersLocker.Lock())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -156,7 +156,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public Task<bool> ConnectWebRtcTransportAsync(string peerId, ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            using (_peerLocker.Lock())
+            using (_peersLocker.Lock())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -170,15 +170,16 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<JoinRoomResult> JoinRoomAsync(string peerId, JoinRoomRequest joinRoomRequest)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     _logger.LogError($"JoinRoomAsync() | Peer:{peerId} is not exists.");
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
-                using (await _roomLocker.LockAsync())
+                using (await _roomsLocker.LockAsync())
                 {
+                    // 如果不存在 Room 则创建
                     if (!Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
                     {
                         room = await CreateRoom(joinRoomRequest.RoomId, "Default");
@@ -203,7 +204,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public LeaveRoomResult LeaveRoom(string peerId, string roomId)
         {
-            using (_peerLocker.Lock())
+            using (_peersLocker.Lock())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -228,6 +229,7 @@ namespace TubumuMeeting.Meeting.Server
                         otherPeer.CloseProducersNoConsumers(roomId, peer.PeerId);
                     }
 
+                    // Peer 和 Room 的关系
                     room.Peers.Remove(peerId);
                     peer.Rooms.Remove(roomId);
 
@@ -242,7 +244,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public ConsumeResult Consume(string peerId, ConsumeRequest consumeRequest)
         {
-            using (_peerLocker.Lock())
+            using (_peersLocker.Lock())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -314,7 +316,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<ProduceResult> ProduceAsync(string peerId, ProduceRequest produceRequest)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -367,14 +369,14 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<Consumer> ConsumeAsync(string peerId, Producer producer, string roomId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     _logger.LogError($"ConsumeAsync() | Peer:{peerId} is not exists.");
                     throw new Exception($"Peer:{peerId} is not exists.");
                 }
-                using (await _roomLocker.LockAsync())
+                using (await _roomsLocker.LockAsync())
                 {
                     if (!Rooms.ContainsKey(roomId))
                     {
@@ -383,7 +385,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     var consumer = await peer.ConsumeAsync(producer, roomId);
-                    if (producer == null)
+                    if (consumer == null)
                     {
                         _logger.LogError($"ConsumeAsync() | Peer:{peerId} is not exists.");
                         throw new Exception($"Peer:{peerId} produce faild.");
@@ -396,7 +398,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> CloseProducerAsync(string peerId, string producerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -409,7 +411,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PauseProducerAsync(string peerId, string producerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -422,7 +424,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> ResumeProducerAsync(string peerId, string producerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -435,7 +437,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> CloseConsumerAsync(string peerId, string consumerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -448,7 +450,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PauseConsumerAsync(string peerId, string consumerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -461,7 +463,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<Consumer> ResumeConsumerAsync(string peerId, string consumerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -474,7 +476,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> SetConsumerPreferedLayersAsync(string peerId, SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -487,7 +489,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> SetConsumerPriorityAsync(string peerId, SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -500,7 +502,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> RequestConsumerKeyFrameAsync(string peerId, string consumerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -513,7 +515,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<TransportStat> GetTransportStatsAsync(string peerId, string transportId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -526,7 +528,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<ProducerStat> GetProducerStatsAsync(string peerId, string producerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -539,7 +541,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<ConsumerStat> GetConsumerStatsAsync(string peerId, string consumerId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -552,7 +554,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<IceParameters?> RestartIceAsync(string peerId, string transportId)
         {
-            using (await _peerLocker.LockAsync())
+            using (await _peersLocker.LockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -562,20 +564,6 @@ namespace TubumuMeeting.Meeting.Server
                 return await peer.RestartIceAsync(transportId);
             }
         }
-
-        public void RemoveConsumer(string peerId, string consumerId)
-        {
-            using (_peerLocker.Lock())
-            {
-                if (!Peers.TryGetValue(peerId, out var peer))
-                {
-                    _logger.LogError($"RequestConsumerKeyFrameAsync() | Peer:{peerId} is not exists.");
-                    throw new Exception($"Peer:{peerId} is not exists.");
-                }
-                peer.RemoveConsumer(consumerId);
-            }
-        }
-
 
         #region Private Methods
 

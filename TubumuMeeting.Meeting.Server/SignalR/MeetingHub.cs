@@ -18,6 +18,8 @@ namespace TubumuMeeting.Meeting.Server
         private readonly IHubContext<MeetingHub, IPeer> _hubContext;
         private readonly Scheduler _scheduler;
 
+        private string UserId => Context.User.Identity.Name;
+
         public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, Scheduler scheduler)
         {
             _logger = logger;
@@ -53,8 +55,6 @@ namespace TubumuMeeting.Meeting.Server
                 }
             }
         }
-
-        private string UserId => Context.User.Identity.Name;
 
         #endregion
     }
@@ -420,6 +420,16 @@ namespace TubumuMeeting.Meeting.Server
 
                 // Message: consumerLayersChanged
                 SendMessage(consumerPeer.PeerId, "consumerLayersChanged", new { ConsumerId = consumer.ConsumerId });
+            });
+
+            // NOTE: For testing.
+            // await consumer.enableTraceEvent([ 'rtp', 'keyframe', 'nack', 'pli', 'fir' ]);
+            // await consumer.enableTraceEvent([ 'pli', 'fir' ]);
+            // await consumer.enableTraceEvent([ 'keyframe' ]);
+
+            consumer.On("trace", trace =>
+            {
+                _logger.LogDebug($"consumer \"trace\" event [producerId:{consumer.ConsumerId}, trace:{trace}]");
             });
 
             // Send a request to the remote Peer with Consumer parameters.

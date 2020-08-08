@@ -99,7 +99,7 @@ export default {
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.nV4fr0tYGDR7zsykNoFYERdVSUPSqmhGdOkPqBjK1qw'
         ];
 
-        const host = process.env.NODE_ENV === 'production' ? '' : 'https://192.168.0.124:5001';
+        const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
@@ -140,6 +140,19 @@ export default {
         routerRtpCapabilities
       });
 
+			// NOTE: Stuff to play remote audios due to browsers' new autoplay policy.
+			//
+			// Just get access to the mic and DO NOT close the mic track for a while.
+			// Super hack!
+			// {
+			// 	const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			// 	const audioTrack = stream.getAudioTracks()[0];
+
+			// 	audioTrack.enabled = false;
+
+			// 	setTimeout(() => audioTrack.stop(), 120000);
+      // }
+      
       // GetRouterRtpCapabilities 成功, Join
       result = await this.connection.invoke('Join', {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
@@ -153,6 +166,7 @@ export default {
         return;
       }
 
+if(this.peerId !== '0') {
       // Join成功，CreateWebRtcTransport(生产) 
       result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
@@ -218,7 +232,7 @@ export default {
       this.sendTransport.on('connectionstatechange', state => {
         logger.debug(`sendTransport.on() connectionstatechange: ${state}`);
       });
-
+}
       // createSendTransport 成功, CreateWebRtcTransport(消费)
       result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
@@ -267,14 +281,14 @@ export default {
       const joinRoomData = result.data;
       logger.debug('Peers:%o', joinRoomData.peers);
 
-      if(this.peerId === '0') {
-        if(this.mediasoupDevice.canProduce('audio')) {
-          this.enableMic();
-        }
-        if(this.mediasoupDevice.canProduce('video')) {
-          this.enableWebcam();
-        }
-      }
+      // if(this.peerId === '0') {
+      //   if(this.mediasoupDevice.canProduce('audio')) {
+      //     this.enableMic();
+      //   }
+      //   if(this.mediasoupDevice.canProduce('video')) {
+      //     this.enableWebcam();
+      //   }
+      // }
     },
     async processNewConsumer(data) {
       const {
@@ -295,7 +309,7 @@ export default {
         rtpParameters,
         appData: { ...producerAppData, producerPeerId } // Trick.
       });
-      logger.debug('recvTransport.consume() Consumer: %o', consumer);
+      logger.debug('processNewConsumer() Consumer: %o', consumer);
 
       // Store in the map.
       this.consumers.set(consumer.id, consumer);
@@ -332,7 +346,7 @@ export default {
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
 
-      logger.debug('recvTransport.consume() stream: %o', stream);
+      logger.debug('processNewConsumer() stream: %o', stream);
       if (kind === 'video') {
         this.remoteVideoStream = stream;
       } else {
@@ -341,13 +355,24 @@ export default {
 
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
-      logger.debug('recvTransport.consume() NewConsumerReturn');
+      logger.debug('processNewConsumer() NewConsumerReturn');
       const result = await this.connection.invoke('NewConsumerReturn', {
         consumerId
       });
 
       if (result.code !== 200) {
         logger.error('processNewConsumer() | NewConsumerReturn.');
+        return;
+      }
+    },
+    async consume(roomId, peerId, sources) {
+      const result = await this.connection.invoke('Consume', {
+        roomId,
+        peerId,
+        sources
+      });
+      if (result.code !== 200) {
+        logger.error('consume() | consume failure.');
         return;
       }
     },
@@ -457,17 +482,6 @@ export default {
         default: {
           logger.error('unknown data.internalCode "%s"', data.internalCode);
         }
-      }
-    },
-    async consume(roomId, peerId, sources) {
-      const result = await this.connection.invoke('Consume', {
-        roomId,
-        peerId,
-        sources
-      });
-      if (result.code !== 200) {
-        logger.error('consume() | consume failure.');
-        return;
       }
     },
     async enableMic() {

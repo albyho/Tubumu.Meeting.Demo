@@ -244,7 +244,8 @@ namespace TubumuMeeting.Meeting.Server
                 var producer = _producers.Values.FirstOrDefault(m => m.Source == source);
                 if (producer != null)
                 {
-                    throw new Exception($"ProduceAsync() | Source:\"{ source }\" is exists.");
+                    _logger.LogWarning($"Source:\"{ source }\" is exists, close it.");
+                    producer.Close();
                 }
 
                 // Add peerId into appData to later get the associated Peer during
@@ -295,7 +296,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     ProducerId = producer.ProducerId,
                     RtpCapabilities = _rtpCapabilities,
-                    Paused = producer.Kind == MediaKind.Video
+                    Paused = true // Or: producer.Kind == MediaKind.Video
                 });
 
                 // Store RoomId
@@ -617,10 +618,8 @@ namespace TubumuMeeting.Meeting.Server
         public void RemoveConsumer(string consumerId)
         {
             // 在 Closed 的情况下也允许删除
-            using (_locker.Lock())
-            {
-                _consumers.Remove(consumerId);
-            }
+            // 不加锁。因为 Peer.Close() -> Trasport.Close() -> Transport.Closed() -> consumer.TransportClosed() -> Event: transportclosed -> Peer.RemoveConsumer()
+            _consumers.Remove(consumerId);
         }
 
         public Producer? GetProducerBySource(string source)
