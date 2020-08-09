@@ -66,6 +66,7 @@ export default {
   components: {},
   data() {
     return {
+      peerId: null,
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
@@ -90,12 +91,13 @@ export default {
     run() {
       try {
         const { peerId } = querystring.parse(location.search.replace("?", ""));
+        this.peerId = peerId;
         const accessTokens = [
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMjkiLCJnIjoi5Yy76ZmiIiwibmJmIjoxNTg0MzQ5MDQ2LCJleHAiOjE1ODY5NDEwNDYsImlzcyI6Imlzc3VlciIsImF1ZCI6ImF1ZGllbmNlIn0._bGG1SOF9WqY8TIErRkxsh9_l_mFB_5JcGrKO1GyQ0E",
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTg3IiwiZyI6IuWMu-mZoiIsIm5iZiI6MTU4NzcxNzU2NSwiZXhwIjoxNTkwMzA5NTY1LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.qjvvJB8EHaerbeKnrmfnN3BJ5jh4R_pG99oS1I7ZAvw"
         ];
 
-        const host = "https://192.168.0.124:5001";
+        const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub?access_token=${accessTokens[peerId]}`
@@ -264,6 +266,7 @@ export default {
         return;
       }
 
+//if(this.peerId !== '0') {
       if (this.mediasoupDevice.canProduce("audio")) {
         this.enableMic();
       }
@@ -271,6 +274,7 @@ export default {
       if (this.mediasoupDevice.canProduce("video")) {
         this.enableWebcam();
       }
+//}
     },
     async processNewConsumer(data) {
       const {
