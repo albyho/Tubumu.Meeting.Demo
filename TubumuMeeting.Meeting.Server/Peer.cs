@@ -64,7 +64,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly Dictionary<string, DataConsumer> _dataConsumers = new Dictionary<string, DataConsumer>();
 
-        public List<PullPadding> PullPaddings { get; set; } = new List<PullPadding>();  // TODO: (alby)只在 Scheduler 的 _peerRoomLocker 之内使用，考虑改为私有。
+        public List<PullPaddingConsume> PullPaddingConsumes { get; set; } = new List<PullPaddingConsume>();  // TODO: (alby)只在 Scheduler 的 _peerRoomLocker 之内使用，考虑改为私有。
 
         public string[] Sources { get; private set; }
 
