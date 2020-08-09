@@ -223,7 +223,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name=""></param>
         /// <returns></returns>
         public async Task SetBufferedAmountLowThreshold(uint threshold)
-	    {
+        {
             _logger.LogDebug($"SetBufferedAmountLowThreshold() [threshold:{threshold}]");
 
             var reqData = new { Threshold = threshold };

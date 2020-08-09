@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Mediasoup.Extensions;

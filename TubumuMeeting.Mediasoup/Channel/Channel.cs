@@ -356,7 +356,7 @@ namespace TubumuMeeting.Mediasoup
             var error = msg["error"].Value(string.Empty);
             var reason = msg["reason"].Value(string.Empty);
             var data = msg["data"].Value(string.Empty);
-            
+
             // If a response, retrieve its associated request.
             if (id >= 0)
             {
