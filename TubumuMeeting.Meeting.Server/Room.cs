@@ -49,7 +49,7 @@ namespace TubumuMeeting.Meeting.Server
             _logger = _loggerFactory.CreateLogger<Room>();
             Router = router;
             RoomId = roomId;
-            Name = name.IsNullOrWhiteSpace() ? "Default" : name;
+            Name = name.NullOrWhiteSpaceReplace("Default");
             Closed = false;
         }
 

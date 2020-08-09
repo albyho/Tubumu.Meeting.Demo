@@ -79,7 +79,7 @@ namespace TubumuMeeting.Meeting.Server
             _rtpCapabilities = rtpCapabilities;
             _sctpCapabilities = sctpCapabilities;
             PeerId = peerId;
-            DisplayName = displayName.IsNullOrWhiteSpace() ? "Guest" : displayName;
+            DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? new string[0];
             AppData = appData ?? new Dictionary<string, object>();
             Closed = false;

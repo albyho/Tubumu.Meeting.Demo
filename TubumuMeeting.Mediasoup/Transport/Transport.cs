@@ -419,7 +419,7 @@ namespace TubumuMeeting.Mediasoup
             (
                 Internal.RouterId,
                 Internal.TransportId,
-                producerOptions.Id.IsNullOrWhiteSpace() ? Guid.NewGuid().ToString() : producerOptions.Id!
+                producerOptions.Id.NullOrWhiteSpaceReplace(Guid.NewGuid().ToString())
             );
             var reqData = new
             {
@@ -613,7 +613,7 @@ namespace TubumuMeeting.Mediasoup
             (
                 Internal.RouterId,
                 Internal.TransportId,
-                !dataProducerOptions.Id.IsNullOrWhiteSpace() ? dataProducerOptions.Id! : Guid.NewGuid().ToString()
+                dataProducerOptions.Id.NullOrWhiteSpaceReplace(Guid.NewGuid().ToString())
             );
 
             var reqData = new
