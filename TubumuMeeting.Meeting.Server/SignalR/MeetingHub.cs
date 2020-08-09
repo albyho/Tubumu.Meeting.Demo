@@ -67,16 +67,6 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
-        public async Task<MeetingMessage> Join(JoinRequest joinRequest)
-        {
-            if (!await _scheduler.Join(UserId, joinRequest))
-            {
-                return new MeetingMessage { Code = 400, Message = "Join 失败" };
-            }
-
-            return new MeetingMessage { Code = 200, Message = "Join 成功" };
-        }
-
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
             var transport = await _scheduler.CreateWebRtcTransportAsync(UserId, createWebRtcTransportRequest);
@@ -141,6 +131,16 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
         }
 
+        public async Task<MeetingMessage> Join(JoinRequest joinRequest)
+        {
+            if (!await _scheduler.Join(UserId, joinRequest))
+            {
+                return new MeetingMessage { Code = 400, Message = "Join 失败" };
+            }
+
+            return new MeetingMessage { Code = 200, Message = "Join 成功" };
+        }
+
         public async Task<MeetingMessage> JoinRoom(JoinRoomRequest joinRoomRequest)
         {
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, joinRoomRequest);
@@ -199,7 +199,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var existsProducer in consumeResult.ExistsProducers)
             {
                 // 本 Peer 消费其他 Peer
-                CreateConsumer(consumeResult.SelfPeer, existsProducer.Peer, existsProducer.Producer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(consumeResult.SelfPeer, consumeResult.TargetPeer, existsProducer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Message: produceSources

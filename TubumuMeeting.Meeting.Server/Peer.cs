@@ -277,8 +277,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (_rtpCapabilities == null || !_router.CanConsume(producer.ProducerId, _rtpCapabilities))
                 {
-                    _logger.LogWarning("ConsumeAsync() | Can not consume.");
-                    throw new Exception($"Consume 失败: Peer:{PeerId} Can not consume.");
+                    throw new Exception($"ConsumeAsync() | Peer:{PeerId} Can not consume.");
                 }
 
                 var transport = GetConsumingTransport();
@@ -286,8 +285,7 @@ namespace TubumuMeeting.Meeting.Server
                 // This should not happen.
                 if (transport == null)
                 {
-                    _logger.LogWarning("ConsumeAsync() | Transport for consuming not found");
-                    throw new Exception($"Consume 失败: Peer:{PeerId} Transport for consuming not found.");
+                    throw new Exception($"ConsumeAsync() | Peer:{PeerId} Transport for consuming not found.");
                 }
 
                 // Create the Consumer in paused mode.
@@ -512,7 +510,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
-                    throw new Exception($"GetConsumerStatsAsync() | Peer:{PeerId} has no Consumers:{consumerId}.");
+                    throw new Exception($"GetConsumerStatsAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
 
                 var status = await consumer.GetStatsAsync();
@@ -536,7 +534,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 if (!(transport is WebRtcTransport webRtcTransport))
                 {
-                    throw new Exception($"RestartIceAsync() | Peer:{PeerId} has no Transport:{transportId}.");
+                    throw new Exception($"RestartIceAsync() | Peer:{PeerId} Transport:{transportId} is not WebRtcTransport.");
                 }
 
                 var iceParameters = await webRtcTransport.RestartIceAsync();
@@ -665,7 +663,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             if (Closed)
             {
-                throw new Exception("Peer was closed");
+                throw new Exception($"CheckClosed() | Peer:{PeerId} was closed");
             }
         }
 

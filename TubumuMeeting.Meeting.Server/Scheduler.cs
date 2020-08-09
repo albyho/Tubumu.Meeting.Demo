@@ -272,7 +272,7 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"Peer:{consumeRequest.PeerId} is not exists in Room:{consumeRequest.RoomId}.");
                     }
 
-                    var existsProducers = new List<PeerProducer>();
+                    var existsProducers = new List<Producer>();
                     var produceSources = new List<string>();
                     foreach (var source in consumeRequest.Sources)
                     {
@@ -285,11 +285,7 @@ namespace TubumuMeeting.Meeting.Server
                                 // 如果本 Peer 已经消费了对应 Producer，忽略以避免重复消费。
                                 continue;
                             }
-                            existsProducers.Add(new PeerProducer
-                            {
-                                Peer = targetPeer,
-                                Producer = producer,
-                            });
+                            existsProducers.Add(producer);
                             continue;
                         }
                         // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
@@ -305,6 +301,7 @@ namespace TubumuMeeting.Meeting.Server
                     return new PullResult
                     {
                         SelfPeer = peer,
+                        TargetPeer = targetPeer,
                         ExistsProducers = existsProducers.ToArray(),
                         RoomId = consumeRequest.RoomId,
                         TargetPeerId = consumeRequest.PeerId,

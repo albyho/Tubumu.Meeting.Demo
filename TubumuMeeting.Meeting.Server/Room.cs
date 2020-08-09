@@ -76,7 +76,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             if (Closed)
             {
-                throw new Exception("Room was closed");
+                throw new Exception($"CheckClosed() | Room:{RoomId} was closed");
             }
         }
     }

@@ -1,10 +1,14 @@
-﻿namespace TubumuMeeting.Meeting.Server
+﻿using TubumuMeeting.Mediasoup;
+
+namespace TubumuMeeting.Meeting.Server
 {
     public class PullResult
     {
         public Peer SelfPeer { get; set; }
 
-        public PeerProducer[] ExistsProducers { get; set; }
+        public Peer TargetPeer { get; set; }
+
+        public Producer[] ExistsProducers { get; set; }
 
         public string RoomId { get; set; }
 

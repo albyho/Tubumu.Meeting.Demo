@@ -156,7 +156,7 @@ export default {
       // GetRouterRtpCapabilities 成功, Join
       result = await this.connection.invoke('Join', {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
-        sctpCapabilities: null, // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
+        sctpCapabilities: undefined, // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
         displayName: 'Guest',
         sources: ['mic', 'webcam'],
         appData: {}
@@ -173,7 +173,7 @@ if(this.peerId/*this.peerId !== '0'*/) {
         forceTcp: false,
         producing: true,
         consuming: false,
-        sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
+        sctpCapabilities: undefined // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
       });
       if (result.code !== 200) {
         logger.error('processNotification() | CreateWebRtcTransport failure.');
@@ -239,7 +239,7 @@ if(this.peerId/*this.peerId !== '0'*/) {
         forceTcp: false,
         producing: false,
         consuming: true,
-        sctpCapabilities: null // 使用 DataChannel 则取 this.mediasoupDevice.sctpCapabilities
+        sctpCapabilities: undefined // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
       });
 
       // CreateWebRtcTransport(消费)成功, createRecvTransport
