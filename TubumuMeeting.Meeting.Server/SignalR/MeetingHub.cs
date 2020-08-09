@@ -199,11 +199,11 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var existsProducer in consumeResult.ExistsProducers)
             {
                 // 本 Peer 消费其他 Peer
-                CreateConsumer(consumeResult.SelfPeer, consumeResult.TargetPeer, existsProducer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(consumeResult.ConsumePeer, consumeResult.ProducePeer, existsProducer, consumeRequest.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Message: produceSources
-            SendMessage(consumeResult.TargetPeerId, "produceSources", new
+            SendMessage(consumeResult.ProducePeer.PeerId, "produceSources", new
             {
                 RoomId = consumeResult.RoomId,
                 ProduceSources = consumeResult.ProduceSources
@@ -218,10 +218,10 @@ namespace TubumuMeeting.Meeting.Server
             var produceResult = await _scheduler.ProduceAsync(peerId, produceRequest);
             var producer = produceResult.Producer;
 
-            foreach (var pullPaddingPeerWithRoomId in produceResult.PullPaddingPeerRoomIds)
+            foreach (var pullPaddingPeerWithRoomId in produceResult.PullPaddingConsumePeerWithRoomIds)
             {
                 // 其他 Peer 消费本 Peer
-                CreateConsumer(pullPaddingPeerWithRoomId.Peer, produceResult.SelfPeer, produceResult.Producer, pullPaddingPeerWithRoomId.RoomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(pullPaddingPeerWithRoomId.ConsumePeer, produceResult.ProducePeer, produceResult.Producer, pullPaddingPeerWithRoomId.RoomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // Set Producer events.

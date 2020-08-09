@@ -1,10 +1,10 @@
 ﻿namespace TubumuMeeting.Meeting.Server
 {
-    public class PullPadding
+    public class PullPaddingConsume
     {
         public string RoomId { get; set; }
 
-        public string PeerId { get; set; }
+        public string ConsumePeerId { get; set; }
 
         public string Source { get; set; }
     }
