@@ -166,6 +166,7 @@ export default {
         return;
       }
 
+// 临时
 if(this.peerId/*this.peerId !== '0'*/) {
       // Join成功，CreateWebRtcTransport(生产) 
       result = await this.connection.invoke('CreateWebRtcTransport', {
@@ -281,14 +282,15 @@ if(this.peerId/*this.peerId !== '0'*/) {
       const joinRoomData = result.data;
       logger.debug('Peers:%o', joinRoomData.peers);
 
-      if(this.peerId === '0') {
-        if(this.mediasoupDevice.canProduce('audio')) {
-          this.enableMic();
-        }
-        if(this.mediasoupDevice.canProduce('video')) {
-          this.enableWebcam();
-        }
+// 临时
+if(!this.peerId/*this.peerId === '0'*/) {
+      if(this.mediasoupDevice.canProduce('audio')) {
+        this.enableMic();
       }
+      if(this.mediasoupDevice.canProduce('video')) {
+        this.enableWebcam();
+      }
+}
     },
     async processNewConsumer(data) {
       const {

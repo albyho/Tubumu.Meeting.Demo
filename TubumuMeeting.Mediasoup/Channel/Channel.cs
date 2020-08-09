@@ -349,7 +349,7 @@ namespace TubumuMeeting.Mediasoup
         private void ProcessMessage(string payload)
         {
             var msg = JObject.Parse(payload);
-            var id = msg["id"].Value((uint)0);
+            var id = msg["id"].Value((long)-1);
             var accepted = msg["accepted"].Value(false);
             var targetId = msg["targetId"].Value(String.Empty);
             var @event = msg["event"].Value(string.Empty);
@@ -358,9 +358,9 @@ namespace TubumuMeeting.Mediasoup
             var data = msg["data"].Value(string.Empty);
             
             // If a response, retrieve its associated request.
-            if (id > 0)
+            if (id >= 0)
             {
-                if (!_sents.TryGetValue(id, out Sent sent))
+                if (!_sents.TryGetValue((uint)id, out Sent sent))
                 {
                     _logger.LogError($"ProcessMessage() | received response does not match any sent request [id:{id}]");
 

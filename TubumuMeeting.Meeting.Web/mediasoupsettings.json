@@ -85,6 +85,7 @@
       "InitialAvailableOutgoingBitrate": 1000000,
       "MinimumAvailableOutgoingBitrate": 600000,
       "MaxSctpMessageSize": 262144,
+      // Additional options that are not part of WebRtcTransportOptions.
       "MaximumIncomingBitrate": 1500000
     }
   }

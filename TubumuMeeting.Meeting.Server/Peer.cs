@@ -244,8 +244,7 @@ namespace TubumuMeeting.Meeting.Server
                 var producer = _producers.Values.FirstOrDefault(m => m.Source == source);
                 if (producer != null)
                 {
-                    _logger.LogWarning($"Source:\"{ source }\" is exists, close it.");
-                    producer.Close();
+                    throw new Exception($"ProduceAsync() | Source:\"{ source }\" is exists, close it.");
                 }
 
                 // Add peerId into appData to later get the associated Peer during
