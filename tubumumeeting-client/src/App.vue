@@ -56,7 +56,7 @@ const SCREEN_SHARING_SVC_ENCODINGS =
 const logger = new Logger('App');
 
 // 'mediasoup-client:* tubumumeeting-client:*'
-localStorage.setItem('debug', 'tubumumeeting-client:*');
+localStorage.setItem('debug', 'mediasoup-client:* tubumumeeting-client:*');
 
 export default {
   name: 'app',
@@ -167,7 +167,7 @@ export default {
       }
 
 // 临时
-if(this.peerId !== '0') {
+if(this.peerId !== '1000') {
       // Join成功，CreateWebRtcTransport(生产) 
       result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
@@ -283,7 +283,7 @@ if(this.peerId !== '0') {
       logger.debug('Peers:%o', joinRoomData.peers);
 
 // 临时
-if(this.peerId === '0' && 1 === 2) {
+if(this.peerId === '1000') {
       if(this.mediasoupDevice.canProduce('audio')) {
         this.enableMic();
       }
@@ -549,7 +549,7 @@ if(this.peerId === '0' && 1 === 2) {
       this.micProducer.close();
 
       try {
-        await this.connection.invoke('closeProducer', {
+        await this.connection.invoke('CloseProducer', {
           producerId: this.micProducer.id
         });
       } catch (error) {
@@ -665,7 +665,7 @@ if(this.peerId === '0' && 1 === 2) {
       this.webcamProducer.close();
 
       try {
-        await this.connection.invoke('closeProducer', {
+        await this.connection.invoke('CloseProducer', {
           producerId: this.webcamProducer.id
         });
       } catch (error) {

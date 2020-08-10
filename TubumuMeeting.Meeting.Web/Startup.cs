@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -166,6 +167,19 @@ namespace TubumuMeeting.Web
                 if (routerSettings != null && !routerSettings.RtpCodecCapabilities.IsNullOrEmpty())
                 {
                     options.MediasoupSettings.RouterSettings = routerSettings;
+
+                    // Fix RtpCodecCapabilities[x].Parameters 。从配置文件反序列化时将数字转换成了字符串，这里进行修正。
+                    foreach (var codec in routerSettings.RtpCodecCapabilities.Where(m => m.Parameters != null))
+                    {
+                        foreach(var key in codec.Parameters.Keys.ToArray())
+                        {
+                            var value = codec.Parameters[key];
+                            if(value != null && Int32.TryParse(value.ToString(), out var intValue))
+                            {
+                                codec.Parameters[key] = intValue;
+                            }
+                        }
+                    }
                 }
 
                 // WebRtcTransportSettings

@@ -4489,7 +4489,7 @@ media-typer@0.3.0:
   version "0.3.0"
   resolved "https://registry.npm.taobao.org/media-typer/download/media-typer-0.3.0.tgz#8710d7af0aa626f8fffa1ce00168545263255748"
 
-mediasoup-client@^3.6.5:
+mediasoup-client@^3.6.12:
   version "3.6.12"
   resolved "https://registry.npm.taobao.org/mediasoup-client/download/mediasoup-client-3.6.12.tgz#3a865b69f6d1c93f33c4d03fc935d85b2be9edc5"
   dependencies:

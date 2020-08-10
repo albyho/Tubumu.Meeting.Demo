@@ -166,6 +166,13 @@ namespace TubumuMeeting.Mediasoup
 
             _pipes = new Pipe[StdioCount];
             // 忽略标准输入
+            // fd 0 (stdin)   : Just ignore it.
+            // fd 1 (stdout)  : Pipe it for 3rd libraries that log their own stuff.
+            // fd 2 (stderr)  : Same as stdout.
+            // fd 3 (channel) : Producer Channel fd.
+            // fd 4 (channel) : Consumer Channel fd.
+            // fd 5 (channel) : Producer PayloadChannel fd.
+            // fd 6 (channel) : Consumer PayloadChannel fd.
             for (var i = 1; i < StdioCount; i++)
             {
                 _pipes[i] = new Pipe() { Writeable = true, Readable = true };
