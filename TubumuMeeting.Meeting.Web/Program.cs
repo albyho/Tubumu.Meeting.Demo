@@ -24,7 +24,7 @@ namespace TubumuMeeting.Web
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 var configs = new ConfigurationBuilder()
-                    .AddJsonFile("Hosting.json", optional: false)
+                    .AddJsonFile("hosting.json", optional: false)
                     .AddJsonFile("mediasoupsettings.json", optional: false)
                     .AddJsonFile("consulsettings.json", optional: false)
                     .Build();

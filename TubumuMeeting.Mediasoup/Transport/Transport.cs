@@ -507,10 +507,9 @@ namespace TubumuMeeting.Mediasoup
             rtpParameters.Mid = $"{_nextMidForConsumers++}";
 
             // We use up to 8 bytes for MID (string).
-            if (_nextMidForConsumers == 100000000)
+            if (_nextMidForConsumers == 100_000_000)
             {
                 _logger.LogDebug($"ConsumeAsync() | reaching max MID value {_nextMidForConsumers}");
-
                 _nextMidForConsumers = 0;
             }
 

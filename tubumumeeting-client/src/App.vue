@@ -3,9 +3,9 @@
     <el-container>
       <el-header>Tubumu Meeting</el-header>
       <el-main>
-        <video id="localVideo" :srcObject.prop="localVideoStream" autoplay="autoplay" />
-        <video id="remoteVideo" :srcObject.prop="remoteVideoStream" autoplay="autoplay" />
-        <audio id="remoteAudio" :srcObject.prop="remoteAudioStream" autoplay="autoplay" />
+        <video id="localVideo" ref="localVideo" :srcObject.prop="localVideoStream" autoplay="autoplay" />
+        <video id="remoteVideo" ref="remoteVideo" :srcObject.prop="remoteVideoStream" autoplay="autoplay" />
+        <audio id="remoteAudio" ref="remoteAudio" :srcObject.prop="remoteAudioStream" autoplay="autoplay" />
       </el-main>
     </el-container>
   </div>
@@ -167,7 +167,7 @@ export default {
       }
 
 // 临时
-if(this.peerId/*this.peerId !== '0'*/) {
+if(this.peerId !== '0') {
       // Join成功，CreateWebRtcTransport(生产) 
       result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
@@ -283,7 +283,7 @@ if(this.peerId/*this.peerId !== '0'*/) {
       logger.debug('Peers:%o', joinRoomData.peers);
 
 // 临时
-if(!this.peerId/*this.peerId === '0'*/) {
+if(this.peerId === '0' && 1 === 2) {
       if(this.mediasoupDevice.canProduce('audio')) {
         this.enableMic();
       }

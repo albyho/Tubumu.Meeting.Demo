@@ -236,7 +236,6 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 string peerid = Marshal.PtrToStringAnsi(param2);
                 var request = new NewConsumerReturnRequest();
                 request.ConsumerId = id;
-                request.PeerId = peerid;
                 var result = await connection.InvokeAsync<dynamic>("NewConsumerReturn", request);
                 int i = 0;
             }
