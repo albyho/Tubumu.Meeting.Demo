@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -144,32 +145,28 @@ namespace TubumuMeeting.Meeting.Server
         {
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, joinRoomRequest);
 
+            var peerInfos = new List<PeerInfo>();
             foreach (var peer in joinRoomResult.PeersInRoom)
             {
+                var peerInfo = new PeerInfo
+                {
+                    RoomId = joinRoomRequest.RoomId,
+                    PeerId = joinRoomResult.SelfPeer.PeerId,
+                    DisplayName = joinRoomResult.SelfPeer.DisplayName,
+                    Sources = joinRoomResult.SelfPeer.Sources,
+                };
+                peerInfos.Add(peerInfo);
                 if (peer.PeerId != joinRoomResult.SelfPeer.PeerId)
                 {
                     // Message: peerJoinRoom
-                    SendMessage(peer.PeerId, "peerJoinRoom", new PeerInfo
-                    {
-                        RoomId = joinRoomRequest.RoomId,
-                        PeerId = joinRoomResult.SelfPeer.PeerId,
-                        DisplayName = joinRoomResult.SelfPeer.DisplayName,
-                        Sources = joinRoomResult.SelfPeer.Sources,
-                    });
+                    SendMessage(peer.PeerId, "peerJoinRoom", peerInfo);
                 }
             }
 
-            var peers = joinRoomResult.PeersInRoom.Select(m => new PeerInfo
-            {
-                RoomId = joinRoomRequest.RoomId,
-                PeerId = m.PeerId,
-                DisplayName = m.DisplayName,
-                Sources = m.Sources,
-            });
             var data = new
             {
                 RoomId = joinRoomRequest.RoomId,
-                Peers = peers,
+                Peers = peerInfos,
             };
             return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = data };
         }
