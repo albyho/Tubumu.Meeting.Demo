@@ -5,9 +5,9 @@ namespace TubumuMeeting.Meeting.Server
     public class ProduceResult
     {
         /// <summary>
-        /// ProducePeer
+        /// ProducerPeer
         /// </summary>
-        public Peer ProducePeer { get; set; }
+        public Peer ProducerPeer { get; set; }
 
         /// <summary>
         /// Producer
@@ -18,12 +18,12 @@ namespace TubumuMeeting.Meeting.Server
         /// PullPaddingPeerRoomIds
         /// <para>因为消费 Peer 不一定全是在本次生产的对应的 Room 里发起的，故需要带上 RoomId 。</para>
         /// </summary>
-        public ConsumePeerWithRoomId[] PullPaddingConsumePeerWithRoomIds { get; set; }
+        public ConsumerPeerWithRoomId[] PullPaddingConsumerPeerWithRoomIds { get; set; }
     }
 
-    public class ConsumePeerWithRoomId
+    public class ConsumerPeerWithRoomId
     {
-        public Peer ConsumePeer { get; set; }
+        public Peer ConsumerPeer { get; set; }
 
         public string RoomId { get; set; }
     }

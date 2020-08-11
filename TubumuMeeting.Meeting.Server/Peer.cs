@@ -240,7 +240,6 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"ProduceAsync() | Source:\"{ source }\" cannot be produce.");
                 }
 
-                // TODO: (alby)线程安全：避免重复 Produce 相同的 Sources
                 var producer = _producers.Values.FirstOrDefault(m => m.Source == source);
                 if (producer != null)
                 {
@@ -543,7 +542,7 @@ namespace TubumuMeeting.Meeting.Server
         }
 
         /// <summary>
-        /// 关闭除本 Room 外其他 Room 无人消费的 Producer
+        /// 关闭除本 Peer 在其他 Room 无人消费的 Producer
         /// </summary>
         /// <param name="excludeRoomId"></param>
         public void CloseProducersNoConsumersExcludeRoom(string excludeRoomId)
@@ -552,15 +551,15 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var producersToClose = new HashSet<Producer>();
                 var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
-                                from p in ri.Peers.Values           // 的包括本 Peer 在内的所有 Peer
+                                from p in ri.Peers.Values           // 的所有 Peer
                                 from pc in p._consumers.Values      // 的 Consumer
-                                where ri.RoomId != excludeRoomId    // 排除房间
+                                where pc.RoomId != excludeRoomId    // 排除房间
                                 select pc;
 
                 foreach (var producer in _producers.Values)
                 {
                     // 如果其他 Room 中没有消费 producer，则关闭。
-                    if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId && m.RoomId == excludeRoomId))
+                    if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId))
                     {
                         producersToClose.Add(producer);
                     }
@@ -585,7 +584,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var producersToClose = new HashSet<Producer>();
                 var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
-                                from p in ri.Peers.Values           // 的包括本 Peer 在内的所有 Peer
+                                from p in ri.Peers.Values           // 的所有 Peer
                                 from pc in p._consumers.Values      // 的 Consumer
                                 where p.PeerId != excludePeerId     // 排除 Peer
                                 select new
@@ -597,7 +596,7 @@ namespace TubumuMeeting.Meeting.Server
                 foreach (var producer in _producers.Values)
                 {
                     // 如果其他 Room 中没有消费 producer，则关闭。
-                    if (!consumers.Any(m => m.Consumer.Internal.ProducerId == producer.ProducerId && m.PeerId == excludePeerId))
+                    if (!consumers.Any(m => m.Consumer.Internal.ProducerId == producer.ProducerId))
                     {
                         producersToClose.Add(producer);
                     }
@@ -624,20 +623,18 @@ namespace TubumuMeeting.Meeting.Server
             {
                 // 关闭无人消费的本 Peer 的 Producer
                 var producersToClose = new HashSet<Producer>();
-                var otherPeers = from ri in Rooms.Values        // Peer 所在的所有房间
-                                 from p in ri.Peers.Values      // 的包括本 Peer 在内的所有 Peer
-                                 where !(ri.RoomId == excludeRoomId && p.PeerId == excludePeerId)   // 除指定 Room 里的指定 Peer
-                                 select p;
+                var consumers = from r in Rooms.Values              // Peer 所在的所有房间
+                                from p in r.Peers.Values            // 的所有 Peer
+                                from pc in p._consumers.Values      // 的 Consumer
+                                where r.RoomId != excludeRoomId || p.PeerId != excludePeerId   // 除指定 Room 里的指定 Peer
+                                select pc;
 
-                foreach (var otherPeer in otherPeers)
+                foreach (var producer in _producers.Values)
                 {
-                    foreach (var producer in _producers.Values)
+                    // 如果其他 Room 中没有消费 producer，则关闭。
+                    if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId))
                     {
-                        // 如果没有消费 producer，则关闭。
-                        if (!otherPeer._consumers.Values.Any(m => m.Internal.ProducerId == producer.ProducerId && !(m.RoomId == excludeRoomId && otherPeer.PeerId == excludePeerId)))
-                        {
-                            producersToClose.Add(producer);
-                        }
+                        producersToClose.Add(producer);
                     }
                 }
 

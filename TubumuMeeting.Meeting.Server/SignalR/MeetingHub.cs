@@ -215,16 +215,18 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerId = UserId;
             var produceResult = await _scheduler.ProduceAsync(peerId, produceRequest);
-            var producerPeer = produceResult.ProducePeer;
+            var producerPeer = produceResult.ProducerPeer;
             var producer = produceResult.Producer;
 
-            foreach (var pullPaddingPeerWithRoomId in produceResult.PullPaddingConsumePeerWithRoomIds)
+            foreach (var item in produceResult.PullPaddingConsumerPeerWithRoomIds)
             {
-                var consumerPeer = pullPaddingPeerWithRoomId.ConsumePeer;
-                var roomId = pullPaddingPeerWithRoomId.RoomId;
+                var consumerPeer = item.ConsumerPeer;
+                var roomId = item.RoomId;
                 // 其他 Peer 消费本 Peer
                 CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
             }
+
+            CreateConsumer(producerPeer, producerPeer, producer, "1").ContinueWithOnFaultedHandleLog(_logger);
 
             // Set Producer events.
             producer.On("score", score =>
@@ -366,7 +368,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
-        #region CreateConsumer
+        #region Private Methods
 
         private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer, string roomId)
         {
@@ -454,8 +456,6 @@ namespace TubumuMeeting.Meeting.Server
             });
         }
 
-        #endregion
-
         private void SendMessage(string peerId, string type, object data)
         {
             if (type == "consumerLayersChanged" || type == "consumerScore" || type == "producerScore") return;
@@ -466,5 +466,7 @@ namespace TubumuMeeting.Meeting.Server
                 Data = data
             }).ContinueWithOnFaultedHandleLog(_logger);
         }
+
+        #endregion
     }
 }

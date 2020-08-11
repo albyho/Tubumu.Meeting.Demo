@@ -177,7 +177,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
                 using (await _roomsLocker.LockAsync())
                 {
-                    // 如果不存在 Room 则创建
+                    // Room 如果不存在则创建
                     if (!Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
                     {
                         room = new Room(_loggerFactory, _router, joinRoomRequest.RoomId, "Default");
@@ -217,9 +217,10 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     // 考虑：获取本人的 Cosumer，如果其对应的 Producer 没有其他人消费，则关闭。现在是粗暴地遍历。
-                    // 关闭除本 Room 外其他 Room 无人消费的 Producer
+                    // 关闭除本 Peer 在其他 Room 无人消费的 Producer
                     peer.CloseProducersNoConsumersExcludeRoom(roomId);
 
+                    // NOTE: 本 Peer 可以在其他 Room 继续消费。
                     var otherPeers = room.Peers.Values.Where(m => m.PeerId != peerId).ToArray();
                     foreach (var otherPeer in otherPeers)
                     {
@@ -286,7 +287,7 @@ namespace TubumuMeeting.Meeting.Server
                         producePeer.PullPaddingConsumes.Add(new PullPaddingConsume
                         {
                             RoomId = room.RoomId,
-                            ConsumePeerId = peer.PeerId,
+                            ConsumerPeerId = peer.PeerId,
                             Source = source!,
                         });
                     }
@@ -320,33 +321,33 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"ProduceAsync() | Peer:{peerId} produce faild.");
                     }
 
-                    var pullPaddingConsumePeerWithRoomIdsToRemove = new List<PullPaddingConsume>();
-                    var pullPaddingConsumePeerWithRoomIds = new List<ConsumePeerWithRoomId>();
+                    var pullPaddingConsumerPeerWithRoomIdsToRemove = new List<PullPaddingConsume>();
+                    var pullPaddingConsumerPeerWithRoomIds = new List<ConsumerPeerWithRoomId>();
                     foreach (var item in peer.PullPaddingConsumes.Where(m => m.Source == producer.Source))
                     {
-                        pullPaddingConsumePeerWithRoomIdsToRemove.Add(item);
+                        pullPaddingConsumerPeerWithRoomIdsToRemove.Add(item);
 
                         // 其他 Peer 消费本 Peer
-                        if (Peers.TryGetValue(item.ConsumePeerId, out var consumerPeer))
+                        if (Peers.TryGetValue(item.ConsumerPeerId, out var consumerPeer))
                         {
-                            pullPaddingConsumePeerWithRoomIds.Add(new ConsumePeerWithRoomId
+                            pullPaddingConsumerPeerWithRoomIds.Add(new ConsumerPeerWithRoomId
                             {
-                                ConsumePeer = consumerPeer,
+                                ConsumerPeer = consumerPeer,
                                 RoomId = item.RoomId,
                             });
                         }
                     }
 
-                    foreach (var item in pullPaddingConsumePeerWithRoomIdsToRemove)
+                    foreach (var item in pullPaddingConsumerPeerWithRoomIdsToRemove)
                     {
                         peer.PullPaddingConsumes.Remove(item);
                     }
 
                     var produceResult = new ProduceResult
                     {
-                        ProducePeer = peer,
+                        ProducerPeer = peer,
                         Producer = producer,
-                        PullPaddingConsumePeerWithRoomIds = pullPaddingConsumePeerWithRoomIds.ToArray(),
+                        PullPaddingConsumerPeerWithRoomIds = pullPaddingConsumerPeerWithRoomIds.ToArray(),
                     };
 
                     return produceResult;
