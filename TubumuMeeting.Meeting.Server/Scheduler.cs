@@ -43,6 +43,7 @@ namespace TubumuMeeting.Meeting.Server
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
         public Scheduler(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
+#pragma warning restore CS8618 // 不可为 null 的字段未初始化。请考虑声明为可以为 null。
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<Scheduler>();
@@ -325,11 +326,11 @@ namespace TubumuMeeting.Meeting.Server
                         pullPaddingConsumePeerWithRoomIdsToRemove.Add(item);
 
                         // 其他 Peer 消费本 Peer
-                        if (Peers.TryGetValue(item.ConsumePeerId, out var otherPeer))
+                        if (Peers.TryGetValue(item.ConsumePeerId, out var consumerPeer))
                         {
                             pullPaddingConsumePeerWithRoomIds.Add(new ConsumePeerWithRoomId
                             {
-                                ConsumePeer = otherPeer,
+                                ConsumePeer = consumerPeer,
                                 RoomId = item.RoomId,
                             });
                         }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace TubumuMeeting.Web
 {
@@ -19,7 +20,10 @@ namespace TubumuMeeting.Web
             {
                 logging.ClearProviders();
                 logging.AddDebug();
-                logging.AddConsole();
+                logging.AddConsole(options =>
+                {
+                    options.TimestampFormat = "[HH:mm:ss.fff]";
+                });
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {

@@ -72,7 +72,7 @@ export default {
       audioDevices: {},
       webcamProducer: null,
       micProducer: null,
-      useSimulcast: true,
+      useSimulcast: false,
       forceH264: false,
       forceVP9: false,
       localVideoStream: null,
@@ -167,7 +167,7 @@ export default {
       }
 
 // 临时
-if(this.peerId !== '1000') {
+if(this.peerId !== '0') {
       // Join成功，CreateWebRtcTransport(生产) 
       result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
@@ -357,12 +357,10 @@ if(this.peerId === '1000') {
 
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
-      logger.debug('processNewConsumer() NewConsumerReturn');
-      const result = await this.connection.invoke('NewConsumerReturn', {
-        consumerId
-      });
+      logger.debug('processNewConsumer() ResumeConsumer');
+      const result = await this.connection.invoke('ResumeConsumer', consumerId);
       if (result.code !== 200) {
-        logger.error('processNewConsumer() | NewConsumerReturn.');
+        logger.error('processNewConsumer() | ResumeConsumer.');
         return;
       }
     },
@@ -776,7 +774,10 @@ video {
   width: 640px;
 }
 
+ /* 水平镜像翻转 */
+ /*
 video#localVideo {
-    transform: rotateY(180deg);   /* 水平镜像翻转 */
+    transform: rotateY(180deg);  
 }
+*/
 </style>
