@@ -478,8 +478,13 @@ if(this.peerId === '1000') {
           break;
         }
 
+        case 'peerLeave': {
+
+          break;
+        }
+
         default: {
-          logger.error('unknown data.internalCode "%s"', data.internalCode);
+          logger.error('unknown data.type, data:%o', data);
         }
       }
     },
