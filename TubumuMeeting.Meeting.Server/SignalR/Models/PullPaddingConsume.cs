@@ -4,7 +4,7 @@
     {
         public string RoomId { get; set; }
 
-        public string ConsumePeerId { get; set; }
+        public string ConsumerPeerId { get; set; }
 
         public string Source { get; set; }
     }
