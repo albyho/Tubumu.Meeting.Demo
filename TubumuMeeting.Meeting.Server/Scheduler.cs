@@ -49,6 +49,7 @@ namespace TubumuMeeting.Meeting.Server
             _mediasoupOptions = mediasoupOptions;
             _mediasoupServer = mediasoupServer;
 
+            // 按创建 Route 时一样方式创建 RtpCodecCapabilities
             var rtpCodecCapabilities = mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
             // This may throw.
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
@@ -325,11 +326,11 @@ namespace TubumuMeeting.Meeting.Server
                         pullPaddingConsumePeerWithRoomIdsToRemove.Add(item);
 
                         // 其他 Peer 消费本 Peer
-                        if (Peers.TryGetValue(item.ConsumePeerId, out var otherPeer))
+                        if (Peers.TryGetValue(item.ConsumePeerId, out var consumerPeer))
                         {
                             pullPaddingConsumePeerWithRoomIds.Add(new ConsumePeerWithRoomId
                             {
-                                ConsumePeer = otherPeer,
+                                ConsumePeer = consumerPeer,
                                 RoomId = item.RoomId,
                             });
                         }
