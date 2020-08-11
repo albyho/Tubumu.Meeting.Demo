@@ -4,6 +4,6 @@
     {
         public Peer SelfPeer { get; set; }
 
-        public PeerRoom[] OtherPeerRooms { get; set; }
+        public Peer[] OtherPeers { get; set; }
     }
 }

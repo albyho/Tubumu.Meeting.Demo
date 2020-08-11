@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
+using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
@@ -43,7 +44,6 @@ namespace TubumuMeeting.Meeting.Server
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 
         public Scheduler(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
-#pragma warning restore CS8618 // 不可为 null 的字段未初始化。请考虑声明为可以为 null。
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<Scheduler>();
@@ -108,35 +108,34 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (_peerRoomLocker.Lock())
                 {
-                    // 从所有房间退出
-                    var otherPeers = new List<PeerRoom>();
+                    var otherPeers = new HashSet<Peer>();
                     foreach (var room in peer.Rooms.Values)
                     {
-                        peer.CloseProducersNoConsumers(room.RoomId);
                         var otherPeersInRoom = room.Peers.Values.Where(m => m.PeerId != peerId);
-                        var otherPeerRoomsInRoom = otherPeersInRoom.Select(m => new PeerRoom
-                        {
-                            Peer = m,
-                            Room = room
-                        });
-                        otherPeers.AddRange(otherPeerRoomsInRoom);
                         foreach (var otherPeer in otherPeersInRoom)
                         {
-                            otherPeer.CloseProducersNoConsumers(room.RoomId, peer.PeerId);
+                            otherPeers.Add(otherPeer);
                         }
 
                         room.Peers.Remove(peerId);
                     }
 
-                    peer.Rooms.Clear();
-                    peer.Close();
+                    foreach(var otherPeer in otherPeers)
+                    {
+                        // 考虑：获取本人的 Cosumer，如果其对应的 Producer 没有其他人消费，则关闭。现在是粗暴地遍历。
+                        // 关闭除本 Peer 外其他 Peer 没有消费的 Producer
+                        otherPeer.CloseProducersNoConsumersExcludePeer(peer.PeerId);
+                    }
 
+                    peer.Rooms.Clear();
+                    // Peer.Close() 会关闭所有 Transport，从而所有 Producer 会关闭。所以这里不用主动关闭 Producer。
+                    peer.Close();
                     Peers.Remove(peerId);
 
                     return new LeaveResult
                     {
                         SelfPeer = peer,
-                        OtherPeerRooms = otherPeers.ToArray(),
+                        OtherPeers = otherPeers.ToArray(),
                     };
                 }
             }
@@ -181,7 +180,7 @@ namespace TubumuMeeting.Meeting.Server
                     // 如果不存在 Room 则创建
                     if (!Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
                     {
-                        room = await CreateRoom(joinRoomRequest.RoomId, "Default");
+                        room = new Room(_loggerFactory, _router, joinRoomRequest.RoomId, "Default");
                         Rooms[room.RoomId] = room;
                     }
 
@@ -217,8 +216,9 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists in Room:{roomId}.");
                     }
 
-                    // 离开 Room 之前，先关闭将无人消费的 Producer
-                    peer.CloseProducersNoConsumers(roomId);
+                    // 考虑：获取本人的 Cosumer，如果其对应的 Producer 没有其他人消费，则关闭。现在是粗暴地遍历。
+                    // 关闭除本 Room 外其他 Room 无人消费的 Producer
+                    peer.CloseProducersNoConsumersExcludeRoom(roomId);
 
                     var otherPeers = room.Peers.Values.Where(m => m.PeerId != peerId).ToArray();
                     foreach (var otherPeer in otherPeers)
@@ -535,16 +535,5 @@ namespace TubumuMeeting.Meeting.Server
                 return await peer.RestartIceAsync(transportId);
             }
         }
-
-        #region Private Methods
-
-        private async Task<Room> CreateRoom(string roomId, string name)
-        {
-            var room = new Room(_loggerFactory, _router, roomId, name);
-            Rooms[roomId] = room;
-            return room;
-        }
-
-        #endregion
     }
 }

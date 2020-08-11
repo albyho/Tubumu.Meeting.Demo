@@ -543,10 +543,10 @@ namespace TubumuMeeting.Meeting.Server
         }
 
         /// <summary>
-        /// 关闭其他房间无人消费的 Producer
+        /// 关闭除本 Room 外其他 Room 无人消费的 Producer
         /// </summary>
         /// <param name="excludeRoomId"></param>
-        public void CloseProducersNoConsumers(string excludeRoomId)
+        public void CloseProducersNoConsumersExcludeRoom(string excludeRoomId)
         {
             using (_locker.Lock())
             {
@@ -574,6 +574,44 @@ namespace TubumuMeeting.Meeting.Server
                 }
             }
         }
+
+        /// <summary>
+        /// 关闭除本 Peer 外其他 Peer 没有消费的 Producer
+        /// </summary>
+        /// <param name="excludeRoomId"></param>
+        public void CloseProducersNoConsumersExcludePeer(string excludePeerId)
+        {
+            using (_locker.Lock())
+            {
+                var producersToClose = new HashSet<Producer>();
+                var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
+                                from p in ri.Peers.Values           // 的包括本 Peer 在内的所有 Peer
+                                from pc in p._consumers.Values      // 的 Consumer
+                                where p.PeerId != excludePeerId     // 排除 Peer
+                                select new
+                                {
+                                    PeerId = p.PeerId,
+                                    Consumer = pc
+                                };
+
+                foreach (var producer in _producers.Values)
+                {
+                    // 如果其他 Room 中没有消费 producer，则关闭。
+                    if (!consumers.Any(m => m.Consumer.Internal.ProducerId == producer.ProducerId && m.PeerId == excludePeerId))
+                    {
+                        producersToClose.Add(producer);
+                    }
+                }
+
+                // Producer 关闭后会触发相应的 Consumer `producerclose` 事件，从而拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
+                foreach (var producerToClose in producersToClose)
+                {
+                    producerToClose.Close();
+                    _producers.Remove(producerToClose.ProducerId);
+                }
+            }
+        }
+
 
         /// <summary>
         /// 关闭除指定 Room 里的指定 Peer 外无人消费的 Producer

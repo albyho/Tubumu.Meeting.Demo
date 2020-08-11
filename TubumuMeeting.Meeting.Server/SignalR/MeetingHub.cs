@@ -48,10 +48,10 @@ namespace TubumuMeeting.Meeting.Server
             var leaveResult = _scheduler.Leave(UserId);
             if (leaveResult != null)
             {
-                foreach (var otherPeer in leaveResult.OtherPeerRooms)
+                foreach (var otherPeer in leaveResult.OtherPeers)
                 {
-                    // Message: peerLeaveRoom
-                    SendMessage(otherPeer.Peer.PeerId, "peerLeaveRoom", new { RoomId = otherPeer.Room.RoomId, PeerId = leaveResult.SelfPeer.PeerId });
+                    // Message: peerLeave
+                    SendMessage(otherPeer.PeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
                 }
             }
         }
