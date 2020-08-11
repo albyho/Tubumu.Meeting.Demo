@@ -553,7 +553,7 @@ namespace TubumuMeeting.Meeting.Server
                 var producersToClose = new HashSet<Producer>();
                 var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
                                 from p in ri.Peers.Values           // 的包括本 Peer 在内的所有 Peer
-                                from pc in p._consumers.Values       // 的 Consumer
+                                from pc in p._consumers.Values      // 的 Consumer
                                 where ri.RoomId != excludeRoomId    // 排除房间
                                 select pc;
 
