@@ -31,7 +31,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncReaderWriterLock _roomsLocker = new AsyncReaderWriterLock();
 
-        private readonly AsyncLock _peerRoomLocker = new AsyncLock();  // 直接或间接访问 peer.Rooms 或 room.Peers 或者访问多个 Peer 的资源需上锁。
+        private readonly AsyncReaderWriterLock _peerRoomLocker = new AsyncReaderWriterLock();  // 直接或间接访问 peer.Rooms 或 room.Peers 或者访问多个 Peer 的资源需上锁。
 
         private Router _router;
 
@@ -106,7 +106,7 @@ namespace TubumuMeeting.Meeting.Server
                     return null;
                 }
 
-                using (_peerRoomLocker.Lock())
+                using (_peerRoomLocker.ReaderLock())
                 {
                     var otherPeers = new HashSet<Peer>();
                     foreach (var room in peer.Rooms.Values)
@@ -174,7 +174,7 @@ namespace TubumuMeeting.Meeting.Server
                         Rooms[room.RoomId] = room;
                     }
 
-                    using (await _peerRoomLocker.LockAsync())
+                    using (await _peerRoomLocker.WriterLockAsync())
                     {
                         room.Peers[peerId] = peer;
                         peer.Rooms[joinRoomRequest.RoomId] = room;
@@ -199,7 +199,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists.");
                 }
 
-                using (_peerRoomLocker.Lock())
+                using (_peerRoomLocker.WriterLock())
                 {
                     if (!peer.Rooms.TryGetValue(roomId, out var room))
                     {
@@ -238,7 +238,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} is not exists.");
                 }
 
-                using (_peerRoomLocker.Lock())
+                using (_peerRoomLocker.ReaderLock())
                 {
                     if (!peer.Rooms.TryGetValue(pullRequest.RoomId, out var room))
                     {
@@ -273,37 +273,35 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"ProduceAsync() | Peer:{peerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.LockAsync())
+                var peerProduceResult = await peer.ProduceAsync(produceRequest);
+                if (peerProduceResult == null)
                 {
-                    var peerProduceResult = await peer.ProduceAsync(produceRequest);
-                    if (peerProduceResult == null)
-                    {
-                        throw new Exception($"ProduceAsync() | Peer:{peerId} produce faild.");
-                    }
-
-                    var pullPaddingConsumerPeerWithRoomIds = new List<ConsumerPeerWithRoomId>();
-                    foreach (var item in peerProduceResult.PullPaddings)
-                    {
-                        // 其他 Peer 消费本 Peer
-                        if (Peers.TryGetValue(item.ConsumerPeerId, out var consumerPeer))
-                        {
-                            pullPaddingConsumerPeerWithRoomIds.Add(new ConsumerPeerWithRoomId
-                            {
-                                ConsumerPeer = consumerPeer,
-                                RoomId = item.RoomId,
-                            });
-                        }
-                    }
-
-                    var produceResult = new ProduceResult
-                    {
-                        ProducerPeer = peer,
-                        Producer = peerProduceResult.Producer,
-                        PullPaddingConsumerPeerWithRoomIds = pullPaddingConsumerPeerWithRoomIds.ToArray(),
-                    };
-
-                    return produceResult;
+                    throw new Exception($"ProduceAsync() | Peer:{peerId} produce faild.");
                 }
+
+                // NOTE: 这里假设了 Room 存在
+                var pullPaddingConsumerPeerWithRoomIds = new List<ConsumerPeerWithRoomId>();
+                foreach (var item in peerProduceResult.PullPaddings)
+                {
+                    // 其他 Peer 消费本 Peer
+                    if (Peers.TryGetValue(item.ConsumerPeerId, out var consumerPeer))
+                    {
+                        pullPaddingConsumerPeerWithRoomIds.Add(new ConsumerPeerWithRoomId
+                        {
+                            ConsumerPeer = consumerPeer,
+                            RoomId = item.RoomId,
+                        });
+                    }
+                }
+
+                var produceResult = new ProduceResult
+                {
+                    ProducerPeer = peer,
+                    Producer = peerProduceResult.Producer,
+                    PullPaddingConsumerPeerWithRoomIds = pullPaddingConsumerPeerWithRoomIds.ToArray(),
+                };
+
+                return produceResult;
             }
         }
 
@@ -319,21 +317,15 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     throw new Exception($"ConsumeAsync() | Consumer Peer:{cosumerPeerId} is not exists.");
                 }
-                using (await _roomsLocker.ReaderLockAsync())
+
+                // NOTE: 这里假设了 Room 存在
+                var consumer = await cosumerPeer.ConsumeAsync(producerPeer, producer, roomId);
+                if (consumer == null)
                 {
-                    if (!Rooms.ContainsKey(roomId))
-                    {
-                        throw new Exception($"ConsumeAsync() | Room:{roomId} is not exists.");
-                    }
-
-                    var consumer = await cosumerPeer.ConsumeAsync(producerPeer, producer, roomId);
-                    if (consumer == null)
-                    {
-                        throw new Exception($"ConsumeAsync() | Peer:{cosumerPeerId} consume faild.");
-                    }
-
-                    return consumer;
+                    throw new Exception($"ConsumeAsync() | Peer:{cosumerPeerId} consume faild.");
                 }
+
+                return consumer;
             }
         }
 

@@ -145,22 +145,31 @@ namespace TubumuMeeting.Meeting.Server
         {
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, joinRoomRequest);
 
+            var selfPeerInfo = new PeerInfo
+            {
+                RoomId = joinRoomRequest.RoomId,
+                PeerId = joinRoomResult.SelfPeer.PeerId,
+                DisplayName = joinRoomResult.SelfPeer.DisplayName,
+                Sources = joinRoomResult.SelfPeer.Sources,
+            };
+
             var peerInfos = new List<PeerInfo>();
             foreach (var peer in joinRoomResult.PeersInRoom)
             {
-                // 将自身的信息告知给房间内的其他人
                 var peerInfo = new PeerInfo
                 {
                     RoomId = joinRoomRequest.RoomId,
-                    PeerId = joinRoomResult.SelfPeer.PeerId,
-                    DisplayName = joinRoomResult.SelfPeer.DisplayName,
-                    Sources = joinRoomResult.SelfPeer.Sources,
+                    PeerId = peer.PeerId,
+                    DisplayName = peer.DisplayName,
+                    Sources = peer.Sources,
                 };
                 peerInfos.Add(peerInfo);
+
+                // 将自身的信息告知给房间内的其他人
                 if (peer.PeerId != joinRoomResult.SelfPeer.PeerId)
                 {
                     // Message: peerJoinRoom
-                    SendMessage(peer.PeerId, "peerJoinRoom", peerInfo);
+                    SendMessage(peer.PeerId, "peerJoinRoom", selfPeerInfo);
                 }
             }
 

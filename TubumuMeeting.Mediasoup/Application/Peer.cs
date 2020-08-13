@@ -51,8 +51,6 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly SctpCapabilities? _sctpCapabilities;
 
-        public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
-
         private readonly Dictionary<string, Transport> _transports = new Dictionary<string, Transport>();
 
         private readonly Dictionary<string, Producer> _producers = new Dictionary<string, Producer>();
@@ -64,6 +62,11 @@ namespace TubumuMeeting.Mediasoup
         private readonly Dictionary<string, DataConsumer> _dataConsumers = new Dictionary<string, DataConsumer>();
 
         private readonly List<PullPadding> _pullPaddings = new List<PullPadding>();
+
+        /// <summary>
+        /// Rooms 只允许Scheduler访问，由后者的 _peerRoomLocker 保护。
+        /// </summary>
+        public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
 
         public string[] Sources { get; private set; }
 
@@ -188,42 +191,54 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                using (producerPeer._locker.Lock())
+                if(producerPeer.PeerId != PeerId)
                 {
-                    var producerProducers = producerPeer._producers.Values.Where(m => sources.Contains(m.Source)).ToArray();
-
-                    var existsProducers = new HashSet<Producer>();
-                    var produceSources = new HashSet<string>();
-                    foreach (var source in sources)
+                    using (producerPeer._locker.Lock())
                     {
-                        foreach (var existsProducer in producerProducers)
-                        {
-                            // 忽略在同一 Room 的重复消费？
-                            if (_consumers.Values.Any(m => m.RoomId == roomId && m.Internal.ProducerId == existsProducer.ProducerId))
-                            {
-                                continue;
-                            }
-                            existsProducers.Add(existsProducer);
-                            continue;
-                        }
-
-                        // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
-                        produceSources.Add(source!);
-                        producerPeer._pullPaddings.Add(new PullPadding
-                        {
-                            RoomId = roomId,
-                            ConsumerPeerId = PeerId,
-                            Source = source!,
-                        });
+                        return PullInternal(producerPeer, roomId, sources);
                     }
-
-                    return new PeerPullResult
-                    {
-                        ExistsProducers = existsProducers.ToArray(),
-                        ProduceSources = produceSources.ToArray(),
-                    };
+                }
+                else
+                {
+                    return PullInternal(producerPeer, roomId, sources);
                 }
             }
+        }
+
+        private PeerPullResult PullInternal(Peer producerPeer, string roomId, IEnumerable<string> sources)
+        {
+            var producerProducers = producerPeer._producers.Values.Where(m => sources.Contains(m.Source)).ToArray();
+
+            var existsProducers = new HashSet<Producer>();
+            var produceSources = new HashSet<string>();
+            foreach (var source in sources)
+            {
+                foreach (var existsProducer in producerProducers)
+                {
+                    // 忽略在同一 Room 的重复消费？
+                    if (_consumers.Values.Any(m => m.RoomId == roomId && m.Internal.ProducerId == existsProducer.ProducerId))
+                    {
+                        continue;
+                    }
+                    existsProducers.Add(existsProducer);
+                    continue;
+                }
+
+                // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
+                produceSources.Add(source!);
+                producerPeer._pullPaddings.Add(new PullPadding
+                {
+                    RoomId = roomId,
+                    ConsumerPeerId = PeerId,
+                    Source = source!,
+                });
+            }
+
+            return new PeerPullResult
+            {
+                ExistsProducers = existsProducers.ToArray(),
+                ProduceSources = produceSources.ToArray(),
+            };
         }
 
         /// <summary>
@@ -243,17 +258,6 @@ namespace TubumuMeeting.Mediasoup
                     throw new Exception($"ProduceAsync() | Peer:{PeerId} AppData[\"source\"] is null.");
                 }
                 var source = sourceObj.ToString();
-
-                if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("roomId", out var roomIdObj))
-                {
-                    throw new Exception($"ProduceAsync() | Peer:{ PeerId} AppData[\"roomId\"] is null.");
-                }
-                var roomId = roomIdObj.ToString();
-
-                if (!Rooms.TryGetValue(roomId, out var room))
-                {
-                    throw new Exception($"ProduceAsync() | Peer:{ PeerId} is not in Room:{roomId}.");
-                }
 
                 var transport = GetProducingTransport();
                 if (transport == null)
