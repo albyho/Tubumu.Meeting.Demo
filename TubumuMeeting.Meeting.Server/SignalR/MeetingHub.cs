@@ -148,12 +148,13 @@ namespace TubumuMeeting.Meeting.Server
             var peerInfos = new List<PeerInfo>();
             foreach (var peer in joinRoomResult.PeersInRoom)
             {
+                // 将自身的信息告知给房间内的其他人
                 var peerInfo = new PeerInfo
                 {
                     RoomId = joinRoomRequest.RoomId,
-                    PeerId = peer.PeerId,
-                    DisplayName = peer.DisplayName,
-                    Sources = peer.Sources,
+                    PeerId = joinRoomResult.SelfPeer.PeerId,
+                    DisplayName = joinRoomResult.SelfPeer.DisplayName,
+                    Sources = joinRoomResult.SelfPeer.Sources,
                 };
                 peerInfos.Add(peerInfo);
                 if (peer.PeerId != joinRoomResult.SelfPeer.PeerId)
