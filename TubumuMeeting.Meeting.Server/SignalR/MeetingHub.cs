@@ -151,9 +151,9 @@ namespace TubumuMeeting.Meeting.Server
                 var peerInfo = new PeerInfo
                 {
                     RoomId = joinRoomRequest.RoomId,
-                    PeerId = joinRoomResult.SelfPeer.PeerId,
-                    DisplayName = joinRoomResult.SelfPeer.DisplayName,
-                    Sources = joinRoomResult.SelfPeer.Sources,
+                    PeerId = peer.PeerId,
+                    DisplayName = peer.DisplayName,
+                    Sources = peer.Sources,
                 };
                 peerInfos.Add(peerInfo);
                 if (peer.PeerId != joinRoomResult.SelfPeer.PeerId)
@@ -214,7 +214,20 @@ namespace TubumuMeeting.Meeting.Server
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
             var peerId = UserId;
-            var produceResult = await _scheduler.ProduceAsync(peerId, produceRequest);
+            ProduceResult produceResult;
+            try
+            {
+                produceResult = await _scheduler.ProduceAsync(peerId, produceRequest);
+            }
+            catch (Exception ex)
+            {
+                return new MeetingMessage
+                {
+                    Code = 400,
+                    Message = $"Produce 失败:{ex.Message}",
+                };
+            }
+
             var producerPeer = produceResult.ProducerPeer;
             var producer = produceResult.Producer;
 
@@ -306,14 +319,25 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ResumeConsumer(string consumerId)
         {
-            var consumer = await _scheduler.ResumeConsumerAsync(UserId, consumerId);
-            if (consumer == null)
+            try
             {
-                return new MeetingMessage { Code = 400, Message = "ResumeConsumer 失败" };
-            }
+                var consumer = await _scheduler.ResumeConsumerAsync(UserId, consumerId);
+                if (consumer == null)
+                {
+                    return new MeetingMessage { Code = 400, Message = "ResumeConsumer 失败" };
+                }
 
-            // Message: consumerScore
-            SendMessage(UserId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = consumer.Score });
+                // Message: consumerScore
+                SendMessage(UserId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = consumer.Score });
+            }
+            catch (Exception ex)
+            {
+                return new MeetingMessage
+                {
+                    Code = 400,
+                    Message = $"ResumeConsumer 失败:{ex.Message}",
+                };
+            }
 
             return new MeetingMessage { Code = 200, Message = "ResumeConsumer 成功" };
         }

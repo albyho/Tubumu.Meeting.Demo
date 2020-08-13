@@ -1,11 +1,11 @@
 <template>
   <div id="app">
     <el-container>
-      <el-header>Tubumu Meeting</el-header>
+      <el-header>Meeting</el-header>
       <el-main>
-        <video id="localVideo" ref="localVideo" :srcObject.prop="localVideoStream" autoplay playsinline />
-        <video id="remoteVideo" ref="remoteVideo" :srcObject.prop="remoteVideoStream" autoplay playsinline />
-        <audio id="remoteAudio" ref="remoteAudio" :srcObject.prop="remoteAudioStream" autoplay />
+        <video id="localVideo" ref="localVideo" v-if="produce" :srcObject.prop="localVideoStream" autoplay playsinline />
+        <video v-for="(value, key) in remoteVideoStreams" :key="key" :srcObject.prop="value" autoplay playsinline />
+        <audio v-for="(value, key) in remoteAudioStreams" :key="key" :srcObject.prop="value" autoplay />
       </el-main>
     </el-container>
   </div>
@@ -30,9 +30,9 @@ const PC_PROPRIETARY_CONSTRAINTS = {
 
 // eslint-disable-next-line no-unused-vars
 const WEBCAM_SIMULCAST_ENCODINGS = [
-	{ scaleResolutionDownBy: 4, maxBitrate: 500000 },
-	{ scaleResolutionDownBy: 2, maxBitrate: 1000000 },
-	{ scaleResolutionDownBy: 1, maxBitrate: 5000000 }
+  { scaleResolutionDownBy: 4, maxBitrate: 500000 },
+  { scaleResolutionDownBy: 2, maxBitrate: 1000000 },
+  { scaleResolutionDownBy: 1, maxBitrate: 5000000 }
 ];
 
 // Used for VP9 webcam video.
@@ -45,15 +45,15 @@ const WEBCAM_KSVC_ENCODINGS = [
 // eslint-disable-next-line no-unused-vars
 const SCREEN_SHARING_SIMULCAST_ENCODINGS =
 [
-	{ dtx: true, maxBitrate: 1500000 },
-	{ dtx: true, maxBitrate: 6000000 }
+  { dtx: true, maxBitrate: 1500000 },
+  { dtx: true, maxBitrate: 6000000 }
 ];
 
 // Used for VP9 screen sharing.
 // eslint-disable-next-line no-unused-vars
 const SCREEN_SHARING_SVC_ENCODINGS =
 [
-	{ scalabilityMode: 'S3T3', dtx: true }
+  { scalabilityMode: 'S3T3', dtx: true }
 ];
 
 const logger = new Logger('App');
@@ -81,8 +81,8 @@ export default {
       forceH264: false,
       forceVP9: false,
       localVideoStream: null,
-      remoteVideoStream: null,
-      remoteAudioStream: null,
+      remoteVideoStreams: {},
+      remoteAudioStreams: {},
       rooms: new Map(),
       peers: new Map(),
       consumers: new Map()
@@ -146,17 +146,17 @@ export default {
         routerRtpCapabilities
       });
 
-			// NOTE: Stuff to play remote audios due to browsers' new autoplay policy.
-			//
-			// Just get access to the mic and DO NOT close the mic track for a while.
-			// Super hack!
-			// {
-			// 	const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			// 	const audioTrack = stream.getAudioTracks()[0];
+      // NOTE: Stuff to play remote audios due to browsers' new autoplay policy.
+      //
+      // Just get access to the mic and DO NOT close the mic track for a while.
+      // Super hack!
+      // {
+      //   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      //   const audioTrack = stream.getAudioTracks()[0];
 
-			// 	audioTrack.enabled = false;
+      //   audioTrack.enabled = false;
 
-			// 	setTimeout(() => audioTrack.stop(), 120000);
+      //   setTimeout(() => audioTrack.stop(), 120000);
       // }
       
       // GetRouterRtpCapabilities 成功, Join
@@ -354,11 +354,7 @@ if(this.peerId === '1000') {
       stream.addTrack(consumer.track);
 
       logger.debug('processNewConsumer() stream: %o', stream);
-      if (kind === 'video') {
-        this.remoteVideoStream = stream;
-      } else {
-        this.remoteAudioStream = stream;
-      }
+      this.$set(kind === 'video' ? this.remoteVideoStreams : this.remoteAudioStreams, consumerId, stream);
 
       // We are ready. Answer the request so the server will
       // resume this Consumer (which was paused for now).
@@ -405,12 +401,12 @@ if(this.peerId === '1000') {
           break;
         }
 
-				case 'peerLeaveRoom':
-				{
+        case 'peerLeaveRoom':
+        {
           // eslint-disable-next-line no-unused-vars
-					const { peerId } = data.data;
+          const { peerId } = data.data;
 
-					break;
+          break;
         }
         
         case 'produceSources':
@@ -430,11 +426,11 @@ if(this.peerId === '1000') {
         }
 
         case 'downlinkBwe':
-				{
-					logger.debug('\'downlinkBwe\' event:%o', data.data);
+        {
+          logger.debug('\'downlinkBwe\' event:%o', data.data);
 
-					break;
-				}
+          break;
+        }
 
         case 'consumerClosed': {
           const { consumerId } = data.data;
@@ -442,6 +438,7 @@ if(this.peerId === '1000') {
 
           if (!consumer) break;
 
+          this.$delete(consumer.kind === 'video' ? this.remoteVideoStreams : this.remoteAudioStreams, consumerId)
           consumer.close();
           this.consumers.delete(consumerId);
 
@@ -779,13 +776,8 @@ body {
   line-height: 60px;
 }
 
-.el-main {
-  line-height: 160px;
-}
-
 video {
-  width: 640px;
-  height: 360px;
+  width: 180px;
   background-color: #000;
 }
 
