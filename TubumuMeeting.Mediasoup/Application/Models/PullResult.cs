@@ -1,6 +1,6 @@
 ﻿using TubumuMeeting.Mediasoup;
 
-namespace TubumuMeeting.Meeting.Server
+namespace TubumuMeeting.Mediasoup
 {
     public class PullResult
     {

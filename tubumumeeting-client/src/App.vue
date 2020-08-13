@@ -3,8 +3,8 @@
     <el-container>
       <el-header>Tubumu Meeting</el-header>
       <el-main>
-        <video id="localVideo" ref="localVideo" :srcObject.prop="localVideoStream" controls autoplay playsinline />
-        <video id="remoteVideo" ref="remoteVideo" :srcObject.prop="remoteVideoStream" controls autoplay playsinline />
+        <video id="localVideo" ref="localVideo" :srcObject.prop="localVideoStream" autoplay playsinline />
+        <video id="remoteVideo" ref="remoteVideo" :srcObject.prop="remoteVideoStream" autoplay playsinline />
         <audio id="remoteAudio" ref="remoteAudio" :srcObject.prop="remoteAudioStream" autoplay />
       </el-main>
     </el-container>
@@ -785,6 +785,8 @@ body {
 
 video {
   width: 640px;
+  height: 360px;
+  background-color: #000;
 }
 
  /* 水平镜像翻转 */

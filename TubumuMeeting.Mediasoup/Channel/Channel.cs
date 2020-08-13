@@ -363,8 +363,7 @@ namespace TubumuMeeting.Mediasoup
                 if (!_sents.TryGetValue((uint)id, out Sent sent))
                 {
                     _logger.LogError($"ProcessMessage() | received response does not match any sent request [id:{id}], payload:{payload}");
-
-                    sent.Reject?.Invoke(new Exception($"Received response does not match any sent request, payload:{payload}"));
+                    return;
                 }
 
                 if (accepted)

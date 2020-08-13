@@ -6,10 +6,9 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using Tubumu.Core.Extensions;
-using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Mediasoup.Extensions;
 
-namespace TubumuMeeting.Meeting.Server
+namespace TubumuMeeting.Mediasoup
 {
     public partial class Peer : IEquatable<Peer>
     {
@@ -42,7 +41,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncLock _locker = new AsyncLock();
 
-        public bool Closed { get; private set; }
+        public bool Joined { get; private set; }
 
         private readonly WebRtcTransportSettings _webRtcTransportSettings;
 
@@ -82,33 +81,7 @@ namespace TubumuMeeting.Meeting.Server
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? new string[0];
             AppData = appData ?? new Dictionary<string, object>();
-            Closed = false;
-        }
-
-        /// <summary>
-        /// Close
-        /// </summary>
-        public void Close()
-        {
-            if (Closed)
-            {
-                return;
-            }
-
-            using (_locker.Lock())
-            {
-                if (Closed)
-                {
-                    return;
-                }
-
-                Closed = true;
-
-                // Iterate and close all mediasoup Transport associated to this Peer, so all
-                // its Producers and Consumers will also be closed.
-                _transports.Values.ForEach(m => m.Close());
-                _transports.Clear();
-            }
+            Joined = true;
         }
 
         /// <summary>
@@ -118,10 +91,10 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<WebRtcTransport> CreateWebRtcTransportAsync(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (!(createWebRtcTransportRequest.Consuming ^ createWebRtcTransportRequest.Producing))
                 {
@@ -186,10 +159,10 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> ConnectWebRtcTransportAsync(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (!_transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
                 {
@@ -210,13 +183,12 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public PeerPullResult Pull(Peer producerPeer, string roomId, IEnumerable<string> sources)
         {
-            CheckClosed();
+            CheckJoined();
             using (_locker.Lock())
             {
-                CheckClosed();
+                CheckJoined();
 
-                // TODO: (alby)开发时就知道的 Bug: 线程安全问题。
-                using(producerPeer._locker.Lock())
+                using (producerPeer._locker.Lock())
                 {
                     var producerProducers = producerPeer._producers.Values.Where(m => sources.Contains(m.Source)).ToArray();
 
@@ -261,10 +233,10 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<PeerProduceResult> ProduceAsync(ProduceRequest produceRequest)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
                 {
@@ -318,12 +290,13 @@ namespace TubumuMeeting.Meeting.Server
                 });
 
                 // Store producer source
+                producer.ProducerPeer = this;
                 producer.Source = source;
 
                 // Store the Producer into the Peer data Object.
                 _producers[producer.ProducerId] = producer;
 
-                producer.On("close", _ => _producers.Remove(producer.ProducerId));
+                producer.On("@close", _ => _producers.Remove(producer.ProducerId));
                 producer.On("transportclose", _ => _producers.Remove(producer.ProducerId));
 
                 var matchedPullPaddings = _pullPaddings.Where(m => m.Source == producer.Source).ToArray();
@@ -346,12 +319,13 @@ namespace TubumuMeeting.Meeting.Server
         /// <param name="producer"></param>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        public async Task<Consumer> ConsumeAsync(Producer producer, string roomId)
+        public async Task<Consumer> ConsumeAsync(Peer producerPeer, Producer producer, string roomId)
         {
-            CheckClosed();
+            // 调用者确保 producer 属于 producerPeer
+            CheckJoined();
             using (_locker.Lock())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_rtpCapabilities == null || !_router.CanConsume(producer.ProducerId, _rtpCapabilities))
                 {
@@ -375,25 +349,46 @@ namespace TubumuMeeting.Meeting.Server
                 });
 
                 consumer.RoomId = roomId;
+                consumer.ProducerPeer = producerPeer;
+                consumer.ConsumerPeer = this;
+                consumer.Producer = producer;
                 consumer.Source = producer.Source;
 
                 // Store the Consumer into the consumerPeer data Object.
                 _consumers[consumer.ConsumerId] = consumer;
 
-                consumer.On("close", _ => _consumers.Remove(consumer.ConsumerId));
+                using (await producerPeer._locker.LockAsync())
+                {
+                    producer.Consumers[consumer.ConsumerId] = consumer;
+                }
+
+                consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
                 consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
                 consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
+                consumer.Observer.On("close", _ =>
+                {
+                    _consumers.Remove(consumer.ConsumerId);
+                    using (producerPeer._locker.Lock())
+                    {
+                        producer.Consumers.Remove(consumer.ConsumerId);
+                    }
+                });
 
                 return consumer;
             }
         }
 
+        /// <summary>
+        /// 停止生产
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<bool> CloseProducerAsync(string producerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_producers.TryGetValue(producerId, out var producer))
                 {
@@ -406,12 +401,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 暂停生产
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<bool> PauseProducerAsync(string producerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_producers.TryGetValue(producerId, out var producer))
                 {
@@ -423,9 +423,14 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 恢复生产
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<bool> ResumeProducerAsync(string producerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
                 if (_producers.TryGetValue(producerId, out var producer))
@@ -438,12 +443,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 停止消费
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<bool> CloseConsumerAsync(string consumerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -456,12 +466,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 暂停消费
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<bool> PauseConsumerAsync(string consumerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -473,12 +488,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 恢复消费
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<Consumer> ResumeConsumerAsync(string consumerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -490,12 +510,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 设置消费建议 Layers
+        /// </summary>
+        /// <param name="setConsumerPreferedLayersRequest"></param>
+        /// <returns></returns>
         public async Task<bool> SetConsumerPreferedLayersAsync(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
                 {
@@ -507,12 +532,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 设置消费 Priority
+        /// </summary>
+        /// <param name="setConsumerPriorityRequest"></param>
+        /// <returns></returns>
         public async Task<bool> SetConsumerPriorityAsync(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
                 {
@@ -524,12 +554,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 请求关键帧
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<bool> RequestConsumerKeyFrameAsync(string consumerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -541,12 +576,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 获取 Transport 状态
+        /// </summary>
+        /// <param name="transportId"></param>
+        /// <returns></returns>
         public async Task<TransportStat> GetTransportStatsAsync(string transportId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_transports.TryGetValue(transportId, out var transport))
                 {
@@ -561,12 +601,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 获取生产者状态
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<ProducerStat> GetProducerStatsAsync(string producerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_producers.TryGetValue(producerId, out var producer))
                 {
@@ -580,12 +625,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 获取消费者状态
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<ConsumerStat> GetConsumerStatsAsync(string consumerId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -599,12 +649,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        /// <summary>
+        /// 重置 Ice
+        /// </summary>
+        /// <param name="transportId"></param>
+        /// <returns></returns>
         public async Task<IceParameters?> RestartIceAsync(string transportId)
         {
-            CheckClosed();
+            CheckJoined();
             using (await _locker.LockAsync())
             {
-                CheckClosed();
+                CheckJoined();
 
                 if (_transports.TryGetValue(transportId, out var transport))
                 {
@@ -622,24 +677,65 @@ namespace TubumuMeeting.Meeting.Server
         }
 
         /// <summary>
-        /// [离开房间]关闭除本房间的本人外，无人消费的自己的 Producer
+        /// 离开房间
         /// </summary>
-        /// <param name="excludeRoomId"></param>
-        public void CloseProducersNoConsumersExcludeRoom(string excludeRoomId)
+        /// <param name="roomId"></param>
+        public void LeaveRoom(string roomId)
         {
             using (_locker.Lock())
             {
-                var producersToClose = new HashSet<Producer>();
-                var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
-                                from p in ri.Peers.Values           // 的所有 Peer
-                                from pc in p._consumers.Values      // 的 Consumer
-                                where pc.RoomId != excludeRoomId    // 排除房间
-                                select pc;
-
+                var producersToClose = new List<Producer>();
                 foreach (var producer in _producers.Values)
                 {
-                    // 如果其他 Room 中没有消费 producer，则关闭。
-                    if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId))
+                    // Producer 在其他房间被消费，则继续生产。
+                    if (!producer.Consumers.Values.Any(m => m.RoomId != roomId))
+                    {
+                        producersToClose.Add(producer);
+                    }
+                }
+                foreach (var producer in _consumers.Values.Where(m => m.RoomId == roomId).Select(m => m.Producer!))
+                {
+                    // Producer 在其他房间被消费，或者在房间被其他人消费，则继续生产。
+                    if (!producer.Consumers.Values.Any(m => m.RoomId != roomId || m.ConsumerPeer!.PeerId != PeerId))
+                    {
+                        producersToClose.Add(producer);
+                    }
+                }
+                // 1、Producer 关闭后会触发相应的 Consumer 内部的 `producerclose` 事件
+                // 2、拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
+                foreach (var producerToClose in producersToClose)
+                {
+                    producerToClose.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 离开
+        /// </summary>
+        public void Leave()
+        {
+            if (!Joined)
+            {
+                return;
+            }
+
+            using (_locker.Lock())
+            {
+                if (!Joined)
+                {
+                    return;
+                }
+
+                Joined = false;
+
+                var producersToClose = new List<Producer>();
+                producersToClose.AddRange(_producers.Values);
+
+                foreach (var producer in _consumers.Values.Select(m => m.Producer!))
+                {
+                    // Producer 被其他人消费，则继续生产。
+                    if (!producer.Consumers.Values.Any(m => m.ConsumerPeer!.PeerId != PeerId))
                     {
                         producersToClose.Add(producer);
                     }
@@ -651,47 +747,16 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     producerToClose.Close();
                 }
+
+                // Iterate and close all mediasoup Transport associated to this Peer, so all
+                // its Producers and Consumers will also be closed.
+                _transports.Values.ForEach(m => m.Close());
+                _transports.Clear();
             }
         }
 
         /// <summary>
-        /// 关闭除本 Peer 外其他 Peer 没有消费的 Producer
-        /// </summary>
-        /// <param name="excludeRoomId"></param>
-        public void CloseProducersNoConsumersExcludePeer(string excludePeerId)
-        {
-            using (_locker.Lock())
-            {
-                var producersToClose = new HashSet<Producer>();
-                var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
-                                from p in ri.Peers.Values           // 的所有 Peer
-                                from pc in p._consumers.Values      // 的 Consumer
-                                where p.PeerId != excludePeerId     // 排除 Peer
-                                select new
-                                {
-                                    PeerId = p.PeerId,
-                                    Consumer = pc
-                                };
-
-                foreach (var producer in _producers.Values)
-                {
-                    // 如果其他 Room 中没有消费 producer，则关闭。
-                    if (!consumers.Any(m => m.Consumer.Internal.ProducerId == producer.ProducerId))
-                    {
-                        producersToClose.Add(producer);
-                    }
-                }
-
-                // Producer 关闭后会触发相应的 Consumer `producerclose` 事件，从而拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
-                foreach (var producerToClose in producersToClose)
-                {
-                    producerToClose.Close();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 关闭除指定 Room 里的指定 Peer 外无人消费的 Producer
+        /// [离开房间]关闭他人的 Producer
         /// </summary>
         /// <param name="excludeRoomId"></param>
         /// <param name="excludePeerId"></param>
@@ -711,6 +776,43 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     // 如果其他 Room 中没有消费 producer，则关闭。
                     if (!consumers.Any(m => m.Internal.ProducerId == producer.ProducerId))
+                    {
+                        producersToClose.Add(producer);
+                    }
+                }
+
+                // Producer 关闭后会触发相应的 Consumer `producerclose` 事件，从而拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
+                foreach (var producerToClose in producersToClose)
+                {
+                    producerToClose.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// [离开]关闭其他人的、除本人外的没有消费的 Producer
+        /// </summary>
+        /// <param name="excludeRoomId"></param>
+        public void CloseProducersNoConsumersExcludePeer(string excludePeerId)
+        {
+            using (_locker.Lock())
+            {
+                var producersToClose = new HashSet<Producer>();
+
+                var consumers = from ri in Rooms.Values             // Peer 所在的所有房间
+                                from p in ri.Peers.Values           // 的所有 Peer
+                                from pc in p._consumers.Values      // 的 Consumer
+                                where p.PeerId != excludePeerId     // 排除 Peer
+                                select new
+                                {
+                                    PeerId = p.PeerId,
+                                    Consumer = pc
+                                };
+
+                foreach (var producer in _producers.Values)
+                {
+                    // 如果其他 Room 中没有消费 producer，则关闭。
+                    if (!consumers.Any(m => m.Consumer.Internal.ProducerId == producer.ProducerId))
                     {
                         producersToClose.Add(producer);
                     }
@@ -746,11 +848,11 @@ namespace TubumuMeeting.Meeting.Server
             return _transports.Values.Any(m => m.AppData != null && m.AppData.TryGetValue("Consuming", out var value) && (bool)value);
         }
 
-        private void CheckClosed()
+        private void CheckJoined()
         {
-            if (Closed)
+            if (!Joined)
             {
-                throw new Exception($"CheckClosed() | Peer:{PeerId} was closed");
+                throw new Exception($"CheckClosed() | Peer:{PeerId} is not joined.");
             }
         }
 

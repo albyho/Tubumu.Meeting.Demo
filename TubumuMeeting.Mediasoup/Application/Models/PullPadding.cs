@@ -1,4 +1,4 @@
-﻿namespace TubumuMeeting.Meeting.Server
+﻿namespace TubumuMeeting.Mediasoup
 {
     public class PullPadding
     {

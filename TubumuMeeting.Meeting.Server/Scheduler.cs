@@ -120,16 +120,8 @@ namespace TubumuMeeting.Meeting.Server
                         room.Peers.Remove(peerId);
                     }
 
-                    foreach(var otherPeer in otherPeers)
-                    {
-                        // 考虑：获取本人的 Cosumer，如果其对应的 Producer 没有其他人消费，则关闭。现在是粗暴地遍历。
-                        // 关闭除本 Peer 外其他 Peer 没有消费的 Producer
-                        otherPeer.CloseProducersNoConsumersExcludePeer(peer.PeerId);
-                    }
-
                     peer.Rooms.Clear();
-                    // Peer.Close() 会关闭所有 Transport，从而所有 Producer 会关闭。所以这里不用主动关闭 Producer。
-                    peer.Close();
+                    peer.Leave();
                     Peers.Remove(peerId);
 
                     return new LeaveResult
@@ -214,20 +206,14 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists in Room:{roomId}.");
                     }
 
-                    // [离开房间]关闭除本房间的本人外，无人消费的自己的 Producer
-                    peer.CloseProducersNoConsumersExcludeRoom(roomId);
-
-                    // 考虑：获取本人的在本房间的 Cosumer，如果其对应的 Producer 没有其他人消费，则关闭。现在是粗暴地遍历所有可能的 Consumer。
-                    // NOTE: 本 Peer 可以在其他 Room 继续消费。
-                    var otherPeers = room.Peers.Values.Where(m => m.PeerId != peerId).ToArray();
-                    foreach (var otherPeer in otherPeers)
-                    {
-                        otherPeer.CloseProducersNoConsumers(roomId, peer.PeerId);
-                    }
+                    // 离开房间
+                    peer.LeaveRoom(roomId);
 
                     // Peer 和 Room 的关系
                     room.Peers.Remove(peerId);
                     peer.Rooms.Remove(roomId);
+
+                    var otherPeers = room.Peers.Values.ToArray();
 
                     return new LeaveRoomResult
                     {
@@ -321,13 +307,17 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<Consumer> ConsumeAsync(string peerId, Producer producer, string roomId)
+        public async Task<Consumer> ConsumeAsync(string producerPeerId, string cosumerPeerId, Producer producer, string roomId)
         {
             using (await _peersLocker.ReaderLockAsync())
             {
-                if (!Peers.TryGetValue(peerId, out var peer))
+                if (!Peers.TryGetValue(producerPeerId, out var producerPeer))
                 {
-                    throw new Exception($"ConsumeAsync() | Peer:{peerId} is not exists.");
+                    throw new Exception($"ConsumeAsync() | Producer Peer:{producerPeerId} is not exists.");
+                }
+                if (!Peers.TryGetValue(cosumerPeerId, out var cosumerPeer))
+                {
+                    throw new Exception($"ConsumeAsync() | Consumer Peer:{cosumerPeerId} is not exists.");
                 }
                 using (await _roomsLocker.ReaderLockAsync())
                 {
@@ -336,10 +326,10 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"ConsumeAsync() | Room:{roomId} is not exists.");
                     }
 
-                    var consumer = await peer.ConsumeAsync(producer, roomId);
+                    var consumer = await cosumerPeer.ConsumeAsync(producerPeer, producer, roomId);
                     if (consumer == null)
                     {
-                        throw new Exception($"ConsumeAsync() | Peer:{peerId} produce faild.");
+                        throw new Exception($"ConsumeAsync() | Peer:{cosumerPeerId} consume faild.");
                     }
 
                     return consumer;

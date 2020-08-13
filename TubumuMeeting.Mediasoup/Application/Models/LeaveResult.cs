@@ -1,6 +1,6 @@
-﻿namespace TubumuMeeting.Meeting.Server
+﻿namespace TubumuMeeting.Mediasoup
 {
-    public class LeaveRoomResult
+    public class LeaveResult
     {
         public Peer SelfPeer { get; set; }
 

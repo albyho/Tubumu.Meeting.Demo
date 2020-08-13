@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
-using TubumuMeeting.Mediasoup;
 
-namespace TubumuMeeting.Meeting.Server
+namespace TubumuMeeting.Mediasoup
 {
     public partial class Room : IEquatable<Room>
     {

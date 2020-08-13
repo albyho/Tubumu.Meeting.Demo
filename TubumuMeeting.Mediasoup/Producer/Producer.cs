@@ -89,6 +89,16 @@ namespace TubumuMeeting.Mediasoup
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
+        /// [扩展]ProducerPeer
+        /// </summary>
+        public Peer? ProducerPeer;
+
+        /// <summary>
+        /// [扩展]Consumers
+        /// </summary>
+        public Dictionary<string, Consumer> Consumers { get; } = new Dictionary<string, Consumer>();
+
+        /// <summary>
         /// [扩展]Source.
         /// </summary>
         public string? Source { get; set; }
