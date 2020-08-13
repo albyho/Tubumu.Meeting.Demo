@@ -362,9 +362,9 @@ namespace TubumuMeeting.Mediasoup
             {
                 if (!_sents.TryGetValue((uint)id, out Sent sent))
                 {
-                    _logger.LogError($"ProcessMessage() | received response does not match any sent request [id:{id}]");
+                    _logger.LogError($"ProcessMessage() | received response does not match any sent request [id:{id}], payload:{payload}");
 
-                    return;
+                    sent.Reject?.Invoke(new Exception($"Received response does not match any sent request, payload:{payload}"));
                 }
 
                 if (accepted)
@@ -376,13 +376,15 @@ namespace TubumuMeeting.Mediasoup
                 else if (!error.IsNullOrWhiteSpace())
                 {
                     // 在 Node.js 实现中，error 的值可能是 "Error" 或 "TypeError"。
-                    _logger.LogWarning($"ProcessMessage() | request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}");
+                    _logger.LogWarning($"ProcessMessage() | request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}. payload:{payload}");
 
-                    sent.Reject?.Invoke(new Exception(reason));
+                    sent.Reject?.Invoke(new Exception($"Request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}. payload:{payload}"));
                 }
                 else
                 {
-                    _logger.LogError($"ProcessMessage() | received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+                    _logger.LogError($"ProcessMessage() | received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]. payload:{payload}");
+
+                    sent.Reject?.Invoke(new Exception($"Received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]. payload:{payload}"));
                 }
             }
             // If a notification emit it to the corresponding entity.

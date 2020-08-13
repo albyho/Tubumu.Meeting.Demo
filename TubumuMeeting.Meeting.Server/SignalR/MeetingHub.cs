@@ -188,7 +188,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
         }
 
-        public MeetingMessage Pull(ConsumeRequest consumeRequest)
+        public MeetingMessage Pull(PullRequest consumeRequest)
         {
             var consumeResult = _scheduler.Pull(UserId, consumeRequest);
             var consumerPeer = consumeResult.ConsumePeer;
@@ -222,11 +222,15 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var consumerPeer = item.ConsumerPeer;
                 var roomId = item.RoomId;
+
+                // NOTE: For Testing
+                //if (consumerPeer.PeerId == "1") continue;
                 // 其他 Peer 消费本 Peer
                 CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
-            CreateConsumer(producerPeer, producerPeer, producer, "1").ContinueWithOnFaultedHandleLog(_logger);
+            // NOTE: For Testing
+            //CreateConsumer(producerPeer, producerPeer, producer, "1").ContinueWithOnFaultedHandleLog(_logger);
 
             // Set Producer events.
             producer.On("score", score =>
@@ -397,15 +401,10 @@ namespace TubumuMeeting.Meeting.Server
             // Set Consumer events.
             consumer.On("transportclose", _ =>
             {
-                // Remove from its map.
-                consumerPeer.RemoveConsumer(consumer.ConsumerId);
             });
 
             consumer.On("producerclose", _ =>
             {
-                // Remove from its map.
-                consumerPeer.RemoveConsumer(consumer.ConsumerId);
-
                 // Message: consumerClosed
                 SendMessage(consumerPeer.PeerId, "consumerClosed", new { ConsumerId = consumer.ConsumerId });
             });

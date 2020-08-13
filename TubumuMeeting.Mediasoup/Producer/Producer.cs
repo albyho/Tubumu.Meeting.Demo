@@ -296,7 +296,7 @@ namespace TubumuMeeting.Mediasoup
         /// Send RTP packet (just valid for Producers created on a DirectTransport).
         /// </summary>
         /// <param name="rtpPacket"></param>
-        public void send(byte[] rtpPacket)
+        public void Send(byte[] rtpPacket)
         {
             _payloadChannel.Notify("producer.send", Internal, null, rtpPacket);
         }

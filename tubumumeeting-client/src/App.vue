@@ -3,9 +3,9 @@
     <el-container>
       <el-header>Tubumu Meeting</el-header>
       <el-main>
-        <video id="localVideo" ref="localVideo" :srcObject.prop="localVideoStream" autoplay="autoplay" />
-        <video id="remoteVideo" ref="remoteVideo" :srcObject.prop="remoteVideoStream" autoplay="autoplay" />
-        <audio id="remoteAudio" ref="remoteAudio" :srcObject.prop="remoteAudioStream" autoplay="autoplay" />
+        <video id="localVideo" ref="localVideo" :srcObject.prop="localVideoStream" controls autoplay playsinline />
+        <video id="remoteVideo" ref="remoteVideo" :srcObject.prop="remoteVideoStream" controls autoplay playsinline />
+        <audio id="remoteAudio" ref="remoteAudio" :srcObject.prop="remoteAudioStream" autoplay />
       </el-main>
     </el-container>
   </div>
@@ -17,6 +17,7 @@ import querystring from 'querystring';
 import * as mediasoupClient from 'mediasoup-client';
 import * as signalR from '@microsoft/signalr';
 
+// eslint-disable-next-line no-unused-vars
 const VIDEO_CONSTRAINS = {
   qvga: { width: { ideal: 320 }, height: { ideal: 240 } },
   vga: { width: { ideal: 640 }, height: { ideal: 480 } },
@@ -27,6 +28,7 @@ const PC_PROPRIETARY_CONSTRAINTS = {
   optional: [{ googDscp: true }]
 };
 
+// eslint-disable-next-line no-unused-vars
 const WEBCAM_SIMULCAST_ENCODINGS = [
 	{ scaleResolutionDownBy: 4, maxBitrate: 500000 },
 	{ scaleResolutionDownBy: 2, maxBitrate: 1000000 },
@@ -34,6 +36,7 @@ const WEBCAM_SIMULCAST_ENCODINGS = [
 ];
 
 // Used for VP9 webcam video.
+// eslint-disable-next-line no-unused-vars
 const WEBCAM_KSVC_ENCODINGS = [
   { scalabilityMode: 'S3T3_KEY' }
 ];
@@ -68,6 +71,8 @@ export default {
       mediasoupDevice: null,
       sendTransport: null,
       recvTransport: null,
+      consume: true,
+      produce: false,
       webcams: {},
       audioDevices: {},
       webcamProducer: null,
@@ -91,6 +96,7 @@ export default {
       try {
         const { peerId, peerid } = querystring.parse(location.search.replace('?', ''));
         this.peerId = peerId || peerid;
+        this.produce = this.peerId !== '0' && this.peerId !== '1';
         const accessTokens = [
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.5w00ixg06pRPxcdbtbmRVI6Wy_Ta9qsSJc3D7PE3chQ',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMiIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.q2tKWUa6i4u0VpZDhA8Fw92NoV_g9YQeWD-OeF7fAvU',
@@ -166,74 +172,73 @@ export default {
         return;
       }
 
-// 临时
-if(this.peerId !== '0') {
-      // Join成功，CreateWebRtcTransport(生产) 
-      result = await this.connection.invoke('CreateWebRtcTransport', {
-        forceTcp: false,
-        producing: true,
-        consuming: false,
-        sctpCapabilities: undefined // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
-      });
-      if (result.code !== 200) {
-        logger.error('processNotification() | CreateWebRtcTransport failure.');
-        return;
-      }
-
-      // CreateWebRtcTransport(生产), createSendTransport
-      this.sendTransport = this.mediasoupDevice.createSendTransport({
-        id: result.data.transportId,
-        iceParameters: result.data.iceParameters,
-        iceCandidates: result.data.iceCandidates,
-        dtlsParameters: result.data.dtlsParameters,
-        sctpParameters: result.data.sctpParameters,
-        iceServers: [],
-        proprietaryConstraints: PC_PROPRIETARY_CONSTRAINTS
-      });
-
-      this.sendTransport.on(
-        'connect',
-        ({ dtlsParameters }, callback, errback) => {
-          logger.debug('sendTransport.on() connect dtls: %o', dtlsParameters);
-          this.connection
-            .invoke('ConnectWebRtcTransport', {
-              transportId: this.sendTransport.id,
-              dtlsParameters
-            })
-            .then(callback)
-            .catch(errback);
+      if(this.produce) {
+        // Join成功，CreateWebRtcTransport(生产) 
+        result = await this.connection.invoke('CreateWebRtcTransport', {
+          forceTcp: false,
+          producing: true,
+          consuming: false,
+          sctpCapabilities: undefined // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
+        });
+        if (result.code !== 200) {
+          logger.error('processNotification() | CreateWebRtcTransport failure.');
+          return;
         }
-      );
 
-      this.sendTransport.on(
-        'produce',
-        // appData 需要包含 roomId 和 source
-        // eslint-disable-next-line no-unused-vars
-        async ({ kind, rtpParameters, appData }, callback, errback) => {
-          logger.debug('sendTransport.on() produce, appData: %o', appData);
-          try {
-            const result = await this.connection.invoke('Produce', {
-              transportId: this.sendTransport.id,
-              kind,
-              rtpParameters,
-              appData
-            });
-            if (result.code !== 200) {
-              logger.debug(result.message);
-              errback(new Error(result.message));
-              return;
-            }
-            callback({ id: result.data.id });
-          } catch (error) {
-            errback(error);
+        // CreateWebRtcTransport(生产), createSendTransport
+        this.sendTransport = this.mediasoupDevice.createSendTransport({
+          id: result.data.transportId,
+          iceParameters: result.data.iceParameters,
+          iceCandidates: result.data.iceCandidates,
+          dtlsParameters: result.data.dtlsParameters,
+          sctpParameters: result.data.sctpParameters,
+          iceServers: [],
+          proprietaryConstraints: PC_PROPRIETARY_CONSTRAINTS
+        });
+
+        this.sendTransport.on(
+          'connect',
+          ({ dtlsParameters }, callback, errback) => {
+            logger.debug('sendTransport.on() connect dtls: %o', dtlsParameters);
+            this.connection
+              .invoke('ConnectWebRtcTransport', {
+                transportId: this.sendTransport.id,
+                dtlsParameters
+              })
+              .then(callback)
+              .catch(errback);
           }
-        }
-      );
+        );
 
-      this.sendTransport.on('connectionstatechange', state => {
-        logger.debug(`sendTransport.on() connectionstatechange: ${state}`);
-      });
-}
+        this.sendTransport.on(
+          'produce',
+          // appData 需要包含 roomId 和 source
+          // eslint-disable-next-line no-unused-vars
+          async ({ kind, rtpParameters, appData }, callback, errback) => {
+            logger.debug('sendTransport.on() produce, appData: %o', appData);
+            try {
+              const result = await this.connection.invoke('Produce', {
+                transportId: this.sendTransport.id,
+                kind,
+                rtpParameters,
+                appData
+              });
+              if (result.code !== 200) {
+                logger.debug(result.message);
+                errback(new Error(result.message));
+                return;
+              }
+              callback({ id: result.data.id });
+            } catch (error) {
+              errback(error);
+            }
+          }
+        );
+
+        this.sendTransport.on('connectionstatechange', state => {
+          logger.debug(`sendTransport.on() connectionstatechange: ${state}`);
+        });
+      }
       // createSendTransport 成功, CreateWebRtcTransport(消费)
       result = await this.connection.invoke('CreateWebRtcTransport', {
         forceTcp: false,
@@ -285,10 +290,10 @@ if(this.peerId !== '0') {
 // 临时
 if(this.peerId === '1000') {
       if(this.mediasoupDevice.canProduce('audio')) {
-        this.enableMic();
+       await this.enableMic();
       }
       if(this.mediasoupDevice.canProduce('video')) {
-        this.enableWebcam();
+       await this.enableWebcam();
       }
 }
     },
@@ -364,10 +369,10 @@ if(this.peerId === '1000') {
         return;
       }
     },
-    async pull(roomId, peerId, sources) {
+    async pull(roomId, producerPeerId, sources) {
       const result = await this.connection.invoke('Pull', {
         roomId,
-        peerId,
+        producerPeerId,
         sources
       });
       if (result.code !== 200) {
@@ -410,12 +415,14 @@ if(this.peerId === '1000') {
         
         case 'produceSources':
         {
+          if(!this.produce) break;
+
           const { /*roomId, */produceSources } = data.data;
           for(let i =0; i < produceSources.length; i++){
             if(produceSources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
-              this.enableMic();
+              await this.enableMic();
             } else if(produceSources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
-              this.enableWebcam();
+              await this.enableWebcam();
             }
           }
 
@@ -576,24 +583,25 @@ if(this.peerId === '1000') {
       try {
         const deviceId = await this._getWebcamDeviceId();
 
-        const device = this.webcams[deviceId];
+        logger.debug(`_setWebcamProducer() | webcam: ${deviceId}`);
 
-        if (!device) throw new Error('no webcam devices');
+        const device = this.webcams.get(deviceId);
 
-        logger.debug(
-          '_setWebcamProducer() | new selected webcam [device:%o]',
-          device
-        );
+        if (!device) throw new Error(`no webcam devices: ${JSON.stringify(this.webcams)}`);
+
+        logger.debug('_setWebcamProducer() | new selected webcam [device:%o]', device);
 
         logger.debug('_setWebcamProducer() | calling getUserMedia()');
 
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        /*
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             deviceId: { ideal: deviceId },
             ...VIDEO_CONSTRAINS.hd
           }
         });
-
+        //*/
         this.localVideoStream = stream;
 
         track = stream.getVideoTracks()[0];
@@ -652,7 +660,6 @@ if(this.peerId === '1000') {
         this.webcamProducer.on('trackended', () => {
           this.disableWebcam().catch(() => {});
         });
-
         logger.debug('_setWebcamProducer() succeeded');
       } catch (error) {
         logger.error('_setWebcamProducer() failed:%o', error);
@@ -701,17 +708,18 @@ if(this.peerId === '1000') {
       logger.debug('_updateWebcams()');
 
       // Reset the list.
-      this.webcams = {};
+      this.webcams = new Map();
 
       try {
         logger.debug('_updateWebcams() | calling enumerateDevices()');
 
         const devices = await navigator.mediaDevices.enumerateDevices();
 
+        logger.debug('_updateWebcams() | %o', devices);
         for (const device of devices) {
           if (device.kind !== 'videoinput') continue;
-
-          this.webcams[device.deviceId] = device;
+          logger.debug('_updateWebcams() | %o', device);
+          this.webcams.set(device.deviceId, device);
         }
       } catch (error) {
         logger.error('_updateWebcams() failed:%o', error);
@@ -739,7 +747,7 @@ if(this.peerId === '1000') {
 
         await this._updateWebcams();
 
-        const webcams = Object.values(this.webcams);
+        const webcams = Array.from(this.webcams.values());
         return webcams[0] ? webcams[0].deviceId : null;
       } catch (error) {
         logger.error('_getWebcamDeviceId() failed:%o', error);
