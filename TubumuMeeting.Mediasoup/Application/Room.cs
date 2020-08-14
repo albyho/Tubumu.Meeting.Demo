@@ -41,7 +41,7 @@ namespace TubumuMeeting.Mediasoup
         public Router Router { get; private set; }
 
         /// <summary>
-        /// Peers 只允许Scheduler访问，由后者的 _peerRoomLocker 保护。
+        /// Peers 只允许 Scheduler 访问，由后者的 _peerRoomLocker 保护。
         /// </summary>
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
 

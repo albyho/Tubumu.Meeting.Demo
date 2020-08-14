@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -140,15 +141,14 @@ namespace TubumuMeeting.Mediasoup
 
         public Task<string?> RequestAsync(MethodId methodId, object? @internal = null, object? data = null)
         {
-            var method = methodId.GetEnumStringValue();
-            var id = InterlockedExtensions.Increment(ref _nextId);
-
-            _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
-
             if (_closed)
             {
                 throw new InvalidStateException("Channel closed");
             }
+
+            var method = methodId.GetEnumStringValue();
+            var id = InterlockedExtensions.Increment(ref _nextId);
+            _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
 
             var requestMesssge = new RequestMessage
             {
@@ -261,7 +261,10 @@ namespace TubumuMeeting.Mediasoup
                         {
                             // 123 = '{' (a Channel JSON messsage).
                             case '{':
-                                ProcessMessage(payloadString);
+                                ThreadPool.QueueUserWorkItem(_ =>
+                                {
+                                    ProcessMessage(payloadString);
+                                });
                                 break;
 
                             // 68 = 'D' (a debug log).
@@ -287,13 +290,13 @@ namespace TubumuMeeting.Mediasoup
                                 break;
 
                             default:
-                                _logger.LogWarning($"ConsumerSocketOnData() | worker[pid:{_processId}] unexpected data:{ payloadString }");
+                                _logger.LogWarning($"ConsumerSocketOnData() | Worker [pid:{_processId}] unexpected data:{ payloadString }");
                                 break;
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"ConsumerSocketOnData() | received invalid message from the worker process:{ex}\ndata: {payloadString}");
+                        _logger.LogError($"ConsumerSocketOnData() | Received invalid message from the worker process:{ex}\ndata: {payloadString}");
                         // Reset the buffer and exit.
                         _recvBuffer = null;
                         return;
@@ -315,7 +318,7 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception ex)
             {
-                _logger.LogError($"ConsumerSocketOnData() | invalid netstring data received from the worker process:{ex}");
+                _logger.LogError($"ConsumerSocketOnData() | Invalid netstring data received from the worker process:{ex}");
                 // Reset the buffer and exit.
                 _recvBuffer = null;
                 return;
@@ -369,7 +372,6 @@ namespace TubumuMeeting.Mediasoup
                 if (accepted)
                 {
                     _logger.LogDebug($"ProcessMessage() | request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
-
                     sent.Resolve?.Invoke(data);
                 }
                 else if (!error.IsNullOrWhiteSpace())

@@ -66,7 +66,7 @@ namespace TubumuMeeting.Mediasoup
         private readonly List<PullPadding> _pullPaddings = new List<PullPadding>();
 
         /// <summary>
-        /// Rooms 只允许Scheduler访问，由后者的 _peerRoomLocker 保护。
+        /// Rooms 只允许 Scheduler 访问，由后者的 _peerRoomLocker 保护。
         /// </summary>
         public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
 
