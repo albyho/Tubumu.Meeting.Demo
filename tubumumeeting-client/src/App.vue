@@ -59,7 +59,7 @@ const SCREEN_SHARING_SVC_ENCODINGS =
 const logger = new Logger('App');
 
 // 'mediasoup-client:* tubumumeeting-client:*'
-localStorage.setItem('debug', 'mediasoup-client:* tubumumeeting-client:*');
+localStorage.setItem('debug', 'tubumumeeting-client:*');
 
 export default {
   name: 'app',
@@ -353,7 +353,6 @@ if(this.peerId === '1000') {
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
 
-      logger.debug('processNewConsumer() stream: %o', stream);
       this.$set(kind === 'video' ? this.remoteVideoStreams : this.remoteAudioStreams, consumerId, stream);
 
       // We are ready. Answer the request so the server will
@@ -361,7 +360,7 @@ if(this.peerId === '1000') {
       logger.debug('processNewConsumer() ResumeConsumer');
       const result = await this.connection.invoke('ResumeConsumer', consumerId);
       if (result.code !== 200) {
-        logger.error('processNewConsumer() | ResumeConsumer.');
+        logger.error('processNewConsumer() | ResumeConsumer failure.');
         return;
       }
     },

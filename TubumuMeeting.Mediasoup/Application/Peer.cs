@@ -70,7 +70,7 @@ namespace TubumuMeeting.Mediasoup
 
         public string[] Sources { get; private set; }
 
-        public Dictionary<string, object> AppData { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object>? AppData { get; set; }
 
         public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Router router, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
         {
