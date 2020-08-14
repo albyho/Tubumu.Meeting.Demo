@@ -303,7 +303,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        public async Task<Consumer> ConsumeAsync(string producerPeerId, string cosumerPeerId, Producer producer, string roomId)
+        public async Task<Consumer> ConsumeAsync(string producerPeerId, string cosumerPeerId, string producerId, string roomId)
         {
             using (await _peersLocker.ReaderLockAsync())
             {
@@ -317,7 +317,7 @@ namespace TubumuMeeting.Mediasoup
                 }
 
                 // NOTE: 这里假设了 Room 存在
-                var consumer = await cosumerPeer.ConsumeAsync(producerPeer, producer, roomId);
+                var consumer = await cosumerPeer.ConsumeAsync(producerPeer, producerId, roomId);
                 if (consumer == null)
                 {
                     throw new Exception($"ConsumeAsync() | Peer:{cosumerPeerId} consume faild.");

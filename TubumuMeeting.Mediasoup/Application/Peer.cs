@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -64,6 +65,10 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly List<PullPadding> _pullPaddings = new List<PullPadding>();
 
+        private const int CheckProducersTimeSeconds = 30;
+
+        private readonly Timer _timer;
+
         /// <summary>
         /// Rooms 只允许Scheduler访问，由后者的 _peerRoomLocker 保护。
         /// </summary>
@@ -81,6 +86,7 @@ namespace TubumuMeeting.Mediasoup
             _router = router;
             _rtpCapabilities = rtpCapabilities;
             _sctpCapabilities = sctpCapabilities;
+            //_timer = new Timer(CheckProducers, null, TimeSpan.FromSeconds(CheckProducersTimeSeconds), TimeSpan.FromMilliseconds(-1));
             PeerId = peerId;
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? new string[0];
@@ -328,77 +334,79 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="producer"></param>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        public async Task<Consumer> ConsumeAsync(Peer producerPeer, Producer producer, string roomId)
+        public async Task<Consumer> ConsumeAsync(Peer producerPeer, string producerId, string roomId)
         {
-            // 调用者确保 producer 属于 producerPeer
             CheckJoined();
             using (await _locker.WriterLockAsync())
             {
                 CheckJoined();
 
-                if (_rtpCapabilities == null || !_router.CanConsume(producer.ProducerId, _rtpCapabilities))
-                {
-                    throw new Exception($"ConsumeAsync() | Peer:{PeerId} Can not consume.");
-                }
-
-                var transport = GetConsumingTransport();
-
-                // This should not happen.
-                if (transport == null)
-                {
-                    throw new Exception($"ConsumeAsync() | Peer:{PeerId} Transport for consuming not found.");
-                }
-
-                // Create the Consumer in paused mode.
-                var consumer = await transport.ConsumeAsync(new ConsumerOptions
-                {
-                    ProducerId = producer.ProducerId,
-                    RtpCapabilities = _rtpCapabilities,
-                    Paused = true // Or: producer.Kind == MediaKind.Video
-                });
-
-                consumer.RoomId = roomId;
-                consumer.ProducerPeer = producerPeer;
-                consumer.ConsumerPeer = this;
-                consumer.Producer = producer;
-                consumer.Source = producer.Source;
-
-                // Store the Consumer into the consumerPeer data Object.
-                _consumers[consumer.ConsumerId] = consumer;
-
                 if (producerPeer.PeerId != PeerId)
                 {
                     using (await producerPeer._locker.WriterLockAsync())
                     {
-                        producer.Consumers[consumer.ConsumerId] = consumer;
+                        return await ConsumeInternalAsync(producerPeer, producerId, roomId);
                     }
                 }
                 else
                 {
-                    producer.Consumers[consumer.ConsumerId] = consumer;
+                    return await ConsumeInternalAsync(producerPeer, producerId, roomId);
                 }
-
-                //consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
-                //consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
-                //consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
-                consumer.Observer.On("close", _ =>
-                {
-                    _consumers.TryRemove(consumer.ConsumerId, out var _);
-                    if (producerPeer.PeerId != PeerId)
-                    {
-                        using (producerPeer._locker.WriterLock())
-                        {
-                            producer.Consumers.Remove(consumer.ConsumerId);
-                        }
-                    }
-                    else
-                    {
-                        producer.Consumers.Remove(consumer.ConsumerId);
-                    }
-                });
-
-                return consumer;
             }
+        }
+
+        private async Task<Consumer> ConsumeInternalAsync(Peer producerPeer, string producerId, string roomId)
+        {
+            if (!producerPeer._producers.TryGetValue(producerId, out var producer))
+            {
+                throw new Exception($"ConsumeAsync() | Peer:{PeerId} - ProducerPeer:{producerPeer.PeerId} has no Producer:{producerId}");
+            }
+            if (producer.Closed)
+            {
+                throw new Exception($"ConsumeAsync() | Peer:{PeerId} - ProducerPeer:{producerPeer.PeerId} Producer:{producerId} was closed.");
+            }
+
+            if (_rtpCapabilities == null || !_router.CanConsume(producer.ProducerId, _rtpCapabilities))
+            {
+                throw new Exception($"ConsumeAsync() | Peer:{PeerId} Can not consume.");
+            }
+
+            var transport = GetConsumingTransport();
+
+            // This should not happen.
+            if (transport == null)
+            {
+                throw new Exception($"ConsumeAsync() | Peer:{PeerId} Transport for consuming not found.");
+            }
+
+            // Create the Consumer in paused mode.
+            var consumer = await transport.ConsumeAsync(new ConsumerOptions
+            {
+                ProducerId = producer.ProducerId,
+                RtpCapabilities = _rtpCapabilities,
+                Paused = true // Or: producer.Kind == MediaKind.Video
+            });
+
+            consumer.RoomId = roomId;
+            consumer.ProducerPeer = producerPeer;
+            consumer.ConsumerPeer = this;
+            consumer.Producer = producer;
+            consumer.Source = producer.Source;
+
+            // Store the Consumer into the consumerPeer data Object.
+            _consumers[consumer.ConsumerId] = consumer;
+            producer.Consumers[consumer.ConsumerId] = consumer;
+
+            //consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
+            //consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
+            //consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
+            consumer.Observer.On("close", _ =>
+            {
+                _consumers.TryRemove(consumer.ConsumerId, out var _);
+                producer.Consumers.TryRemove(consumer.ConsumerId, out var _);
+            });
+
+            return consumer;
         }
 
         /// <summary>
@@ -817,6 +825,21 @@ namespace TubumuMeeting.Mediasoup
             {
                 throw new Exception($"CheckClosed() | Peer:{PeerId} is not joined.");
             }
+        }
+
+        private void CheckProducers(object state)
+        {
+            using (_locker.WriterLock())
+            {
+                foreach(var producer in _producers.Values)
+                {
+                    if(!producer.Closed && !producer.Consumers.Any())
+                    {
+                        producer.Close();
+                    }
+                }
+            }
+            _timer.Change(TimeSpan.FromSeconds(CheckProducersTimeSeconds), TimeSpan.FromMilliseconds(-1));
         }
 
         #endregion

@@ -429,7 +429,7 @@ namespace TubumuMeeting.Meeting.Server
 
             try
             {
-                consumer = await _scheduler.ConsumeAsync(producerPeer.PeerId, consumerPeer.PeerId, producer, roomId);
+                consumer = await _scheduler.ConsumeAsync(producerPeer.PeerId, consumerPeer.PeerId, producer.ProducerId, roomId);
             }
             catch (Exception ex)
             {

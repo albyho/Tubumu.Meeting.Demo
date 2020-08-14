@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -96,7 +97,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// [扩展]Consumers
         /// </summary>
-        public Dictionary<string, Consumer> Consumers { get; } = new Dictionary<string, Consumer>();
+        public ConcurrentDictionary<string, Consumer> Consumers { get; } = new ConcurrentDictionary<string, Consumer>();
 
         /// <summary>
         /// [扩展]Source.
