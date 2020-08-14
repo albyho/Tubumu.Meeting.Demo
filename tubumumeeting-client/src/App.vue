@@ -288,7 +288,7 @@ export default {
       logger.debug('Peers: %o', joinRoomData.peers);
 
 // 临时
-if(this.peerId === '1000') {
+if(this.peerId === '1001') {
       if(this.mediasoupDevice.canProduce('audio')) {
        await this.enableMic();
       }
