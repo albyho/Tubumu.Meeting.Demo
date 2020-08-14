@@ -65,10 +65,6 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly List<PullPadding> _pullPaddings = new List<PullPadding>();
 
-        private const int CheckProducersTimeSeconds = 30;
-
-        private readonly Timer _timer;
-
         /// <summary>
         /// Rooms 只允许Scheduler访问，由后者的 _peerRoomLocker 保护。
         /// </summary>
@@ -86,7 +82,6 @@ namespace TubumuMeeting.Mediasoup
             _router = router;
             _rtpCapabilities = rtpCapabilities;
             _sctpCapabilities = sctpCapabilities;
-            //_timer = new Timer(CheckProducers, null, TimeSpan.FromSeconds(CheckProducersTimeSeconds), TimeSpan.FromMilliseconds(-1));
             PeerId = peerId;
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? new string[0];
@@ -421,7 +416,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_producers.TryGetValue(producerId, out var producer))
+                if (!_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"CloseProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
@@ -444,7 +439,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_producers.TryGetValue(producerId, out var producer))
+                if (!_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"PauseProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
@@ -464,7 +459,7 @@ namespace TubumuMeeting.Mediasoup
             CheckJoined();
             using (await _locker.ReaderLockAsync())
             {
-                if (_producers.TryGetValue(producerId, out var producer))
+                if (!_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"ResumeProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
@@ -486,7 +481,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_consumers.TryGetValue(consumerId, out var consumer))
+                if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"CloseConsumerAsync() | Peer:{PeerId} has no Cmonsumer:{consumerId}.");
                 }
@@ -509,7 +504,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_consumers.TryGetValue(consumerId, out var consumer))
+                if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"PauseConsumerAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
@@ -553,7 +548,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
+                if (!_consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
                 {
                     throw new Exception($"SetConsumerPreferedLayersAsync() | Peer:{PeerId} has no Consumer:{setConsumerPreferedLayersRequest.ConsumerId}.");
                 }
@@ -575,7 +570,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
+                if (!_consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
                 {
                     throw new Exception($"SetConsumerPriorityAsync() | Peer:{PeerId} has no Consumer:{setConsumerPriorityRequest.ConsumerId}.");
                 }
@@ -597,7 +592,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_consumers.TryGetValue(consumerId, out var consumer))
+                if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"RequestConsumerKeyFrameAsync() | Peer:{PeerId} has no Producer:{consumerId}.");
                 }
@@ -644,7 +639,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_producers.TryGetValue(producerId, out var producer))
+                if (!_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"GetProducerStatsAsync() | Peer:{PeerId} has no Producer:{producerId}.");
                 }
@@ -668,7 +663,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if (_consumers.TryGetValue(consumerId, out var consumer))
+                if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
                     throw new Exception($"GetConsumerStatsAsync() | Peer:{PeerId} has no Consumer:{consumerId}.");
                 }
@@ -825,21 +820,6 @@ namespace TubumuMeeting.Mediasoup
             {
                 throw new Exception($"CheckClosed() | Peer:{PeerId} is not joined.");
             }
-        }
-
-        private void CheckProducers(object state)
-        {
-            using (_locker.WriterLock())
-            {
-                foreach(var producer in _producers.Values)
-                {
-                    if(!producer.Closed && !producer.Consumers.Any())
-                    {
-                        producer.Close();
-                    }
-                }
-            }
-            _timer.Change(TimeSpan.FromSeconds(CheckProducersTimeSeconds), TimeSpan.FromMilliseconds(-1));
         }
 
         #endregion

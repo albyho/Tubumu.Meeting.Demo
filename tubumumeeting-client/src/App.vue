@@ -85,6 +85,7 @@ export default {
       remoteAudioStreams: {},
       rooms: new Map(),
       peers: new Map(),
+      producers: new Map(),
       consumers: new Map()
     };
   },
@@ -233,6 +234,7 @@ export default {
                 errback(new Error(result.message));
                 return;
               }
+              this.producers.set(result.data.id, result.data);
               callback({ id: result.data.id });
             } catch (error) {
               errback(error);
@@ -486,6 +488,21 @@ if(this.peerId === '1001') {
           break;
         }
 
+        case 'producerClosed': {
+          const { producerId } = data.data;
+          const producer = this.producers.get(producerId);
+
+          if (!producer) break;
+
+          if(producer.source === 'webcam') {
+            this.webcamClosed();
+          } else if(producer.source === 'mic') {
+            this.micClosed();
+          }
+
+          break;
+        }
+
         case 'peerLeave': {
 
           break;
@@ -560,13 +577,16 @@ if(this.peerId === '1001') {
       this.micProducer.close();
 
       try {
-        await this.connection.invoke('CloseProducer', {
-          producerId: this.micProducer.id
-        });
+        await this.connection.invoke('CloseProducer', this.micProducer.id);
       } catch (error) {
         logger.error('disableMic() [error:"%o"]', error);
       }
 
+      this.micProducer = null;
+    },
+    micClosed() {
+      if (!this.micProducer) return;
+      this.micProducer.close();
       this.micProducer = null;
     },
     async enableWebcam() {
@@ -676,13 +696,16 @@ if(this.peerId === '1001') {
       this.webcamProducer.close();
 
       try {
-        await this.connection.invoke('CloseProducer', {
-          producerId: this.webcamProducer.id
-        });
+        await this.connection.invoke('CloseProducer', this.webcamProducer.id);
       } catch (error) {
         logger.error('disableWebcam() [error:"%o"]', error);
       }
 
+      this.webcamProducer = null;
+    },
+    webcamClosed() {
+      if (!this.webcamProducer) return;
+      this.webcamProducer.close();
       this.webcamProducer = null;
     },
     async _updateAudioDevices() {

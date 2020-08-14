@@ -280,12 +280,22 @@ namespace TubumuMeeting.Meeting.Server
                 var data = (ProducerVideoOrientation)videoOrientation!;
                 _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
             });
+            producer.Observer.On("close", _ =>
+            {
+                SendMessage(peerId, "producerClosed", new { ProducerId = producer.ProducerId });
+            });
+
+            string source = null;
+            if (produceRequest.AppData.TryGetValue("source", out var sourceObj))
+            {
+                source = sourceObj.ToString();
+            }
 
             return new MeetingMessage
             {
                 Code = 200,
                 Message = "Produce 成功",
-                Data = new { Id = producer.ProducerId }
+                Data = new { Id = producer.ProducerId, Source = source }
             };
         }
 
