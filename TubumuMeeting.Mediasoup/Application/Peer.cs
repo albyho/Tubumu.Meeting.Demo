@@ -758,23 +758,28 @@ namespace TubumuMeeting.Mediasoup
 
                 Joined = false;
 
-                var producersToClose = new List<Producer>();
-                producersToClose.AddRange(_producers.Values);
+                foreach (var producer in _producers.Values)
+                {
+                    producer.Close();
+                }
 
                 foreach (var producer in _consumers.Values.Select(m => m.Producer!))
                 {
                     // Producer 被其他人消费，则继续生产。
                     if (!producer.Consumers.Values.Any(m => m.ConsumerPeer!.PeerId != PeerId))
                     {
-                        producersToClose.Add(producer);
+                        if (producer.ProducerPeer != null && producer.ProducerPeer.PeerId != PeerId)
+                        {
+                            using (producer.ProducerPeer._locker.WriterLock())
+                            {
+                                producer.Close();
+                            }
+                        }
+                        else
+                        {
+                            producer.Close();
+                        }
                     }
-                }
-
-                // 1、Producer 关闭后会触发相应的 Consumer 内部的 `producerclose` 事件
-                // 2、拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
-                foreach (var producerToClose in producersToClose)
-                {
-                    producerToClose.Close();
                 }
 
                 // Iterate and close all mediasoup Transport associated to this Peer, so all
