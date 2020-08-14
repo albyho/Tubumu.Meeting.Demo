@@ -191,7 +191,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 CheckJoined();
 
-                if(producerPeer.PeerId != PeerId)
+                if (producerPeer.PeerId != PeerId)
                 {
                     using (producerPeer._locker.Lock())
                     {
@@ -225,7 +225,10 @@ namespace TubumuMeeting.Mediasoup
                 }
 
                 // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
-                produceSources.Add(source!);
+                if (!producerPeer._pullPaddings.Any(m => m.Source == source))
+                {
+                    produceSources.Add(source!);
+                }
                 producerPeer._pullPaddings.Add(new PullPadding
                 {
                     RoomId = roomId,
@@ -300,8 +303,12 @@ namespace TubumuMeeting.Mediasoup
                 // Store the Producer into the Peer data Object.
                 _producers[producer.ProducerId] = producer;
 
-                producer.On("@close", _ => _producers.Remove(producer.ProducerId));
-                producer.On("transportclose", _ => _producers.Remove(producer.ProducerId));
+                //producer.On("@close", _ => _producers.Remove(producer.ProducerId));
+                //producer.On("transportclose", _ => _producers.Remove(producer.ProducerId));
+                producer.Observer.On("close", _ =>
+                {
+                    _producers.Remove(producer.ProducerId);
+                });
 
                 var matchedPullPaddings = _pullPaddings.Where(m => m.Source == producer.Source).ToArray();
                 foreach (var item in matchedPullPaddings)
@@ -361,14 +368,21 @@ namespace TubumuMeeting.Mediasoup
                 // Store the Consumer into the consumerPeer data Object.
                 _consumers[consumer.ConsumerId] = consumer;
 
-                using (await producerPeer._locker.LockAsync())
+                if (producerPeer.PeerId != PeerId)
+                {
+                    using (await producerPeer._locker.LockAsync())
+                    {
+                        producer.Consumers[consumer.ConsumerId] = consumer;
+                    }
+                }
+                else
                 {
                     producer.Consumers[consumer.ConsumerId] = consumer;
                 }
 
-                consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
-                consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
-                consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
+                //consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
+                //consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
+                //consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
                 consumer.Observer.On("close", _ =>
                 {
                     _consumers.Remove(consumer.ConsumerId);

@@ -4,10 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using Tubumu.Core.Extensions;
-using TubumuMeeting.Mediasoup;
 
-namespace TubumuMeeting.Meeting.Server
+namespace TubumuMeeting.Mediasoup
 {
     public class Scheduler
     {

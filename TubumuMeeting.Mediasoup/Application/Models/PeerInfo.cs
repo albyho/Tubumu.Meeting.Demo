@@ -12,5 +12,7 @@ namespace TubumuMeeting.Mediasoup
         public string DisplayName { get; set; }
 
         public string[] Sources { get; set; }
+
+        public Dictionary<string, object>? AppData { get; set; }
     }
 }

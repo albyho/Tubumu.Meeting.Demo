@@ -133,9 +133,16 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            if (!await _scheduler.ConnectWebRtcTransportAsync(UserId, connectWebRtcTransportRequest))
+            try
             {
-                return new MeetingMessage { Code = 400, Message = "ConnectWebRtcTransport 失败" };
+                if (!await _scheduler.ConnectWebRtcTransportAsync(UserId, connectWebRtcTransportRequest))
+                {
+                    return new MeetingMessage { Code = 400, Message = $"ConnectWebRtcTransport 失败: TransportId: {connectWebRtcTransportRequest.TransportId}" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new MeetingMessage { Code = 400, Message = $"ConnectWebRtcTransport 失败: TransportId: {connectWebRtcTransportRequest.TransportId}, {ex.Message}" };
             }
 
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
@@ -151,6 +158,7 @@ namespace TubumuMeeting.Meeting.Server
                 PeerId = joinRoomResult.SelfPeer.PeerId,
                 DisplayName = joinRoomResult.SelfPeer.DisplayName,
                 Sources = joinRoomResult.SelfPeer.Sources,
+                AppData = joinRoomResult.SelfPeer.AppData,
             };
 
             var peerInfos = new List<PeerInfo>();
@@ -162,6 +170,7 @@ namespace TubumuMeeting.Meeting.Server
                     PeerId = peer.PeerId,
                     DisplayName = peer.DisplayName,
                     Sources = peer.Sources,
+                    AppData = peer.AppData,
                 };
                 peerInfos.Add(peerInfo);
 
@@ -211,12 +220,15 @@ namespace TubumuMeeting.Meeting.Server
                 CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
             }
 
-            // Message: produceSources
-            SendMessage(consumeResult.ProducePeer.PeerId, "produceSources", new
+            if (!consumeResult.ProduceSources.IsNullOrEmpty())
             {
-                RoomId = consumeResult.RoomId,
-                ProduceSources = consumeResult.ProduceSources
-            });
+                // Message: produceSources
+                SendMessage(consumeResult.ProducePeer.PeerId, "produceSources", new
+                {
+                    RoomId = consumeResult.RoomId,
+                    ProduceSources = consumeResult.ProduceSources
+                });
+            }
 
             return new MeetingMessage { Code = 200, Message = "Pull 成功" };
         }

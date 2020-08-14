@@ -181,7 +181,7 @@ export default {
           sctpCapabilities: undefined // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
         });
         if (result.code !== 200) {
-          logger.error('processNotification() | CreateWebRtcTransport failure.');
+          logger.error('processNotification() | CreateWebRtcTransport failed: %s', result.message);
           return;
         }
 
@@ -285,7 +285,7 @@ export default {
       }
 
       const joinRoomData = result.data;
-      logger.debug('Peers:%o', joinRoomData.peers);
+      logger.debug('Peers: %o', joinRoomData.peers);
 
 // 临时
 if(this.peerId === '1000') {
@@ -426,7 +426,7 @@ if(this.peerId === '1000') {
 
         case 'downlinkBwe':
         {
-          logger.debug('\'downlinkBwe\' event:%o', data.data);
+          logger.debug('\'downlinkBwe\' event: %o', data.data);
 
           break;
         }
@@ -543,8 +543,8 @@ if(this.peerId === '1000') {
 
         this.micProducer.volume = 0;
       } catch (error) {
-        console.log('enableMic() failed:%o', error);
-        logger.error('enableMic() failed:%o', error);
+        console.log('enableMic() failed: %o', error);
+        logger.error('enableMic() failed: %o', error);
         if (track) track.stop();
       }
     },
@@ -697,7 +697,7 @@ if(this.peerId === '1000') {
           this.audioDevices[device.deviceId] = device;
         }
       } catch (error) {
-        logger.error('_updateAudioDevices() failed:%o', error);
+        logger.error('_updateAudioDevices() failed: %o', error);
       }
     },
     async _updateWebcams() {
@@ -718,7 +718,7 @@ if(this.peerId === '1000') {
           this.webcams.set(device.deviceId, device);
         }
       } catch (error) {
-        logger.error('_updateWebcams() failed:%o', error);
+        logger.error('_updateWebcams() failed: %o', error);
       }
     },
     async _getAudioDeviceId() {
@@ -732,7 +732,7 @@ if(this.peerId === '1000') {
         const audioDevices = Object.values(this.audioDevices);
         return audioDevices[0] ? audioDevices[0].deviceId : null;
       } catch (error) {
-        logger.error('_getAudioDeviceId() failed:%o', error);
+        logger.error('_getAudioDeviceId() failed: %o', error);
       }
     },
     async _getWebcamDeviceId() {
@@ -746,7 +746,7 @@ if(this.peerId === '1000') {
         const webcams = Array.from(this.webcams.values());
         return webcams[0] ? webcams[0].deviceId : null;
       } catch (error) {
-        logger.error('_getWebcamDeviceId() failed:%o', error);
+        logger.error('_getWebcamDeviceId() failed: %o', error);
       }
     }
   }
