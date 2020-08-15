@@ -59,7 +59,7 @@ const SCREEN_SHARING_SVC_ENCODINGS =
 const logger = new Logger('App');
 
 // 'mediasoup-client:* tubumumeeting-client:*'
-localStorage.setItem('debug', 'tubumumeeting-client:*');
+localStorage.setItem('debug', 'mediasoup-client:* tubumumeeting-client:*');
 
 export default {
   name: 'app',
@@ -295,11 +295,11 @@ export default {
       logger.debug('Peers: %o', joinRoomData.peers);
 
 // 临时
-if(this.peerId === '1001') {
-      if(this.mediasoupDevice.canProduce('audio')) {
+if(this.peerId !== '1000') {
+      if(this.produce && this.mediasoupDevice.canProduce('audio')) {
        await this.enableMic();
       }
-      if(this.mediasoupDevice.canProduce('video')) {
+      if(this.produce && this.mediasoupDevice.canProduce('video')) {
        await this.enableWebcam();
       }
 }
@@ -398,8 +398,8 @@ if(this.peerId === '1001') {
         }
 
         case 'peerJoinRoom': {
-          // eslint-disable-next-line no-unused-vars
           const peer = data.data;
+          // eslint-disable-next-line no-unused-vars
           const {roomId, peerId, sources } = peer;
           
           await this.pull(roomId, peerId, sources);

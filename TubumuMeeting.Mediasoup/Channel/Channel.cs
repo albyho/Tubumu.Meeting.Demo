@@ -226,6 +226,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnData(ArraySegment<byte> data)
         {
+            // 数据回调通过单一线程进入，所有 _recvBuffer 是线程安全的。
             if (_recvBuffer == null)
             {
                 _recvBuffer = data;

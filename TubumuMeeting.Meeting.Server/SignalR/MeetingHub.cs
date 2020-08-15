@@ -258,8 +258,6 @@ namespace TubumuMeeting.Meeting.Server
                 var consumerPeer = item.ConsumerPeer;
                 var roomId = item.RoomId;
 
-                // NOTE: For Testing
-                //if (consumerPeer.PeerId == "1") continue;
                 // 其他 Peer 消费本 Peer
                 CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
             }
@@ -285,7 +283,7 @@ namespace TubumuMeeting.Meeting.Server
                 SendMessage(peerId, "producerClosed", new { ProducerId = producer.ProducerId });
             });
 
-            string source = null;
+            string? source = null;
             if (produceRequest.AppData.TryGetValue("source", out var sourceObj))
             {
                 source = sourceObj.ToString();
@@ -497,6 +495,7 @@ namespace TubumuMeeting.Meeting.Server
 
             // Send a request to the remote Peer with Consumer parameters.
             // Message: newConsumer
+
             SendMessage(consumerPeer.PeerId, "newConsumer", new ConsumeInfo
             {
                 RoomId = roomId,

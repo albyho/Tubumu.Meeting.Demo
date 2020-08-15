@@ -23,6 +23,7 @@ namespace TubumuMeeting.Web
                 logging.AddConsole(options =>
                 {
                     options.TimestampFormat = "[HH:mm:ss.fff]";
+                    options.Format = ConsoleLoggerFormat.Systemd;
                 });
             })
             .ConfigureWebHostDefaults(webBuilder =>

@@ -459,6 +459,8 @@ namespace TubumuMeeting.Mediasoup
             CheckJoined();
             using (await _locker.ReaderLockAsync())
             {
+                CheckJoined();
+
                 if (!_producers.TryGetValue(producerId, out var producer))
                 {
                     throw new Exception($"ResumeProducerAsync() | Peer:{PeerId} has no Producer:{producerId}.");
