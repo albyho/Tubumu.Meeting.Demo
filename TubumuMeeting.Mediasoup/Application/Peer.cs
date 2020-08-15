@@ -218,7 +218,7 @@ namespace TubumuMeeting.Mediasoup
                 foreach (var existsProducer in producerProducers)
                 {
                     // 忽略在同一 Room 的重复消费？
-                    if (_consumers.Values.Any(m => m.RoomId == roomId && m.Internal.ProducerId == existsProducer.ProducerId))
+                    if (_consumers.Values.Any(m => m.RoomId == roomId && m.ProducerId == existsProducer.ProducerId))
                     {
                         continue;
                     }
@@ -390,7 +390,6 @@ namespace TubumuMeeting.Mediasoup
 
             // Store the Consumer into the consumerPeer data Object.
             _consumers[consumer.ConsumerId] = consumer;
-            producer.Consumers[consumer.ConsumerId] = consumer;
 
             //consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
             //consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
@@ -398,8 +397,10 @@ namespace TubumuMeeting.Mediasoup
             consumer.Observer.On("close", _ =>
             {
                 _consumers.TryRemove(consumer.ConsumerId, out var _);
-                producer.Consumers.TryRemove(consumer.ConsumerId, out var _);
+                producer.RemoveConsumer(consumer.ConsumerId);
             });
+
+            producer.AddConsumer(consumer);
 
             return consumer;
         }
@@ -710,38 +711,7 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="roomId"></param>
         public void LeaveRoom(string roomId)
         {
-            // 1、Producer 关闭后会触发相应的 Consumer 内部的 `producerclose` 事件
-            // 2、拥有 Consumer 的 Peer 能够关闭该 Consumer 并通知客户端。
 
-            using (_locker.WriterLock())
-            {
-                foreach (var producer in _producers.Values)
-                {
-                    // Producer 在其他房间被消费，则继续生产。
-                    if (!producer.Consumers.Values.Any(m => m.RoomId != roomId))
-                    {
-                        producer.Close();
-                    }
-                }
-                foreach (var producer in _consumers.Values.Where(m => m.RoomId == roomId).Select(m => m.Producer!))
-                {
-                    // Producer 在其他房间被消费，或者在房间被其他人消费，则继续生产。
-                    if (!producer.Consumers.Values.Any(m => m.RoomId != roomId || m.ConsumerPeer!.PeerId != PeerId))
-                    {
-                        if (producer.ProducerPeer != null && producer.ProducerPeer.PeerId != PeerId)
-                        {
-                            using (producer.ProducerPeer._locker.WriterLock())
-                            {
-                                producer.Close();
-                            }
-                        }
-                        else
-                        {
-                            producer.Close();
-                        }
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -762,30 +732,6 @@ namespace TubumuMeeting.Mediasoup
                 }
 
                 Joined = false;
-
-                foreach (var producer in _producers.Values)
-                {
-                    producer.Close();
-                }
-
-                foreach (var producer in _consumers.Values.Select(m => m.Producer!))
-                {
-                    // Producer 被其他人消费，则继续生产。
-                    if (!producer.Consumers.Values.Any(m => m.ConsumerPeer!.PeerId != PeerId))
-                    {
-                        if (producer.ProducerPeer != null && producer.ProducerPeer.PeerId != PeerId)
-                        {
-                            using (producer.ProducerPeer._locker.WriterLock())
-                            {
-                                producer.Close();
-                            }
-                        }
-                        else
-                        {
-                            producer.Close();
-                        }
-                    }
-                }
 
                 // Iterate and close all mediasoup Transport associated to this Peer, so all
                 // its Producers and Consumers will also be closed.

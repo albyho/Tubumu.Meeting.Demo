@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -43,12 +44,18 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        private ProducerInternalData Internal { get; set; }
+        private ProducerInternalData _internal;
+
+        private Timer _checkConsumersTimer;
+
+        private object _locker = new object();
+
+        private const int CheckConsumersTimeSeconds = 10;
 
         /// <summary>
         /// Producer id.
         /// </summary>
-        public string ProducerId => Internal.ProducerId;
+        public string ProducerId => _internal.ProducerId;
 
         #region Producer data.
 
@@ -95,9 +102,9 @@ namespace TubumuMeeting.Mediasoup
         public Peer? ProducerPeer;
 
         /// <summary>
-        /// [扩展]Consumers 只允许 Peer 访问，由后者的 _locker 保护。
+        /// [扩展]Consumers
         /// </summary>
-        public ConcurrentDictionary<string, Consumer> Consumers { get; } = new ConcurrentDictionary<string, Consumer>();
+        private Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();
 
         /// <summary>
         /// [扩展]Source.
@@ -163,7 +170,7 @@ namespace TubumuMeeting.Mediasoup
             _logger = loggerFactory.CreateLogger<Producer>();
 
             // Internal
-            Internal = producerInternalData;
+            _internal = producerInternalData;
 
             // Data
             Kind = kind;
@@ -175,6 +182,8 @@ namespace TubumuMeeting.Mediasoup
             _payloadChannel = payloadChannel;
             AppData = appData;
             Paused = paused;
+
+            _checkConsumersTimer = new Timer(CheckConsumers, null, TimeSpan.FromSeconds(CheckConsumersTimeSeconds), TimeSpan.FromMilliseconds(-1));
 
             HandleWorkerNotifications();
         }
@@ -189,20 +198,30 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            lock (_locker)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
+                _logger.LogDebug("Close()");
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                Closed = true;
 
-            // Fire and forget
-            _channel.RequestAsync(MethodId.PRODUCER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
+                _checkConsumersTimer.Dispose();
 
-            Emit("close");
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
 
-            // Emit observer event.
-            Observer.Emit("close");
+                // Fire and forget
+                _channel.RequestAsync(MethodId.PRODUCER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+
+                Emit("close");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>
@@ -235,7 +254,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("DumpAsync()");
 
-            return _channel.RequestAsync(MethodId.PRODUCER_DUMP, Internal);
+            return _channel.RequestAsync(MethodId.PRODUCER_DUMP, _internal);
         }
 
         /// <summary>
@@ -245,7 +264,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("GetStatsAsync()");
 
-            return _channel.RequestAsync(MethodId.PRODUCER_GET_STATS, Internal);
+            return _channel.RequestAsync(MethodId.PRODUCER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -257,7 +276,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await _channel.RequestAsync(MethodId.PRODUCER_PAUSE, Internal);
+            await _channel.RequestAsync(MethodId.PRODUCER_PAUSE, _internal);
 
             Paused = true;
 
@@ -277,7 +296,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused;
 
-            await _channel.RequestAsync(MethodId.PRODUCER_RESUME, Internal);
+            await _channel.RequestAsync(MethodId.PRODUCER_RESUME, _internal);
 
             Paused = false;
 
@@ -300,7 +319,7 @@ namespace TubumuMeeting.Mediasoup
                 Types = types ?? Array.Empty<TraceEventType>()
             };
 
-            return _channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, Internal, reqData);
+            return _channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         /// <summary>
@@ -309,7 +328,23 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="rtpPacket"></param>
         public void Send(byte[] rtpPacket)
         {
-            _payloadChannel.Notify("producer.send", Internal, null, rtpPacket);
+            _payloadChannel.Notify("producer.send", _internal, null, rtpPacket);
+        }
+
+        public void AddConsumer(Consumer consumer)
+        {
+            lock (_locker)
+            {
+                _consumers[consumer.ConsumerId] = consumer;
+            }
+        }
+
+        public void RemoveConsumer(string consumerId)
+        {
+            lock (_locker)
+            {
+                _consumers.Remove(consumerId);
+            }
         }
 
         #region Event Handlers
@@ -367,6 +402,26 @@ namespace TubumuMeeting.Mediasoup
                         _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
                         break;
                     }
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void CheckConsumers(object state)
+        {
+            lock (_locker)
+            {
+                if (_consumers.Count == 0)
+                {
+                    Close();
+                    _checkConsumersTimer.Dispose();
+                }
+                else
+                {
+                    _checkConsumersTimer.Change(TimeSpan.FromSeconds(CheckConsumersTimeSeconds), TimeSpan.FromMilliseconds(-1));
+                }
             }
         }
 

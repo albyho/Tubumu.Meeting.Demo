@@ -295,7 +295,7 @@ export default {
       logger.debug('Peers: %o', joinRoomData.peers);
 
 // 临时
-if(this.peerId !== '1000') {
+if(this.peerId === '1000') {
       if(this.produce && this.mediasoupDevice.canProduce('audio')) {
        await this.enableMic();
       }
@@ -614,12 +614,12 @@ if(this.peerId !== '1000') {
 
         logger.debug('_setWebcamProducer() | calling getUserMedia()');
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-        /*
+        //const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        //*
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             deviceId: { ideal: deviceId },
-            ...VIDEO_CONSTRAINS.hd
+            ...VIDEO_CONSTRAINS.qvga
           }
         });
         //*/

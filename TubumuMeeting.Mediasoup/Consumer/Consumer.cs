@@ -49,12 +49,17 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        public ConsumerInternalData Internal { get; private set; }
+        private ConsumerInternalData _internal;
 
         /// <summary>
         /// Consumer id.
         /// </summary>
-        public string ConsumerId => Internal.ConsumerId;
+        public string ConsumerId => _internal.ConsumerId;
+
+        /// <summary>
+        /// Consumer id.
+        /// </summary>
+        public string ProducerId => _internal.ConsumerId;
 
         #region Consumer data.
 
@@ -203,7 +208,7 @@ namespace TubumuMeeting.Mediasoup
             _logger = loggerFactory.CreateLogger<Consumer>();
 
             // Internal
-            Internal = consumerInternalData;
+            _internal = consumerInternalData;
 
             // Data
             Kind = kind;
@@ -239,7 +244,7 @@ namespace TubumuMeeting.Mediasoup
             _channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            _channel.RequestAsync(MethodId.CONSUMER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -277,7 +282,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("DumpAsync()");
 
-            return _channel.RequestAsync(MethodId.CONSUMER_DUMP, Internal);
+            return _channel.RequestAsync(MethodId.CONSUMER_DUMP, _internal);
         }
 
         /// <summary>
@@ -287,7 +292,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("GetStatsAsync()");
 
-            return _channel.RequestAsync(MethodId.CONSUMER_GET_STATS, Internal);
+            return _channel.RequestAsync(MethodId.CONSUMER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -299,7 +304,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused || ProducerPaused;
 
-            await _channel.RequestAsync(MethodId.CONSUMER_PAUSE, Internal);
+            await _channel.RequestAsync(MethodId.CONSUMER_PAUSE, _internal);
 
             Paused = true;
 
@@ -319,7 +324,7 @@ namespace TubumuMeeting.Mediasoup
 
             var wasPaused = Paused || ProducerPaused;
 
-            await _channel.RequestAsync(MethodId.CONSUMER_RESUME, Internal);
+            await _channel.RequestAsync(MethodId.CONSUMER_RESUME, _internal);
 
             Paused = false;
 
@@ -338,7 +343,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("SetPreferredLayersAsync()");
 
             var reqData = consumerLayers;
-            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, Internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetPreferredLayersResponseData>(status!);
             PreferredLayers = responseData;
         }
@@ -351,7 +356,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("SetPriorityAsync()");
 
             var reqData = new { Priority = priority };
-            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, Internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status!);
             Priority = responseData.Priority;
         }
@@ -364,7 +369,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("UnsetPriorityAsync()");
 
             var reqData = new { Priority = 1 };
-            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, Internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status!);
 
             Priority = responseData.Priority;
@@ -377,7 +382,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("RequestKeyFrameAsync()");
 
-            return _channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, Internal);
+            return _channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, _internal);
         }
 
         /// <summary>
@@ -391,7 +396,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 Types = types ?? Array.Empty<TraceEventType>()
             };
-            return _channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, Internal, reqData);
+            return _channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         #region Event Handlers
