@@ -43,7 +43,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Peers 只允许 Scheduler 访问，由后者的 _peerRoomLocker 保护。
         /// </summary>
-        public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
+        public Dictionary<string, PeerWithRoomAppData> Peers { get; } = new Dictionary<string, PeerWithRoomAppData>();
 
         public Room(ILoggerFactory loggerFactory, Router router, string roomId, string name)
         {

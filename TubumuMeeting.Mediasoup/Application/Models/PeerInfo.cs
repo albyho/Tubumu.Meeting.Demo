@@ -13,6 +13,10 @@ namespace TubumuMeeting.Mediasoup
 
         public string[] Sources { get; set; }
 
-        public Dictionary<string, object>? AppData { get; set; }
+        public Dictionary<string, object> AppData { get; set; }
+
+        public string[] RoomSources { get; set; }
+
+        public Dictionary<string, object> RoomAppData { get; set; }
     }
 }

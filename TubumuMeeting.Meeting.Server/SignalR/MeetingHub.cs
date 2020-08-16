@@ -51,7 +51,7 @@ namespace TubumuMeeting.Meeting.Server
                 foreach (var otherPeer in leaveResult.OtherPeers)
                 {
                     // Message: peerLeave
-                    SendMessage(otherPeer.PeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
+                    SendMessage(otherPeer.Peer.PeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
                 }
             }
         }
@@ -159,6 +159,8 @@ namespace TubumuMeeting.Meeting.Server
                 DisplayName = joinRoomResult.SelfPeer.DisplayName,
                 Sources = joinRoomResult.SelfPeer.Sources,
                 AppData = joinRoomResult.SelfPeer.AppData,
+                RoomSources = joinRoomResult.RoomSources,
+                RoomAppData = joinRoomResult.RoomAppData,
             };
 
             var peerInfos = new List<PeerInfo>();
@@ -167,18 +169,20 @@ namespace TubumuMeeting.Meeting.Server
                 var peerInfo = new PeerInfo
                 {
                     RoomId = joinRoomRequest.RoomId,
-                    PeerId = peer.PeerId,
-                    DisplayName = peer.DisplayName,
-                    Sources = peer.Sources,
-                    AppData = peer.AppData,
+                    PeerId = peer.Peer.PeerId,
+                    DisplayName = peer.Peer.DisplayName,
+                    Sources = peer.Peer.Sources,
+                    AppData = peer.Peer.AppData,
+                    RoomSources = peer.RoomSources,
+                    RoomAppData = peer.RoomAppData,
                 };
                 peerInfos.Add(peerInfo);
 
                 // 将自身的信息告知给房间内的其他人
-                if (peer.PeerId != joinRoomResult.SelfPeer.PeerId)
+                if (peer.Peer.PeerId != joinRoomResult.SelfPeer.PeerId)
                 {
                     // Message: peerJoinRoom
-                    SendMessage(peer.PeerId, "peerJoinRoom", selfPeerInfo);
+                    SendMessage(peer.Peer.PeerId, "peerJoinRoom", selfPeerInfo);
                 }
             }
 
@@ -190,21 +194,75 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = data };
         }
 
-        public MeetingMessage LeaveRoom(LeaveRoomRequest leaveRoomRequest)
+        public MeetingMessage LeaveRoom(string roomId)
         {
-            var leaveRoomResult = _scheduler.LeaveRoom(UserId, leaveRoomRequest.RoomId);
+            var leaveRoomResult = _scheduler.LeaveRoom(UserId, roomId);
 
             foreach (var otherPeer in leaveRoomResult.OtherPeers)
             {
                 // Message: peerLeaveRoom
-                SendMessage(otherPeer.PeerId, "peerLeaveRoom", new
+                SendMessage(otherPeer.Peer.PeerId, "peerLeaveRoom", new
                 {
-                    RoomId = leaveRoomRequest.RoomId,
+                    RoomId = roomId,
                     PeerId = UserId
                 });
             }
 
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
+        }
+
+        public MeetingMessage SetRoomAppData(SetRoomAppDataRequest setRoomAppDataRequest)
+        {
+            var peerRoomAppDataResult = _scheduler.SetRoomAppData(UserId, setRoomAppDataRequest);
+
+            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
+            {
+                // Message: peerRoomAppDataChanged
+                SendMessage(otherPeerId, "peerRoomAppDataChanged", new
+                {
+                    RoomId = setRoomAppDataRequest.RoomId,
+                    PeerId = UserId,
+                    RoomAppData = peerRoomAppDataResult.RoomAppData,
+                });
+            }
+
+            return new MeetingMessage { Code = 200, Message = "SetRoomAppData 成功" };
+        }
+
+        public MeetingMessage UnsetRoomAppData(UnsetRoomAppDataRequest unsetRoomAppDataRequest)
+        {
+            var peerRoomAppDataResult = _scheduler.UnsetRoomAppData(UserId, unsetRoomAppDataRequest);
+
+            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
+            {
+                // Message: peerRoomAppDataChanged
+                SendMessage(otherPeerId, "peerRoomAppDataChanged", new
+                {
+                    RoomId = unsetRoomAppDataRequest.RoomId,
+                    PeerId = UserId,
+                    RoomAppData = peerRoomAppDataResult.RoomAppData,
+                });
+            }
+
+            return new MeetingMessage { Code = 200, Message = "UnsetRoomAppData 成功" };
+        }
+
+        public MeetingMessage ClearRoomAppData(string roomId)
+        {
+            var peerRoomAppDataResult = _scheduler.ClearRoomAppData(UserId, roomId);
+
+            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
+            {
+                // Message: peerRoomAppDataChanged
+                SendMessage(otherPeerId, "peerRoomAppDataChanged", new
+                {
+                    RoomId = roomId,
+                    PeerId = UserId,
+                    RoomAppData = peerRoomAppDataResult.RoomAppData,
+                });
+            }
+
+            return new MeetingMessage { Code = 200, Message = "ClearRoomAppData 成功" };
         }
 
         public MeetingMessage Pull(PullRequest consumeRequest)

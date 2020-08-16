@@ -68,11 +68,11 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Rooms 只允许 Scheduler 访问，由后者的 _peerRoomLocker 保护。
         /// </summary>
-        public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
+        public Dictionary<string, RoomWithRoomAppData> Rooms { get; } = new Dictionary<string, RoomWithRoomAppData>();
 
         public string[] Sources { get; private set; }
 
-        public Dictionary<string, object>? AppData { get; set; }
+        public Dictionary<string, object> AppData { get; set; }
 
         public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Router router, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
         {

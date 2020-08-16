@@ -284,7 +284,9 @@ export default {
 
       // createRecvTransport成功, JoinRoom
       result = await this.connection.invoke('JoinRoom', {
-        roomId: '1'
+        roomId: '1',
+        RoomSources: ['webcam', 'mic'],
+        RoomAppData: {}
       });
       if (result.code !== 200) {
         logger.error('processNotification() | JoinRoom failure.');
@@ -371,11 +373,11 @@ if(this.peerId === '1000') {
         return;
       }
     },
-    async pull(roomId, producerPeerId, sources) {
+    async pull(roomId, producerPeerId, roomSources) {
       const result = await this.connection.invoke('Pull', {
         roomId,
         producerPeerId,
-        sources
+        roomSources
       });
       if (result.code !== 200) {
         logger.error('pull() | pull failure.');
@@ -400,9 +402,9 @@ if(this.peerId === '1000') {
         case 'peerJoinRoom': {
           const peer = data.data;
           // eslint-disable-next-line no-unused-vars
-          const {roomId, peerId, sources } = peer;
+          const {roomId, peerId, sources, roomSources } = peer;
           
-          await this.pull(roomId, peerId, sources);
+          await this.pull(roomId, peerId, roomSources);
 
           break;
         }
@@ -415,6 +417,11 @@ if(this.peerId === '1000') {
           break;
         }
         
+        case 'peerRoomAppDataChanged': {
+
+          break;
+        }
+
         case 'produceSources':
         {
           if(!this.produce) break;
