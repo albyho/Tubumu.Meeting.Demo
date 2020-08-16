@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Extensions;
@@ -11,13 +12,20 @@ namespace TubumuMeeting.Mediasoup
 
         public string[] RoomSources { get; set; }
 
-        public Dictionary<string, object> RoomAppData { get; }
+        public ConcurrentDictionary<string, object> RoomAppData { get; }
 
         public RoomWithRoomAppData(Room room, string[] roomSources, Dictionary<string, object> roomAppData)
         {
             Room = room;
             RoomSources = roomSources;
-            RoomAppData = roomAppData;
+            RoomAppData = new ConcurrentDictionary<string, object>();
+            if (roomAppData != null)
+            {
+                foreach (var kv in roomAppData)
+                {
+                    RoomAppData[kv.Key] = kv.Value;
+                }
+            }
         }
 
         public bool Equals(RoomWithRoomAppData other)

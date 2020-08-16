@@ -51,7 +51,7 @@ namespace TubumuMeeting.Meeting.Server
                 foreach (var otherPeer in leaveResult.OtherPeers)
                 {
                     // Message: peerLeave
-                    SendMessage(otherPeer.Peer.PeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
+                    SendMessage(otherPeer.PeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
                 }
             }
         }
@@ -164,25 +164,15 @@ namespace TubumuMeeting.Meeting.Server
             };
 
             var peerInfos = new List<PeerInfo>();
-            foreach (var peer in joinRoomResult.PeersInRoom)
+            foreach (var peerInfo in joinRoomResult.PeersInRoom)
             {
-                var peerInfo = new PeerInfo
-                {
-                    RoomId = joinRoomRequest.RoomId,
-                    PeerId = peer.Peer.PeerId,
-                    DisplayName = peer.Peer.DisplayName,
-                    Sources = peer.Peer.Sources,
-                    AppData = peer.Peer.AppData,
-                    RoomSources = peer.RoomSources,
-                    RoomAppData = peer.RoomAppData,
-                };
                 peerInfos.Add(peerInfo);
 
                 // 将自身的信息告知给房间内的其他人
-                if (peer.Peer.PeerId != joinRoomResult.SelfPeer.PeerId)
+                if (peerInfo.PeerId != joinRoomResult.SelfPeer.PeerId)
                 {
                     // Message: peerJoinRoom
-                    SendMessage(peer.Peer.PeerId, "peerJoinRoom", selfPeerInfo);
+                    SendMessage(peerInfo.PeerId, "peerJoinRoom", selfPeerInfo);
                 }
             }
 
@@ -201,7 +191,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeer in leaveRoomResult.OtherPeers)
             {
                 // Message: peerLeaveRoom
-                SendMessage(otherPeer.Peer.PeerId, "peerLeaveRoom", new
+                SendMessage(otherPeer.PeerId, "peerLeaveRoom", new
                 {
                     RoomId = roomId,
                     PeerId = UserId

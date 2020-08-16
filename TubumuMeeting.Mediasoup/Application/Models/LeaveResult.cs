@@ -4,6 +4,6 @@
     {
         public Peer SelfPeer { get; set; }
 
-        public PeerWithRoomAppData[] OtherPeers { get; set; }
+        public PeerInfo[] OtherPeers { get; set; }
     }
 }

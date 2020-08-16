@@ -72,7 +72,7 @@ namespace TubumuMeeting.Mediasoup
 
         public string[] Sources { get; private set; }
 
-        public Dictionary<string, object> AppData { get; set; }
+        public ConcurrentDictionary<string, object> AppData { get; set; }
 
         public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Router router, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
         {
@@ -85,7 +85,14 @@ namespace TubumuMeeting.Mediasoup
             PeerId = peerId;
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? new string[0];
-            AppData = appData ?? new Dictionary<string, object>();
+            AppData = new ConcurrentDictionary<string, object>();
+            if (appData != null)
+            {
+                foreach (var kv in appData)
+                {
+                    AppData[kv.Key] = kv.Value;
+                }
+            }
             Joined = true;
         }
 
