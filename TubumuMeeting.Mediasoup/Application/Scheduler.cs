@@ -209,7 +209,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     foreach (var item in unsetPeerAppDataRequest.Keys)
                     {
-                        peer.AppData.TryRemove(item, out var _);
+                        peer.AppData.Remove(item);
                     }
                 }
 
