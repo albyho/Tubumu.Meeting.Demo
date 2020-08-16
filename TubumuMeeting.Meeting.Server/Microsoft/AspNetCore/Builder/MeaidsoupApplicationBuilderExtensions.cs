@@ -25,10 +25,11 @@ namespace Microsoft.AspNetCore.Builder
                         {
                             mediasoupServer.AddWorker(worker);
                             logger.LogInformation($"worker[pid:{worker.ProcessId}] create success.");
+                            return Task.CompletedTask;
                         });
                     }
                 });
-            });
+            }).ConfigureAwait(false);
 
             return app;
         }

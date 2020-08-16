@@ -59,27 +59,27 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the PipeTransport.
         /// </summary>
-        public override void Close()
+        public override async Task Close()
         {
             if (Closed)
             {
                 return;
             }
 
-            base.Close();
+            await base.Close();
         }
 
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override void RouterClosed()
+        public override async Task RouterClosed()
         {
             if (Closed)
             {
                 return;
             }
 
-            base.RouterClosed();
+            await base.RouterClosed();
         }
 
         /// <summary>

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Nito.AsyncEx;
+using Microsoft.VisualStudio.Threading;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -60,7 +60,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> JoinAsync(string peerId, JoinRequest joinRequest)
         {
-            using (await _peersLocker.WriterLockAsync())
+            using (await _peersLocker.WriteLockAsync())
             {
                 if (Peers.TryGetValue(peerId, out var peer))
                 {
@@ -100,7 +100,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<LeaveResult?> LeaveAsync(string peerId)
         {
-            using (await _peersLocker.WriterLockAsync())
+            using (await _peersLocker.WriteLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -108,7 +108,7 @@ namespace TubumuMeeting.Mediasoup
                     return null;
                 }
 
-                using (await _peerRoomLocker.ReaderLockAsync())
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     var otherPeers = new HashSet<PeerInfo>();
                     foreach (var room in peer.Rooms.Values)
@@ -137,15 +137,15 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<PeerAppDataResult> SetPeerAppDataAsync(string peerId, SetPeerAppDataRequest setPeerAppDataRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     throw new Exception($"SetPeerAppDataAsync() | Peer:{peerId} is not exists.");
                 }
 
-                // NOTE: 这里用 _peerRoomLocker 锁住, 因为涉及 Peer 和 Room 的关系查询而没有写入操作，故使用 ReaderLock。
-                using (await _peerRoomLocker.ReaderLockAsync())
+                // NOTE: 这里用 _peerRoomLocker 锁住, 因为涉及 Peer 和 Room 的关系查询而没有写入操作，故使用 ReadLock。
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     foreach (var item in setPeerAppDataRequest.PeerAppData)
                     {
@@ -167,14 +167,14 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<PeerAppDataResult> UnsetPeerAppDataAsync(string peerId, UnsetPeerAppDataRequest unsetPeerAppDataRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     throw new Exception($"UnsetPeerAppDataAsync() | Peer:{peerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.ReaderLockAsync())
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     foreach (var item in unsetPeerAppDataRequest.Keys)
                     {
@@ -196,14 +196,14 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<PeerAppDataResult> ClearPeerAppDataAsync(string peerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     throw new Exception($"ClearPeerAppDataAsync() | Peer:{peerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.ReaderLockAsync())
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     peer.AppData.Clear();
 
@@ -222,7 +222,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<WebRtcTransport> CreateWebRtcTransportAsync(string peerId, CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -235,7 +235,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> ConnectWebRtcTransportAsync(string peerId, ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -247,7 +247,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<JoinRoomResult> JoinRoomAsync(string peerId, JoinRoomRequest joinRoomRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -259,7 +259,7 @@ namespace TubumuMeeting.Mediasoup
                     throw new Exception($"Pull() | Peer:{peerId} don't has some sources which is in Room:{joinRoomRequest.RoomId}.");
                 }
 
-                using (await _roomsLocker.WriterLockAsync())
+                using (await _roomsLocker.WriteLockAsync())
                 {
                     // Room 如果不存在则创建
                     if (!Rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
@@ -268,7 +268,7 @@ namespace TubumuMeeting.Mediasoup
                         Rooms[room.RoomId] = room;
                     }
 
-                    using (await _peerRoomLocker.WriterLockAsync())
+                    using (await _peerRoomLocker.WriteLockAsync())
                     {
                         var roomResources = joinRoomRequest.RoomSources ?? Array.Empty<string>();
                         var roomAppData = joinRoomRequest.RoomAppData ?? new Dictionary<string, object>();
@@ -302,14 +302,14 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<LeaveRoomResult> LeaveRoomAsync(string peerId, string roomId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.WriterLockAsync())
+                using (await _peerRoomLocker.WriteLockAsync())
                 {
                     if (!peer.Rooms.TryGetValue(roomId, out var room))
                     {
@@ -336,14 +336,14 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<PeerRoomAppDataResult> SetRoomAppDataAsync(string peerId, SetRoomAppDataRequest setRoomAppDataRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.ReaderLockAsync())
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     if (!peer.Rooms.TryGetValue(setRoomAppDataRequest.RoomId, out var room))
                     {
@@ -369,14 +369,14 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<PeerRoomAppDataResult> UnsetRoomAppDataAsync(string peerId, UnsetRoomAppDataRequest unsetRoomAppDataRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     throw new Exception($"UnsetRoomAppDataAsync() | Peer:{peerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.ReaderLockAsync())
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     if (!peer.Rooms.TryGetValue(unsetRoomAppDataRequest.RoomId, out var room))
                     {
@@ -402,14 +402,14 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<PeerRoomAppDataResult> ClearRoomAppDataAsync(string peerId, string roomId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
                     throw new Exception($"ClearRoomAppDataAsync() | Peer:{peerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.ReaderLockAsync())
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     if (!peer.Rooms.TryGetValue(roomId, out var room))
                     {
@@ -432,7 +432,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<PullResult> PullAsync(string peerId, PullRequest pullRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -444,7 +444,7 @@ namespace TubumuMeeting.Mediasoup
                     throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} is not exists.");
                 }
 
-                using (await _peerRoomLocker.ReaderLockAsync())
+                using (await _peerRoomLocker.ReadLockAsync())
                 {
                     if (!peer.Rooms.ContainsKey(pullRequest.RoomId))
                     {
@@ -477,7 +477,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<ProduceResult> ProduceAsync(string peerId, ProduceRequest produceRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -518,7 +518,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<Consumer> ConsumeAsync(string producerPeerId, string cosumerPeerId, string producerId, string roomId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(producerPeerId, out var producerPeer))
                 {
@@ -542,7 +542,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> CloseProducerAsync(string peerId, string producerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -554,7 +554,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> PauseProducerAsync(string peerId, string producerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -566,7 +566,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> ResumeProducerAsync(string peerId, string producerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -578,7 +578,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> CloseConsumerAsync(string peerId, string consumerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -590,7 +590,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> PauseConsumerAsync(string peerId, string consumerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -602,7 +602,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<Consumer> ResumeConsumerAsync(string peerId, string consumerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -614,7 +614,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> SetConsumerPreferedLayersAsync(string peerId, SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -626,7 +626,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> SetConsumerPriorityAsync(string peerId, SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -638,7 +638,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<bool> RequestConsumerKeyFrameAsync(string peerId, string consumerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -650,7 +650,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<TransportStat> GetTransportStatsAsync(string peerId, string transportId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -662,7 +662,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<ProducerStat> GetProducerStatsAsync(string peerId, string producerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -674,7 +674,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<ConsumerStat> GetConsumerStatsAsync(string peerId, string consumerId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {
@@ -686,7 +686,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task<IceParameters?> RestartIceAsync(string peerId, string transportId)
         {
-            using (await _peersLocker.ReaderLockAsync())
+            using (await _peersLocker.ReadLockAsync())
             {
                 if (!Peers.TryGetValue(peerId, out var peer))
                 {

@@ -1,6 +1,4 @@
-﻿using TubumuMeeting.Mediasoup;
-
-namespace TubumuMeeting.Mediasoup
+﻿namespace TubumuMeeting.Mediasoup
 {
     public class PeerPullResult
     {

@@ -86,7 +86,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the PlainTransport.
         /// </summary>
-        public override void Close()
+        public override async Task Close()
         {
             if (Closed)
             {
@@ -98,13 +98,13 @@ namespace TubumuMeeting.Mediasoup
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
             }
 
-            base.Close();
+            await base.Close();
         }
 
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override void RouterClosed()
+        public override async Task RouterClosed()
         {
             if (Closed)
             {
@@ -116,7 +116,7 @@ namespace TubumuMeeting.Mediasoup
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
             }
 
-            base.RouterClosed();
+            await base.RouterClosed();
         }
 
         /// <summary>

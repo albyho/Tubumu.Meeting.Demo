@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Threading;
 using Tubumu.Core.Extensions;
 
 namespace TubumuMeeting.Mediasoup
@@ -34,7 +36,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<Room> _logger;
 
-        private readonly object _locker = new object();
+        private readonly AsyncReaderWriterLock _locker = new AsyncReaderWriterLock();
 
         public bool Closed { get; private set; }
 
@@ -55,21 +57,23 @@ namespace TubumuMeeting.Mediasoup
             Closed = false;
         }
 
-        public void Close()
+        public async Task Close()
         {
-            _logger.LogError($"Close() | Room:{RoomId}");
-
-            CheckClosed();
-            lock (_locker)
+            if (Closed)
             {
-                CheckClosed();
+                return;
+            }
 
+            using (await _locker.WriteLockAsync())
+            {
                 if (Closed)
                 {
                     return;
                 }
 
-                Router.Close();
+                _logger.LogDebug($"Close() | Room:{RoomId}");
+
+                await Router.Close();
                 Closed = true;
             }
         }

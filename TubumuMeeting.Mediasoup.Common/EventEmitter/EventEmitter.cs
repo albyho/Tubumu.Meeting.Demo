@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -21,7 +22,7 @@ namespace TubumuMeeting.Mediasoup
         }
         */
 
-        private readonly Dictionary<string, List<Action<object?>>> _events;
+        private readonly Dictionary<string, List<Func<object?, Task>>> _events;
         private readonly ReaderWriterLockSlim _rwl;
 
         /// <summary>
@@ -29,7 +30,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public EventEmitter()
         {
-            _events = new Dictionary<string, List<Action<object?>>>();
+            _events = new Dictionary<string, List<Func<object?, Task>>>();
             _rwl = new ReaderWriterLockSlim();
         }
 
@@ -38,38 +39,38 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         /// <param name="eventName">Event name to subscribe to</param>
         /// <param name="method">Method to add to the event</param>
-        public void On(string eventName, Action<object?> method)
+        public void On(string eventName, Func<object?, Task> method)
         {
             _rwl.EnterWriteLock();
-            if (_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
+            if (_events.TryGetValue(eventName, out List<Func<object?, Task>> subscribedMethods))
             {
                 subscribedMethods.Add(method);
             }
             else
             {
-                _events.Add(eventName, new List<Action<object?>> { method });
+                _events.Add(eventName, new List<Func<object?, Task>> { method });
             }
             _rwl.ExitWriteLock();
         }
 
+
         /// <summary>
-        /// Emits the event and associated data
+        /// Emits the event and runs all associated methods asynchronously
         /// </summary>
-        /// <param name="eventName">Event name to be emitted</param>
-        /// <param name="data">Data to call the attached methods with</param>
+        /// <param name="eventName">The event name to call methods for</param>
+        /// <param name="data">The data to call all the methods with</param>
         public void Emit(string eventName, object? data = null)
         {
             _rwl.EnterReadLock();
-            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
+            if (!_events.TryGetValue(eventName, out List<Func<object?, Task>> subscribedMethods))
             {
-                // NOTE: For testing.
                 //throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
             }
             else
             {
                 foreach (var f in subscribedMethods)
                 {
-                    f(data);
+                    ThreadPool.QueueUserWorkItem(m => f(m), data);
                 }
             }
             _rwl.ExitReadLock();
@@ -80,10 +81,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         /// <param name="eventName">Event name to remove function from</param>
         /// <param name="method">Method to remove from eventName</param>
-        public void RemoveListener(string eventName, Action<object?> method)
+        public void RemoveListener(string eventName, Func<object?, Task> method)
         {
             _rwl.EnterWriteLock();
-            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
+            if (!_events.TryGetValue(eventName, out List<Func<object?, Task>> subscribedMethods))
             {
                 throw new DoesNotExistException(string.Format("Event [{0}] does not exist to have listeners removed.", eventName));
             }
@@ -109,7 +110,7 @@ namespace TubumuMeeting.Mediasoup
         public void RemoveAllListeners(string eventName)
         {
             _rwl.EnterWriteLock();
-            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
+            if (!_events.TryGetValue(eventName, out List<Func<object?, Task>> subscribedMethods))
             {
                 throw new DoesNotExistException(string.Format("Event [{0}] does not exist to have methods removed.", eventName));
             }
@@ -118,28 +119,6 @@ namespace TubumuMeeting.Mediasoup
                 subscribedMethods.RemoveAll(m => true);
             }
             _rwl.ExitWriteLock();
-        }
-
-        /// <summary>
-        /// Emits the event and runs all associated methods asynchronously
-        /// </summary>
-        /// <param name="eventName">The event name to call methods for</param>
-        /// <param name="data">The data to call all the methods with</param>
-        public void EmitAsync(string eventName, object? data = null)
-        {
-            _rwl.EnterReadLock();
-            if (!_events.TryGetValue(eventName, out List<Action<object?>> subscribedMethods))
-            {
-                throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
-            }
-            else
-            {
-                foreach (var f in subscribedMethods)
-                {
-                    ThreadPool.QueueUserWorkItem(m => f(m), data);
-                }
-            }
-            _rwl.ExitReadLock();
         }
     }
 }

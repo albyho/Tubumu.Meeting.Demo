@@ -35,7 +35,7 @@ namespace Microsoft.AspNetCore.Builder
             // 应用程序终止时，服务取消注册
             lifetime.ApplicationStopping.Register(() =>
             {
-                consulClient.Agent.ServiceDeregister(registration.ID).Wait();
+                consulClient.Agent.ServiceDeregister(registration.ID).GetAwaiter().GetResult();
             });
 
             return app;

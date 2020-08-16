@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -346,7 +345,7 @@ namespace TubumuMeeting.Mediasoup
         {
             // 关闭后也允许移除
             lock (_locker)
-            { 
+            {
                 _consumers.Remove(consumerId);
             }
         }
@@ -415,7 +414,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void CheckConsumers(object state)
         {
-            if(Closed)
+            if (Closed)
             {
                 _checkConsumersTimer.Dispose();
                 return;

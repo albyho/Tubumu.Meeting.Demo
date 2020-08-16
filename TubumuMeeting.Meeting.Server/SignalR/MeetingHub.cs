@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -132,6 +131,7 @@ namespace TubumuMeeting.Meeting.Server
             transport.On("sctpstatechange", sctpState =>
             {
                 _logger.LogDebug($"WebRtcTransport \"sctpstatechange\" event [sctpState:{sctpState}]");
+                return Task.CompletedTask;
             });
 
             transport.On("dtlsstatechange", value =>
@@ -141,6 +141,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     _logger.LogWarning($"WebRtcTransport dtlsstatechange event [dtlsState:{value}]");
                 }
+                return Task.CompletedTask;
             });
 
             // NOTE: For testing.
@@ -163,6 +164,7 @@ namespace TubumuMeeting.Meeting.Server
                         AvailableBitrate = traceData.Info["availableBitrate"]
                     });
                 }
+                return Task.CompletedTask;
             });
 
             return new MeetingMessage
@@ -368,16 +370,18 @@ namespace TubumuMeeting.Meeting.Server
                 var data = (ProducerScore[])score!;
                 // Message: producerScore
                 SendMessage(peerId, "producerScore", new { ProducerId = producer.ProducerId, Score = data });
-
+                return Task.CompletedTask;
             });
             producer.On("videoorientationchange", videoOrientation =>
             {
                 var data = (ProducerVideoOrientation)videoOrientation!;
                 _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
+                return Task.CompletedTask;
             });
             producer.Observer.On("close", _ =>
             {
                 SendMessage(peerId, "producerClosed", new { ProducerId = producer.ProducerId });
+                return Task.CompletedTask;
             });
 
             string? source = null;
@@ -547,29 +551,34 @@ namespace TubumuMeeting.Meeting.Server
                 var data = (ConsumerScore)score!;
                 // Message: consumerScore
                 SendMessage(consumerPeer.PeerId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = data });
+                return Task.CompletedTask;
             });
 
             // Set Consumer events.
             consumer.On("transportclose", _ =>
             {
+                return Task.CompletedTask;
             });
 
             consumer.On("producerclose", _ =>
             {
                 // Message: consumerClosed
                 SendMessage(consumerPeer.PeerId, "consumerClosed", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
             });
 
             consumer.On("producerpause", _ =>
             {
                 // Message: consumerPaused
                 SendMessage(consumerPeer.PeerId, "consumerPaused", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
             });
 
             consumer.On("producerresume", _ =>
             {
                 // Message: consumerResumed
                 SendMessage(consumerPeer.PeerId, "consumerResumed", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
             });
 
             consumer.On("layerschange", layers =>
@@ -578,6 +587,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 // Message: consumerLayersChanged
                 SendMessage(consumerPeer.PeerId, "consumerLayersChanged", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
             });
 
             // NOTE: For testing.
@@ -588,6 +598,7 @@ namespace TubumuMeeting.Meeting.Server
             consumer.On("trace", trace =>
             {
                 _logger.LogDebug($"consumer \"trace\" event [producerId:{consumer.ConsumerId}, trace:{trace}]");
+                return Task.CompletedTask;
             });
 
             // Send a request to the remote Peer with Consumer parameters.

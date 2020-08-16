@@ -69,6 +69,11 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly List<Router> _routers = new List<Router>();
 
+        /// <summary>
+        /// Locker.
+        /// </summary>
+        private readonly object _locker = new object();
+
         #endregion
 
         #region Public Properties
@@ -299,9 +304,19 @@ namespace TubumuMeeting.Mediasoup
 
             var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, _payloadChannel, AppData);
 
-            _routers.Add(router);
+            lock(_locker)
+            {
+                _routers.Add(router);
+            }
 
-            router.On("@close", _ => _routers.Remove(router));
+            router.On("@close", _ =>
+            {
+                lock (_locker)
+                {
+                    _routers.Remove(router);
+                }
+                return Task.CompletedTask;
+            });
 
             // Emit observer event.
             Observer.Emit("newrouter", router);
@@ -396,6 +411,7 @@ namespace TubumuMeeting.Mediasoup
             // TODO: 如果在以上内容中替代了终结器，则取消注释以下行。
             // GC.SuppressFinalize(this);
         }
+
         #endregion
     }
 }

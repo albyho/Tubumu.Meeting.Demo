@@ -2,11 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json;
-using Nito.AsyncEx;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup.Extensions;
 
@@ -104,7 +103,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<WebRtcTransport> CreateWebRtcTransportAsync(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
             CheckJoined();
-            using (await _locker.WriterLockAsync())
+            using (await _locker.WriteLockAsync())
             {
                 CheckJoined();
 
@@ -151,7 +150,13 @@ namespace TubumuMeeting.Mediasoup
                 }
                 // Store the WebRtcTransport into the Peer data Object.
                 _transports[transport.TransportId] = transport;
-                transport.On("@close", _ => _transports.TryRemove(transport.TransportId, out var _));
+                transport.On("@close", async _ =>
+                {
+                    using (await _locker.WriteLockAsync())
+                    {
+                        _transports.TryRemove(transport.TransportId, out var _);
+                    }
+                });
 
                 // If set, apply max incoming bitrate limit.
                 if (_webRtcTransportSettings.MaximumIncomingBitrate.HasValue && _webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
@@ -172,7 +177,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> ConnectWebRtcTransportAsync(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -196,13 +201,13 @@ namespace TubumuMeeting.Mediasoup
         public async Task<PeerPullResult> PullAsync(Peer producerPeer, string roomId, IEnumerable<string> sources)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
                 if (producerPeer.PeerId != PeerId)
                 {
-                    using (await producerPeer._locker.WriterLockAsync())
+                    using (await producerPeer._locker.WriteLockAsync())
                     {
                         return PullInternal(producerPeer, roomId, sources);
                     }
@@ -238,12 +243,15 @@ namespace TubumuMeeting.Mediasoup
                 {
                     produceSources.Add(source!);
                 }
-                producerPeer._pullPaddings.Add(new PullPadding
+                if (!producerPeer._pullPaddings.Any(m => m.Source == source && m.RoomId == roomId && m.ConsumerPeerId == PeerId))
                 {
-                    RoomId = roomId,
-                    ConsumerPeerId = PeerId,
-                    Source = source!,
-                });
+                    producerPeer._pullPaddings.Add(new PullPadding
+                    {
+                        RoomId = roomId,
+                        ConsumerPeerId = PeerId,
+                        Source = source!,
+                    });
+                }
             }
 
             return new PeerPullResult
@@ -261,7 +269,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<PeerProduceResult> ProduceAsync(ProduceRequest produceRequest)
         {
             CheckJoined();
-            using (await _locker.WriterLockAsync())
+            using (await _locker.WriteLockAsync())
             {
                 CheckJoined();
 
@@ -314,7 +322,14 @@ namespace TubumuMeeting.Mediasoup
 
                 //producer.On("@close", _ => _producers.Remove(producer.ProducerId));
                 //producer.On("transportclose", _ => _producers.Remove(producer.ProducerId));
-                producer.Observer.On("close", _ => _producers.TryRemove(producer.ProducerId, out var _));
+                producer.Observer.On("close", async _ =>
+                {
+                    using (await _locker.WriteLockAsync())
+                    {
+                        _producers.TryRemove(producer.ProducerId, out var _);
+                        _pullPaddings.Clear();
+                    }
+                });
 
                 var matchedPullPaddings = _pullPaddings.Where(m => m.Source == producer.Source).ToArray();
                 foreach (var item in matchedPullPaddings)
@@ -339,13 +354,13 @@ namespace TubumuMeeting.Mediasoup
         public async Task<Consumer> ConsumeAsync(Peer producerPeer, string producerId, string roomId)
         {
             CheckJoined();
-            using (await _locker.WriterLockAsync())
+            using (await _locker.WriteLockAsync())
             {
                 CheckJoined();
 
                 if (producerPeer.PeerId != PeerId)
                 {
-                    using (await producerPeer._locker.WriterLockAsync())
+                    using (await producerPeer._locker.WriteLockAsync())
                     {
                         return await ConsumeInternalAsync(producerPeer, producerId, roomId);
                     }
@@ -401,10 +416,16 @@ namespace TubumuMeeting.Mediasoup
             //consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
             //consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
             //consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
-            consumer.Observer.On("close", _ =>
+            consumer.Observer.On("close", async _ =>
             {
-                _consumers.TryRemove(consumer.ConsumerId, out var _);
-                producer.RemoveConsumer(consumer.ConsumerId);
+                using (await _locker.WriteLockAsync())
+                {
+                    _consumers.TryRemove(consumer.ConsumerId, out var _);
+                }
+                using (await producerPeer._locker.WriteLockAsync())
+                {
+                    producer.RemoveConsumer(consumer.ConsumerId);
+                }
             });
 
             producer.AddConsumer(consumer);
@@ -420,7 +441,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> CloseProducerAsync(string producerId)
         {
             CheckJoined();
-            using (await _locker.WriterLockAsync())
+            using (await _locker.WriteLockAsync())
             {
                 CheckJoined();
 
@@ -443,7 +464,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> PauseProducerAsync(string producerId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -465,7 +486,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> ResumeProducerAsync(string producerId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -487,7 +508,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> CloseConsumerAsync(string consumerId)
         {
             CheckJoined();
-            using (await _locker.WriterLockAsync())
+            using (await _locker.WriteLockAsync())
             {
                 CheckJoined();
 
@@ -510,7 +531,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> PauseConsumerAsync(string consumerId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -532,7 +553,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<Consumer> ResumeConsumerAsync(string consumerId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -554,7 +575,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> SetConsumerPreferedLayersAsync(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -576,7 +597,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> SetConsumerPriorityAsync(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -598,7 +619,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<bool> RequestConsumerKeyFrameAsync(string consumerId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -620,7 +641,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<TransportStat> GetTransportStatsAsync(string transportId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -645,7 +666,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<ProducerStat> GetProducerStatsAsync(string producerId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -669,7 +690,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<ConsumerStat> GetConsumerStatsAsync(string consumerId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -693,7 +714,7 @@ namespace TubumuMeeting.Mediasoup
         public async Task<IceParameters?> RestartIceAsync(string transportId)
         {
             CheckJoined();
-            using (await _locker.ReaderLockAsync())
+            using (await _locker.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -731,7 +752,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            using (await _locker.WriterLockAsync())
+            using (await _locker.WriteLockAsync())
             {
                 if (!Joined)
                 {
@@ -742,7 +763,10 @@ namespace TubumuMeeting.Mediasoup
 
                 // Iterate and close all mediasoup Transport associated to this Peer, so all
                 // its Producers and Consumers will also be closed.
-                _transports.Values.ForEach(m => m.Close());
+                foreach (var item in _transports.Values)
+                {
+                    await item.Close();
+                }
                 _transports.Clear();
             }
         }

@@ -125,7 +125,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the Router.
         /// </summary>
-        public void Close()
+        public async Task Close()
         {
             if (Closed)
             {
@@ -142,7 +142,7 @@ namespace TubumuMeeting.Mediasoup
             // Close every Transport.
             foreach (var transport in _transports.Values)
             {
-                transport.RouterClosed();
+                await transport.RouterClosed();
             }
 
             _transports.Clear();
@@ -172,7 +172,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Worker was closed.
         /// </summary>
-        public void WorkerClosed()
+        public async Task WorkerClosed()
         {
             if (Closed)
             {
@@ -186,7 +186,7 @@ namespace TubumuMeeting.Mediasoup
             // Close every Transport.
             foreach (var transport in _transports.Values)
             {
-                transport.RouterClosed();
+                await transport.RouterClosed();
             }
 
             _transports.Clear();
@@ -274,26 +274,34 @@ namespace TubumuMeeting.Mediasoup
                 );
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.TryRemove(transport.TransportId, out var _));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -354,26 +362,34 @@ namespace TubumuMeeting.Mediasoup
                             );
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.TryRemove(transport.TransportId, out var _));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -432,26 +448,34 @@ namespace TubumuMeeting.Mediasoup
 
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.TryRemove(transport.TransportId, out var _));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -498,26 +522,34 @@ namespace TubumuMeeting.Mediasoup
 
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.TryRemove(transport.TransportId, out var _));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -630,15 +662,15 @@ namespace TubumuMeeting.Mediasoup
                     })
                     );
 
-                    localPipeTransport.Observer.On("close", _ =>
+                    localPipeTransport.Observer.On("close", async _ =>
                     {
-                        remotePipeTransport.Close();
+                        await remotePipeTransport.Close();
                         _mapRouterPipeTransports.TryRemove(pipeToRouterOptions.Router, out var _);
                     });
 
-                    remotePipeTransport.Observer.On("close", _ =>
+                    remotePipeTransport.Observer.On("close", async _ =>
                     {
-                        localPipeTransport.Close();
+                        await localPipeTransport.Close();
                         _mapRouterPipeTransports.TryRemove(pipeToRouterOptions.Router, out var _);
                     });
 
@@ -650,12 +682,12 @@ namespace TubumuMeeting.Mediasoup
 
                     if (localPipeTransport != null)
                     {
-                        localPipeTransport.Close();
+                        await localPipeTransport.Close();
                     }
 
                     if (remotePipeTransport != null)
                     {
-                        remotePipeTransport.Close();
+                        await remotePipeTransport.Close();
                     }
 
                     throw;
@@ -684,12 +716,20 @@ namespace TubumuMeeting.Mediasoup
                     });
 
                     // Pipe events from the pipe Consumer to the pipe Producer.
-                    pipeConsumer.Observer.On("close", _ => pipeProducer.Close());
+                    pipeConsumer.Observer.On("close", _ =>
+                    {
+                        pipeProducer.Close();
+                        return Task.CompletedTask;
+                    });
                     pipeConsumer.Observer.On("pause", async _ => await pipeProducer.PauseAsync());
                     pipeConsumer.Observer.On("resume", async _ => await pipeProducer.ResumeAsync());
 
                     // Pipe events from the pipe Producer to the pipe Consumer.
-                    pipeProducer.Observer.On("close", _ => pipeConsumer.Close());
+                    pipeProducer.Observer.On("close", _ =>
+                    {
+                        pipeConsumer.Close();
+                        return Task.CompletedTask;
+                    });
 
                     return new PipeToRouterResult { PipeConsumer = pipeConsumer, PipeProducer = pipeProducer };
                 }
@@ -732,10 +772,18 @@ namespace TubumuMeeting.Mediasoup
                     });
 
                     // Pipe events from the pipe DataConsumer to the pipe DataProducer.
-                    pipeDataConsumer.Observer.On("close", _ => pipeDataProducer.Close());
+                    pipeDataConsumer.Observer.On("close", _ =>
+                    {
+                        pipeDataProducer.Close();
+                        return Task.CompletedTask;
+                    });
 
                     // Pipe events from the pipe DataProducer to the pipe DataConsumer.
-                    pipeDataProducer.Observer.On("close", _ => pipeDataConsumer.Close());
+                    pipeDataProducer.Observer.On("close", _ =>
+                    {
+                        pipeDataConsumer.Close();
+                        return Task.CompletedTask;
+                    });
 
                     return new PipeToRouterResult { PipeDataConsumer = pipeDataConsumer, PipeDataProducer = pipeDataProducer };
                 }
@@ -792,7 +840,11 @@ namespace TubumuMeeting.Mediasoup
                 m => _producers.TryGetValue(m, out var p) ? p : null);
 
             _rtpObservers[audioLevelObserver.Internal.RtpObserverId] = audioLevelObserver;
-            audioLevelObserver.On("@close", _ => _rtpObservers.TryRemove(audioLevelObserver.Internal.RtpObserverId, out var _));
+            audioLevelObserver.On("@close", _ =>
+            {
+                _rtpObservers.TryRemove(audioLevelObserver.Internal.RtpObserverId, out var _);
+                return Task.CompletedTask;
+            });
 
             // Emit observer event.
             Observer.Emit("newrtpobserver", audioLevelObserver);
