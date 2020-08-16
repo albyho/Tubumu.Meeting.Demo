@@ -333,16 +333,20 @@ namespace TubumuMeeting.Mediasoup
 
         public void AddConsumer(Consumer consumer)
         {
+            CheckClosed();
             lock (_locker)
             {
+                CheckClosed();
+
                 _consumers[consumer.ConsumerId] = consumer;
             }
         }
 
         public void RemoveConsumer(string consumerId)
         {
+            // 关闭后也允许移除
             lock (_locker)
-            {
+            { 
                 _consumers.Remove(consumerId);
             }
         }
@@ -411,17 +415,41 @@ namespace TubumuMeeting.Mediasoup
 
         private void CheckConsumers(object state)
         {
+            if(Closed)
+            {
+                _checkConsumersTimer.Dispose();
+                return;
+            }
+
             lock (_locker)
             {
+                if (Closed)
+                {
+                    _checkConsumersTimer.Dispose();
+                    return;
+                }
+
                 if (_consumers.Count == 0)
                 {
-                    Close();
+                    // 防止死锁
+                    ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        Close();
+                    });
                     _checkConsumersTimer.Dispose();
                 }
                 else
                 {
                     _checkConsumersTimer.Change(TimeSpan.FromSeconds(CheckConsumersTimeSeconds), TimeSpan.FromMilliseconds(-1));
                 }
+            }
+        }
+
+        private void CheckClosed()
+        {
+            if (Closed)
+            {
+                throw new Exception($"CheckClosed() | Producer:{ProducerId} was closed");
             }
         }
 

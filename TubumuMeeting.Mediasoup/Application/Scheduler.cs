@@ -35,11 +35,15 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
+        #region Public Properties
+
         public RtpCapabilities DefaultRtpCapabilities { get; private set; }
 
         public Dictionary<string, Room> Rooms { get; } = new Dictionary<string, Room>();
 
         public Dictionary<string, Peer> Peers { get; } = new Dictionary<string, Peer>();
+
+        #endregion
 
         public Scheduler(ILoggerFactory loggerFactory, MediasoupOptions mediasoupOptions, MediasoupServer mediasoupServer)
         {
