@@ -84,7 +84,7 @@ namespace TubumuMeeting.Mediasoup
             _sctpCapabilities = sctpCapabilities;
             PeerId = peerId;
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
-            Sources = sources ?? new string[0];
+            Sources = sources ?? Array.Empty<string>();
             AppData = new ConcurrentDictionary<string, object>();
             if (appData != null)
             {
@@ -193,16 +193,16 @@ namespace TubumuMeeting.Mediasoup
         /// <param name="roomId"></param>
         /// <param name="sources"></param>
         /// <returns></returns>
-        public PeerPullResult Pull(Peer producerPeer, string roomId, IEnumerable<string> sources)
+        public async Task<PeerPullResult> PullAsync(Peer producerPeer, string roomId, IEnumerable<string> sources)
         {
             CheckJoined();
-            using (_locker.ReaderLock())
+            using (await _locker.ReaderLockAsync())
             {
                 CheckJoined();
 
                 if (producerPeer.PeerId != PeerId)
                 {
-                    using (producerPeer._locker.WriterLock())
+                    using (await producerPeer._locker.WriterLockAsync())
                     {
                         return PullInternal(producerPeer, roomId, sources);
                     }
@@ -290,7 +290,7 @@ namespace TubumuMeeting.Mediasoup
                     return new PeerProduceResult
                     {
                         Producer = producer,
-                        PullPaddings = new PullPadding[0],
+                        PullPaddings = Array.Empty<PullPadding>(),
                     };
                 }
 
@@ -716,22 +716,22 @@ namespace TubumuMeeting.Mediasoup
         /// 离开房间
         /// </summary>
         /// <param name="roomId"></param>
-        public void LeaveRoom(string roomId)
+        public Task LeaveRoomAsync(string roomId)
         {
-
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// 离开
         /// </summary>
-        public void Leave()
+        public async Task LeaveAsync()
         {
             if (!Joined)
             {
                 return;
             }
 
-            using (_locker.WriterLock())
+            using (await _locker.WriterLockAsync())
             {
                 if (!Joined)
                 {

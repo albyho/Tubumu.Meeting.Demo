@@ -44,11 +44,11 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        private ProducerInternalData _internal;
+        private readonly ProducerInternalData _internal;
 
-        private Timer _checkConsumersTimer;
+        private readonly Timer _checkConsumersTimer;
 
-        private object _locker = new object();
+        private readonly object _locker = new object();
 
         private const int CheckConsumersTimeSeconds = 10;
 
@@ -104,7 +104,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// [扩展]Consumers
         /// </summary>
-        private Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();
+        private readonly Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();
 
         /// <summary>
         /// [扩展]Source.
