@@ -4,6 +4,6 @@
     {
         public Peer SelfPeer { get; set; }
 
-        public PeerInfo[] OtherPeers { get; set; }
+        public string[] OtherPeerIds { get; set; }
     }
 }

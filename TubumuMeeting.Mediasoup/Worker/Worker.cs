@@ -304,7 +304,7 @@ namespace TubumuMeeting.Mediasoup
 
             var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, _payloadChannel, AppData);
 
-            lock(_locker)
+            lock (_locker)
             {
                 _routers.Add(router);
             }

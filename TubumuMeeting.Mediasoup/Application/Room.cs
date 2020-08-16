@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
@@ -41,11 +40,6 @@ namespace TubumuMeeting.Mediasoup
         public bool Closed { get; private set; }
 
         public Router Router { get; private set; }
-
-        /// <summary>
-        /// Peers 只允许 Scheduler 访问，由后者的 _peerRoomLocker 保护。
-        /// </summary>
-        public Dictionary<string, PeerInfo> Peers { get; } = new Dictionary<string, PeerInfo>();
 
         public Room(ILoggerFactory loggerFactory, Router router, string roomId, string name)
         {

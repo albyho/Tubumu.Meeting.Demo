@@ -8,6 +8,6 @@ namespace TubumuMeeting.Mediasoup
 
         public Dictionary<string, object> RoomAppData { get; set; }
 
-        public string[] OtherPeerIds { get; set; }
+        public string[] PeerIds { get; set; }
     }
 }

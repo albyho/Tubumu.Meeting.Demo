@@ -224,7 +224,7 @@ namespace TubumuMeeting.Mediasoup
                 {
                     using (await Locker.WriteLockAsync())
                     {
-                        Consumers.Remove(consumer.ConsumerId); 
+                        Consumers.Remove(consumer.ConsumerId);
                     }
                 });
 

@@ -51,6 +51,8 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ConsumerInternalData _internal;
 
+        private readonly object _locker = new object();
+
         /// <summary>
         /// Consumer id.
         /// </summary>
@@ -236,20 +238,28 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            lock (_locker)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
+                _logger.LogDebug("Close()");
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                Closed = true;
 
-            // Fire and forget
-            _channel.RequestAsync(MethodId.CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
 
-            Emit("@close");
+                // Fire and forget
+                _channel.RequestAsync(MethodId.CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            // Emit observer event.
-            Observer.Emit("close");
+                Emit("@close");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>
@@ -262,17 +272,26 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("TransportClosed()");
+            lock (_locker)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                _logger.LogDebug("TransportClosed()");
 
-            Emit("transportclose");
+                Closed = true;
 
-            // Emit observer event.
-            Observer.Emit("close");
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
+
+                Emit("transportclose");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>

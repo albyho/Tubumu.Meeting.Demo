@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -45,10 +44,10 @@ namespace TubumuMeeting.Meeting.Server
             var leaveResult = await _scheduler.LeaveAsync(UserId);
             if (leaveResult != null)
             {
-                foreach (var otherPeer in leaveResult.OtherPeers)
+                foreach (var otherPeerId in leaveResult.OtherPeerIds)
                 {
                     // Message: peerLeave
-                    SendMessage(otherPeer.PeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
+                    SendMessage(otherPeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
                 }
             }
         }
@@ -78,7 +77,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerPeerAppDataResult = await _scheduler.SetPeerAppDataAsync(UserId, setPeerAppDataRequest);
 
-            foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
+            foreach (var otherPeerId in peerPeerAppDataResult.PeerIds)
             {
                 // Message: peerPeerAppDataChanged
                 SendMessage(otherPeerId, "peerPeerAppDataChanged", new
@@ -95,7 +94,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerPeerAppDataResult = await _scheduler.UnsetPeerAppDataAsync(UserId, unsetPeerAppDataRequest);
 
-            foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
+            foreach (var otherPeerId in peerPeerAppDataResult.PeerIds)
             {
                 // Message: peerPeerAppDataChanged
                 SendMessage(otherPeerId, "peerPeerAppDataChanged", new
@@ -112,7 +111,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerPeerAppDataResult = await _scheduler.ClearPeerAppDataAsync(UserId);
 
-            foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
+            foreach (var otherPeerId in peerPeerAppDataResult.PeerIds)
             {
                 // Message: peerPeerAppDataChanged
                 SendMessage(otherPeerId, "peerPeerAppDataChanged", new
@@ -203,34 +202,20 @@ namespace TubumuMeeting.Meeting.Server
         {
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, joinRoomRequest);
 
-            var selfPeerInfo = new PeerInfo
+            foreach (var peer in joinRoomResult.Peers)
             {
-                RoomId = joinRoomRequest.RoomId,
-                PeerId = joinRoomResult.SelfPeer.PeerId,
-                DisplayName = joinRoomResult.SelfPeer.DisplayName,
-                Sources = joinRoomResult.SelfPeer.Sources,
-                AppData = joinRoomResult.SelfPeer.AppData,
-                RoomSources = joinRoomResult.RoomSources,
-                RoomAppData = joinRoomResult.RoomAppData,
-            };
-
-            var peerInfos = new List<PeerInfo>();
-            foreach (var peerInfo in joinRoomResult.PeersInRoom)
-            {
-                peerInfos.Add(peerInfo);
-
                 // 将自身的信息告知给房间内的其他人
-                if (peerInfo.PeerId != joinRoomResult.SelfPeer.PeerId)
+                if (peer.Peer.PeerId != joinRoomResult.SelfPeer.Peer.PeerId)
                 {
                     // Message: peerJoinRoom
-                    SendMessage(peerInfo.PeerId, "peerJoinRoom", selfPeerInfo);
+                    SendMessage(peer.Peer.PeerId, "peerJoinRoom", joinRoomResult.SelfPeer);
                 }
             }
 
             var data = new
             {
                 RoomId = joinRoomRequest.RoomId,
-                Peers = peerInfos,
+                Peers = joinRoomResult.Peers,
             };
             return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = data };
         }
@@ -239,10 +224,10 @@ namespace TubumuMeeting.Meeting.Server
         {
             var leaveRoomResult = await _scheduler.LeaveRoomAsync(UserId, roomId);
 
-            foreach (var otherPeer in leaveRoomResult.OtherPeers)
+            foreach (var otherPeerId in leaveRoomResult.OtherPeerIds)
             {
                 // Message: peerLeaveRoom
-                SendMessage(otherPeer.PeerId, "peerLeaveRoom", new
+                SendMessage(otherPeerId, "peerLeaveRoom", new
                 {
                     RoomId = roomId,
                     PeerId = UserId
@@ -256,7 +241,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerRoomAppDataResult = await _scheduler.SetRoomAppDataAsync(UserId, setRoomAppDataRequest);
 
-            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
+            foreach (var otherPeerId in peerRoomAppDataResult.PeerIds)
             {
                 // Message: peerRoomAppDataChanged
                 SendMessage(otherPeerId, "peerRoomAppDataChanged", new
@@ -274,7 +259,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerRoomAppDataResult = await _scheduler.UnsetRoomAppDataAsync(UserId, unsetRoomAppDataRequest);
 
-            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
+            foreach (var otherPeerId in peerRoomAppDataResult.PeerIds)
             {
                 // Message: peerRoomAppDataChanged
                 SendMessage(otherPeerId, "peerRoomAppDataChanged", new
@@ -292,7 +277,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerRoomAppDataResult = await _scheduler.ClearRoomAppDataAsync(UserId, roomId);
 
-            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
+            foreach (var otherPeerId in peerRoomAppDataResult.PeerIds)
             {
                 // Message: peerRoomAppDataChanged
                 SendMessage(otherPeerId, "peerRoomAppDataChanged", new

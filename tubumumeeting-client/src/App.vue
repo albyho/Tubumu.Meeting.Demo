@@ -297,9 +297,9 @@ export default {
       logger.debug('Peers: %o', joinRoomData.peers);
 
       for(let i = 0; i < joinRoomData.peers.length; i++) {
-        const peer = joinRoomData.peers[i];
-        if(peer.peerId == this.peerId || !peer.roomSources || peer.roomSources.length === 0) continue;
-        this.pull(peer.roomId, peer.peerId, peer.roomSources)
+        const {peer, roomId, roomSources} = joinRoomData.peers[i];
+        if(peer.peerId == this.peerId || !roomSources || roomSources.length === 0) continue;
+        this.pull(roomId, peer.peerId, roomSources)
       }
 
 // 临时
@@ -406,11 +406,10 @@ if(this.peerId === '1000') {
         }
 
         case 'peerJoinRoom': {
-          const peer = data.data;
           // eslint-disable-next-line no-unused-vars
-          const {roomId, peerId, sources, roomSources } = peer;
-          if(peerId != this.peerId && roomSources && roomSources.length !== 0) {
-            await this.pull(roomId, peerId, roomSources);
+          const {peer, roomId, roomSources } = data.data;
+          if(peer.peerId != this.peerId && roomSources && roomSources.length !== 0) {
+            await this.pull(roomId, peer.peerId, roomSources);
           }
           break;
         }
