@@ -8,6 +8,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, object> RoomAppData { get; set; }
 
-        public string[] PeerIds { get; set; }
+        public string[] OtherPeerIds { get; set; }
     }
 }

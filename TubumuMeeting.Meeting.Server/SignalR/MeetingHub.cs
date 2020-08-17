@@ -77,7 +77,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerPeerAppDataResult = await _scheduler.SetPeerAppDataAsync(UserId, setPeerAppDataRequest);
 
-            foreach (var otherPeerId in peerPeerAppDataResult.PeerIds)
+            foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
             {
                 // Message: peerPeerAppDataChanged
                 SendMessage(otherPeerId, "peerPeerAppDataChanged", new
@@ -94,7 +94,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerPeerAppDataResult = await _scheduler.UnsetPeerAppDataAsync(UserId, unsetPeerAppDataRequest);
 
-            foreach (var otherPeerId in peerPeerAppDataResult.PeerIds)
+            foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
             {
                 // Message: peerPeerAppDataChanged
                 SendMessage(otherPeerId, "peerPeerAppDataChanged", new
@@ -111,7 +111,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerPeerAppDataResult = await _scheduler.ClearPeerAppDataAsync(UserId);
 
-            foreach (var otherPeerId in peerPeerAppDataResult.PeerIds)
+            foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
             {
                 // Message: peerPeerAppDataChanged
                 SendMessage(otherPeerId, "peerPeerAppDataChanged", new
@@ -241,7 +241,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerRoomAppDataResult = await _scheduler.SetRoomAppDataAsync(UserId, setRoomAppDataRequest);
 
-            foreach (var otherPeerId in peerRoomAppDataResult.PeerIds)
+            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
             {
                 // Message: peerRoomAppDataChanged
                 SendMessage(otherPeerId, "peerRoomAppDataChanged", new
@@ -259,7 +259,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerRoomAppDataResult = await _scheduler.UnsetRoomAppDataAsync(UserId, unsetRoomAppDataRequest);
 
-            foreach (var otherPeerId in peerRoomAppDataResult.PeerIds)
+            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
             {
                 // Message: peerRoomAppDataChanged
                 SendMessage(otherPeerId, "peerRoomAppDataChanged", new
@@ -277,7 +277,7 @@ namespace TubumuMeeting.Meeting.Server
         {
             var peerRoomAppDataResult = await _scheduler.ClearRoomAppDataAsync(UserId, roomId);
 
-            foreach (var otherPeerId in peerRoomAppDataResult.PeerIds)
+            foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
             {
                 // Message: peerRoomAppDataChanged
                 SendMessage(otherPeerId, "peerRoomAppDataChanged", new
