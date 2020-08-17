@@ -500,7 +500,7 @@ namespace TubumuMeeting.Meeting.Server
                         {
                             SelfPeer = peer,
                             RoomAppData = peerRoom.RoomAppData,
-                            OtherPeerIds = roomPeers.Where(m=>m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
+                            OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
                         };
                     }
                 }
@@ -889,6 +889,67 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"RestartIceAsync() | Peer:{peerId} is not exists.");
                 }
                 return await peer.RestartIceAsync(transportId);
+            }
+        }
+
+        public async Task<string[]> GetOtherPeerIdsAsync(string peerId)
+        {
+            using (await _peersLocker.ReadLockAsync())
+            {
+                if (!_peers.TryGetValue(peerId, out var peer))
+                {
+                    throw new Exception($"GetOtherPeerIds() | Peer:{peerId} is not exists.");
+                }
+
+                using (await _peerRoomsLocker.ReadLockAsync())
+                {
+                    var otherPeerIds = new HashSet<string>();
+                    if (_peerRooms.TryGetValue(peerId, out var peerRooms))
+                    {
+                        using (await _roomPeersLocker.ReadLockAsync())
+                        {
+                            foreach (var room in peerRooms)
+                            {
+                                if (_roomPeers.TryGetValue(room.Room.RoomId, out var roomPeers))
+                                {
+                                    foreach (var otherPeer in roomPeers.Where(m => m.Peer.PeerId != peerId))
+                                    {
+                                        otherPeerIds.Add(otherPeer.Peer.PeerId);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return otherPeerIds.ToArray();
+                }
+            }
+        }
+
+        public async Task<string[]> GetOtherPeerIdsInRoomAsync(string peerId, string roomId)
+        {
+            using (await _peersLocker.ReadLockAsync())
+            {
+                if (!_peers.TryGetValue(peerId, out var peer))
+                {
+                    throw new Exception($"GetOtherPeerIdsInRoom() | Peer:{peerId} is not exists.");
+                }
+
+                using (await _roomPeersLocker.ReadLockAsync())
+                {
+                    if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
+                    {
+                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
+                    }
+                    if (!roomPeers.Any(m => m.Peer.PeerId == peerId))
+                    {
+                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
+                    }
+
+                    var otherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray();
+
+                    return otherPeerIds;
+                }
             }
         }
     }

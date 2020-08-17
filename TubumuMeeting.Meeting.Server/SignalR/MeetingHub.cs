@@ -47,7 +47,7 @@ namespace TubumuMeeting.Meeting.Server
                 foreach (var otherPeerId in leaveResult.OtherPeerIds)
                 {
                     // Message: peerLeave
-                    SendMessage(otherPeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
+                    SendNotification(otherPeerId, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
                 }
             }
         }
@@ -80,7 +80,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
             {
                 // Message: peerPeerAppDataChanged
-                SendMessage(otherPeerId, "peerPeerAppDataChanged", new
+                SendNotification(otherPeerId, "peerPeerAppDataChanged", new
                 {
                     PeerId = UserId,
                     RoomAppData = peerPeerAppDataResult.SelfPeer.AppData,
@@ -97,7 +97,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
             {
                 // Message: peerPeerAppDataChanged
-                SendMessage(otherPeerId, "peerPeerAppDataChanged", new
+                SendNotification(otherPeerId, "peerPeerAppDataChanged", new
                 {
                     PeerId = UserId,
                     PeerAppData = peerPeerAppDataResult.SelfPeer.AppData,
@@ -114,7 +114,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeerId in peerPeerAppDataResult.OtherPeerIds)
             {
                 // Message: peerPeerAppDataChanged
-                SendMessage(otherPeerId, "peerPeerAppDataChanged", new
+                SendNotification(otherPeerId, "peerPeerAppDataChanged", new
                 {
                     PeerId = UserId,
                     RoomAppData = peerPeerAppDataResult.SelfPeer.AppData,
@@ -156,7 +156,7 @@ namespace TubumuMeeting.Meeting.Server
                 if (traceData.Type == TransportTraceEventType.BWE && traceData.Direction == TraceEventDirection.Out)
                 {
                     // Message: downlinkBwe
-                    SendMessage(peerId, "downlinkBwe", new
+                    SendNotification(peerId, "downlinkBwe", new
                     {
                         DesiredBitrate = traceData.Info["desiredBitrate"],
                         EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"],
@@ -208,7 +208,7 @@ namespace TubumuMeeting.Meeting.Server
                 if (peer.Peer.PeerId != joinRoomResult.SelfPeer.Peer.PeerId)
                 {
                     // Message: peerJoinRoom
-                    SendMessage(peer.Peer.PeerId, "peerJoinRoom", joinRoomResult.SelfPeer);
+                    SendNotification(peer.Peer.PeerId, "peerJoinRoom", joinRoomResult.SelfPeer);
                 }
             }
 
@@ -227,7 +227,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeerId in leaveRoomResult.OtherPeerIds)
             {
                 // Message: peerLeaveRoom
-                SendMessage(otherPeerId, "peerLeaveRoom", new
+                SendNotification(otherPeerId, "peerLeaveRoom", new
                 {
                     RoomId = roomId,
                     PeerId = UserId
@@ -244,7 +244,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
             {
                 // Message: peerRoomAppDataChanged
-                SendMessage(otherPeerId, "peerRoomAppDataChanged", new
+                SendNotification(otherPeerId, "peerRoomAppDataChanged", new
                 {
                     RoomId = setRoomAppDataRequest.RoomId,
                     PeerId = UserId,
@@ -262,7 +262,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
             {
                 // Message: peerRoomAppDataChanged
-                SendMessage(otherPeerId, "peerRoomAppDataChanged", new
+                SendNotification(otherPeerId, "peerRoomAppDataChanged", new
                 {
                     RoomId = unsetRoomAppDataRequest.RoomId,
                     PeerId = UserId,
@@ -280,7 +280,7 @@ namespace TubumuMeeting.Meeting.Server
             foreach (var otherPeerId in peerRoomAppDataResult.OtherPeerIds)
             {
                 // Message: peerRoomAppDataChanged
-                SendMessage(otherPeerId, "peerRoomAppDataChanged", new
+                SendNotification(otherPeerId, "peerRoomAppDataChanged", new
                 {
                     RoomId = roomId,
                     PeerId = UserId,
@@ -307,7 +307,7 @@ namespace TubumuMeeting.Meeting.Server
             if (!consumeResult.ProduceSources.IsNullOrEmpty())
             {
                 // Message: produceSources
-                SendMessage(consumeResult.ProducePeer.PeerId, "produceSources", new
+                SendNotification(consumeResult.ProducePeer.PeerId, "produceSources", new
                 {
                     RoomId = consumeResult.RoomId,
                     ProduceSources = consumeResult.ProduceSources
@@ -354,7 +354,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var data = (ProducerScore[])score!;
                 // Message: producerScore
-                SendMessage(peerId, "producerScore", new { ProducerId = producer.ProducerId, Score = data });
+                SendNotification(peerId, "producerScore", new { ProducerId = producer.ProducerId, Score = data });
                 return Task.CompletedTask;
             });
             producer.On("videoorientationchange", videoOrientation =>
@@ -365,7 +365,7 @@ namespace TubumuMeeting.Meeting.Server
             });
             producer.Observer.On("close", _ =>
             {
-                SendMessage(peerId, "producerClosed", new { ProducerId = producer.ProducerId });
+                SendNotification(peerId, "producerClosed", new { ProducerId = producer.ProducerId });
                 return Task.CompletedTask;
             });
 
@@ -444,7 +444,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 // Message: consumerScore
-                SendMessage(UserId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = consumer.Score });
+                SendNotification(UserId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = consumer.Score });
             }
             catch (Exception ex)
             {
@@ -512,6 +512,31 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
+        public async Task<MeetingMessage> SendMessage(SendMessageRequest sendMessageRequest)
+        {
+            string[] otherPeerIds;
+            if (sendMessageRequest.RoomId.IsNullOrWhiteSpace())
+            {
+                otherPeerIds = await _scheduler.GetOtherPeerIdsAsync(UserId);
+            }
+            else
+            {
+                otherPeerIds = await _scheduler.GetOtherPeerIdsInRoomAsync(UserId, sendMessageRequest.RoomId!);
+            }
+
+            foreach(var otherPeerId in otherPeerIds)
+            {
+                // Message: newMessage
+                SendNotification(otherPeerId, "newMessage", new
+                {
+                    RoomId = sendMessageRequest.RoomId,
+                    Message = sendMessageRequest.Message,
+                });
+            }
+
+            return new MeetingMessage { Code = 200, Message = "RestartIce 成功" };
+        }
+
         #region Private Methods
 
         private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer, string roomId)
@@ -535,7 +560,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 var data = (ConsumerScore)score!;
                 // Message: consumerScore
-                SendMessage(consumerPeer.PeerId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = data });
+                SendNotification(consumerPeer.PeerId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = data });
                 return Task.CompletedTask;
             });
 
@@ -548,21 +573,21 @@ namespace TubumuMeeting.Meeting.Server
             consumer.On("producerclose", _ =>
             {
                 // Message: consumerClosed
-                SendMessage(consumerPeer.PeerId, "consumerClosed", new { ConsumerId = consumer.ConsumerId });
+                SendNotification(consumerPeer.PeerId, "consumerClosed", new { ConsumerId = consumer.ConsumerId });
                 return Task.CompletedTask;
             });
 
             consumer.On("producerpause", _ =>
             {
                 // Message: consumerPaused
-                SendMessage(consumerPeer.PeerId, "consumerPaused", new { ConsumerId = consumer.ConsumerId });
+                SendNotification(consumerPeer.PeerId, "consumerPaused", new { ConsumerId = consumer.ConsumerId });
                 return Task.CompletedTask;
             });
 
             consumer.On("producerresume", _ =>
             {
                 // Message: consumerResumed
-                SendMessage(consumerPeer.PeerId, "consumerResumed", new { ConsumerId = consumer.ConsumerId });
+                SendNotification(consumerPeer.PeerId, "consumerResumed", new { ConsumerId = consumer.ConsumerId });
                 return Task.CompletedTask;
             });
 
@@ -571,7 +596,7 @@ namespace TubumuMeeting.Meeting.Server
                 var data = (ConsumerLayers?)layers;
 
                 // Message: consumerLayersChanged
-                SendMessage(consumerPeer.PeerId, "consumerLayersChanged", new { ConsumerId = consumer.ConsumerId });
+                SendNotification(consumerPeer.PeerId, "consumerLayersChanged", new { ConsumerId = consumer.ConsumerId });
                 return Task.CompletedTask;
             });
 
@@ -589,7 +614,7 @@ namespace TubumuMeeting.Meeting.Server
             // Send a request to the remote Peer with Consumer parameters.
             // Message: newConsumer
 
-            SendMessage(consumerPeer.PeerId, "newConsumer", new ConsumeInfo
+            SendNotification(consumerPeer.PeerId, "newConsumer", new ConsumeInfo
             {
                 RoomId = roomId,
                 ProducerPeerId = producerPeer.PeerId,
@@ -603,7 +628,7 @@ namespace TubumuMeeting.Meeting.Server
             });
         }
 
-        private void SendMessage(string peerId, string type, object data)
+        private void SendNotification(string peerId, string type, object data)
         {
             if (type == "consumerLayersChanged" || type == "consumerScore" || type == "producerScore") return;
             var client = _hubContext.Clients.User(peerId);
