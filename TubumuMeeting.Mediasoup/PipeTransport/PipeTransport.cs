@@ -81,7 +81,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the PipeTransport.
         /// </summary>
-        public override async Task Close()
+        public override async Task CloseAsync()
         {
             if (Closed)
             {
@@ -93,7 +93,7 @@ namespace TubumuMeeting.Mediasoup
                 SctpState = Mediasoup.SctpState.Closed;
             }
 
-            await base.Close();
+            await base.CloseAsync();
         }
 
         /// <summary>

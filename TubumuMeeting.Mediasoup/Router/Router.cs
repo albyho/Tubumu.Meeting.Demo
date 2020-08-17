@@ -125,7 +125,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the Router.
         /// </summary>
-        public async Task Close()
+        public async Task CloseAsync()
         {
             if (Closed)
             {
@@ -664,13 +664,13 @@ namespace TubumuMeeting.Mediasoup
 
                     localPipeTransport.Observer.On("close", async _ =>
                     {
-                        await remotePipeTransport.Close();
+                        await remotePipeTransport.CloseAsync();
                         _mapRouterPipeTransports.TryRemove(pipeToRouterOptions.Router, out var _);
                     });
 
                     remotePipeTransport.Observer.On("close", async _ =>
                     {
-                        await localPipeTransport.Close();
+                        await localPipeTransport.CloseAsync();
                         _mapRouterPipeTransports.TryRemove(pipeToRouterOptions.Router, out var _);
                     });
 
@@ -682,12 +682,12 @@ namespace TubumuMeeting.Mediasoup
 
                     if (localPipeTransport != null)
                     {
-                        await localPipeTransport.Close();
+                        await localPipeTransport.CloseAsync();
                     }
 
                     if (remotePipeTransport != null)
                     {
-                        await remotePipeTransport.Close();
+                        await remotePipeTransport.CloseAsync();
                     }
 
                     throw;

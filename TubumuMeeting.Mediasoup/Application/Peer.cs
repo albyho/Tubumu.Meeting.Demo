@@ -700,7 +700,7 @@ namespace TubumuMeeting.Mediasoup
                 // its Producers and Consumers will also be closed.
                 foreach (var item in _transports.Values)
                 {
-                    await item.Close();
+                    await item.CloseAsync();
                 }
                 _transports.Clear();
             }

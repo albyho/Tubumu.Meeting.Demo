@@ -208,7 +208,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the Transport.
         /// </summary>
-        public virtual async Task Close()
+        public virtual async Task CloseAsync()
         {
             if (Closed)
             {

@@ -108,7 +108,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the WebRtcTransport.
         /// </summary>
-        public override async Task Close()
+        public override async Task CloseAsync()
         {
             if (Closed)
             {
@@ -124,7 +124,7 @@ namespace TubumuMeeting.Mediasoup
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
             }
 
-            await base.Close();
+            await base.CloseAsync();
         }
 
         /// <summary>

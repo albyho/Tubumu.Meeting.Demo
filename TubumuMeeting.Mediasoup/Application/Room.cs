@@ -51,7 +51,7 @@ namespace TubumuMeeting.Mediasoup
             Closed = false;
         }
 
-        public async Task Close()
+        public async Task CloseAsync()
         {
             if (Closed)
             {
@@ -67,7 +67,7 @@ namespace TubumuMeeting.Mediasoup
 
                 _logger.LogDebug($"Close() | Room:{RoomId}");
 
-                await Router.Close();
+                await Router.CloseAsync();
                 Closed = true;
             }
         }
