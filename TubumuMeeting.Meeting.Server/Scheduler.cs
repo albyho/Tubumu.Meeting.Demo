@@ -188,6 +188,7 @@ namespace TubumuMeeting.Meeting.Server
                             }
                         }
                     }
+
                     return new PeerAppDataResult
                     {
                         SelfPeer = peer,
@@ -233,6 +234,7 @@ namespace TubumuMeeting.Meeting.Server
                             }
                         }
                     }
+
                     return new PeerAppDataResult
                     {
                         SelfPeer = peer,
@@ -275,6 +277,7 @@ namespace TubumuMeeting.Meeting.Server
                             }
                         }
                     }
+
                     return new PeerAppDataResult
                     {
                         SelfPeer = peer,

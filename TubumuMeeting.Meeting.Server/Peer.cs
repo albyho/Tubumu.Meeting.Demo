@@ -54,13 +54,13 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncReaderWriterLock _transportsLocker = new AsyncReaderWriterLock();
 
-        private readonly Dictionary<string, Producer> _producers = new Dictionary<string, Producer>();
-
-        private readonly AsyncReaderWriterLock _producersLocker = new AsyncReaderWriterLock();
-
         private readonly Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();
 
         private readonly AsyncReaderWriterLock _consumersLocker = new AsyncReaderWriterLock();
+
+        private readonly Dictionary<string, Producer> _producers = new Dictionary<string, Producer>();
+
+        private readonly AsyncReaderWriterLock _producersLocker = new AsyncReaderWriterLock();
 
         private readonly Dictionary<string, DataProducer> _dataProducers = new Dictionary<string, DataProducer>();
 
@@ -668,7 +668,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <param name="roomId"></param>
         public async Task LeaveRoomAsync(string roomId)
         {
-            using (await _consumersLocker.WriteLockAsync())
+            using (await _consumersLocker.ReadLockAsync())
             {
                 _consumers.Values.Where(m => m.RoomId == roomId).ForEach(m => m.Close());
             }
