@@ -73,6 +73,8 @@ export default {
       recvTransport: null,
       consume: true,
       produce: false,
+      useDataChannel: false,
+      nextDataChannelTestNumber: 0,
       webcams: {},
       audioDevices: {},
       webcamProducer: null,
@@ -86,7 +88,9 @@ export default {
       rooms: new Map(),
       peers: new Map(),
       producers: new Map(),
-      consumers: new Map()
+      consumers: new Map(),
+      dataProducer: null,
+      dataConsumers: new Map()
     };
   },
   async mounted() {
@@ -168,7 +172,9 @@ export default {
       // GetRouterRtpCapabilities 成功, Join
       result = await this.connection.invoke('Join', {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
-        sctpCapabilities: undefined, // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
+        sctpCapabilities: this.useDataChannel && this.consume
+						? this.mediasoupDevice.sctpCapabilities
+						: undefined,
         displayName: 'Guest',
         sources: ['mic', 'webcam'],
         appData: {}
@@ -184,7 +190,9 @@ export default {
           forceTcp: false,
           producing: true,
           consuming: false,
-          sctpCapabilities: undefined // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
+          sctpCapabilities: this.useDataChannel
+							? this.mediasoupDevice.sctpCapabilities
+							: undefined
         });
         if (result.code !== 200) {
           logger.error('processNotification() | CreateWebRtcTransport failed: %s', result.message);
@@ -242,8 +250,46 @@ export default {
           }
         );
 
-        this.sendTransport.on('connectionstatechange', state => {
-          logger.debug(`sendTransport.on() connectionstatechange: ${state}`);
+        this.sendTransport.on('producedata', async (
+					{
+						sctpStreamParameters,
+						label,
+						protocol,
+						appData
+					},
+					callback,
+					errback
+				) =>
+				{
+					logger.debug('"producedata" event: [sctpStreamParameters:%o, appData:%o]', sctpStreamParameters, appData);
+
+					try
+					{
+						// eslint-disable-next-line no-shadow
+						const { id } = await this._protoo.request(
+							'ProduceData',
+							{
+								transportId : this.sendTransport.id,
+								sctpStreamParameters,
+								label,
+								protocol,
+								appData
+							});
+
+						callback({ id });
+					}
+					catch (error)
+					{
+						errback(error);
+					}
+        });
+        
+        this.sendTransport.on('connectionstatechange', connectionState => {
+          logger.debug(`sendTransport.on() connectionstatechange: ${connectionState}`);
+          if (connectionState === 'connected')
+					{
+						this.enableDataProducer();
+					}
         });
       }
       // createSendTransport 成功, CreateWebRtcTransport(消费)
@@ -278,8 +324,8 @@ export default {
         }
       );
 
-      this.recvTransport.on('connectionstatechange', state => {
-        logger.debug(`recvTransport.on() connectionstatechange: ${state}`);
+      this.recvTransport.on('connectionstatechange', connectionState => {
+        logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
 
       // createRecvTransport成功, JoinRoom
@@ -379,6 +425,97 @@ if(this.peerId === '1000') {
         return;
       }
     },
+    async processNewDataConsumer(data) {
+      const {
+        dataProducerPeerId, // NOTE: Null if bot.
+        dataProducerId,
+        dataCosumerId,
+        sctpStreamParameters,
+        label,
+        protocol,
+        dataProducerAppData
+      } = data;
+
+      try
+      {
+        const dataConsumer = await this.recvTransport.consumeData(
+          {
+            dataCosumerId,
+            dataProducerId,
+            sctpStreamParameters,
+            label,
+            protocol,
+            appData : { ...dataProducerAppData, dataProducerPeerId } // Trick.
+          });
+
+        // Store in the map.
+        this.dataConsumers.set(dataConsumer.id, dataConsumer);
+
+        dataConsumer.on('transportclose', () =>
+        {
+          this.dataConsumers.delete(dataConsumer.id);
+        });
+
+        dataConsumer.on('open', () =>
+        {
+          logger.debug('DataConsumer "open" event');
+        });
+
+        dataConsumer.on('close', () =>
+        {
+          logger.warn('DataConsumer "close" event');
+          this.dataConsumers.delete(dataConsumer.id);
+        });
+
+        dataConsumer.on('error', (error) =>
+        {
+          logger.error('DataConsumer "error" event:%o', error);
+        });
+
+        dataConsumer.on('message', (message) =>
+        {
+          logger.debug('DataConsumer "message" event [streamId:%d]', dataConsumer.sctpStreamParameters.streamId);
+
+          if (message instanceof ArrayBuffer)
+          {
+            const view = new DataView(message);
+            const number = view.getUint32();
+
+            if (number == Math.pow(2, 32) - 1)
+            {
+              logger.warn('dataChannelTest finished!');
+              this.nextDataChannelTestNumber = 0;
+
+              return;
+            }
+
+            if (number > this.nextDataChannelTestNumber)
+            {
+              logger.warn(
+                'dataChannelTest: %s packets missing',
+                number - this.nextDataChannelTestNumber);
+            }
+
+            this.nextDataChannelTestNumber = number + 1;
+
+            return;
+          }
+          else if (typeof message !== 'string')
+          {
+            logger.warn('ignoring DataConsumer "message" (not a string)');
+
+            return;
+          }
+
+          logger.debug(`New message: ${message}`);
+        });
+      }
+      catch (error)
+      {
+        logger.error('"newDataConsumer" request failed:%o', error);
+        throw error;
+      }
+    },
     async pull(roomId, producerPeerId, roomSources) {
       const result = await this.connection.invoke('Pull', {
         roomId,
@@ -398,6 +535,13 @@ if(this.peerId === '1000') {
             
             break;
         }
+
+        case 'newDataConsumer': {
+            await this.processNewDataConsumer(data.data);
+
+            break;
+        }
+
         case 'producerScore': {
           // eslint-disable-next-line no-unused-vars
           const { producerId, score } = data.data;
@@ -523,6 +667,58 @@ if(this.peerId === '1000') {
         default: {
           logger.error('unknown data.type, data:%o', data);
         }
+      }
+    },
+    async enableChatDataProducer()
+    {
+      logger.debug('enableChatDataProducer()');
+
+      if (!this.useDataChannel)
+        return;
+
+      try
+      {
+        this.dataProducer = await this.sendTransport.produceData(
+          {
+            ordered        : false,
+            maxRetransmits : 1,
+            label          : 'chat',
+            priority       : 'medium',
+            appData        : { info: '' }
+          });
+
+        this.dataProducer.on('transportclose', () =>
+        {
+          this.dataProducer = null;
+        });
+
+        this.dataProducer.on('open', () =>
+        {
+          logger.debug('DataProducer "open" event');
+        });
+
+        this.dataProducer.on('close', () =>
+        {
+          logger.error('DataProducer "close" event');
+
+          this.dataProducer = null;
+        });
+
+        this.dataProducer.on('error', (error) =>
+        {
+          logger.error('chat DataProducer "error" event:%o', error);
+        });
+
+        this.dataProducer.on('bufferedamountlow', () =>
+        {
+          logger.debug('chat DataProducer "bufferedamountlow" event');
+        });
+      }
+      catch (error)
+      {
+        logger.error('enableDataProducer() | failed:%o', error);
+
+        throw error;
       }
     },
     async enableMic() {
