@@ -1,4 +1,6 @@
-﻿namespace TubumuMeeting.Mediasoup
+﻿using TubumuMeeting.Mediasoup;
+
+namespace TubumuMeeting.Meeting.Server
 {
     public class PullResult
     {

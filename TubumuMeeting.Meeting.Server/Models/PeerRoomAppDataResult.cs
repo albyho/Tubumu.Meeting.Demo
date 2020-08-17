@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace TubumuMeeting.Mediasoup
+namespace TubumuMeeting.Meeting.Server
 {
     public class PeerRoomAppDataResult
     {

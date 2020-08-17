@@ -6,9 +6,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
+using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Mediasoup.Extensions;
 
-namespace TubumuMeeting.Mediasoup
+namespace TubumuMeeting.Meeting.Server
 {
     public partial class Peer : IEquatable<Peer>
     {
@@ -288,7 +289,6 @@ namespace TubumuMeeting.Mediasoup
                     });
 
                     // Store producer source
-                    producer.ProducerPeer = this;
                     producer.Source = source;
 
                     // Store the Producer into the Peer data Object.
@@ -372,9 +372,6 @@ namespace TubumuMeeting.Mediasoup
                         });
 
                         consumer.RoomId = roomId;
-                        consumer.ProducerPeer = producerPeer;
-                        consumer.ConsumerPeer = this;
-                        consumer.Producer = producer;
                         consumer.Source = producer.Source;
 
                         // Store the Consumer into the consumerPeer data Object.

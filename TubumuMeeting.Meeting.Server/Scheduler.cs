@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
+using TubumuMeeting.Mediasoup;
 
-namespace TubumuMeeting.Mediasoup
+namespace TubumuMeeting.Meeting.Server
 {
     public class Scheduler
     {

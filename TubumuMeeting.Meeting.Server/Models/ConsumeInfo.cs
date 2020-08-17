@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using TubumuMeeting.Mediasoup;
 
-namespace TubumuMeeting.Mediasoup
+namespace TubumuMeeting.Meeting.Server
 {
     public class ConsumeInfo
     {

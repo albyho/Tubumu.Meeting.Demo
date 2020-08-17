@@ -96,11 +96,6 @@ namespace TubumuMeeting.Mediasoup
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
-        /// [扩展]ProducerPeer 只允许 Peer 访问，由后者的 _locker 保护。
-        /// </summary>
-        public Peer? ProducerPeer;
-
-        /// <summary>
         /// [扩展]Consumers
         /// </summary>
         private readonly Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();

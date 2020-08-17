@@ -103,21 +103,6 @@ namespace TubumuMeeting.Mediasoup
         public string? RoomId { get; set; }
 
         /// <summary>
-        /// [扩展]ProducerPeer
-        /// </summary>
-        public Peer? ProducerPeer;
-
-        /// <summary>
-        /// [扩展]ConsumerPeer
-        /// </summary>
-        public Peer? ConsumerPeer;
-
-        /// <summary>
-        /// [扩展]Producer.
-        /// </summary>
-        public Producer? Producer { get; set; }
-
-        /// <summary>
         /// [扩展]Source.
         /// </summary>
         public string? Source { get; set; }

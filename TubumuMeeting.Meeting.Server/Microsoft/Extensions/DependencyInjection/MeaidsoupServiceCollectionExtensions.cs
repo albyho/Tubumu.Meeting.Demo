@@ -1,5 +1,6 @@
 ﻿using System;
 using TubumuMeeting.Mediasoup;
+using TubumuMeeting.Meeting.Server;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
