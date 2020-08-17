@@ -665,8 +665,8 @@ namespace TubumuMeeting.Mediasoup
                 var dataProducer = new DataProducer(_loggerFactory,
                     @internal,
                     responseData.SctpStreamParameters,
-                    responseData.Label,
-                    responseData.Protocol,
+                    responseData.Label!,
+                    responseData.Protocol!,
                     Channel,
                     PayloadChannel,
                     AppData);

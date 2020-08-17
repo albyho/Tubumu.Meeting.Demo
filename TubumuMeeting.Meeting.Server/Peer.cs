@@ -68,7 +68,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly List<PullPadding> _pullPaddings = new List<PullPadding>();
 
-        private readonly AsyncReaderWriterLock _pullPaddingsLocker = new AsyncReaderWriterLock();
+        private readonly AsyncAutoResetEvent _pullPaddingsLocker = new AsyncAutoResetEvent();
 
         public string[] Sources { get; private set; }
 
@@ -85,7 +85,8 @@ namespace TubumuMeeting.Meeting.Server
             PeerId = peerId;
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? Array.Empty<string>();
-            AppData = appData;
+            AppData = appData ?? new Dictionary<string, object>();
+            _pullPaddingsLocker.Set();
             Joined = true;
         }
 
@@ -209,23 +210,22 @@ namespace TubumuMeeting.Meeting.Server
                             continue;
                         }
 
-                        using (await producerPeer._pullPaddingsLocker.WriteLockAsync())
+                        await producerPeer._pullPaddingsLocker.WaitAsync();
+                        // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
+                        if (!producerPeer._pullPaddings.Any(m => m.Source == source))
                         {
-                            // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
-                            if (!producerPeer._pullPaddings.Any(m => m.Source == source))
-                            {
-                                produceSources.Add(source!);
-                            }
-                            if (!producerPeer._pullPaddings.Any(m => m.Source == source && m.RoomId == roomId && m.ConsumerPeerId == PeerId))
-                            {
-                                producerPeer._pullPaddings.Add(new PullPadding
-                                {
-                                    RoomId = roomId,
-                                    ConsumerPeerId = PeerId,
-                                    Source = source!,
-                                });
-                            }
+                            produceSources.Add(source!);
                         }
+                        if (!producerPeer._pullPaddings.Any(m => m.Source == source && m.RoomId == roomId && m.ConsumerPeerId == PeerId))
+                        {
+                            producerPeer._pullPaddings.Add(new PullPadding
+                            {
+                                RoomId = roomId,
+                                ConsumerPeerId = PeerId,
+                                Source = source!,
+                            });
+                        }
+                        producerPeer._pullPaddingsLocker.Set();
                     }
 
                     return new PeerPullResult
@@ -302,27 +302,25 @@ namespace TubumuMeeting.Meeting.Server
                         {
                             _producers.Remove(producer.ProducerId);
 
-                            using (await _pullPaddingsLocker.WriteLockAsync())
-                            {
-                                _pullPaddings.Clear();
-                            }
+                            await _pullPaddingsLocker.WaitAsync();
+                            _pullPaddings.Clear();
+                            _pullPaddingsLocker.Set();
                         }
                     });
 
-                    using (await _pullPaddingsLocker.WriteLockAsync())
+                    await _pullPaddingsLocker.WaitAsync();
+                    var matchedPullPaddings = _pullPaddings.Where(m => m.Source == producer.Source).ToArray();
+                    foreach (var item in matchedPullPaddings)
                     {
-                        var matchedPullPaddings = _pullPaddings.Where(m => m.Source == producer.Source).ToArray();
-                        foreach (var item in matchedPullPaddings)
-                        {
-                            _pullPaddings.Remove(item);
-                        }
-
-                        return new PeerProduceResult
-                        {
-                            Producer = producer,
-                            PullPaddings = matchedPullPaddings,
-                        };
+                        _pullPaddings.Remove(item);
                     }
+                    _pullPaddingsLocker.Set();
+
+                    return new PeerProduceResult
+                    {
+                        Producer = producer,
+                        PullPaddings = matchedPullPaddings,
+                    };
                 }
             }
         }

@@ -669,7 +669,7 @@ if(this.peerId === '1000') {
         }
       }
     },
-    async enableChatDataProducer()
+    async enableDataProducer()
     {
       logger.debug('enableChatDataProducer()');
 
