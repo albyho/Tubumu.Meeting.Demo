@@ -338,7 +338,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 PeerWithRoomAppData roomPeer;
-                var otherPeers = new List<PeerWithRoomAppData>();
+                var allPeers = new List<PeerWithRoomAppData>();
                 using (await _peerRoomsLocker.WriteLockAsync())
                 {
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
@@ -384,7 +384,7 @@ namespace TubumuMeeting.Meeting.Server
                             {
                                 foreach (var otherPeer in roomPeersLocal)
                                 {
-                                    otherPeers.Add(otherPeer);
+                                    allPeers.Add(otherPeer);
                                 }
                             }
                         }
@@ -396,7 +396,7 @@ namespace TubumuMeeting.Meeting.Server
                 return new JoinRoomResult
                 {
                     SelfPeer = roomPeer,
-                    Peers = otherPeers.ToArray(),
+                    Peers = allPeers.ToArray(),
                 };
             }
         }

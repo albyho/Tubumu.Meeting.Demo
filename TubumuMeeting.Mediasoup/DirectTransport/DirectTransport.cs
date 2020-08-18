@@ -66,7 +66,16 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
+            await CloseLocker.WaitAsync();
+
+            if (Closed)
+            {
+                return;
+            }
+
             await base.CloseAsync();
+
+            CloseLocker.Set();
         }
 
         /// <summary>
@@ -79,7 +88,16 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
+            await CloseLocker.WaitAsync();
+
+            if (Closed)
+            {
+                return;
+            }
+
             await base.RouterClosedAsync();
+
+            CloseLocker.Set();
         }
 
         /// <summary>

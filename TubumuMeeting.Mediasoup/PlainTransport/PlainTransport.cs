@@ -93,12 +93,21 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
+            await CloseLocker.WaitAsync();
+
+            if (Closed)
+            {
+                return;
+            }
+
             if (SctpState.HasValue)
             {
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
             }
 
             await base.CloseAsync();
+
+            CloseLocker.Set();
         }
 
         /// <summary>

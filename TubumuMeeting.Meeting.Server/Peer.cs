@@ -62,9 +62,13 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncReaderWriterLock _producersLocker = new AsyncReaderWriterLock();
 
+        private readonly Dictionary<string, DataConsumer> _dataConsumers = new Dictionary<string, DataConsumer>();
+
+        private readonly AsyncReaderWriterLock _dataConsumersLocker = new AsyncReaderWriterLock();
+
         private readonly Dictionary<string, DataProducer> _dataProducers = new Dictionary<string, DataProducer>();
 
-        private readonly Dictionary<string, DataConsumer> _dataConsumers = new Dictionary<string, DataConsumer>();
+        private readonly AsyncReaderWriterLock _dataProducersLocker = new AsyncReaderWriterLock();
 
         private readonly List<PullPadding> _pullPaddings = new List<PullPadding>();
 

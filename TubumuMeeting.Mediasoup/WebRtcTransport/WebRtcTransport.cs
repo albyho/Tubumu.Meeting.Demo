@@ -115,6 +115,13 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
+            await CloseLocker.WaitAsync();
+
+            if (Closed)
+            {
+                return;
+            }
+
             IceState = IceState.Closed;
             IceSelectedTuple = null;
             DtlsState = DtlsState.Closed;
@@ -125,6 +132,8 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await base.CloseAsync();
+
+            CloseLocker.Set();
         }
 
         /// <summary>
@@ -132,6 +141,13 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public override async Task RouterClosedAsync()
         {
+            if (Closed)
+            {
+                return;
+            }
+
+            await CloseLocker.WaitAsync();
+
             if (Closed)
             {
                 return;
@@ -147,6 +163,8 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await base.RouterClosedAsync();
+
+            CloseLocker.Set();
         }
 
         /// <summary>

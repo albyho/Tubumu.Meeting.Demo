@@ -148,7 +148,8 @@ namespace TubumuMeeting.Mediasoup
 
             var method = methodId.GetEnumStringValue();
             var id = InterlockedExtensions.Increment(ref _nextId);
-            _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
+            // NOTE: For testinng
+            //_logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
 
             var requestMesssge = new RequestMessage
             {
