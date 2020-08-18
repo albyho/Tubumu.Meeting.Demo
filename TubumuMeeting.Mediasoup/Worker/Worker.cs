@@ -77,11 +77,16 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
+        // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
         /// Closed flag.
-        /// <para>暂不用考虑线程安全问题。</para>
         /// </summary>
         public bool Closed { get; private set; }
+
+        /// <summary>
+        /// Close locker.
+        /// </summary>
+        private readonly AsyncAutoResetEvent _closeLocker = new AsyncAutoResetEvent();
 
         /// <summary>
         /// Custom app data.
@@ -106,6 +111,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Worker>();
+            _closeLocker.Set();
 
             var workerPath = mediasoupOptions.MediasoupStartupSettings.WorkerPath;
             if (workerPath.IsNullOrWhiteSpace())
@@ -233,6 +239,13 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
+            await _closeLocker.WaitAsync();
+
+            if (Closed)
+            {
+                return;
+            }
+
             Closed = true;
 
             // Kill the worker process.
@@ -259,6 +272,8 @@ namespace TubumuMeeting.Mediasoup
 
             // Emit observer event.
             Observer.Emit("close");
+
+            _closeLocker.Set();
         }
 
         #region Request

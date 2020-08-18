@@ -107,11 +107,13 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string? Source { get; set; }
 
+        // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
         /// Whether the Consumer is closed.
         /// </summary>
         public bool Closed { get; private set; }
 
+        // TODO: (alby) Paused 的使用及线程安全。
         /// <summary>
         /// Paused flag.
         /// </summary>

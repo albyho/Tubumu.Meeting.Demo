@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TubumuMeeting.Libuv;
@@ -10,7 +11,7 @@ namespace Microsoft.AspNetCore.Builder
     {
         public static IApplicationBuilder UseMediasoup(this IApplicationBuilder app)
         {
-            Task.Run(() =>
+            ThreadPool.QueueUserWorkItem(_ =>
             {
                 Loop.Default.Run(() =>
                 {
@@ -29,7 +30,7 @@ namespace Microsoft.AspNetCore.Builder
                         });
                     }
                 });
-            }).ConfigureAwait(false);
+            });
 
             return app;
         }

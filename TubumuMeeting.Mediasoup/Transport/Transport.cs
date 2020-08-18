@@ -80,8 +80,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
+        // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
-        /// Whether the Transport is closed. 尚未真正使用起来。
+        /// Whether the Transport is closed.
         /// </summary>
         public bool Closed { get; private set; }
 

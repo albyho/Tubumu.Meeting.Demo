@@ -36,8 +36,12 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Room> _logger;
 
-        private readonly AsyncAutoResetEvent _locker = new AsyncAutoResetEvent();
+        private readonly AsyncAutoResetEvent _closeLocker = new AsyncAutoResetEvent();
 
+        // TODO: (alby) Closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the Room is closed.
+        /// </summary>
         public bool Closed { get; private set; }
 
         public Router Router { get; private set; }
@@ -49,7 +53,7 @@ namespace TubumuMeeting.Meeting.Server
             Router = router;
             RoomId = roomId;
             Name = name.NullOrWhiteSpaceReplace("Default");
-            _locker.Set();
+            _closeLocker.Set();
             Closed = false;
         }
 
@@ -60,7 +64,7 @@ namespace TubumuMeeting.Meeting.Server
                 return;
             }
 
-            await _locker.WaitAsync();
+            await _closeLocker.WaitAsync();
             if (Closed)
             {
                 return;
@@ -70,15 +74,7 @@ namespace TubumuMeeting.Meeting.Server
 
             await Router.CloseAsync();
             Closed = true;
-            _locker.Set();
-        }
-
-        private void CheckClosed()
-        {
-            if (Closed)
-            {
-                throw new Exception($"CheckClosed() | Room:{RoomId} was closed");
-            }
+            _closeLocker.Set();
         }
     }
 }

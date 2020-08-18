@@ -90,6 +90,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
+        // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
         /// Whether the DataConsumer is closed.
         /// </summary>
