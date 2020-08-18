@@ -53,6 +53,7 @@ namespace TubumuMeeting.Mediasoup
 
         /// <summary>
         /// Whether the Router is closed.
+        /// <para>暂不用考虑线程安全问题。</para>
         /// </summary>
         public bool Closed { get; private set; }
 
@@ -139,29 +140,7 @@ namespace TubumuMeeting.Mediasoup
             // Fire and forget
             _channel.RequestAsync(MethodId.ROUTER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            // Close every Transport.
-            foreach (var transport in _transports.Values)
-            {
-                await transport.RouterClosed();
-            }
-
-            _transports.Clear();
-
-            // Clear the Producers map.
-            _producers.Clear();
-
-            // Close every RtpObserver.
-            foreach (var rtpObserver in _rtpObservers.Values)
-            {
-                rtpObserver.RouterClosed();
-            }
-            _rtpObservers.Clear();
-
-            // Clear the DataProducers map.
-            _dataProducers.Clear();
-
-            // Clear map of Router/PipeTransports.
-            _mapRouterPipeTransports.Clear();
+            await CloseInternalAsync();
 
             Emit("@close");
 
@@ -172,7 +151,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Worker was closed.
         /// </summary>
-        public async Task WorkerClosed()
+        public async Task WorkerClosedAsync()
         {
             if (Closed)
             {
@@ -183,10 +162,20 @@ namespace TubumuMeeting.Mediasoup
 
             Closed = true;
 
+            await CloseInternalAsync();
+
+            Emit("workerclose");
+
+            // Emit observer event.
+            Observer.Emit("close");
+        }
+
+        private async Task CloseInternalAsync()
+        {
             // Close every Transport.
             foreach (var transport in _transports.Values)
             {
-                await transport.RouterClosed();
+                await transport.RouterClosedAsync();
             }
 
             _transports.Clear();
@@ -206,11 +195,6 @@ namespace TubumuMeeting.Mediasoup
 
             // Clear map of Router/PipeTransports.
             _mapRouterPipeTransports.Clear();
-
-            Emit("workerclose");
-
-            // Emit observer event.
-            Observer.Emit("close");
         }
 
         /// <summary>

@@ -72,14 +72,14 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override async Task RouterClosed()
+        public override async Task RouterClosedAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            await base.RouterClosed();
+            await base.RouterClosedAsync();
         }
 
         /// <summary>

@@ -104,7 +104,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override async Task RouterClosed()
+        public override async Task RouterClosedAsync()
         {
             if (Closed)
             {
@@ -116,7 +116,7 @@ namespace TubumuMeeting.Mediasoup
                 SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
             }
 
-            await base.RouterClosed();
+            await base.RouterClosedAsync();
         }
 
         /// <summary>

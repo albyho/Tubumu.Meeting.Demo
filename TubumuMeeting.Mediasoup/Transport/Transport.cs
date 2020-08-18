@@ -271,7 +271,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public virtual async Task RouterClosed()
+        public virtual async Task RouterClosedAsync()
         {
             if (Closed)
             {

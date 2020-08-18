@@ -172,8 +172,8 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug($"Worker() | spawning worker process: {args.ToArray().Join(" ")}");
 
             _pipes = new Pipe[StdioCount];
-            // 忽略标准输入
-            // fd 0 (stdin)   : Just ignore it.
+
+            // fd 0 (stdin)   : Just ignore it. (忽略标准输入)
             // fd 1 (stdout)  : Pipe it for 3rd libraries that log their own stuff.
             // fd 2 (stderr)  : Same as stdout.
             // fd 3 (channel) : Producer Channel fd.
@@ -216,8 +216,6 @@ namespace TubumuMeeting.Mediasoup
                     _logger.LogError($"Worker() | worker process error [pid:{ProcessId}]: {ex.Message}");
                     Emit("died", ex);
                 }
-
-                throw;
             }
 
             _channel = new Channel(_loggerFactory.CreateLogger<Channel>(), _pipes[3], _pipes[4], ProcessId);
@@ -255,7 +253,7 @@ namespace TubumuMeeting.Mediasoup
             // Close every Router.
             foreach (var router in _routers)
 		{
-               await router.WorkerClosed();
+               await router.WorkerClosedAsync();
             }
             _routers.Clear();
 
@@ -349,7 +347,7 @@ namespace TubumuMeeting.Mediasoup
             if (!_spawnDone)
             {
                 _spawnDone = true;
-                _logger.LogDebug($"OnChannelRunning() | worker process running [pid:{targetId}]");
+                _logger.LogDebug($"OnChannelMessage() | worker process running [pid:{targetId}]");
                 Emit("@success");
             }
         }
