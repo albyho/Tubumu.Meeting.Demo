@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Threading;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Libuv;
 
@@ -14,7 +15,7 @@ namespace TubumuMeeting.Mediasoup
     /// <summary>
     /// A worker represents a mediasoup C++ subprocess that runs in a single CPU core and handles Router instances.
     /// </summary>
-    public class Worker : EventEmitter
+    public class Worker : EventEmitter, IDisposable
     {
         #region Constants
 
@@ -76,15 +77,16 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion
 
-        #region Public Properties
-
-        // Closed flag.
+        /// <summary>
+        /// Closed flag.
+        /// <para>暂不用考虑线程安全问题。</para>
+        /// </summary>
         public bool Closed { get; private set; }
 
-        // Custom app data.
+        /// <summary>
+        /// Custom app data.
+        /// </summary>
         public Dictionary<string, object>? AppData { get; }
-
-        #endregion
 
         public EventEmitter Observer { get; } = new EventEmitter();
 
@@ -200,7 +202,7 @@ namespace TubumuMeeting.Mediasoup
             catch (Exception ex)
             {
                 _child = null;
-                Close();
+                CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
                 if (!_spawnDone)
                 {
@@ -226,7 +228,7 @@ namespace TubumuMeeting.Mediasoup
             _pipes.ForEach(m => m?.Resume());
         }
 
-        public void Close()
+        public async Task CloseAsync()
         {
             if (Closed)
             {
@@ -249,6 +251,13 @@ namespace TubumuMeeting.Mediasoup
 
             // Close the PayloadChannel instance.
             _payloadChannel?.Close();
+
+            // Close every Router.
+            foreach (var router in _routers)
+		{
+               await router.WorkerClosed();
+            }
+            _routers.Clear();
 
             // Emit observer event.
             Observer.Emit("close");
@@ -348,7 +357,7 @@ namespace TubumuMeeting.Mediasoup
         private void OnExit(Process process)
         {
             _child = null;
-            Close();
+            CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
             if (!_spawnDone)
             {
@@ -363,12 +372,11 @@ namespace TubumuMeeting.Mediasoup
                 {
                     _logger.LogError($"OnExit() | worker process failed unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
                     Emit("@failure", new Exception($"[pid:{ProcessId}, code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
-
                 }
             }
             else
             {
-                _logger.LogError($"OnExit() | [pid:{ProcessId}] worker process died unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
+                _logger.LogError($"OnExit() | worker process died unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
                 Emit("died", new Exception($"[pid:{ProcessId}, code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
             }
         }
@@ -376,6 +384,7 @@ namespace TubumuMeeting.Mediasoup
         #endregion
 
         #region IDisposable Support
+
         private bool disposedValue = false; // 要检测冗余调用
 
         protected virtual void Dispose(bool disposing)

@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Tubumu.Core.Extensions.Object;
 
 namespace TubumuMeeting.Mediasoup
 {
     public class MediasoupServer
     {
+        private readonly List<Worker> _workers = new List<Worker>();
+
         private int _nextMediasoupWorkerIndex = 0;
 
-        private readonly object _locker = new object();
-
-        private readonly List<Worker> _workers = new List<Worker>();
+        private readonly ReaderWriterLockSlim _workersLocker = new ReaderWriterLockSlim();
 
         /// <summary>
         /// Get a cloned copy of the mediasoup supported RTP capabilities.
@@ -27,21 +28,20 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Worker GetWorker()
         {
-            lock (_locker)
+            _workersLocker.EnterReadLock();
+            if (_nextMediasoupWorkerIndex > _workers.Count - 1)
             {
-                if (_nextMediasoupWorkerIndex > _workers.Count - 1)
-                {
-                    throw new Exception("none worker");
-                }
-
-                var worker = _workers[_nextMediasoupWorkerIndex];
-                if (++_nextMediasoupWorkerIndex == _workers.Count)
-                {
-                    _nextMediasoupWorkerIndex = 0;
-                }
-
-                return worker;
+                throw new Exception("none worker");
             }
+
+            var worker = _workers[_nextMediasoupWorkerIndex];
+            if (++_nextMediasoupWorkerIndex == _workers.Count)
+            {
+                _nextMediasoupWorkerIndex = 0;
+            }
+
+            _workersLocker.ExitReadLock();
+            return worker;
         }
 
         /// <summary>
@@ -55,10 +55,9 @@ namespace TubumuMeeting.Mediasoup
                 throw new ArgumentNullException(nameof(worker));
             }
 
-            lock (_locker)
-            {
-                _workers.Add(worker);
-            }
+            _workersLocker.EnterWriteLock();
+            _workers.Add(worker);
+            _workersLocker.ExitWriteLock();
         }
     }
 }

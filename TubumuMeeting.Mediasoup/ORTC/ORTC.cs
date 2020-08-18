@@ -1148,11 +1148,11 @@ namespace TubumuMeeting.Mediasoup
                                 return false;
                             }
 
-                            string selectedProfileLevelId;
+                            string? selectedProfileLevelId;
 
                             try
                             {
-                                selectedProfileLevelId = H264ProfileLevelId.GenerateProfileLevelIdForAnswer(aCodec.Parameters, bCodec.Parameters);  // TODO: (alby)注意 null 引用
+                                selectedProfileLevelId = H264ProfileLevelId.GenerateProfileLevelIdForAnswer(aCodec.Parameters, bCodec.Parameters);
                             }
                             catch (Exception)
                             {
@@ -1163,7 +1163,7 @@ namespace TubumuMeeting.Mediasoup
                             {
                                 if (!selectedProfileLevelId.IsNullOrWhiteSpace())
                                 {
-                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;  // TODO: (alby)注意 null 引用
+                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId!;
                                 }
                                 else
                                 {
