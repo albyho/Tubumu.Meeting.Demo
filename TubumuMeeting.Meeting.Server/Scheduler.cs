@@ -193,7 +193,8 @@ namespace TubumuMeeting.Meeting.Server
 
                     return new PeerAppDataResult
                     {
-                        SelfPeer = peer,
+                        SelfPeerId = peerId,
+                        AppData = peer.AppData,
                         OtherPeerIds = otherPeerIds.ToArray(),
                     };
                 }
@@ -238,7 +239,8 @@ namespace TubumuMeeting.Meeting.Server
 
                     return new PeerAppDataResult
                     {
-                        SelfPeer = peer,
+                        SelfPeerId = peerId,
+                        AppData = peer.AppData,
                         OtherPeerIds = otherPeerIds.ToArray(),
                     };
                 }
@@ -280,7 +282,8 @@ namespace TubumuMeeting.Meeting.Server
 
                     return new PeerAppDataResult
                     {
-                        SelfPeer = peer,
+                        SelfPeerId = peerId,
+                        AppData = peer.AppData,
                         OtherPeerIds = otherPeerIds.ToArray(),
                     };
                 }
@@ -498,8 +501,8 @@ namespace TubumuMeeting.Meeting.Server
                         // 只通知本房间
                         return new PeerRoomAppDataResult
                         {
-                            SelfPeer = peer,
-                            RoomAppData = peerRoom.RoomAppData,
+                            SelfPeerId = peerId,
+                            AppData = peerRoom.RoomAppData,
                             OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
                         };
                     }
@@ -553,8 +556,8 @@ namespace TubumuMeeting.Meeting.Server
                         // 只通知本房间
                         return new PeerRoomAppDataResult
                         {
-                            SelfPeer = peer,
-                            RoomAppData = peerRoom.RoomAppData,
+                            SelfPeerId = peerId,
+                            AppData = peerRoom.RoomAppData,
                             OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
                         };
                     }
@@ -605,8 +608,8 @@ namespace TubumuMeeting.Meeting.Server
                         // 只通知本房间
                         return new PeerRoomAppDataResult
                         {
-                            SelfPeer = peer,
-                            RoomAppData = peerRoom.RoomAppData,
+                            SelfPeerId = peerId,
+                            AppData = peerRoom.RoomAppData,
                             OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
                         };
                     }

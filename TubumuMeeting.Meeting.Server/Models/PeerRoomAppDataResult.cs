@@ -4,9 +4,9 @@ namespace TubumuMeeting.Meeting.Server
 {
     public class PeerRoomAppDataResult
     {
-        public Peer SelfPeer { get; set; }
+        public string SelfPeerId { get; set; }
 
-        public Dictionary<string, object> RoomAppData { get; set; }
+        public Dictionary<string, object> AppData { get; set; }
 
         public string[] OtherPeerIds { get; set; }
     }

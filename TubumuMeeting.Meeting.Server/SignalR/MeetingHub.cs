@@ -83,7 +83,7 @@ namespace TubumuMeeting.Meeting.Server
                 SendNotification(otherPeerId, "peerPeerAppDataChanged", new
                 {
                     PeerId = UserId,
-                    RoomAppData = peerPeerAppDataResult.SelfPeer.AppData,
+                    AppData = peerPeerAppDataResult.AppData,
                 });
             }
 
@@ -100,7 +100,7 @@ namespace TubumuMeeting.Meeting.Server
                 SendNotification(otherPeerId, "peerPeerAppDataChanged", new
                 {
                     PeerId = UserId,
-                    PeerAppData = peerPeerAppDataResult.SelfPeer.AppData,
+                    AppData = peerPeerAppDataResult.AppData,
                 });
             }
 
@@ -117,7 +117,7 @@ namespace TubumuMeeting.Meeting.Server
                 SendNotification(otherPeerId, "peerPeerAppDataChanged", new
                 {
                     PeerId = UserId,
-                    RoomAppData = peerPeerAppDataResult.SelfPeer.AppData,
+                    AppData = peerPeerAppDataResult.AppData,
                 });
             }
 
@@ -248,7 +248,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     RoomId = setRoomAppDataRequest.RoomId,
                     PeerId = UserId,
-                    RoomAppData = peerRoomAppDataResult.RoomAppData,
+                    AppData = peerRoomAppDataResult.AppData,
                 });
             }
 
@@ -266,7 +266,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     RoomId = unsetRoomAppDataRequest.RoomId,
                     PeerId = UserId,
-                    RoomAppData = peerRoomAppDataResult.RoomAppData,
+                    AppData = peerRoomAppDataResult.AppData,
                 });
             }
 
@@ -284,7 +284,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     RoomId = roomId,
                     PeerId = UserId,
-                    RoomAppData = peerRoomAppDataResult.RoomAppData,
+                    RoomAppData = peerRoomAppDataResult.AppData,
                 });
             }
 
