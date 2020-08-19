@@ -265,8 +265,8 @@ namespace TubumuMeeting.Mediasoup
 
             // Close every Router.
             foreach (var router in _routers)
-		{
-               await router.WorkerClosedAsync();
+            {
+                await router.WorkerClosedAsync();
             }
             _routers.Clear();
 

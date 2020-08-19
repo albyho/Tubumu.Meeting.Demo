@@ -524,7 +524,7 @@ namespace TubumuMeeting.Meeting.Server
                 otherPeerIds = await _scheduler.GetOtherPeerIdsInRoomAsync(UserId, sendMessageRequest.RoomId!);
             }
 
-            foreach(var otherPeerId in otherPeerIds)
+            foreach (var otherPeerId in otherPeerIds)
             {
                 // Message: newMessage
                 SendNotification(otherPeerId, "newMessage", new
