@@ -362,7 +362,6 @@ namespace TubumuMeeting.Mediasoup
             if (!_spawnDone)
             {
                 _spawnDone = true;
-                _logger.LogDebug($"OnChannelMessage() | worker process running [pid:{targetId}]");
                 Emit("@success");
             }
         }

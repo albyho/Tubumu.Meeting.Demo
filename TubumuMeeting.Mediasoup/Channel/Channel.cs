@@ -76,8 +76,6 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger = logger;
 
-            _logger.LogDebug("Channel() | constructor");
-
             _producerSocket = producerSocket;
             _consumerSocket = consumerSocket;
             _processId = processId;

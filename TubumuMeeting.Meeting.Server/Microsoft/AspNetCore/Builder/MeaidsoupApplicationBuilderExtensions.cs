@@ -25,7 +25,7 @@ namespace Microsoft.AspNetCore.Builder
                         worker.On("@success", _ =>
                         {
                             mediasoupServer.AddWorker(worker);
-                            logger.LogInformation($"worker[pid:{worker.ProcessId}] create success.");
+                            logger.LogInformation($"Worker[pid:{worker.ProcessId}] create success.");
                             return Task.CompletedTask;
                         });
                     }
