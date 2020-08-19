@@ -11,7 +11,6 @@ namespace TubumuMeeting.Mediasoup
 {
     public class Router : EventEmitter, IEquatable<Router>
     {
-
         /// <summary>
         /// Logger factory for create logger.
         /// </summary>
