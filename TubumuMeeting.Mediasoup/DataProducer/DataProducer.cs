@@ -146,7 +146,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug($"Close() | DataProducer:{DataProducerId}");
 
             Closed = true;
 
@@ -172,7 +172,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("TransportClosed()");
+            _logger.LogDebug($"TransportClosed() | DataProducer:{DataProducerId}");
 
             Closed = true;
 
@@ -190,7 +190,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
+            _logger.LogDebug($"DumpAsync() | DataProducer:{DataProducerId}");
 
             return _channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP, Internal);
         }
@@ -200,7 +200,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> GetStatsAsync()
         {
-            _logger.LogDebug("GetStatsAsync()");
+            _logger.LogDebug($"GetStatsAsync() | DataProducer:{DataProducerId}");
 
             return _channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, Internal);
         }
@@ -213,7 +213,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Task SendAsync(string message, int? ppid)
         {
-            _logger.LogDebug("SendAsync()");
+            _logger.LogDebug($"SendAsync() | DataProducer:{DataProducerId}");
 
             /*
              * +-------------------------------+----------+
@@ -257,7 +257,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Task SendAsync(byte[] message, int? ppid)
         {
-            _logger.LogDebug("SendAsync()");
+            _logger.LogDebug($"SendAsync() | DataProducer:{DataProducerId}");
 
             if (ppid == null)
             {

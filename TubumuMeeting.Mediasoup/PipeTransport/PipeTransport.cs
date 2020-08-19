@@ -284,7 +284,7 @@ namespace TubumuMeeting.Mediasoup
 
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event{@event}");
                         break;
                     }
             }

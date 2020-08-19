@@ -15,7 +15,7 @@
         "Args": {
           "restrictedToMinimumLevel": "Debug",
           "theme": "Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Literate, Serilog.Sinks.Console",
-          "outputTemplate": "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+          "outputTemplate": "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj} <s:{SourceContext}>{NewLine}{Exception}"
         }
       }
     ],

@@ -360,7 +360,7 @@ namespace TubumuMeeting.Meeting.Server
             producer.On("videoorientationchange", videoOrientation =>
             {
                 var data = (ProducerVideoOrientation)videoOrientation!;
-                _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
+                _logger.LogDebug($"producer.On() | Producer \"videoorientationchange\" Event [producerId:\"{producer.ProducerId}\", VideoOrientation:\"{videoOrientation}\"]");
                 return Task.CompletedTask;
             });
             producer.Observer.On("close", _ =>
@@ -541,7 +541,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer, string roomId)
         {
-            _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.ProducerId}\"]");
+            _logger.LogDebug($"CreateConsumer() | [ConsumerPeer:\"{consumerPeer.PeerId}\", ProducerPeer:\"{producerPeer.PeerId}\", Producer:\"{producer.ProducerId}\"]");
 
             // Create the Consumer in paused mode.
             Consumer consumer;
@@ -552,7 +552,7 @@ namespace TubumuMeeting.Meeting.Server
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
+                _logger.LogWarning(ex, "CreateConsumer()");
                 return;
             }
 

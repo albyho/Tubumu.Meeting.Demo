@@ -237,7 +237,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public virtual async Task CloseAsync()
         {
-            _logger.LogDebug("Close()");
+            _logger.LogDebug($"CloseAsync() | Transport:{TransportId}");
 
             Closed = true;
 
@@ -260,7 +260,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public virtual async Task RouterClosedAsync()
         {
-            _logger.LogDebug("RouterClosed()");
+            _logger.LogDebug($"RouterClosed() | Transport:{TransportId}");
 
             Closed = true;
 
@@ -334,7 +334,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
+            _logger.LogDebug($"DumpAsync() | Transport:{TransportId}");
 
             return Channel.RequestAsync(MethodId.TRANSPORT_DUMP, Internal);
         }
@@ -345,7 +345,7 @@ namespace TubumuMeeting.Mediasoup
         public virtual Task<string?> GetStatsAsync()
         {
             // 在 Node.js 实现中，Transport 类没有实现 getState 方法。
-            _logger.LogDebug("GetStatsAsync()");
+            _logger.LogDebug($"GetStatsAsync() | Transport:{TransportId}");
 
             return Channel.RequestAsync(MethodId.TRANSPORT_GET_STATS, Internal);
         }
@@ -364,7 +364,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public virtual Task<string?> SetMaxIncomingBitrateAsync(int bitrate)
         {
-            _logger.LogDebug($"SetMaxIncomingBitrateAsync() [bitrate:{bitrate}]");
+            _logger.LogDebug($"SetMaxIncomingBitrateAsync() | Transport:{TransportId} Bitrate:{bitrate}");
 
             var reqData = new { Bitrate = bitrate };
             return Channel.RequestAsync(MethodId.TRANSPORT_SET_MAX_INCOMING_BITRATE, Internal, reqData);
@@ -377,7 +377,7 @@ namespace TubumuMeeting.Mediasoup
         {
             await ProducersLocker.WaitAsync();
 
-            _logger.LogDebug("ProduceAsync()");
+            _logger.LogDebug($"ProduceAsync() | Transport:{TransportId}");
 
             if (!producerOptions.Id.IsNullOrWhiteSpace() && Producers.ContainsKey(producerOptions.Id!))
             {
@@ -494,7 +494,7 @@ namespace TubumuMeeting.Mediasoup
         public virtual async Task<Consumer> ConsumeAsync(ConsumerOptions consumerOptions)
         {
             await ConsumersLocker.WaitAsync();
-            _logger.LogDebug("ConsumeAsync()");
+            _logger.LogDebug($"ConsumeAsync() | Transport:{TransportId}");
 
             if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
             {
@@ -529,7 +529,7 @@ namespace TubumuMeeting.Mediasoup
             // We use up to 8 bytes for MID (string).
             if (_nextMidForConsumers == 100_000_000)
             {
-                _logger.LogDebug($"ConsumeAsync() | reaching max MID value {_nextMidForConsumers}");
+                _logger.LogDebug($"ConsumeAsync() | Reaching max MID value {_nextMidForConsumers}");
                 _nextMidForConsumers = 0;
             }
 
@@ -604,11 +604,11 @@ namespace TubumuMeeting.Mediasoup
         {
             await DataProducersLocker.WaitAsync();
 
-            _logger.LogDebug("ProduceDataAsync()");
+            _logger.LogDebug($"ProduceDataAsync() | Transport:{TransportId}");
 
             if (!dataProducerOptions.Id.IsNullOrWhiteSpace() && DataProducers.ContainsKey(dataProducerOptions.Id!))
             {
-                throw new Exception($"a DataProducer with same id {dataProducerOptions.Id} already exists");
+                throw new Exception($"A DataProducer with same id {dataProducerOptions.Id} already exists");
             }
 
             if (dataProducerOptions.Label.IsNullOrWhiteSpace())
@@ -637,7 +637,7 @@ namespace TubumuMeeting.Mediasoup
 
                 if (dataProducerOptions.SctpStreamParameters != null)
                 {
-                    _logger.LogWarning("ProduceDataAsync() | sctpStreamParameters are ignored when producing data on a DirectTransport");
+                    _logger.LogWarning($"ProduceDataAsync() | Transport:{TransportId} sctpStreamParameters are ignored when producing data on a DirectTransport");
                 }
             }
 
@@ -693,12 +693,12 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public async Task<DataConsumer> ConsumeDataAsync(DataConsumerOptions dataConsumerOptions)
         {
-            _logger.LogDebug("ConsumeDataAsync()");
+            _logger.LogDebug($"ConsumeDataAsync() | Transport:{TransportId}");
 
             await DataConsumersLocker.WaitAsync();
             if (dataConsumerOptions.DataProducerId.IsNullOrWhiteSpace())
             {
-                throw new Exception("missing dataProducerId");
+                throw new Exception("Missing dataProducerId");
             }
 
             var dataProducer = GetDataProducerById(dataConsumerOptions.DataProducerId);
@@ -739,7 +739,7 @@ namespace TubumuMeeting.Mediasoup
                     dataConsumerOptions.MaxRetransmits.HasValue
                 )
                 {
-                    _logger.LogWarning("ConsumeDataAsync() | ordered, maxPacketLifeTime and maxRetransmits are ignored when consuming data on a DirectTransport");
+                    _logger.LogWarning("ConsumeDataAsync() | Ordered, maxPacketLifeTime and maxRetransmits are ignored when consuming data on a DirectTransport");
                 }
             }
 
@@ -809,8 +809,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Task EnableTraceEventAsync(TransportTraceEventType[] types)
         {
-
-            _logger.LogDebug("EnableTraceEventAsync()");
+            _logger.LogDebug($"EnableTraceEventAsync() | Transport:{TransportId}");
 
             var reqData = new { Types = types };
 
@@ -823,7 +822,7 @@ namespace TubumuMeeting.Mediasoup
         {
             if (SctpParameters == null)
             {
-                throw new Exception("missing data.sctpParameters.MIS");
+                throw new Exception("Missing data.sctpParameters.MIS");
             }
             if (_sctpStreamIds == null)
             {
@@ -850,7 +849,7 @@ namespace TubumuMeeting.Mediasoup
                 }
             }
 
-            throw new Exception("no sctpStreamId available");
+            throw new Exception("No sctpStreamId available");
         }
 
         #endregion

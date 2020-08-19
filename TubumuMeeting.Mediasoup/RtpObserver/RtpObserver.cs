@@ -121,7 +121,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug($"Close() | RtpObserver:{Internal.RtpObserverId}");
 
             Closed = true;
 
@@ -147,7 +147,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("RouterClosed()");
+            _logger.LogDebug($"RouterClosed() | RtpObserver:{Internal.RtpObserverId}");
 
             Closed = true;
 
@@ -165,7 +165,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task PauseAsync()
         {
-            _logger.LogDebug("PauseAsync()");
+            _logger.LogDebug($"PauseAsync() | RtpObserver:{Internal.RtpObserverId}");
 
             var wasPaused = Paused;
 
@@ -185,7 +185,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task ResumeAsync()
         {
-            _logger.LogDebug("ResumeAsync()");
+            _logger.LogDebug($"ResumeAsync() | RtpObserver:{Internal.RtpObserverId}");
 
             var wasPaused = Paused;
 
@@ -205,7 +205,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task AddProducerAsync(string producerId)
         {
-            _logger.LogDebug("AddProducerAsync()");
+            _logger.LogDebug($"AddProducerAsync() | RtpObserver:{Internal.RtpObserverId}");
 
             var producer = GetProducerById(producerId);
             if (producer == null)
@@ -231,7 +231,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task RemoveProducerAsync(string producerId)
         {
-            _logger.LogDebug("RemoveProducerAsync()");
+            _logger.LogDebug($"RemoveProducerAsync() | RtpObserver:{Internal.RtpObserverId}");
 
             var producer = GetProducerById(producerId);
             if (producer == null)

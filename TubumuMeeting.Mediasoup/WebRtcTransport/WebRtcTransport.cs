@@ -172,7 +172,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public override Task ConnectAsync(object parameters)
         {
-            _logger.LogDebug("ConnectAsync()");
+            _logger.LogDebug($"ConnectAsync() | WebRtcTransport:{TransportId}");
 
             if (!(parameters is DtlsParameters dtlsParameters))
             {
@@ -183,8 +183,6 @@ namespace TubumuMeeting.Mediasoup
 
         private async Task ConnectAsync(DtlsParameters dtlsParameters)
         {
-            _logger.LogDebug("ConnectAsync()");
-
             var reqData = new { DtlsParameters = dtlsParameters };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, Internal, reqData);
@@ -199,7 +197,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task<IceParameters> RestartIceAsync()
         {
-            _logger.LogDebug("RestartIceAsync()");
+            _logger.LogDebug($"RestartIceAsync() | WebRtcTransport:{TransportId}");
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE, Internal);
             var responseData = JsonConvert.DeserializeObject<WebRtcTransportRestartIceResponseData>(status!);
@@ -297,7 +295,7 @@ namespace TubumuMeeting.Mediasoup
 
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | WebRtcTransport:{TransportId} Ignoring unknown event{@event}");
                         break;
                     }
             }

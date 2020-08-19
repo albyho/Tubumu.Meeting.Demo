@@ -132,7 +132,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug("CloseAsync() | Router");
 
             Closed = true;
 
@@ -157,7 +157,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("WorkerClosed()");
+            _logger.LogDebug($"WorkerClosedAsync() | Router:{RouterId}");
 
             Closed = true;
 
@@ -302,7 +302,7 @@ namespace TubumuMeeting.Mediasoup
 
             if (plainTransportOptions.ListenIp == null || plainTransportOptions.ListenIp.Ip.IsNullOrWhiteSpace())
             {
-                throw new Exception("missing listenIp");
+                throw new Exception("Missing listenIp");
             }
 
             var @internal = new
@@ -390,7 +390,7 @@ namespace TubumuMeeting.Mediasoup
 
             if (pipeTransportOptions.ListenIp == null)
             {
-                throw new NullReferenceException("missing listenIp");
+                throw new NullReferenceException("Missing listenIp");
             }
 
             var @internal = new
@@ -550,17 +550,17 @@ namespace TubumuMeeting.Mediasoup
         {
             if (pipeToRouterOptions.ListenIp == null)
             {
-                throw new NullReferenceException("missing listenIp");
+                throw new NullReferenceException("Missing listenIp");
             }
 
             if (pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
             {
-                throw new Exception("missing producerId or dataProducerId");
+                throw new Exception("Missing producerId or dataProducerId");
             }
 
             if (!pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && !pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
             {
-                throw new Exception("just producerId or dataProducerId can be given");
+                throw new Exception("Just producerId or dataProducerId can be given");
             }
 
             if (pipeToRouterOptions.Router == null)
@@ -570,7 +570,7 @@ namespace TubumuMeeting.Mediasoup
 
             if (pipeToRouterOptions.Router == this)
             {
-                throw new Exception("cannot use this Router as destination");
+                throw new Exception("Cannot use this Router as destination");
             }
 
             Producer? producer = null;
@@ -661,7 +661,7 @@ namespace TubumuMeeting.Mediasoup
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"pipeToRouter() | error creating PipeTransport pair:{ex}");
+                    _logger.LogError(ex, $"PipeToRouterAsync() | Create PipeTransport pair failed.");
 
                     if (localPipeTransport != null)
                     {
@@ -718,7 +718,7 @@ namespace TubumuMeeting.Mediasoup
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"pipeToRouter() | error creating pipe Consumer/Producer pair:{ex}");
+                    _logger.LogError(ex, $"PipeToRouterAsync() | Create pipe Consumer/Producer pair failed");
 
                     if (pipeConsumer != null)
                     {
@@ -772,7 +772,7 @@ namespace TubumuMeeting.Mediasoup
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"pipeToRouter() | error creating pipe DataConsumer/DataProducer pair:{ex}");
+                    _logger.LogError(ex, $"PipeToRouterAsync() | Create pipe DataConsumer/DataProducer pair failed.");
 
                     if (pipeDataConsumer != null)
                     {
@@ -789,7 +789,7 @@ namespace TubumuMeeting.Mediasoup
             }
             else
             {
-                throw new Exception("internal error");
+                throw new Exception("Internal error");
             }
         }
 
@@ -852,7 +852,7 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "CanConsume() | unexpected error");
+                _logger.LogError(ex, "CanConsume() | Unexpected error");
                 return false;
             }
         }

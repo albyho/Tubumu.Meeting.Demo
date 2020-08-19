@@ -158,7 +158,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug($"Close() | DataConsumer:{DataConsumerId}");
 
             Closed = true;
 
@@ -184,7 +184,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("TransportClosed()");
+            _logger.LogDebug($"TransportClosed() | DataConsumer:{DataConsumerId}");
 
             Closed = true;
 
@@ -202,7 +202,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
+            _logger.LogDebug($"DumpAsync() | DataConsumer:{DataConsumerId}");
 
             return _channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, Internal);
         }
@@ -212,7 +212,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> GetStatsAsync()
         {
-            _logger.LogDebug("GetStatsAsync()");
+            _logger.LogDebug($"GetStatsAsync() | DataConsumer:{DataConsumerId}");
 
             return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, Internal);
         }
@@ -225,7 +225,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public async Task SetBufferedAmountLowThresholdAsync(uint threshold)
         {
-            _logger.LogDebug($"SetBufferedAmountLowThreshold() [threshold:{threshold}]");
+            _logger.LogDebug($"SetBufferedAmountLowThreshold() | Threshold:{threshold}");
 
             var reqData = new { Threshold = threshold };
             await _channel.RequestAsync(MethodId.DATA_CONSUMER_SET_BUFFERED_AMOUNT_LOW_THRESHOLD, Internal, reqData);
@@ -239,7 +239,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Task SendAsync(string message, int? ppid)
         {
-            _logger.LogDebug("SendAsync()");
+            _logger.LogDebug($"SendAsync() | DataConsumer:{DataConsumerId}");
 
             /*
              * +-------------------------------+----------+
@@ -283,7 +283,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Task SendAsync(byte[] message, int? ppid)
         {
-            _logger.LogDebug("SendAsync()");
+            _logger.LogDebug($"SendAsync() | DataConsumer:{DataConsumerId}");
 
             if (ppid == null)
             {
@@ -364,7 +364,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event \"{@event}\" in channel listener");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event \"{@event}\" in channel listener");
                         break;
                     }
             }
@@ -396,7 +396,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
-                        _logger.LogError($"OnPayloadChannelMessage() | ignoring unknown event \"{@event}\" in payload channel listener");
+                        _logger.LogError($"OnPayloadChannelMessage() | Ignoring unknown event \"{@event}\" in payload channel listener");
                         break;
                     }
             }

@@ -201,7 +201,7 @@ namespace TubumuMeeting.Mediasoup
                     return;
                 }
 
-                _logger.LogDebug("Close()");
+                _logger.LogDebug($"Close() | Producer:{ProducerId}");
 
                 Closed = true;
 
@@ -230,7 +230,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("TransportClosed()");
+            _logger.LogDebug($"TransportClosed() | Producer:{ProducerId}");
 
             Closed = true;
 
@@ -248,7 +248,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
+            _logger.LogDebug($"DumpAsync() | Producer:{ProducerId}");
 
             return _channel.RequestAsync(MethodId.PRODUCER_DUMP, _internal);
         }
@@ -258,7 +258,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> GetStatsAsync()
         {
-            _logger.LogDebug("GetStatsAsync()");
+            _logger.LogDebug($"GetStatsAsync() | Producer:{ProducerId}");
 
             return _channel.RequestAsync(MethodId.PRODUCER_GET_STATS, _internal);
         }
@@ -268,7 +268,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task PauseAsync()
         {
-            _logger.LogDebug("PauseAsync()");
+            _logger.LogDebug($"PauseAsync() | Producer:{ProducerId}");
 
             var wasPaused = Paused;
 
@@ -288,7 +288,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task ResumeAsync()
         {
-            _logger.LogDebug("ResumeAsync()");
+            _logger.LogDebug($"ResumeAsync() | Producer:{ProducerId}");
 
             var wasPaused = Paused;
 
@@ -308,7 +308,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task EnableTraceEventAsync(TraceEventType[] types)
         {
-            _logger.LogDebug("EnableTraceEventAsync()");
+            _logger.LogDebug($"EnableTraceEventAsync() | Producer:{ProducerId}");
 
             var reqData = new
             {
@@ -399,7 +399,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event{@event}");
                         break;
                     }
             }

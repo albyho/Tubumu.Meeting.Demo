@@ -99,7 +99,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug($"Close() | PayloadChannel");
 
             _closed = true;
 
@@ -134,7 +134,7 @@ namespace TubumuMeeting.Mediasoup
 
         public void Notify(string @event, object @internal, NotifyData? data, byte[] payload)
         {
-            _logger.LogDebug($"notify() [event:{@event}]");
+            _logger.LogDebug($"Notify() [Event:{@event}]");
 
             if (_closed)
             {
@@ -163,14 +163,14 @@ namespace TubumuMeeting.Mediasoup
                     {
                         if (ex != null)
                         {
-                            _logger.LogError(ex, "_producerSocket.Write() | error");
+                            _logger.LogError(ex, "_producerSocket.Write() | Error");
                         }
                     });
 
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning($"notify() | sending notification failed: {ex}");
+                    _logger.LogWarning(ex, $"Notify() | Sending notification failed");
                     return;
                 }
 
@@ -181,14 +181,14 @@ namespace TubumuMeeting.Mediasoup
                     {
                         if (ex != null)
                         {
-                            _logger.LogError(ex, "_producerSocket.Write() | error");
+                            _logger.LogError(ex, "_producerSocket.Write() | Error");
                         }
                     });
 
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning($"notify() | sending notification failed: {ex}");
+                    _logger.LogWarning(ex, $"Notify() | sending notification failed");
                     return;
                 }
             });
@@ -199,7 +199,7 @@ namespace TubumuMeeting.Mediasoup
             var method = methodId.GetEnumStringValue();
             var id = InterlockedExtensions.Increment(ref _nextId);
 
-            _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
+            _logger.LogDebug($"RequestAsync() | [Method:{method}, Id:{id}]");
 
             if (_closed)
             {
@@ -268,7 +268,7 @@ namespace TubumuMeeting.Mediasoup
                     {
                         if (ex != null)
                         {
-                            _logger.LogError(ex, "_producerSocket.Write() | error");
+                            _logger.LogError(ex, "_producerSocket.Write() | Error");
                             sent.Reject(ex);
                         }
                     });
@@ -276,14 +276,14 @@ namespace TubumuMeeting.Mediasoup
                     {
                         if (ex != null)
                         {
-                            _logger.LogError(ex, "_producerSocket.Write() | error");
+                            _logger.LogError(ex, "_producerSocket.Write() | Error");
                             sent.Reject(ex);
                         }
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "_producerSocket.Write() | error");
+                    _logger.LogError(ex, "_producerSocket.Write() | Error");
                     sent.Reject(ex);
                 }
             });
@@ -309,7 +309,7 @@ namespace TubumuMeeting.Mediasoup
 
             if (_recvBuffer.Value.Count > NsPayloadMaxLen)
             {
-                _logger.LogError("ConsumerSocketOnData() | receiving buffer is full, discarding all data into it");
+                _logger.LogError("ConsumerSocketOnData() | Receiving buffer is full, discarding all data into it");
                 // Reset the buffer and exit.
                 _recvBuffer = null;
                 return;
@@ -341,7 +341,7 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception ex)
             {
-                _logger.LogError($"ConsumerSocketOnData() | invalid netstring data received from the worker process:{ex}");
+                _logger.LogError(ex, $"ConsumerSocketOnData() | Invalid netstring data received from the worker process.");
                 // Reset the buffer and exit.
                 _recvBuffer = null;
                 return;
@@ -355,7 +355,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnError(Exception exception)
         {
-            _logger.LogDebug("ConsumerSocketOnError() | Consumer Channel error", exception);
+            _logger.LogDebug(exception, "ConsumerSocketOnError() | Consumer Channel error");
         }
 
         private void ProducerSocketOnClosed()
@@ -365,7 +365,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void ProducerSocketOnError(Exception exception)
         {
-            _logger.LogDebug("ProducerSocketOnError() | Producer Channel error", exception);
+            _logger.LogDebug(exception, "ProducerSocketOnError() | Producer Channel error");
         }
 
         #endregion
@@ -391,27 +391,27 @@ namespace TubumuMeeting.Mediasoup
                 {
                     if (!_sents.TryGetValue(id, out Sent sent))
                     {
-                        _logger.LogError($"ProcessData() | received response does not match any sent request [id:{id}]");
+                        _logger.LogError($"ProcessData() | Received response does not match any sent request [id:{id}]");
 
                         return;
                     }
 
                     if (accepted)
                     {
-                        _logger.LogDebug($"ProcessData() | request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+                        _logger.LogDebug($"ProcessData() | Request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
 
                         sent.Resolve?.Invoke(data);
                     }
                     else if (!error.IsNullOrWhiteSpace())
                     {
                         // 在 Node.js 实现中，error 的值可能是 "Error" 或 "TypeError"。
-                        _logger.LogWarning($"ProcessData() | request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}");
+                        _logger.LogWarning($"ProcessData() | Request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}");
 
                         sent.Reject?.Invoke(new Exception(reason));
                     }
                     else
                     {
-                        _logger.LogError($"ProcessData() | received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+                        _logger.LogError($"ProcessData() | Received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
                     }
                 }
                 // If a notification emit it to the corresponding entity.
@@ -427,7 +427,7 @@ namespace TubumuMeeting.Mediasoup
                 }
                 else
                 {
-                    _logger.LogError("ProcessData() | received data is not a notification nor a response");
+                    _logger.LogError("ProcessData() | Received data is not a notification nor a response");
                     return;
                 }
             }
