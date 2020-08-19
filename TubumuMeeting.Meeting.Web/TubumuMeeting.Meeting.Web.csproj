@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="3.1.7" />
     <PackageReference Include="Microsoft.Extensions.Caching.Redis" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.7" />
+    <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
   </ItemGroup>
 
   <ItemGroup>
