@@ -11,7 +11,7 @@ namespace TubumuMeeting.Mediasoup
 
         private int _nextMediasoupWorkerIndex = 0;
 
-        private readonly ReaderWriterLockSlim _workersLocker = new ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim _workersLock = new ReaderWriterLockSlim();
 
         /// <summary>
         /// Get a cloned copy of the mediasoup supported RTP capabilities.
@@ -28,7 +28,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Worker GetWorker()
         {
-            _workersLocker.EnterReadLock();
+            _workersLock.EnterReadLock();
             if (_nextMediasoupWorkerIndex > _workers.Count - 1)
             {
                 throw new Exception("none worker");
@@ -40,7 +40,7 @@ namespace TubumuMeeting.Mediasoup
                 _nextMediasoupWorkerIndex = 0;
             }
 
-            _workersLocker.ExitReadLock();
+            _workersLock.ExitReadLock();
             return worker;
         }
 
@@ -55,9 +55,9 @@ namespace TubumuMeeting.Mediasoup
                 throw new ArgumentNullException(nameof(worker));
             }
 
-            _workersLocker.EnterWriteLock();
+            _workersLock.EnterWriteLock();
             _workers.Add(worker);
-            _workersLocker.ExitWriteLock();
+            _workersLock.ExitWriteLock();
         }
     }
 }

@@ -54,27 +54,27 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly Dictionary<string, Transport> _transports = new Dictionary<string, Transport>();
 
-        private readonly AsyncReaderWriterLock _transportsLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _transportsLock = new AsyncReaderWriterLock();
 
         private readonly Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();
 
-        private readonly AsyncReaderWriterLock _consumersLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _consumersLock = new AsyncReaderWriterLock();
 
         private readonly Dictionary<string, Producer> _producers = new Dictionary<string, Producer>();
 
-        private readonly AsyncReaderWriterLock _producersLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _producersLock = new AsyncReaderWriterLock();
 
         private readonly Dictionary<string, DataConsumer> _dataConsumers = new Dictionary<string, DataConsumer>();
 
-        private readonly AsyncReaderWriterLock _dataConsumersLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _dataConsumersLock = new AsyncReaderWriterLock();
 
         private readonly Dictionary<string, DataProducer> _dataProducers = new Dictionary<string, DataProducer>();
 
-        private readonly AsyncReaderWriterLock _dataProducersLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _dataProducersLock = new AsyncReaderWriterLock();
 
         private readonly List<PullPadding> _pullPaddings = new List<PullPadding>();
 
-        private readonly AsyncAutoResetEvent _pullPaddingsLocker = new AsyncAutoResetEvent();
+        private readonly AsyncAutoResetEvent _pullPaddingsLock = new AsyncAutoResetEvent();
 
         public string[] Sources { get; private set; }
 
@@ -101,7 +101,7 @@ namespace TubumuMeeting.Meeting.Server
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? Array.Empty<string>();
             AppData = appData ?? new Dictionary<string, object>();
-            _pullPaddingsLocker.Set();
+            _pullPaddingsLock.Set();
             Joined = true;
         }
 
@@ -112,7 +112,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<WebRtcTransport> CreateWebRtcTransportAsync(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            using (await _transportsLocker.WriteLockAsync())
+            using (await _transportsLock.WriteLockAsync())
             {
                 if (!(createWebRtcTransportRequest.Consuming ^ createWebRtcTransportRequest.Producing))
                 {
@@ -159,7 +159,7 @@ namespace TubumuMeeting.Meeting.Server
                 _transports[transport.TransportId] = transport;
                 transport.On("@close", async _ =>
                 {
-                    using (await _transportsLocker.WriteLockAsync())
+                    using (await _transportsLock.WriteLockAsync())
                     {
                         _transports.Remove(transport.TransportId);
                     }
@@ -183,7 +183,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> ConnectWebRtcTransportAsync(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            using (await _transportsLocker.ReadLockAsync())
+            using (await _transportsLock.ReadLockAsync())
             {
                 if (!_transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
                 {
@@ -204,9 +204,9 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<PeerPullResult> PullAsync(Peer producerPeer, string roomId, IEnumerable<string> sources)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
-                using (await producerPeer._producersLocker.ReadLockAsync())
+                using (await producerPeer._producersLock.ReadLockAsync())
                 {
                     var producerProducers = producerPeer._producers.Values.Where(m => sources.Contains(m.Source)).ToArray();
 
@@ -225,7 +225,7 @@ namespace TubumuMeeting.Meeting.Server
                             continue;
                         }
 
-                        await producerPeer._pullPaddingsLocker.WaitAsync();
+                        await producerPeer._pullPaddingsLock.WaitAsync();
                         // 如果 Source 没有对应的 Producer，通知 otherPeer 生产；生产成功后又要通知本 Peer 去对应的 Room 消费。
                         if (!producerPeer._pullPaddings.Any(m => m.Source == source))
                         {
@@ -240,7 +240,7 @@ namespace TubumuMeeting.Meeting.Server
                                 Source = source!,
                             });
                         }
-                        producerPeer._pullPaddingsLocker.Set();
+                        producerPeer._pullPaddingsLock.Set();
                     }
 
                     return new PeerPullResult
@@ -259,9 +259,9 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<PeerProduceResult> ProduceAsync(ProduceRequest produceRequest)
         {
-            using (await _transportsLocker.ReadLockAsync())
+            using (await _transportsLock.ReadLockAsync())
             {
-                using (await _producersLocker.WriteLockAsync())
+                using (await _producersLock.WriteLockAsync())
                 {
                     if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
                     {
@@ -313,23 +313,23 @@ namespace TubumuMeeting.Meeting.Server
                     //producer.On("transportclose", _ => _producers.Remove(producer.ProducerId));
                     producer.Observer.On("close", async _ =>
                     {
-                        using (await _producersLocker.WriteLockAsync())
+                        using (await _producersLock.WriteLockAsync())
                         {
                             _producers.Remove(producer.ProducerId);
 
-                            await _pullPaddingsLocker.WaitAsync();
+                            await _pullPaddingsLock.WaitAsync();
                             _pullPaddings.Clear();
-                            _pullPaddingsLocker.Set();
+                            _pullPaddingsLock.Set();
                         }
                     });
 
-                    await _pullPaddingsLocker.WaitAsync();
+                    await _pullPaddingsLock.WaitAsync();
                     var matchedPullPaddings = _pullPaddings.Where(m => m.Source == producer.Source).ToArray();
                     foreach (var item in matchedPullPaddings)
                     {
                         _pullPaddings.Remove(item);
                     }
-                    _pullPaddingsLocker.Set();
+                    _pullPaddingsLock.Set();
 
                     return new PeerProduceResult
                     {
@@ -348,11 +348,11 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<Consumer> ConsumeAsync(Peer producerPeer, string producerId, string roomId)
         {
-            using (await _transportsLocker.ReadLockAsync())
+            using (await _transportsLock.ReadLockAsync())
             {
-                using (await _consumersLocker.WriteLockAsync())
+                using (await _consumersLock.WriteLockAsync())
                 {
-                    using (await producerPeer._producersLocker.WriteLockAsync())
+                    using (await producerPeer._producersLock.WriteLockAsync())
                     {
                         if (!producerPeer._producers.TryGetValue(producerId, out var producer))
                         {
@@ -395,11 +395,11 @@ namespace TubumuMeeting.Meeting.Server
                         //consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
                         consumer.Observer.On("close", async _ =>
                         {
-                            using (await _consumersLocker.WriteLockAsync())
+                            using (await _consumersLock.WriteLockAsync())
                             {
                                 _consumers.Remove(consumer.ConsumerId);
 
-                                using (await producerPeer._producersLocker.WriteLockAsync())
+                                using (await producerPeer._producersLock.WriteLockAsync())
                                 {
                                     producer.RemoveConsumer(consumer.ConsumerId);
                                 }
@@ -421,7 +421,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> CloseProducerAsync(string producerId)
         {
-            using (await _producersLocker.WriteLockAsync())
+            using (await _producersLock.WriteLockAsync())
             {
                 if (!_producers.TryGetValue(producerId, out var producer))
                 {
@@ -441,7 +441,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> PauseProducerAsync(string producerId)
         {
-            using (await _producersLocker.ReadLockAsync())
+            using (await _producersLock.ReadLockAsync())
             {
                 if (!_producers.TryGetValue(producerId, out var producer))
                 {
@@ -460,7 +460,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> ResumeProducerAsync(string producerId)
         {
-            using (await _producersLocker.ReadLockAsync())
+            using (await _producersLock.ReadLockAsync())
             {
                 if (!_producers.TryGetValue(producerId, out var producer))
                 {
@@ -479,7 +479,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> CloseConsumerAsync(string consumerId)
         {
-            using (await _consumersLocker.WriteLockAsync())
+            using (await _consumersLock.WriteLockAsync())
             {
                 if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -499,7 +499,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> PauseConsumerAsync(string consumerId)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
                 if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -518,7 +518,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<Consumer> ResumeConsumerAsync(string consumerId)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
                 if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -537,7 +537,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> SetConsumerPreferedLayersAsync(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
                 if (!_consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
                 {
@@ -556,7 +556,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> SetConsumerPriorityAsync(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
                 if (!_consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
                 {
@@ -575,7 +575,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<bool> RequestConsumerKeyFrameAsync(string consumerId)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
                 if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -594,7 +594,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<TransportStat> GetTransportStatsAsync(string transportId)
         {
-            using (await _transportsLocker.ReadLockAsync())
+            using (await _transportsLock.ReadLockAsync())
             {
                 if (_transports.TryGetValue(transportId, out var transport))
                 {
@@ -616,7 +616,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<ProducerStat> GetProducerStatsAsync(string producerId)
         {
-            using (await _producersLocker.ReadLockAsync())
+            using (await _producersLock.ReadLockAsync())
             {
                 if (!_producers.TryGetValue(producerId, out var producer))
                 {
@@ -637,7 +637,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<ConsumerStat> GetConsumerStatsAsync(string consumerId)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
                 if (!_consumers.TryGetValue(consumerId, out var consumer))
                 {
@@ -658,7 +658,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<IceParameters?> RestartIceAsync(string transportId)
         {
-            using (await _transportsLocker.ReadLockAsync())
+            using (await _transportsLock.ReadLockAsync())
             {
                 if (_transports.TryGetValue(transportId, out var transport))
                 {
@@ -681,7 +681,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <param name="roomId"></param>
         public async Task LeaveRoomAsync(string roomId)
         {
-            using (await _consumersLocker.ReadLockAsync())
+            using (await _consumersLock.ReadLockAsync())
             {
                 _consumers.Values.Where(m => m.RoomId == roomId).ForEach(m => m.Close());
             }
@@ -697,7 +697,7 @@ namespace TubumuMeeting.Meeting.Server
                 return;
             }
 
-            using (await _transportsLocker.WriteLockAsync())
+            using (await _transportsLock.WriteLockAsync())
             {
                 if (!Joined)
                 {

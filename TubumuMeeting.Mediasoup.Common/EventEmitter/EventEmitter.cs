@@ -53,7 +53,6 @@ namespace TubumuMeeting.Mediasoup
             _rwl.ExitWriteLock();
         }
 
-
         /// <summary>
         /// Emits the event and runs all associated methods asynchronously
         /// </summary>

@@ -109,7 +109,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Producers locker.
         /// </summary>
-        protected readonly AsyncAutoResetEvent ProducersLocker = new AsyncAutoResetEvent();
+        protected readonly AsyncAutoResetEvent ProducersLock = new AsyncAutoResetEvent();
 
         /// <summary>
         /// Consumers map.
@@ -119,7 +119,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Consumers locker.
         /// </summary>
-        protected readonly AsyncAutoResetEvent ConsumersLocker = new AsyncAutoResetEvent();
+        protected readonly AsyncAutoResetEvent ConsumersLock = new AsyncAutoResetEvent();
 
         /// <summary>
         /// DataProducers map.
@@ -129,7 +129,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// DataProducers locker.
         /// </summary>
-        protected readonly AsyncAutoResetEvent DataProducersLocker = new AsyncAutoResetEvent();
+        protected readonly AsyncAutoResetEvent DataProducersLock = new AsyncAutoResetEvent();
 
         /// <summary>
         /// DataConsumers map.
@@ -139,12 +139,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// DataConsumers locker.
         /// </summary>
-        protected readonly AsyncAutoResetEvent DataConsumersLocker = new AsyncAutoResetEvent();
+        protected readonly AsyncAutoResetEvent DataConsumersLock = new AsyncAutoResetEvent();
 
         /// <summary>
         /// Close locker.
         /// </summary>
-        protected readonly AsyncAutoResetEvent CloseLocker = new AsyncAutoResetEvent();
+        protected readonly AsyncAutoResetEvent CloseLock = new AsyncAutoResetEvent();
 
         /// <summary>
         /// RTCP CNAME for Producers.
@@ -225,11 +225,11 @@ namespace TubumuMeeting.Mediasoup
             GetProducerById = getProducerById;
             GetDataProducerById = getDataProducerById;
 
-            ProducersLocker.Set();
-            ConsumersLocker.Set();
-            DataProducersLocker.Set();
-            DataConsumersLocker.Set();
-            CloseLocker.Set();
+            ProducersLock.Set();
+            ConsumersLock.Set();
+            DataProducersLock.Set();
+            DataConsumersLock.Set();
+            CloseLock.Set();
         }
 
         /// <summary>
@@ -278,7 +278,7 @@ namespace TubumuMeeting.Mediasoup
         private async Task CloseIternalAsync(bool tellRoute)
         {
             // Close every Producer.
-            await ProducersLocker.WaitAsync();
+            await ProducersLock.WaitAsync();
             foreach (var producer in Producers.Values)
             {
                 producer.TransportClosed();
@@ -287,19 +287,19 @@ namespace TubumuMeeting.Mediasoup
                 Emit("@producerclose", producer);
             }
             Producers.Clear();
-            ProducersLocker.Set();
+            ProducersLock.Set();
 
             // Close every Consumer.
-            await ConsumersLocker.WaitAsync();
+            await ConsumersLock.WaitAsync();
             foreach (var consumer in Consumers.Values)
             {
                 consumer.TransportClosed();
             }
             Consumers.Clear();
-            ConsumersLocker.Set();
+            ConsumersLock.Set();
 
             // Close every DataProducer.
-            await DataProducersLocker.WaitAsync();
+            await DataProducersLock.WaitAsync();
             foreach (var dataProducer in DataProducers.Values)
             {
                 dataProducer.TransportClosed();
@@ -317,16 +317,16 @@ namespace TubumuMeeting.Mediasoup
                 }
             }
             DataProducers.Clear();
-            DataProducersLocker.Set();
+            DataProducersLock.Set();
 
             // Close every DataConsumer.
-            await DataConsumersLocker.WaitAsync();
+            await DataConsumersLock.WaitAsync();
             foreach (var dataConsumer in DataConsumers.Values)
             {
                 dataConsumer.TransportClosed();
             }
             DataConsumers.Clear();
-            DataConsumersLocker.Set();
+            DataConsumersLock.Set();
         }
 
         /// <summary>
@@ -375,7 +375,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public virtual async Task<Producer> ProduceAsync(ProducerOptions producerOptions)
         {
-            await ProducersLocker.WaitAsync();
+            await ProducersLock.WaitAsync();
 
             _logger.LogDebug($"ProduceAsync() | Transport:{TransportId}");
 
@@ -468,13 +468,13 @@ namespace TubumuMeeting.Mediasoup
 
 
             Producers[producer.ProducerId] = producer;
-            ProducersLocker.Set();
+            ProducersLock.Set();
 
             producer.On("@close", async _ =>
             {
-                await ProducersLocker.WaitAsync();
+                await ProducersLock.WaitAsync();
                 Producers.Remove(producer.ProducerId);
-                ProducersLocker.Set();
+                ProducersLock.Set();
                 Emit("@producerclose", producer);
             });
 
@@ -493,7 +493,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public virtual async Task<Consumer> ConsumeAsync(ConsumerOptions consumerOptions)
         {
-            await ConsumersLocker.WaitAsync();
+            await ConsumersLock.WaitAsync();
             _logger.LogDebug($"ConsumeAsync() | Transport:{TransportId}");
 
             if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
@@ -575,19 +575,19 @@ namespace TubumuMeeting.Mediasoup
                 responseData.PreferredLayers);
 
             Consumers[consumer.ConsumerId] = consumer;
-            ConsumersLocker.Set();
+            ConsumersLock.Set();
 
             consumer.On("@close", async _ =>
             {
-                await ConsumersLocker.WaitAsync();
+                await ConsumersLock.WaitAsync();
                 Consumers.Remove(consumer.ConsumerId);
-                ConsumersLocker.Set();
+                ConsumersLock.Set();
             });
             consumer.On("@producerclose", async _ =>
             {
-                await ConsumersLocker.WaitAsync();
+                await ConsumersLock.WaitAsync();
                 Consumers.Remove(consumer.ConsumerId);
-                ConsumersLocker.Set();
+                ConsumersLock.Set();
             });
 
             // Emit observer event.
@@ -602,7 +602,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public async Task<DataProducer> ProduceDataAsync(DataProducerOptions dataProducerOptions)
         {
-            await DataProducersLocker.WaitAsync();
+            await DataProducersLock.WaitAsync();
 
             _logger.LogDebug($"ProduceDataAsync() | Transport:{TransportId}");
 
@@ -668,13 +668,13 @@ namespace TubumuMeeting.Mediasoup
                 AppData);
 
             DataProducers[dataProducer.DataProducerId] = dataProducer;
-            DataProducersLocker.Set();
+            DataProducersLock.Set();
 
             dataProducer.On("@close", async _ =>
             {
-                await DataProducersLocker.WaitAsync();
+                await DataProducersLock.WaitAsync();
                 DataProducers.Remove(dataProducer.DataProducerId);
-                DataProducersLocker.Set();
+                DataProducersLock.Set();
                 Emit("@dataproducerclose", dataProducer);
             });
 
@@ -695,7 +695,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"ConsumeDataAsync() | Transport:{TransportId}");
 
-            await DataConsumersLocker.WaitAsync();
+            await DataConsumersLock.WaitAsync();
             if (dataConsumerOptions.DataProducerId.IsNullOrWhiteSpace())
             {
                 throw new Exception("Missing dataProducerId");
@@ -775,30 +775,30 @@ namespace TubumuMeeting.Mediasoup
 
             dataConsumer.On("@close", async _ =>
             {
-                await DataConsumersLocker.WaitAsync();
+                await DataConsumersLock.WaitAsync();
                 DataConsumers.Remove(dataConsumer.DataConsumerId);
                 if (_sctpStreamIds != null && sctpStreamId >= 0)
                 {
                     _sctpStreamIds[sctpStreamId] = 0;
                 }
-                DataConsumersLocker.Set();
+                DataConsumersLock.Set();
             });
 
             dataConsumer.On("@dataproducerclose", async _ =>
             {
-                await DataConsumersLocker.WaitAsync();
+                await DataConsumersLock.WaitAsync();
                 DataConsumers.Remove(dataConsumer.DataConsumerId);
                 if (_sctpStreamIds != null && sctpStreamId >= 0)
                 {
                     _sctpStreamIds[sctpStreamId] = 0;
                 }
-                DataConsumersLocker.Set();
+                DataConsumersLock.Set();
             });
 
             // Emit observer event.
             Observer.Emit("newdataconsumer", dataConsumer);
 
-            DataConsumersLocker.Set();
+            DataConsumersLock.Set();
             return dataConsumer;
         }
 

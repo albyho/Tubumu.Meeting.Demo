@@ -115,7 +115,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            await CloseLocker.WaitAsync();
+            await CloseLock.WaitAsync();
 
             if (Closed)
             {
@@ -133,7 +133,7 @@ namespace TubumuMeeting.Mediasoup
 
             await base.CloseAsync();
 
-            CloseLocker.Set();
+            CloseLock.Set();
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            await CloseLocker.WaitAsync();
+            await CloseLock.WaitAsync();
 
             if (Closed)
             {
@@ -164,7 +164,7 @@ namespace TubumuMeeting.Mediasoup
 
             await base.RouterClosedAsync();
 
-            CloseLocker.Set();
+            CloseLock.Set();
         }
 
         /// <summary>

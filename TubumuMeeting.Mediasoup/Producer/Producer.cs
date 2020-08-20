@@ -47,7 +47,7 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly Timer _checkConsumersTimer;
 
-        private readonly object _closeLocker = new object();
+        private readonly object _closeLock = new object();
 
         private const int CheckConsumersTimeSeconds = 10;
 
@@ -194,7 +194,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            lock (_closeLocker)
+            lock (_closeLock)
             {
                 if (Closed)
                 {
@@ -330,7 +330,7 @@ namespace TubumuMeeting.Mediasoup
         public void AddConsumer(Consumer consumer)
         {
             CheckClosed();
-            lock (_closeLocker)
+            lock (_closeLock)
             {
                 CheckClosed();
 
@@ -341,7 +341,7 @@ namespace TubumuMeeting.Mediasoup
         public void RemoveConsumer(string consumerId)
         {
             // 关闭后也允许移除
-            lock (_closeLocker)
+            lock (_closeLock)
             {
                 _consumers.Remove(consumerId);
             }
@@ -417,7 +417,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            lock (_closeLocker)
+            lock (_closeLock)
             {
                 if (Closed)
                 {
