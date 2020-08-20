@@ -29,19 +29,25 @@ namespace TubumuMeeting.Mediasoup
         public Worker GetWorker()
         {
             _workersLock.EnterReadLock();
-            if (_nextMediasoupWorkerIndex > _workers.Count - 1)
+            try
             {
-                throw new Exception("none worker");
-            }
+                if (_nextMediasoupWorkerIndex > _workers.Count - 1)
+                {
+                    throw new Exception("none worker");
+                }
 
-            var worker = _workers[_nextMediasoupWorkerIndex];
-            if (++_nextMediasoupWorkerIndex == _workers.Count)
+                var worker = _workers[_nextMediasoupWorkerIndex];
+                if (++_nextMediasoupWorkerIndex == _workers.Count)
+                {
+                    _nextMediasoupWorkerIndex = 0;
+                }
+
+                return worker;
+            }
+            finally
             {
-                _nextMediasoupWorkerIndex = 0;
+                _workersLock.ExitReadLock();
             }
-
-            _workersLock.ExitReadLock();
-            return worker;
         }
 
         /// <summary>
@@ -56,8 +62,14 @@ namespace TubumuMeeting.Mediasoup
             }
 
             _workersLock.EnterWriteLock();
-            _workers.Add(worker);
-            _workersLock.ExitWriteLock();
+            try
+            {
+                _workers.Add(worker);
+            }
+            finally
+            {
+                _workersLock.ExitWriteLock();
+            }
         }
     }
 }
