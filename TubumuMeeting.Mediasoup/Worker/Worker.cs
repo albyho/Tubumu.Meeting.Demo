@@ -73,7 +73,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Locker.
         /// </summary>
-        private readonly object _routersLocker = new object();
+        private readonly object _routersLock = new object();
 
         #endregion
 
@@ -86,7 +86,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close locker.
         /// </summary>
-        private readonly AsyncAutoResetEvent _closeLocker = new AsyncAutoResetEvent();
+        private readonly AsyncAutoResetEvent _closeLock = new AsyncAutoResetEvent();
 
         /// <summary>
         /// Custom app data.
@@ -111,7 +111,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Worker>();
-            _closeLocker.Set();
+            _closeLock.Set();
 
             var workerPath = mediasoupOptions.MediasoupStartupSettings.WorkerPath;
             if (workerPath.IsNullOrWhiteSpace())
@@ -239,7 +239,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            await _closeLocker.WaitAsync();
+            await _closeLock.WaitAsync();
 
             if (Closed)
             {
@@ -275,7 +275,7 @@ namespace TubumuMeeting.Mediasoup
             // Emit observer event.
             Observer.Emit("close");
 
-            _closeLocker.Set();
+            _closeLock.Set();
         }
 
         #region Request
@@ -328,14 +328,14 @@ namespace TubumuMeeting.Mediasoup
 
             var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, _payloadChannel, AppData);
 
-            lock (_routersLocker)
+            lock (_routersLock)
             {
                 _routers.Add(router);
             }
 
             router.On("@close", _ =>
             {
-                lock (_routersLocker)
+                lock (_routersLock)
                 {
                     _routers.Remove(router);
                 }

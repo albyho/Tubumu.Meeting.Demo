@@ -88,7 +88,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            await CloseLocker.WaitAsync();
+            await CloseLock.WaitAsync();
 
             if (Closed)
             {
@@ -102,7 +102,7 @@ namespace TubumuMeeting.Mediasoup
 
             await base.CloseAsync();
 
-            CloseLocker.Set();
+            CloseLock.Set();
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public override async Task<Consumer> ConsumeAsync(ConsumerOptions consumerOptions)
         {
-            await ConsumersLocker.WaitAsync();
+            await ConsumersLock.WaitAsync();
             _logger.LogDebug("ConsumeAsync()");
 
             if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
@@ -220,19 +220,19 @@ namespace TubumuMeeting.Mediasoup
                 responseData.PreferredLayers);
 
             Consumers[consumer.ConsumerId] = consumer;
-            ConsumersLocker.Set();
+            ConsumersLock.Set();
 
             consumer.On("@close", async _ =>
             {
-                await ConsumersLocker.WaitAsync();
+                await ConsumersLock.WaitAsync();
                 Consumers.Remove(consumer.ConsumerId);
-                ConsumersLocker.Set();
+                ConsumersLock.Set();
             });
             consumer.On("@producerclose", async _ =>
             {
-                await ConsumersLocker.WaitAsync();
+                await ConsumersLock.WaitAsync();
                 Consumers.Remove(consumer.ConsumerId);
-                ConsumersLocker.Set();
+                ConsumersLock.Set();
             });
 
             // Emit observer event.

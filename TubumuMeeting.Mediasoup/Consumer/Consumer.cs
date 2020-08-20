@@ -51,7 +51,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ConsumerInternalData _internal;
 
-        private readonly object _CloseLocker = new object();
+        private readonly object _closeLock = new object();
 
         /// <summary>
         /// Consumer id.
@@ -225,7 +225,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            lock (_CloseLocker)
+            lock (_closeLock)
             {
                 if (Closed)
                 {
@@ -259,7 +259,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            lock (_CloseLocker)
+            lock (_closeLock)
             {
                 if (Closed)
                 {

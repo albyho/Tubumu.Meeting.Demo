@@ -28,23 +28,23 @@ namespace TubumuMeeting.Meeting.Server
 
         private Dictionary<string, Peer> _peers { get; } = new Dictionary<string, Peer>();
 
-        private readonly AsyncReaderWriterLock _peersLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _peersLock = new AsyncReaderWriterLock();
 
         private Dictionary<string, Room> _rooms { get; } = new Dictionary<string, Room>();
 
-        private readonly AsyncAutoResetEvent _roomsLocker = new AsyncAutoResetEvent();
+        private readonly AsyncAutoResetEvent _roomsLock = new AsyncAutoResetEvent();
 
         private Dictionary<string, List<RoomWithRoomAppData>> _peerRooms { get; } = new Dictionary<string, List<RoomWithRoomAppData>>();
 
-        private readonly AsyncReaderWriterLock _peerRoomsLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _peerRoomsLock = new AsyncReaderWriterLock();
 
         private Dictionary<string, List<PeerWithRoomAppData>> _roomPeers { get; } = new Dictionary<string, List<PeerWithRoomAppData>>();
 
-        private readonly AsyncReaderWriterLock _roomPeersLocker = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _roomPeersLock = new AsyncReaderWriterLock();
 
-        private readonly AsyncAutoResetEvent _peerAppDataLocker = new AsyncAutoResetEvent();
+        private readonly AsyncAutoResetEvent _peerAppDataLock = new AsyncAutoResetEvent();
 
-        private readonly AsyncAutoResetEvent _roomAppDataLocker = new AsyncAutoResetEvent();
+        private readonly AsyncAutoResetEvent _roomAppDataLock = new AsyncAutoResetEvent();
 
         private Router _router;
 
@@ -64,14 +64,14 @@ namespace TubumuMeeting.Meeting.Server
             // This may throw.
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
 
-            _roomsLocker.Set();
-            _peerAppDataLocker.Set();
-            _roomAppDataLocker.Set();
+            _roomsLock.Set();
+            _peerAppDataLock.Set();
+            _roomAppDataLock.Set();
         }
 
         public async Task<bool> JoinAsync(string peerId, string connectionId, JoinRequest joinRequest)
         {
-            using (await _peersLocker.WriteLockAsync())
+            using (await _peersLock.WriteLockAsync())
             {
                 if (_peers.TryGetValue(peerId, out var peer))
                 {
@@ -115,7 +115,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<LeaveResult?> LeaveAsync(string peerId, string connectionId)
         {
-            using (await _peersLocker.WriteLockAsync())
+            using (await _peersLock.WriteLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer) || peer.ConnectionId != connectionId)
                 {
@@ -123,7 +123,7 @@ namespace TubumuMeeting.Meeting.Server
                     return null;
                 }
 
-                using (await _peerRoomsLocker.WriteLockAsync())
+                using (await _peerRoomsLock.WriteLockAsync())
                 {
                     var otherPeerIds = new HashSet<string>();
                     if (_peerRooms.TryGetValue(peerId, out var peerRooms))
@@ -132,7 +132,7 @@ namespace TubumuMeeting.Meeting.Server
                         await peer.LeaveAsync();
                         _peers.Remove(peerId);
 
-                        using (await _roomPeersLocker.WriteLockAsync())
+                        using (await _roomPeersLock.WriteLockAsync())
                         {
                             foreach (var room in peerRooms)
                             {
@@ -161,7 +161,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PeerAppDataResult> SetPeerAppDataAsync(string peerId, string connectionId, SetPeerAppDataRequest setPeerAppDataRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -170,19 +170,19 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                await _peerAppDataLocker.WaitAsync();
+                await _peerAppDataLock.WaitAsync();
                 foreach (var item in setPeerAppDataRequest.PeerAppData)
                 {
                     peer.AppData[item.Key] = item.Value;
                 }
-                _peerAppDataLocker.Set();
+                _peerAppDataLock.Set();
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     var otherPeerIds = new HashSet<string>();
                     if (_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
-                        using (await _roomPeersLocker.ReadLockAsync())
+                        using (await _roomPeersLock.ReadLockAsync())
                         {
                             foreach (var room in peerRooms)
                             {
@@ -209,7 +209,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PeerAppDataResult> UnsetPeerAppDataAsync(string peerId, string connectionId, UnsetPeerAppDataRequest unsetPeerAppDataRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -218,19 +218,19 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                await _peerAppDataLocker.WaitAsync();
+                await _peerAppDataLock.WaitAsync();
                 foreach (var item in unsetPeerAppDataRequest.Keys)
                 {
                     peer.AppData.Remove(item);
                 }
-                _peerAppDataLocker.Set();
+                _peerAppDataLock.Set();
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     var otherPeerIds = new HashSet<string>();
                     if (_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
-                        using (await _roomPeersLocker.ReadLockAsync())
+                        using (await _roomPeersLock.ReadLockAsync())
                         {
                             foreach (var room in peerRooms)
                             {
@@ -257,7 +257,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PeerAppDataResult> ClearPeerAppDataAsync(string peerId, string connectionId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -266,16 +266,16 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                await _peerAppDataLocker.WaitAsync();
+                await _peerAppDataLock.WaitAsync();
                 peer.AppData.Clear();
-                _peerAppDataLocker.Set();
+                _peerAppDataLock.Set();
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     var otherPeerIds = new HashSet<string>();
                     if (_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
-                        using (await _roomPeersLocker.ReadLockAsync())
+                        using (await _roomPeersLock.ReadLockAsync())
                         {
                             foreach (var room in peerRooms)
                             {
@@ -302,7 +302,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<WebRtcTransport> CreateWebRtcTransportAsync(string peerId, string connectionId, CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -317,7 +317,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> ConnectWebRtcTransportAsync(string peerId, string connectionId, ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -332,7 +332,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<JoinRoomResult> JoinRoomAsync(string peerId, string connectionId, JoinRoomRequest joinRoomRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -346,7 +346,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"JoinRoomAsync() | Peer:{peerId} don't has some sources which is in Room:{joinRoomRequest.RoomId}.");
                 }
 
-                await _roomsLocker.WaitAsync();
+                await _roomsLock.WaitAsync();
                 // Room 如果不存在则创建
                 if (!_rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
                 {
@@ -356,7 +356,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 PeerWithRoomAppData roomPeer;
                 var allPeers = new List<PeerWithRoomAppData>();
-                using (await _peerRoomsLocker.WriteLockAsync())
+                using (await _peerRoomsLock.WriteLockAsync())
                 {
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
@@ -377,7 +377,7 @@ namespace TubumuMeeting.Meeting.Server
                     peerRoom.RoomSources = roomSources;
                     peerRoom.RoomAppData = roomAppData;
 
-                    using (await _roomPeersLocker.WriteLockAsync())
+                    using (await _roomPeersLock.WriteLockAsync())
                     {
                         if (!_roomPeers.TryGetValue(room.RoomId, out var roomPeers))
                         {
@@ -408,7 +408,7 @@ namespace TubumuMeeting.Meeting.Server
                     }
                 }
 
-                _roomsLocker.Set();
+                _roomsLock.Set();
 
                 return new JoinRoomResult
                 {
@@ -420,7 +420,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<LeaveRoomResult> LeaveRoomAsync(string peerId, string connectionId, string roomId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -429,7 +429,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLocker.WriteLockAsync())
+                using (await _peerRoomsLock.WriteLockAsync())
                 {
                     // Peer 和 Room 的关系
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
@@ -439,7 +439,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     peerRooms.RemoveAll(m => m.Room.RoomId == roomId);
 
-                    using (await _roomPeersLocker.WriteLockAsync())
+                    using (await _roomPeersLock.WriteLockAsync())
                     {
                         // Room 和 Peer 的关系
                         if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
@@ -476,7 +476,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PeerRoomAppDataResult> SetRoomAppDataAsync(string peerId, string connectionId, SetRoomAppDataRequest setRoomAppDataRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -485,7 +485,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
@@ -498,7 +498,7 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{setRoomAppDataRequest.RoomId}.");
                     }
 
-                    using (await _roomPeersLocker.ReadLockAsync())
+                    using (await _roomPeersLock.ReadLockAsync())
                     {
                         if (!_roomPeers.TryGetValue(setRoomAppDataRequest.RoomId, out var roomPeers))
                         {
@@ -511,13 +511,13 @@ namespace TubumuMeeting.Meeting.Server
                             throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{setRoomAppDataRequest.RoomId}.");
                         }
 
-                        await _roomAppDataLocker.WaitAsync();
+                        await _roomAppDataLock.WaitAsync();
                         foreach (var item in setRoomAppDataRequest.RoomAppData)
                         {
                             peerRoom.RoomAppData[item.Key] = item.Value;
                             roomPeer.RoomAppData[item.Key] = item.Value;
                         }
-                        _roomAppDataLocker.Set();
+                        _roomAppDataLock.Set();
 
                         // 只通知本房间
                         return new PeerRoomAppDataResult
@@ -533,7 +533,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PeerRoomAppDataResult> UnsetRoomAppDataAsync(string peerId, string connectionId, UnsetRoomAppDataRequest unsetRoomAppDataRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -542,7 +542,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
@@ -555,7 +555,7 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{unsetRoomAppDataRequest.RoomId}.");
                     }
 
-                    using (await _roomPeersLocker.ReadLockAsync())
+                    using (await _roomPeersLock.ReadLockAsync())
                     {
                         if (!_roomPeers.TryGetValue(unsetRoomAppDataRequest.RoomId, out var roomPeers))
                         {
@@ -568,13 +568,13 @@ namespace TubumuMeeting.Meeting.Server
                             throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{unsetRoomAppDataRequest.RoomId}.");
                         }
 
-                        await _roomAppDataLocker.WaitAsync();
+                        await _roomAppDataLock.WaitAsync();
                         foreach (var item in unsetRoomAppDataRequest.Keys)
                         {
                             peerRoom.RoomAppData.Remove(item);
                             roomPeer.RoomAppData.Remove(item);
                         }
-                        _roomAppDataLocker.Set();
+                        _roomAppDataLock.Set();
 
                         // 只通知本房间
                         return new PeerRoomAppDataResult
@@ -590,7 +590,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PeerRoomAppDataResult> ClearRoomAppDataAsync(string peerId, string connectionId, string roomId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -599,7 +599,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
@@ -612,7 +612,7 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
                     }
 
-                    using (await _roomPeersLocker.ReadLockAsync())
+                    using (await _roomPeersLock.ReadLockAsync())
                     {
                         if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
                         {
@@ -625,10 +625,10 @@ namespace TubumuMeeting.Meeting.Server
                             throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
                         }
 
-                        await _roomAppDataLocker.WaitAsync();
+                        await _roomAppDataLock.WaitAsync();
                         peerRoom.RoomAppData.Clear();
                         roomPeer.RoomAppData.Clear();
-                        _roomAppDataLocker.Set();
+                        _roomAppDataLock.Set();
 
                         // 只通知本房间
                         return new PeerRoomAppDataResult
@@ -644,7 +644,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PullResult> PullAsync(string peerId, string connectionId, PullRequest pullRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -658,7 +658,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} is not exists.");
                 }
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     if (!_peerRooms.TryGetValue(peerId, out var consumerPeerRooms))
                     {
@@ -703,7 +703,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<ProduceResult> ProduceAsync(string peerId, string connectionId, ProduceRequest produceRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -746,7 +746,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<Consumer> ConsumeAsync(string producerPeerId, string cosumerPeerId, string producerId, string roomId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(producerPeerId, out var producerPeer))
                 {
@@ -770,7 +770,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> CloseProducerAsync(string peerId, string connectionId, string producerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -785,7 +785,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PauseProducerAsync(string peerId, string connectionId, string producerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -800,7 +800,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> ResumeProducerAsync(string peerId, string connectionId, string producerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -815,7 +815,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> CloseConsumerAsync(string peerId, string connectionId, string consumerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -830,7 +830,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> PauseConsumerAsync(string peerId, string connectionId, string consumerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -845,7 +845,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<Consumer> ResumeConsumerAsync(string peerId, string connectionId, string consumerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -860,7 +860,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> SetConsumerPreferedLayersAsync(string peerId, string connectionId, SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -875,7 +875,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> SetConsumerPriorityAsync(string peerId, string connectionId, SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -890,7 +890,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<bool> RequestConsumerKeyFrameAsync(string peerId, string connectionId, string consumerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -905,7 +905,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<TransportStat> GetTransportStatsAsync(string peerId, string connectionId, string transportId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -920,7 +920,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<ProducerStat> GetProducerStatsAsync(string peerId, string connectionId, string producerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -935,7 +935,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<ConsumerStat> GetConsumerStatsAsync(string peerId, string connectionId, string consumerId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -950,7 +950,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<IceParameters?> RestartIceAsync(string peerId, string connectionId, string transportId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -965,7 +965,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<string[]> GetOtherPeerIdsAsync(string peerId, string connectionId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -974,12 +974,12 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLocker.ReadLockAsync())
+                using (await _peerRoomsLock.ReadLockAsync())
                 {
                     var otherPeerIds = new HashSet<string>();
                     if (_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
-                        using (await _roomPeersLocker.ReadLockAsync())
+                        using (await _roomPeersLock.ReadLockAsync())
                         {
                             foreach (var room in peerRooms)
                             {
@@ -1001,7 +1001,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<string[]> GetOtherPeerIdsInRoomAsync(string peerId, string connectionId, string roomId)
         {
-            using (await _peersLocker.ReadLockAsync())
+            using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
@@ -1010,7 +1010,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                using (await _roomPeersLocker.ReadLockAsync())
+                using (await _roomPeersLock.ReadLockAsync())
                 {
                     if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
                     {
