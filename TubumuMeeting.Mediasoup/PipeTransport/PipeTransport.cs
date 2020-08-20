@@ -89,20 +89,24 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await CloseLock.WaitAsync();
-
-            if (Closed)
+            try
             {
-                return;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            if (SctpState.HasValue)
+                if (SctpState.HasValue)
+                {
+                    SctpState = Mediasoup.SctpState.Closed;
+                }
+
+                await base.CloseAsync();
+            }
+            finally
             {
-                SctpState = Mediasoup.SctpState.Closed;
+                CloseLock.Set();
             }
-
-            await base.CloseAsync();
-
-            CloseLock.Set();
         }
 
         /// <summary>
@@ -115,12 +119,25 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            await base.RouterClosedAsync();
+                if (SctpState.HasValue)
+                {
+                    SctpState = Mediasoup.SctpState.Closed;
+                }
+
+                await base.RouterClosedAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
@@ -162,83 +179,101 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public override async Task<Consumer> ConsumeAsync(ConsumerOptions consumerOptions)
         {
-            await ConsumersLock.WaitAsync();
             _logger.LogDebug("ConsumeAsync()");
 
-            if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
+            await ConsumersLock.WaitAsync();
+            try
             {
-                throw new Exception("missing producerId");
+                if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
+                {
+                    throw new Exception("missing producerId");
+                }
+
+                var producer = GetProducerById(consumerOptions.ProducerId);
+                if (producer == null)
+                {
+                    throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
+                }
+
+                // This may throw.
+                var rtpParameters = ORTC.GetPipeConsumerRtpParameters(producer.ConsumableRtpParameters, Rtx);
+
+                var @internal = new ConsumerInternalData
+                (
+                    Internal.RouterId,
+                    Internal.TransportId,
+                    consumerOptions.ProducerId,
+                    Guid.NewGuid().ToString()
+                );
+
+                var reqData = new
+                {
+                    producer.Kind,
+                    RtpParameters = rtpParameters,
+                    Type = ConsumerType.Pipe,
+                    ConsumableRtpEncodings = producer.ConsumableRtpParameters.Encodings,
+                };
+
+                var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
+                var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status!);
+
+                var data = new
+                {
+                    producer.Kind,
+                    RtpParameters = rtpParameters,
+                    Type = ConsumerType.Pipe,
+                };
+
+                // 在 Node.js 实现中， 创建 Consumer 对象时没提供 score 和 preferredLayers 参数，且 score = { score: 10, producerScore: 10 }。
+                var consumer = new Consumer(_loggerFactory,
+                    @internal,
+                    data.Kind,
+                    data.RtpParameters,
+                    data.Type,
+                    Channel,
+                    PayloadChannel,
+                    AppData,
+                    responseData.Paused,
+                    responseData.ProducerPaused,
+                    responseData.Score,
+                    responseData.PreferredLayers);
+
+                Consumers[consumer.ConsumerId] = consumer;
+
+                consumer.On("@close", async _ =>
+                {
+                    await ConsumersLock.WaitAsync();
+                    try
+                    {
+                        Consumers.Remove(consumer.ConsumerId);
+                    }
+                    finally
+                    {
+                        ConsumersLock.Set();
+                    }
+                });
+                consumer.On("@producerclose", async _ =>
+                {
+                    await ConsumersLock.WaitAsync();
+                    try
+                    {
+                        Consumers.Remove(consumer.ConsumerId);
+                    }
+                    finally
+                    {
+                        ConsumersLock.Set();
+                    }
+                });
+
+                // Emit observer event.
+                Observer.Emit("newconsumer", consumer);
+
+                return consumer;
             }
-
-            var producer = GetProducerById(consumerOptions.ProducerId);
-            if (producer == null)
+            finally
             {
-                throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
+                ConsumersLock.Set();
             }
-
-            // This may throw.
-            var rtpParameters = ORTC.GetPipeConsumerRtpParameters(producer.ConsumableRtpParameters, Rtx);
-
-            var @internal = new ConsumerInternalData
-            (
-                Internal.RouterId,
-                Internal.TransportId,
-                consumerOptions.ProducerId,
-                Guid.NewGuid().ToString()
-            );
-
-            var reqData = new
-            {
-                producer.Kind,
-                RtpParameters = rtpParameters,
-                Type = ConsumerType.Pipe,
-                ConsumableRtpEncodings = producer.ConsumableRtpParameters.Encodings,
-            };
-
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status!);
-
-            var data = new
-            {
-                producer.Kind,
-                RtpParameters = rtpParameters,
-                Type = ConsumerType.Pipe,
-            };
-
-            // 在 Node.js 实现中， 创建 Consumer 对象时没提供 score 和 preferredLayers 参数，且 score = { score: 10, producerScore: 10 }。
-            var consumer = new Consumer(_loggerFactory,
-                @internal,
-                data.Kind,
-                data.RtpParameters,
-                data.Type,
-                Channel,
-                PayloadChannel,
-                AppData,
-                responseData.Paused,
-                responseData.ProducerPaused,
-                responseData.Score,
-                responseData.PreferredLayers);
-
-            Consumers[consumer.ConsumerId] = consumer;
-            ConsumersLock.Set();
-
-            consumer.On("@close", async _ =>
-            {
-                await ConsumersLock.WaitAsync();
-                Consumers.Remove(consumer.ConsumerId);
-                ConsumersLock.Set();
-            });
-            consumer.On("@producerclose", async _ =>
-            {
-                await ConsumersLock.WaitAsync();
-                Consumers.Remove(consumer.ConsumerId);
-                ConsumersLock.Set();
-            });
-
-            // Emit observer event.
-            Observer.Emit("newconsumer", consumer);
-
-            return consumer;
         }
 
         #region Event Handlers

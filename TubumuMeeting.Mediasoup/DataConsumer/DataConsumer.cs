@@ -330,6 +330,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "dataproducerclose":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                         {
                             break;
@@ -381,6 +382,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "message":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                         {
                             break;

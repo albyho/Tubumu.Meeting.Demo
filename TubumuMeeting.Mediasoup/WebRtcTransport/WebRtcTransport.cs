@@ -116,24 +116,28 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await CloseLock.WaitAsync();
-
-            if (Closed)
+            try
             {
-                return;
+                if (Closed)
+                {
+                    return;
+                }
+
+                IceState = IceState.Closed;
+                IceSelectedTuple = null;
+                DtlsState = DtlsState.Closed;
+
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.CloseAsync();
             }
-
-            IceState = IceState.Closed;
-            IceSelectedTuple = null;
-            DtlsState = DtlsState.Closed;
-
-            if (SctpState.HasValue)
+            finally
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                CloseLock.Set();
             }
-
-            await base.CloseAsync();
-
-            CloseLock.Set();
         }
 
         /// <summary>
@@ -147,24 +151,28 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await CloseLock.WaitAsync();
-
-            if (Closed)
+            try
             {
-                return;
+                if (Closed)
+                {
+                    return;
+                }
+
+                IceState = IceState.Closed;
+                IceSelectedTuple = null;
+                DtlsState = DtlsState.Closed;
+
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.RouterClosedAsync();
             }
-
-            IceState = IceState.Closed;
-            IceSelectedTuple = null;
-            DtlsState = DtlsState.Closed;
-
-            if (SctpState.HasValue)
+            finally
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                CloseLock.Set();
             }
-
-            await base.RouterClosedAsync();
-
-            CloseLock.Set();
         }
 
         /// <summary>

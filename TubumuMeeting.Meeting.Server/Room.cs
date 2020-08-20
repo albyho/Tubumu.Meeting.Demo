@@ -65,16 +65,23 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             await _closeLock.WaitAsync();
-            if (Closed)
+            try
             {
-                return;
+                if (Closed)
+                {
+                    return;
+                }
+
+                _logger.LogDebug($"Close() | Room:{RoomId}");
+
+                Closed = true;
+
+                await Router.CloseAsync();
             }
-
-            _logger.LogDebug($"Close() | Room:{RoomId}");
-
-            await Router.CloseAsync();
-            Closed = true;
-            _closeLock.Set();
+            finally
+            {
+                _closeLock.Set();
+            }
         }
     }
 }

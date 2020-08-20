@@ -94,20 +94,24 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await CloseLock.WaitAsync();
-
-            if (Closed)
+            try
             {
-                return;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            if (SctpState.HasValue)
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.CloseAsync();
+            }
+            finally
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                CloseLock.Set();
             }
-
-            await base.CloseAsync();
-
-            CloseLock.Set();
         }
 
         /// <summary>
@@ -120,12 +124,25 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            await base.RouterClosedAsync();
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.RouterClosedAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>

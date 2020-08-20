@@ -67,15 +67,19 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await CloseLock.WaitAsync();
-
-            if (Closed)
+            try
             {
-                return;
+                if (Closed)
+                {
+                    return;
+                }
+
+                await base.CloseAsync();
             }
-
-            await base.CloseAsync();
-
-            CloseLock.Set();
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
@@ -89,15 +93,19 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await CloseLock.WaitAsync();
-
-            if (Closed)
+            try
             {
-                return;
+                if (Closed)
+                {
+                    return;
+                }
+
+                await base.RouterClosedAsync();
             }
-
-            await base.RouterClosedAsync();
-
-            CloseLock.Set();
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
@@ -195,6 +203,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "rtcp":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                             break;
 

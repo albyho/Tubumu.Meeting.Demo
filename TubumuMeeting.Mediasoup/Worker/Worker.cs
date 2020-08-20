@@ -240,42 +240,46 @@ namespace TubumuMeeting.Mediasoup
             }
 
             await _closeLock.WaitAsync();
-
-            if (Closed)
+            try
             {
-                return;
+                if (Closed)
+                {
+                    return;
+                }
+
+                _logger.LogDebug("CloseAsync()");
+
+                Closed = true;
+
+                // Kill the worker process.
+                if (_child != null)
+                {
+                    // Remove event listeners but leave a fake 'error' hander to avoid
+                    // propagation.
+                    _child.Kill(15/*SIGTERM*/);
+                    _child = null;
+                }
+
+                // Close the Channel instance.
+                _channel?.Close();
+
+                // Close the PayloadChannel instance.
+                _payloadChannel?.Close();
+
+                // Close every Router.
+                foreach (var router in _routers)
+                {
+                    await router.WorkerClosedAsync();
+                }
+                _routers.Clear();
+
+                // Emit observer event.
+                Observer.Emit("close");
             }
-
-            _logger.LogDebug("CloseAsync()");
-
-            Closed = true;
-
-            // Kill the worker process.
-            if (_child != null)
+            finally
             {
-                // Remove event listeners but leave a fake 'error' hander to avoid
-                // propagation.
-                _child.Kill(15/*SIGTERM*/);
-                _child = null;
+                _closeLock.Set();
             }
-
-            // Close the Channel instance.
-            _channel?.Close();
-
-            // Close the PayloadChannel instance.
-            _payloadChannel?.Close();
-
-            // Close every Router.
-            foreach (var router in _routers)
-            {
-                await router.WorkerClosedAsync();
-            }
-            _routers.Clear();
-
-            // Emit observer event.
-            Observer.Emit("close");
-
-            _closeLock.Set();
         }
 
         #region Request

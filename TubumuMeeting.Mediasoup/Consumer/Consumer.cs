@@ -266,7 +266,6 @@ namespace TubumuMeeting.Mediasoup
                     return;
                 }
 
-
                 _logger.LogDebug($"TransportClosed() | Consumer:{ConsumerId}");
 
                 Closed = true;
@@ -424,6 +423,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "producerclose":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                         {
                             break;
@@ -539,6 +539,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "rtp":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                             break;
 

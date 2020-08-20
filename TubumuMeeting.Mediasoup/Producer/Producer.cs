@@ -230,17 +230,25 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug($"TransportClosed() | Producer:{ProducerId}");
+            lock (_closeLock)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
+                _logger.LogDebug($"TransportClosed() | Producer:{ProducerId}");
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                Closed = true;
 
-            Emit("transportclose");
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
 
-            // Emit observer event.
-            Observer.Emit("close");
+                Emit("transportclose");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>
