@@ -15,6 +15,8 @@ namespace TubumuMeeting.Meeting.Server
     {
         public string PeerId { get; }
 
+        public string ConnectionId { get; }
+
         public string DisplayName { get; }
 
         public bool Equals(Peer other)
@@ -78,7 +80,15 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, object> AppData { get; set; }
 
-        public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings, Router router, RtpCapabilities rtpCapabilities, SctpCapabilities? sctpCapabilities, string peerId, string displayName, string[]? sources, Dictionary<string, object>? appData)
+        public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings,
+            Router router,
+            RtpCapabilities rtpCapabilities,
+            SctpCapabilities? sctpCapabilities,
+            string peerId,
+            string connectionId,
+            string displayName,
+            string[]? sources,
+            Dictionary<string, object>? appData)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Peer>();
@@ -87,6 +97,7 @@ namespace TubumuMeeting.Meeting.Server
             _rtpCapabilities = rtpCapabilities;
             _sctpCapabilities = sctpCapabilities;
             PeerId = peerId;
+            ConnectionId = connectionId;
             DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
             Sources = sources ?? Array.Empty<string>();
             AppData = appData ?? new Dictionary<string, object>();
