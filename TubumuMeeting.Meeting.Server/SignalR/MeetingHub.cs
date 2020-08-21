@@ -16,21 +16,24 @@ namespace TubumuMeeting.Meeting.Server
     {
         private readonly ILogger<MeetingHub> _logger;
         private readonly IHubContext<MeetingHub, IPeer> _hubContext;
+        private readonly BadDisconnectSocketService _badDisconnectSocketService;
         private readonly Scheduler _scheduler;
 
         private string UserId => Context.User.Identity.Name;
         private string ConnectionId => Context.ConnectionId;
 
-        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, Scheduler scheduler)
+        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, BadDisconnectSocketService badDisconnectSocketService,Scheduler scheduler)
         {
             _logger = logger;
             _hubContext = hubContext;
             _scheduler = scheduler;
+            _badDisconnectSocketService = badDisconnectSocketService;
         }
 
         public override async Task OnConnectedAsync()
         {
             await LeaveAsync();
+            _badDisconnectSocketService.CacheContext(Context);
             await base.OnConnectedAsync();
         }
 
@@ -44,11 +47,12 @@ namespace TubumuMeeting.Meeting.Server
 
         private async Task LeaveAsync()
         {
-            var leaveResult = await _scheduler.LeaveAsync(UserId, ConnectionId);
+            var leaveResult = await _scheduler.LeaveAsync(UserId);
             if (leaveResult != null)
             {
                 // Message: peerLeave
                 SendNotification(leaveResult.OtherPeerIds, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
+                _badDisconnectSocketService.DisconnectClient(leaveResult.SelfPeer.ConnectionId);
             }
         }
 

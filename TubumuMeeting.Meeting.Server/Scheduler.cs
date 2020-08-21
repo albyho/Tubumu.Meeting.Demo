@@ -113,11 +113,11 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<LeaveResult?> LeaveAsync(string peerId, string connectionId)
+        public async Task<LeaveResult?> LeaveAsync(string peerId)
         {
             using (await _peersLock.WriteLockAsync())
             {
-                if (!_peers.TryGetValue(peerId, out var peer) || peer.ConnectionId != connectionId)
+                if (!_peers.TryGetValue(peerId, out var peer))
                 {
                     // _logger.LogWarning($"PeerLeave() | Peer:{peerId} is not exists.");
                     return null;
