@@ -118,7 +118,11 @@ export default {
         const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
-            `${host}/hubs/meetingHub?access_token=${accessTokens[this.peerId]}`
+            `${host}/hubs/meetingHub?access_token=${accessTokens[this.peerId]}`, {
+              accessTokenFactory: () => this.props.accessTokens[this.state.peerId],
+              skipNegotiation: true,
+              transport: signalR.HttpTransportType.WebSockets,
+            }
           )
           // .withAutomaticReconnect({
           //   nextRetryDelayInMilliseconds: retryContext => {
@@ -330,7 +334,7 @@ export default {
 
       // createRecvTransport成功, JoinRoom
       result = await this.connection.invoke('JoinRoom', {
-        roomId: '1',
+        roomId: '0',
         RoomSources: ['webcam', 'mic'],
         RoomAppData: {}
       });
