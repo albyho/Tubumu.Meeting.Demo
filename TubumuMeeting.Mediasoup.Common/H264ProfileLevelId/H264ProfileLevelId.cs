@@ -246,7 +246,7 @@ namespace TubumuMeeting.Mediasoup
                 return DefaultProfileLevelId;
             }
 
-            // TODO: (alby)如果 ParseProfileLevelId 返回 null，ParseSdpProfileLevelId 是否应该返回 DefaultProfileLevelId ？
+            // TODO: (alby)如果 ParseProfileLevelId 返回 null，ParseSdpProfileLevelId 是否应该返回 DefaultProfileLevelId ？Node.js 实现没考虑这点。
             return ParseProfileLevelId(profile_level_id.ToString());
         }
 
