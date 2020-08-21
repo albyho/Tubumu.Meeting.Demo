@@ -11,7 +11,8 @@ namespace Tubumu.Core.Extensions.Ip
         private static readonly Regex IpV4Regex = new Regex(@"^\d{1,3}[\.]\d{1,3}[\.]\d{1,3}[\.]\d{1,3}$", RegexOptions.Compiled);
 
         /// <summary>
-        /// IPAddress 转 Int32 (可能产生负数)
+        /// IPAddress 转 Int32
+        /// <para>NOTE: 可能产生负数</para>
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
@@ -47,7 +48,7 @@ namespace Tubumu.Core.Extensions.Ip
         }
 
         /// <summary>
-        /// Int32 转 IPAddress (注意：由于是基于int的扩展方法，故会造成一定的污染)
+        /// Int32 转 IPAddress 
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
@@ -62,7 +63,7 @@ namespace Tubumu.Core.Extensions.Ip
         }
 
         /// <summary>
-        /// Int64 转 IPAddress (注意：由于是基于Int64的扩展方法，故会造成一定的污染)
+        /// Int64 转 IPAddress
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>

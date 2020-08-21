@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
@@ -88,6 +90,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
+        // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
         /// Whether the DataConsumer is closed.
         /// </summary>
@@ -102,6 +105,9 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Events:</para>
         /// <para>@emits transportclose</para>
         /// <para>@emits dataproducerclose</para>
+        /// <para>@emits message - (message: Buffer, ppid: number)</para>
+        /// <para>@emits sctpsendbufferfull</para>
+        /// <para>@emits bufferedamountlow - (bufferedAmount: number)</para>
         /// <para>@emits @close</para>
         /// <para>@emits @dataproducerclose</para>
         /// <para>Observer events:</para>
@@ -152,7 +158,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug($"Close() | DataConsumer:{DataConsumerId}");
 
             Closed = true;
 
@@ -178,7 +184,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("TransportClosed()");
+            _logger.LogDebug($"TransportClosed() | DataConsumer:{DataConsumerId}");
 
             Closed = true;
 
@@ -196,7 +202,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
+            _logger.LogDebug($"DumpAsync() | DataConsumer:{DataConsumerId}");
 
             return _channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, Internal);
         }
@@ -206,9 +212,103 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> GetStatsAsync()
         {
-            _logger.LogDebug("GetStatsAsync()");
+            _logger.LogDebug($"GetStatsAsync() | DataConsumer:{DataConsumerId}");
 
             return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, Internal);
+        }
+
+        /// <summary>
+        /// Set buffered amount low threshold.
+        /// </summary>
+        /// <param name=""></param>
+        /// <param name=""></param>
+        /// <returns></returns>
+        public async Task SetBufferedAmountLowThresholdAsync(uint threshold)
+        {
+            _logger.LogDebug($"SetBufferedAmountLowThreshold() | Threshold:{threshold}");
+
+            var reqData = new { Threshold = threshold };
+            await _channel.RequestAsync(MethodId.DATA_CONSUMER_SET_BUFFERED_AMOUNT_LOW_THRESHOLD, Internal, reqData);
+        }
+
+        /// <summary>
+        /// Send data (just valid for DataProducers created on a DirectTransport).
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="ppid"></param>
+        /// <returns></returns>
+        public Task SendAsync(string message, int? ppid)
+        {
+            _logger.LogDebug($"SendAsync() | DataConsumer:{DataConsumerId}");
+
+            /*
+             * +-------------------------------+----------+
+             * | Value                         | SCTP     |
+             * |                               | PPID     |
+             * +-------------------------------+----------+
+             * | WebRTC String                 | 51       |
+             * | WebRTC Binary Partial         | 52       |
+             * | (Deprecated)                  |          |
+             * | WebRTC Binary                 | 53       |
+             * | WebRTC String Partial         | 54       |
+             * | (Deprecated)                  |          |
+             * | WebRTC String Empty           | 56       |
+             * | WebRTC Binary Empty           | 57       |
+             * +-------------------------------+----------+
+             */
+
+            if (ppid == null)
+            {
+                ppid = !message.IsNullOrEmpty() ? 51 : 56;
+            }
+
+            // Ensure we honor PPIDs.
+            if (ppid == 56)
+            {
+                message = " ";
+            }
+
+            var requestData = new NotifyData { PPID = ppid.Value };
+
+            _payloadChannel.Notify("dataConsumer.send", Internal, requestData, Encoding.UTF8.GetBytes(message));
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Send data (just valid for DataProducers created on a DirectTransport).
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="ppid"></param>
+        /// <returns></returns>
+        public Task SendAsync(byte[] message, int? ppid)
+        {
+            _logger.LogDebug($"SendAsync() | DataConsumer:{DataConsumerId}");
+
+            if (ppid == null)
+            {
+                ppid = !message.IsNullOrEmpty() ? 53 : 57;
+            }
+
+            // Ensure we honor PPIDs.
+            if (ppid == 57)
+            {
+                message = new byte[1];
+            }
+
+            var requestData = new NotifyData { PPID = ppid.Value };
+
+            _payloadChannel.Notify("dataConsumer.send", Internal, requestData, message);
+
+            return Task.CompletedTask;
+        }
+
+        public Task<string?> GetBufferedAmountAsync()
+        {
+            _logger.LogDebug("GetBufferedAmountAsync()");
+
+            // 返回的是 JSON 格式，取其 bufferedAmount 属性。
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_BUFFERED_AMOUNT, Internal);
         }
 
         #region Event Handlers
@@ -230,6 +330,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "dataproducerclose":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                         {
                             break;
@@ -248,9 +349,23 @@ namespace TubumuMeeting.Mediasoup
 
                         break;
                     }
+                case "sctpsendbufferfull":
+                    {
+                        Emit("sctpsendbufferfull");
+
+                        break;
+                    }
+                case "bufferedamount":
+                    {
+                        var bufferedAmount = Int32.Parse(data);
+
+                        Emit("bufferedamountlow", bufferedAmount);
+
+                        break;
+                    }
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event \"{@event}\" in channel listener");
                         break;
                     }
             }
@@ -267,6 +382,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "message":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                         {
                             break;
@@ -282,7 +398,7 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
-                        _logger.LogError($"OnPayloadChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnPayloadChannelMessage() | Ignoring unknown event \"{@event}\" in payload channel listener");
                         break;
                     }
             }

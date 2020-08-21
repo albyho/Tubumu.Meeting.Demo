@@ -1,13 +1,13 @@
 {
   "MediasoupStartupSettings": {
-    "MediasoupVersion": "3.6.9",
+    "MediasoupVersion": "3.6.16",
     //"WorkerPath": "C:\\Developer\\OpenSource\\Meeting\\worker\\Release\\mediasoup-worker",
     //"WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/Lab/w/Release/mediasoup-worker",
     "NumberOfWorkers": 1
   },
   "MediasoupSettings": {
     "WorkerSettings": {
-      "LogLevel": "debug",
+      "LogLevel": "warn",
       "LogTags": [
         "info",
         "ice",
@@ -85,6 +85,7 @@
       "InitialAvailableOutgoingBitrate": 1000000,
       "MinimumAvailableOutgoingBitrate": 600000,
       "MaxSctpMessageSize": 262144,
+      // Additional options that are not part of WebRtcTransportOptions.
       "MaximumIncomingBitrate": 1500000
     }
   }

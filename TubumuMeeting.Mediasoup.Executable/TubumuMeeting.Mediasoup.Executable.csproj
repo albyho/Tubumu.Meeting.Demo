@@ -8,6 +8,9 @@
     <None Update="runtimes\win\native\mediasoup-worker.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="runtimes\osx\native\mediasoup-worker">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

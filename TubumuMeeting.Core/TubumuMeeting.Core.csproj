@@ -7,11 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
-    <PackageReference Include="MessagePack" Version="2.1.152" />
-    <PackageReference Include="MessagePackAnalyzer" Version="2.1.152" />
+    <PackageReference Include="MessagePack" Version="2.1.165" />
+    <PackageReference Include="MessagePackAnalyzer" Version="2.1.165" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="PinYinConverterCore" Version="1.0.2" />
-    <PackageReference Include="SkiaSharp" Version="1.68.3" />
+    <PackageReference Include="SkiaSharp" Version="2.80.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
     <PackageReference Include="NPOI" Version="2.5.1" />
   </ItemGroup>

@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace TubumuMeeting.Mediasoup
 {
     public class InvalidStateException : Exception

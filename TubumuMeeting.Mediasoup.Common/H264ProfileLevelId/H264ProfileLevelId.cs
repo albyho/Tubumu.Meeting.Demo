@@ -126,7 +126,7 @@ namespace TubumuMeeting.Mediasoup
                 default:
                     {
                         // NOTE: For testing.
-                        //debug("parseProfileLevelId() | unrecognized level_idc:%s", level_idc);
+                        //debug("ParseProfileLevelId() | Unrecognized level_idc:%s", level_idc);
                         return null;
                     }
             }
@@ -141,7 +141,7 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // NOTE: For testing.
-            //debug("parseProfileLevelId() | unrecognized profile_idc/profile_iop combination");
+            //debug("ParseProfileLevelId() | Unrecognized profile_idc/profile_iop combination");
             return null;
         }
 
@@ -176,7 +176,7 @@ namespace TubumuMeeting.Mediasoup
                     default:
                         {
                             // NOTE: For testing.
-                            //debug("profileLevelIdToString() | Level 1_b not is allowed for profile:%s", profileLevelId.profile);
+                            //debug("ProfileLevelIdToString() | Level 1_b not is allowed for profile:%s", profileLevelId.profile);
                             return null;
                         }
                 }
@@ -214,7 +214,7 @@ namespace TubumuMeeting.Mediasoup
                 default:
                     {
                         // NOTE: For testing.
-                        //debug("profileLevelIdToString() | unrecognized profile:%s", profileLevelId.profile);
+                        //debug("ProfileLevelIdToString() | Unrecognized profile:%s", profileLevelId.profile);
                         return null;
                     }
             }
@@ -246,7 +246,7 @@ namespace TubumuMeeting.Mediasoup
                 return DefaultProfileLevelId;
             }
 
-            // TODO: (alby)如果 ParseProfileLevelId 返回 null，ParseSdpProfileLevelId 是否应该返回 DefaultProfileLevelId ？
+            // TODO: (alby)如果 ParseProfileLevelId 返回 null，ParseSdpProfileLevelId 是否应该返回 DefaultProfileLevelId ？Node.js 实现没考虑这点。
             return ParseProfileLevelId(profile_level_id.ToString());
         }
 
@@ -301,7 +301,7 @@ namespace TubumuMeeting.Mediasoup
             if (!local_supported_params.TryGetValue("profile-level-id", out _) && !remote_offered_params.TryGetValue("profile-level-id", out _))
             {
                 // NOTE: For testing.
-                //debug("generateProfileLevelIdForAnswer() | no profile-level-id in local and remote params");
+                //debug("GenerateProfileLevelIdForAnswer() | No profile-level-id in local and remote params");
                 return null;
             }
 
@@ -337,7 +337,7 @@ namespace TubumuMeeting.Mediasoup
             // than the level in the offer.
             var answer_level = level_asymmetry_allowed ? local_level : min_level;
 
-            //debug("generateProfileLevelIdForAnswer() | result: [profile:%s, level:%s]", local_profile_level_id.profile, answer_level);
+            //debug("GenerateProfileLevelIdForAnswer() | Result: [Profile:%s, Level:%s]", local_profile_level_id.profile, answer_level);
 
             // Return the resulting profile-level-id for the answer parameters.
             return ProfileLevelIdToString(new ProfileLevelId(local_profile_level_id.Profile, answer_level));

@@ -20,6 +20,7 @@ namespace TubumuMeeting.Mediasoup
 
         /// <summary>
         /// <para>Events:</para>
+        /// <para>@emits rtcp - (packet: Buffer)</para>
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
@@ -58,27 +59,53 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the PipeTransport.
         /// </summary>
-        public override void Close()
+        public override async Task CloseAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            base.Close();
+            await CloseLock.WaitAsync();
+            try
+            {
+                if (Closed)
+                {
+                    return;
+                }
+
+                await base.CloseAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override void RouterClosed()
+        public override async Task RouterClosedAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            base.RouterClosed();
+            await CloseLock.WaitAsync();
+            try
+            {
+                if (Closed)
+                {
+                    return;
+                }
+
+                await base.RouterClosedAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
@@ -88,7 +115,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public override Task ConnectAsync(object parameters)
         {
-            _logger.LogDebug("ConnectAsync()");
+            _logger.LogDebug($"ConnectAsync() | DiectTransport:{TransportId}");
             return Task.CompletedTask;
         }
 
@@ -99,7 +126,7 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public override Task<string?> SetMaxIncomingBitrateAsync(int bitrate)
         {
-            _logger.LogDebug($"SetMaxIncomingBitrateAsync() [bitrate:{bitrate}]");
+            _logger.LogDebug($"SetMaxIncomingBitrateAsync() | DiectTransport:{TransportId} Bitrate:{bitrate}");
             throw new NotImplementedException("SetMaxIncomingBitrateAsync() not implemented in DirectTransport");
         }
 
@@ -108,7 +135,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public override Task<Producer> ProduceAsync(ProducerOptions producerOptions)
         {
-            _logger.LogDebug("ProduceAsync()");
+            _logger.LogDebug($"ProduceAsync() | DiectTransport:{TransportId}");
             throw new NotImplementedException("ProduceAsync() not implemented in DirectTransport");
         }
 
@@ -119,8 +146,13 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public override Task<Consumer> ConsumeAsync(ConsumerOptions consumerOptions)
         {
-            _logger.LogDebug("ConsumeAsync()");
+            _logger.LogDebug($"ConsumeAsync() | DiectTransport:{TransportId}");
             throw new NotImplementedException("ConsumeAsync() not implemented in DirectTransport");
+        }
+
+        public void SendRtcp(byte[] rtcpPacket)
+        {
+            PayloadChannel.Notify("transport.sendRtcp", Internal, null, rtcpPacket);
         }
 
         #region Event Handlers
@@ -128,6 +160,7 @@ namespace TubumuMeeting.Mediasoup
         private void HandleWorkerNotifications()
         {
             Channel.MessageEvent += OnChannelMessage;
+            PayloadChannel.MessageEvent += OnPayloadChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -153,7 +186,35 @@ namespace TubumuMeeting.Mediasoup
 
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | DiectTransport:{TransportId} Ignoring unknown event{@event}");
+                        break;
+                    }
+            }
+        }
+
+        private void OnPayloadChannelMessage(string targetId, string @event, NotifyData notifyData, ArraySegment<byte> payload)
+        {
+            if (targetId != Internal.TransportId)
+            {
+                return;
+            }
+
+            switch (@event)
+            {
+                case "rtcp":
+                    {
+                        // TODO: (alby)线程安全
+                        if (Closed)
+                            break;
+
+                        Emit("rtcp", payload);
+
+                        break;
+                    }
+
+                default:
+                    {
+                        _logger.LogError($"Ignoring unknown event \"{@event}\"");
                         break;
                     }
             }

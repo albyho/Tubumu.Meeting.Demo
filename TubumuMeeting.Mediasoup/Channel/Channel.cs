@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -51,12 +52,12 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Next id for messages sent to the worker process.
         /// </summary>
-        private int _nextId = 0;
+        private uint _nextId = 0;
 
         /// <summary>
         /// Map of pending sent requests.
         /// </summary>
-        private readonly Dictionary<int, Sent> _sents = new Dictionary<int, Sent>();
+        private readonly ConcurrentDictionary<uint, Sent> _sents = new ConcurrentDictionary<uint, Sent>();
 
         /// <summary>
         /// Buffer for reading messages from the worker.
@@ -74,8 +75,6 @@ namespace TubumuMeeting.Mediasoup
         public Channel(ILogger<Channel> logger, UVStream producerSocket, UVStream consumerSocket, int processId)
         {
             _logger = logger;
-
-            _logger.LogDebug("Channel() | constructor");
 
             _producerSocket = producerSocket;
             _consumerSocket = consumerSocket;
@@ -95,7 +94,7 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug("Close() | Channel");
 
             _closed = true;
 
@@ -140,15 +139,15 @@ namespace TubumuMeeting.Mediasoup
 
         public Task<string?> RequestAsync(MethodId methodId, object? @internal = null, object? data = null)
         {
-            var method = methodId.GetEnumStringValue();
-            var id = _nextId < Int32.MaxValue ? ++_nextId : (_nextId = 1); // TODO: (alby)线程同步
-
-            _logger.LogDebug($"RequestAsync() | [method:{method}, id:{id}]");
-
             if (_closed)
             {
                 throw new InvalidStateException("Channel closed");
             }
+
+            var method = methodId.GetEnumStringValue();
+            var id = InterlockedExtensions.Increment(ref _nextId);
+            // NOTE: For testinng
+            //_logger.LogDebug($"RequestAsync() | [Method:{method}, Id:{id}]");
 
             var requestMesssge = new RequestMessage
             {
@@ -170,16 +169,18 @@ namespace TubumuMeeting.Mediasoup
                 RequestMessage = requestMesssge,
                 Resolve = data =>
                 {
-                    if (!_sents.Remove(id))
+                    if (!_sents.TryRemove(id, out var _))
                     {
+                        tcs.TrySetException(new Exception($"Received response does not match any sent request [id:{id}]"));
                         return;
                     }
                     tcs.TrySetResult(data);
                 },
                 Reject = e =>
                 {
-                    if (!_sents.Remove(id))
+                    if (!_sents.TryRemove(id, out var _))
                     {
+                        tcs.TrySetException(new Exception($"Received response does not match any sent request [id:{id}]"));
                         return;
                     }
                     tcs.TrySetException(e);
@@ -189,9 +190,12 @@ namespace TubumuMeeting.Mediasoup
                     tcs.TrySetException(new InvalidStateException("Channel closed"));
                 },
             };
-            _sents.Add(id, sent);
+            if (!_sents.TryAdd(id, sent))
+            {
+                throw new Exception($"Error add sent request [id:{id}]");
+            }
 
-            tcs.WithTimeout(TimeSpan.FromSeconds(15 + (0.1 * _sents.Count)), () => _sents.Remove(id));
+            tcs.WithTimeout(TimeSpan.FromSeconds(15 + (0.1 * _sents.Count)), () => _sents.TryRemove(id, out var _));
 
             Loop.Default.Sync(() =>
             {
@@ -202,15 +206,15 @@ namespace TubumuMeeting.Mediasoup
                     {
                         if (ex != null)
                         {
-                            _logger.LogError(ex, "_producerSocket.Write() | error");
-                            tcs.TrySetException(ex);
+                            _logger.LogError(ex, "_producerSocket.Write() | Error");
+                            sent.Reject(ex);
                         }
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "_producerSocket.Write() | error");
-                    tcs.TrySetException(ex);
+                    _logger.LogError(ex, "_producerSocket.Write() | Error");
+                    sent.Reject(ex);
                 }
             });
 
@@ -221,6 +225,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnData(ArraySegment<byte> data)
         {
+            // 数据回调通过单一线程进入，所有 _recvBuffer 是线程安全的。
             if (_recvBuffer == null)
             {
                 _recvBuffer = data;
@@ -235,13 +240,12 @@ namespace TubumuMeeting.Mediasoup
 
             if (_recvBuffer.Value.Count > NsPayloadMaxLen)
             {
-                _logger.LogError("ConsumerSocketOnData() | receiving buffer is full, discarding all data into it");
+                _logger.LogError("ConsumerSocketOnData() | Receiving buffer is full, discarding all data into it");
                 // Reset the buffer and exit.
                 _recvBuffer = null;
                 return;
             }
 
-            //_logger.LogError($"ConsumerSocketOnData: {buffer}");
             var netstring = new Netstring(_recvBuffer.Value);
             try
             {
@@ -257,18 +261,22 @@ namespace TubumuMeeting.Mediasoup
                         {
                             // 123 = '{' (a Channel JSON messsage).
                             case '{':
-                                ProcessMessage(payloadString);
+                                ThreadPool.QueueUserWorkItem(_ =>
+                                {
+                                    ProcessMessage(payloadString);
+                                });
                                 break;
 
                             // 68 = 'D' (a debug log).
                             case 'D':
-                                //if (!payloadString.Contains("(trace)"))
-                                _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
+                                if (!payloadString.Contains("(trace)"))
+                                    _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 87 = 'W' (a warn log).
                             case 'W':
-                                _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
+                                if (!payloadString.Contains("no suitable Producer"))
+                                    _logger.LogWarning($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             // 69 = 'E' (an error log).
@@ -278,19 +286,17 @@ namespace TubumuMeeting.Mediasoup
 
                             // 88 = 'X' (a dump log).
                             case 'X':
-                                // eslint-disable-next-line no-console
                                 _logger.LogDebug($"ConsumerSocketOnData() | [pid:{_processId}] { payloadString }");
                                 break;
 
                             default:
-                                // eslint-disable-next-line no-console
-                                _logger.LogWarning($"ConsumerSocketOnData() | worker[pid:{_processId}] unexpected data:{ payloadString }");
+                                _logger.LogWarning($"ConsumerSocketOnData() | Worker [pid:{_processId}] unexpected data, payload:{ payloadString }");
                                 break;
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"ConsumerSocketOnData() | received invalid message from the worker process:{ex}\ndata: {payloadString}");
+                        _logger.LogError(ex, $"ConsumerSocketOnData() | Received invalid message from the worker process, payload: {payloadString}");
                         // Reset the buffer and exit.
                         _recvBuffer = null;
                         return;
@@ -312,7 +318,7 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception ex)
             {
-                _logger.LogError($"ConsumerSocketOnData() | invalid netstring data received from the worker process:{ex}");
+                _logger.LogError(ex, $"ConsumerSocketOnData() | Invalid netstring data received from the worker process.");
                 // Reset the buffer and exit.
                 _recvBuffer = null;
                 return;
@@ -326,7 +332,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void ConsumerSocketOnError(Exception exception)
         {
-            _logger.LogDebug("ConsumerSocketOnError() | Consumer Channel error", exception);
+            _logger.LogDebug(exception, "ConsumerSocketOnError() | Consumer Channel error");
         }
 
         private void ProducerSocketOnClosed()
@@ -336,7 +342,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void ProducerSocketOnError(Exception exception)
         {
-            _logger.LogDebug("ProducerSocketOnError() | Producer Channel error", exception);
+            _logger.LogDebug(exception, "ProducerSocketOnError() | Producer Channel error");
         }
 
         #endregion
@@ -346,39 +352,40 @@ namespace TubumuMeeting.Mediasoup
         private void ProcessMessage(string payload)
         {
             var msg = JObject.Parse(payload);
-            var id = msg["id"].Value(0);
+            var id = msg["id"].Value((long)-1);
             var accepted = msg["accepted"].Value(false);
             var targetId = msg["targetId"].Value(String.Empty);
             var @event = msg["event"].Value(string.Empty);
             var error = msg["error"].Value(string.Empty);
             var reason = msg["reason"].Value(string.Empty);
             var data = msg["data"].Value(string.Empty);
-            // If a response retrieve its associated request.
-            if (id > 0)
-            {
-                if (!_sents.TryGetValue(id, out Sent sent))
-                {
-                    _logger.LogError($"ProcessMessage() | received response does not match any sent request [id:{id}]");
 
+            // If a response, retrieve its associated request.
+            if (id >= 0)
+            {
+                if (!_sents.TryGetValue((uint)id, out Sent sent))
+                {
+                    _logger.LogError($"ProcessMessage() | Received response does not match any sent request [id:{id}], payload:{payload}");
                     return;
                 }
 
                 if (accepted)
                 {
-                    _logger.LogDebug($"ProcessMessage() | request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
-
+                    _logger.LogDebug($"ProcessMessage() | Request succeed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
                     sent.Resolve?.Invoke(data);
                 }
                 else if (!error.IsNullOrWhiteSpace())
                 {
                     // 在 Node.js 实现中，error 的值可能是 "Error" 或 "TypeError"。
-                    _logger.LogWarning($"ProcessMessage() | request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}");
+                    _logger.LogWarning($"ProcessMessage() | Request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}. payload:{payload}");
 
-                    sent.Reject?.Invoke(new Exception(reason));
+                    sent.Reject?.Invoke(new Exception($"Request failed [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]: {reason}. payload:{payload}"));
                 }
                 else
                 {
-                    _logger.LogError($"ProcessMessage() | received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]");
+                    _logger.LogError($"ProcessMessage() | Received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]. payload:{payload}");
+
+                    sent.Reject?.Invoke(new Exception($"Received response is not accepted nor rejected [method:{sent.RequestMessage.Method}, id:{sent.RequestMessage.Id}]. payload:{payload}"));
                 }
             }
             // If a notification emit it to the corresponding entity.
@@ -389,7 +396,7 @@ namespace TubumuMeeting.Mediasoup
             // Otherwise unexpected message.
             else
             {
-                _logger.LogError($"ProcessMessage() | received message is not a response nor a notification: {payload}");
+                _logger.LogError($"ProcessMessage() | Received message is not a response nor a notification: {payload}");
             }
         }
 

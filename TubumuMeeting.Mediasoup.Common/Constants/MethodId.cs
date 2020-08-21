@@ -133,6 +133,12 @@ namespace TubumuMeeting.Mediasoup
         [EnumStringValue("dataConsumer.getStats")]
         DATA_CONSUMER_GET_STATS,
 
+        [EnumStringValue("dataConsumer.getBufferedAmount")]
+        DATA_CONSUMER_GET_BUFFERED_AMOUNT,
+
+        [EnumStringValue("dataConsumer.setBufferedAmountLowThreshold")]
+        DATA_CONSUMER_SET_BUFFERED_AMOUNT_LOW_THRESHOLD,
+
         [EnumStringValue("rtpObserver.close")]
         RTP_OBSERVER_CLOSE,
 

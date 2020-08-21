@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Tubumu.Core.Extensions.Object;
 
 namespace TubumuMeeting.Mediasoup
 {
     public class MediasoupServer
     {
+        private readonly List<Worker> _workers = new List<Worker>();
+
         private int _nextMediasoupWorkerIndex = 0;
 
-        private readonly object _locker = new object();
-
-        private readonly List<Worker> _workers = new List<Worker>();
+        private readonly ReaderWriterLockSlim _workersLock = new ReaderWriterLockSlim();
 
         /// <summary>
         /// Get a cloned copy of the mediasoup supported RTP capabilities.
@@ -27,7 +28,8 @@ namespace TubumuMeeting.Mediasoup
         /// <returns></returns>
         public Worker GetWorker()
         {
-            lock (_locker)
+            _workersLock.EnterReadLock();
+            try
             {
                 if (_nextMediasoupWorkerIndex > _workers.Count - 1)
                 {
@@ -42,6 +44,10 @@ namespace TubumuMeeting.Mediasoup
 
                 return worker;
             }
+            finally
+            {
+                _workersLock.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -55,9 +61,14 @@ namespace TubumuMeeting.Mediasoup
                 throw new ArgumentNullException(nameof(worker));
             }
 
-            lock (_locker)
+            _workersLock.EnterWriteLock();
+            try
             {
                 _workers.Add(worker);
+            }
+            finally
+            {
+                _workersLock.ExitWriteLock();
             }
         }
     }

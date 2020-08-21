@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using Microsoft.VisualStudio.Threading;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 
@@ -9,9 +9,19 @@ namespace TubumuMeeting.Meeting.Server
 {
     public partial class Room : IEquatable<Room>
     {
-        public Guid RoomId { get; }
+        public string RoomId { get; }
 
         public string Name { get; }
+
+        public bool Equals(Room other)
+        {
+            return RoomId == other.RoomId;
+        }
+
+        public override int GetHashCode()
+        {
+            return RoomId.GetHashCode();
+        }
     }
 
     public partial class Room
@@ -26,53 +36,51 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Room> _logger;
 
+        private readonly AsyncAutoResetEvent _closeLock = new AsyncAutoResetEvent();
+
+        /// <summary>
+        /// Whether the Room is closed.
+        /// </summary>
         public bool Closed { get; private set; }
 
         public Router Router { get; private set; }
 
-        public Dictionary<string, Peer> Peers { get; set; }
-
-        public AudioLevelObserver AudioLevelObserver { get; private set; }
-
-        public Room(ILoggerFactory loggerFactory, Guid roomId, string name)
+        public Room(ILoggerFactory loggerFactory, Router router, string roomId, string name)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<Room>();
-
-            RoomId = roomId;
-            Name = name.IsNullOrWhiteSpace() ? "Meeting" : name;
-            Closed = false;
-            Peers = new Dictionary<string, Peer>();
-        }
-
-        public void Active(Router router, AudioLevelObserver audioLevelObserver)
-        {
             Router = router;
-            AudioLevelObserver = audioLevelObserver;
+            RoomId = roomId;
+            Name = name.NullOrWhiteSpaceReplace("Default");
+            _closeLock.Set();
+            Closed = false;
         }
 
-        public void Close()
+        public async Task CloseAsync()
         {
-            _logger.LogError($"Close() | Room: {RoomId}");
-
             if (Closed)
             {
                 return;
             }
 
-            Router.Close();
+            await _closeLock.WaitAsync();
+            try
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
-        }
+                _logger.LogDebug($"Close() | Room:{RoomId}");
 
-        public bool Equals(Room other)
-        {
-            return RoomId == other.RoomId;
-        }
+                Closed = true;
 
-        public override int GetHashCode()
-        {
-            return RoomId.GetHashCode();
+                await Router.CloseAsync();
+            }
+            finally
+            {
+                _closeLock.Set();
+            }
         }
     }
 }

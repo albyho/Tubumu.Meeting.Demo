@@ -44,9 +44,9 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
-        /// <para>@emits newconsumer - (producer: Producer)</para>
+        /// <para>@emits newconsumer - (consumer: Consumer)</para>
         /// <para>@emits newdataproducer - (dataProducer: DataProducer)</para>
-        /// <para>@emits newdataconsumer - (dataProducer: DataProducer)</para>
+        /// <para>@emits newdataconsumer - (dataConsumer: DataConsumer)</para>
         /// <para>@emits icestatechange - (iceState: IceState)</para>
         /// <para>@emits iceselectedtuplechange - (iceSelectedTuple: TransportTuple)</para>
         /// <para>@emits dtlsstatechange - (dtlsState: DtlsState)</para>
@@ -108,45 +108,71 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the WebRtcTransport.
         /// </summary>
-        public override void Close()
+        public override async Task CloseAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            IceState = IceState.Closed;
-            IceSelectedTuple = null;
-            DtlsState = DtlsState.Closed;
-
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            base.Close();
+                IceState = IceState.Closed;
+                IceSelectedTuple = null;
+                DtlsState = DtlsState.Closed;
+
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.CloseAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override void RouterClosed()
+        public override async Task RouterClosedAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            IceState = IceState.Closed;
-            IceSelectedTuple = null;
-            DtlsState = DtlsState.Closed;
-
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            base.RouterClosed();
+                IceState = IceState.Closed;
+                IceSelectedTuple = null;
+                DtlsState = DtlsState.Closed;
+
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.RouterClosedAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
@@ -154,7 +180,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public override Task ConnectAsync(object parameters)
         {
-            _logger.LogDebug("ConnectAsync()");
+            _logger.LogDebug($"ConnectAsync() | WebRtcTransport:{TransportId}");
 
             if (!(parameters is DtlsParameters dtlsParameters))
             {
@@ -165,8 +191,6 @@ namespace TubumuMeeting.Mediasoup
 
         private async Task ConnectAsync(DtlsParameters dtlsParameters)
         {
-            _logger.LogDebug("ConnectAsync()");
-
             var reqData = new { DtlsParameters = dtlsParameters };
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONNECT, Internal, reqData);
@@ -181,7 +205,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task<IceParameters> RestartIceAsync()
         {
-            _logger.LogDebug("RestartIceAsync()");
+            _logger.LogDebug($"RestartIceAsync() | WebRtcTransport:{TransportId}");
 
             var status = await Channel.RequestAsync(MethodId.TRANSPORT_RESTART_ICE, Internal);
             var responseData = JsonConvert.DeserializeObject<WebRtcTransportRestartIceResponseData>(status!);
@@ -279,7 +303,7 @@ namespace TubumuMeeting.Mediasoup
 
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | WebRtcTransport:{TransportId} Ignoring unknown event{@event}");
                         break;
                     }
             }

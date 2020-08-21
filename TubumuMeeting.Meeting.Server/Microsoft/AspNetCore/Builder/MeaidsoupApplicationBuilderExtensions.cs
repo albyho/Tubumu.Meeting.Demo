@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TubumuMeeting.Libuv;
@@ -10,7 +11,7 @@ namespace Microsoft.AspNetCore.Builder
     {
         public static IApplicationBuilder UseMediasoup(this IApplicationBuilder app)
         {
-            Task.Run(() =>
+            ThreadPool.QueueUserWorkItem(_ =>
             {
                 Loop.Default.Run(() =>
                 {
@@ -24,7 +25,8 @@ namespace Microsoft.AspNetCore.Builder
                         worker.On("@success", _ =>
                         {
                             mediasoupServer.AddWorker(worker);
-                            logger.LogInformation($"worker[pid:{worker.ProcessId}] create success.");
+                            logger.LogInformation($"Worker[pid:{worker.ProcessId}] create success.");
+                            return Task.CompletedTask;
                         });
                     }
                 });

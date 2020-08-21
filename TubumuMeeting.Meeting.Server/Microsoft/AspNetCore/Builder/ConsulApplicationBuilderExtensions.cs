@@ -30,12 +30,12 @@ namespace Microsoft.AspNetCore.Builder
             };
 
             // 服务注册
-            consulClient.Agent.ServiceRegister(registration).GetAwaiter().GetResult();
+            consulClient.Agent.ServiceRegister(registration).ConfigureAwait(false).GetAwaiter().GetResult();
 
             // 应用程序终止时，服务取消注册
             lifetime.ApplicationStopping.Register(() =>
             {
-                consulClient.Agent.ServiceDeregister(registration.ID).Wait();
+                consulClient.Agent.ServiceDeregister(registration.ID).ConfigureAwait(false).GetAwaiter().GetResult();
             });
 
             return app;

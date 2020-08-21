@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -10,7 +11,6 @@ namespace TubumuMeeting.Mediasoup
 {
     public class Router : EventEmitter, IEquatable<Router>
     {
-
         /// <summary>
         /// Logger factory for create logger.
         /// </summary>
@@ -50,35 +50,36 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
+        // TODO: (alby)线程安全及 Closed 的使用。
         /// <summary>
-        /// Whether the DataConsumer is closed.
+        /// Whether the Router is closed.
         /// </summary>
         public bool Closed { get; private set; }
 
         /// <summary>
         /// Transports map.
         /// </summary>
-        private readonly Dictionary<string, Transport> _transports = new Dictionary<string, Transport>();
+        private readonly ConcurrentDictionary<string, Transport> _transports = new ConcurrentDictionary<string, Transport>();
 
         /// <summary>
         /// Producers map.
         /// </summary>
-        private readonly Dictionary<string, Producer> _producers = new Dictionary<string, Producer>();
+        private readonly ConcurrentDictionary<string, Producer> _producers = new ConcurrentDictionary<string, Producer>();
 
         /// <summary>
         /// RtpObservers map.
         /// </summary>
-        private readonly Dictionary<string, RtpObserver> _rtpObservers = new Dictionary<string, RtpObserver>();
+        private readonly ConcurrentDictionary<string, RtpObserver> _rtpObservers = new ConcurrentDictionary<string, RtpObserver>();
 
         /// <summary>
         /// DataProducers map.
         /// </summary>
-        private readonly Dictionary<string, DataProducer> _dataProducers = new Dictionary<string, DataProducer>();
+        private readonly ConcurrentDictionary<string, DataProducer> _dataProducers = new ConcurrentDictionary<string, DataProducer>();
 
         /// <summary>
         /// Router to PipeTransport map.
         /// </summary>
-        private readonly Dictionary<Router, PipeTransport[]> _mapRouterPipeTransports = new Dictionary<Router, PipeTransport[]>();
+        private readonly ConcurrentDictionary<Router, PipeTransport[]> _mapRouterPipeTransports = new ConcurrentDictionary<Router, PipeTransport[]>();
 
         /// <summary>
         /// Observer instance.
@@ -124,43 +125,21 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the Router.
         /// </summary>
-        public void Close()
+        public async Task CloseAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            _logger.LogDebug("CloseAsync() | Router");
 
             Closed = true;
 
             // Fire and forget
             _channel.RequestAsync(MethodId.ROUTER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            // Close every Transport.
-            foreach (var transport in _transports.Values)
-            {
-                transport.RouterClosed();
-            }
-
-            _transports.Clear();
-
-            // Clear the Producers map.
-            _producers.Clear();
-
-            // Close every RtpObserver.
-            foreach (var rtpObserver in _rtpObservers.Values)
-            {
-                rtpObserver.RouterClosed();
-            }
-            _rtpObservers.Clear();
-
-            // Clear the DataProducers map.
-            _dataProducers.Clear();
-
-            // Clear map of Router/PipeTransports.
-            _mapRouterPipeTransports.Clear();
+            await CloseInternalAsync();
 
             Emit("@close");
 
@@ -171,21 +150,31 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Worker was closed.
         /// </summary>
-        public void WorkerClosed()
+        public async Task WorkerClosedAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            _logger.LogDebug("WorkerClosed()");
+            _logger.LogDebug($"WorkerClosedAsync() | Router:{RouterId}");
 
             Closed = true;
 
+            await CloseInternalAsync();
+
+            Emit("workerclose");
+
+            // Emit observer event.
+            Observer.Emit("close");
+        }
+
+        private async Task CloseInternalAsync()
+        {
             // Close every Transport.
             foreach (var transport in _transports.Values)
             {
-                transport.RouterClosed();
+                await transport.RouterClosedAsync();
             }
 
             _transports.Clear();
@@ -205,11 +194,6 @@ namespace TubumuMeeting.Mediasoup
 
             // Clear map of Router/PipeTransports.
             _mapRouterPipeTransports.Clear();
-
-            Emit("workerclose");
-
-            // Emit observer event.
-            Observer.Emit("close");
         }
 
         /// <summary>
@@ -245,6 +229,7 @@ namespace TubumuMeeting.Mediasoup
                 webRtcTransportOptions.EnableSctp,
                 webRtcTransportOptions.NumSctpStreams,
                 webRtcTransportOptions.MaxSctpMessageSize,
+                webRtcTransportOptions.MaxSctpSendBufferSize,
                 IsDataChannel = true
             };
 
@@ -272,26 +257,34 @@ namespace TubumuMeeting.Mediasoup
                 );
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.TransportId));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.ProducerId);
+                _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.DataProducerId);
+                _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -309,7 +302,7 @@ namespace TubumuMeeting.Mediasoup
 
             if (plainTransportOptions.ListenIp == null || plainTransportOptions.ListenIp.Ip.IsNullOrWhiteSpace())
             {
-                throw new Exception("missing listenIp");
+                throw new Exception("Missing listenIp");
             }
 
             var @internal = new
@@ -325,6 +318,7 @@ namespace TubumuMeeting.Mediasoup
                 plainTransportOptions.EnableSctp,
                 plainTransportOptions.NumSctpStreams,
                 plainTransportOptions.MaxSctpMessageSize,
+                plainTransportOptions.SctpSendBufferSize,
                 IsDataChannel = false,
                 plainTransportOptions.EnableSrtp,
                 plainTransportOptions.SrtpCryptoSuite
@@ -351,26 +345,34 @@ namespace TubumuMeeting.Mediasoup
                             );
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.TransportId));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.ProducerId);
+                _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.DataProducerId);
+                _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -388,7 +390,7 @@ namespace TubumuMeeting.Mediasoup
 
             if (pipeTransportOptions.ListenIp == null)
             {
-                throw new NullReferenceException("missing listenIp");
+                throw new NullReferenceException("Missing listenIp");
             }
 
             var @internal = new
@@ -403,6 +405,7 @@ namespace TubumuMeeting.Mediasoup
                 pipeTransportOptions.EnableSctp,
                 pipeTransportOptions.NumSctpStreams,
                 pipeTransportOptions.MaxSctpMessageSize,
+                pipeTransportOptions.SctpSendBufferSize,
                 IsDataChannel = false,
                 pipeTransportOptions.EnableRtx,
                 pipeTransportOptions.EnableSrtp,
@@ -428,26 +431,34 @@ namespace TubumuMeeting.Mediasoup
 
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.TransportId));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.ProducerId);
+                _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.DataProducerId);
+                _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -494,26 +505,34 @@ namespace TubumuMeeting.Mediasoup
 
             _transports[transport.TransportId] = transport;
 
-            transport.On("@close", _ => _transports.Remove(transport.TransportId));
+            transport.On("@close", _ =>
+            {
+                _transports.TryRemove(transport.TransportId, out var _);
+                return Task.CompletedTask;
+            });
             transport.On("@newproducer", obj =>
             {
                 var producer = (Producer)obj!;
                 _producers[producer.ProducerId] = producer;
+                return Task.CompletedTask;
             });
             transport.On("@producerclose", obj =>
             {
                 var producer = (Producer)obj!;
-                _producers.Remove(producer.ProducerId);
+                _producers.TryRemove(producer.ProducerId, out var _);
+                return Task.CompletedTask;
             });
             transport.On("@newdataproducer", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
                 _dataProducers[dataProducer.DataProducerId] = dataProducer;
+                return Task.CompletedTask;
             });
             transport.On("@dataproducerclose", obj =>
             {
                 var dataProducer = (DataProducer)obj!;
-                _dataProducers.Remove(dataProducer.DataProducerId);
+                _dataProducers.TryRemove(dataProducer.DataProducerId, out var _);
+                return Task.CompletedTask;
             });
 
             // Emit observer event.
@@ -531,17 +550,17 @@ namespace TubumuMeeting.Mediasoup
         {
             if (pipeToRouterOptions.ListenIp == null)
             {
-                throw new NullReferenceException("missing listenIp");
+                throw new NullReferenceException("Missing listenIp");
             }
 
             if (pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
             {
-                throw new Exception("missing producerId or dataProducerId");
+                throw new Exception("Missing producerId or dataProducerId");
             }
 
             if (!pipeToRouterOptions.ProducerId.IsNullOrWhiteSpace() && !pipeToRouterOptions.DataProducerId.IsNullOrWhiteSpace())
             {
-                throw new Exception("just producerId or dataProducerId can be given");
+                throw new Exception("Just producerId or dataProducerId can be given");
             }
 
             if (pipeToRouterOptions.Router == null)
@@ -551,7 +570,7 @@ namespace TubumuMeeting.Mediasoup
 
             if (pipeToRouterOptions.Router == this)
             {
-                throw new Exception("cannot use this Router as destination");
+                throw new Exception("Cannot use this Router as destination");
             }
 
             Producer? producer = null;
@@ -626,32 +645,32 @@ namespace TubumuMeeting.Mediasoup
                     })
                     );
 
-                    localPipeTransport.Observer.On("close", _ =>
+                    localPipeTransport.Observer.On("close", async _ =>
                     {
-                        remotePipeTransport.Close();
-                        _mapRouterPipeTransports.Remove(pipeToRouterOptions.Router);
+                        await remotePipeTransport.CloseAsync();
+                        _mapRouterPipeTransports.TryRemove(pipeToRouterOptions.Router, out var _);
                     });
 
-                    remotePipeTransport.Observer.On("close", _ =>
+                    remotePipeTransport.Observer.On("close", async _ =>
                     {
-                        localPipeTransport.Close();
-                        _mapRouterPipeTransports.Remove(pipeToRouterOptions.Router);
+                        await localPipeTransport.CloseAsync();
+                        _mapRouterPipeTransports.TryRemove(pipeToRouterOptions.Router, out var _);
                     });
 
                     _mapRouterPipeTransports[pipeToRouterOptions.Router] = new[] { localPipeTransport, remotePipeTransport };
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"pipeToRouter() | error creating PipeTransport pair:{ex}");
+                    _logger.LogError(ex, $"PipeToRouterAsync() | Create PipeTransport pair failed.");
 
                     if (localPipeTransport != null)
                     {
-                        localPipeTransport.Close();
+                        await localPipeTransport.CloseAsync();
                     }
 
                     if (remotePipeTransport != null)
                     {
-                        remotePipeTransport.Close();
+                        await remotePipeTransport.CloseAsync();
                     }
 
                     throw;
@@ -680,18 +699,26 @@ namespace TubumuMeeting.Mediasoup
                     });
 
                     // Pipe events from the pipe Consumer to the pipe Producer.
-                    pipeConsumer.Observer.On("close", _ => pipeProducer.Close());
+                    pipeConsumer.Observer.On("close", _ =>
+                    {
+                        pipeProducer.Close();
+                        return Task.CompletedTask;
+                    });
                     pipeConsumer.Observer.On("pause", async _ => await pipeProducer.PauseAsync());
                     pipeConsumer.Observer.On("resume", async _ => await pipeProducer.ResumeAsync());
 
                     // Pipe events from the pipe Producer to the pipe Consumer.
-                    pipeProducer.Observer.On("close", _ => pipeConsumer.Close());
+                    pipeProducer.Observer.On("close", _ =>
+                    {
+                        pipeConsumer.Close();
+                        return Task.CompletedTask;
+                    });
 
                     return new PipeToRouterResult { PipeConsumer = pipeConsumer, PipeProducer = pipeProducer };
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"pipeToRouter() | error creating pipe Consumer/Producer pair:{ex}");
+                    _logger.LogError(ex, $"PipeToRouterAsync() | Create pipe Consumer/Producer pair failed");
 
                     if (pipeConsumer != null)
                     {
@@ -728,16 +755,24 @@ namespace TubumuMeeting.Mediasoup
                     });
 
                     // Pipe events from the pipe DataConsumer to the pipe DataProducer.
-                    pipeDataConsumer.Observer.On("close", _ => pipeDataProducer.Close());
+                    pipeDataConsumer.Observer.On("close", _ =>
+                    {
+                        pipeDataProducer.Close();
+                        return Task.CompletedTask;
+                    });
 
                     // Pipe events from the pipe DataProducer to the pipe DataConsumer.
-                    pipeDataProducer.Observer.On("close", _ => pipeDataConsumer.Close());
+                    pipeDataProducer.Observer.On("close", _ =>
+                    {
+                        pipeDataConsumer.Close();
+                        return Task.CompletedTask;
+                    });
 
                     return new PipeToRouterResult { PipeDataConsumer = pipeDataConsumer, PipeDataProducer = pipeDataProducer };
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"pipeToRouter() | error creating pipe DataConsumer/DataProducer pair:{ex}");
+                    _logger.LogError(ex, $"PipeToRouterAsync() | Create pipe DataConsumer/DataProducer pair failed.");
 
                     if (pipeDataConsumer != null)
                     {
@@ -754,7 +789,7 @@ namespace TubumuMeeting.Mediasoup
             }
             else
             {
-                throw new Exception("internal error");
+                throw new Exception("Internal error");
             }
         }
 
@@ -788,7 +823,11 @@ namespace TubumuMeeting.Mediasoup
                 m => _producers.TryGetValue(m, out var p) ? p : null);
 
             _rtpObservers[audioLevelObserver.Internal.RtpObserverId] = audioLevelObserver;
-            audioLevelObserver.On("@close", _ => _rtpObservers.Remove(audioLevelObserver.Internal.RtpObserverId));
+            audioLevelObserver.On("@close", _ =>
+            {
+                _rtpObservers.TryRemove(audioLevelObserver.Internal.RtpObserverId, out var _);
+                return Task.CompletedTask;
+            });
 
             // Emit observer event.
             Observer.Emit("newrtpobserver", audioLevelObserver);
@@ -813,7 +852,7 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "CanConsume() | unexpected error");
+                _logger.LogError(ex, "CanConsume() | Unexpected error");
                 return false;
             }
         }

@@ -380,13 +380,13 @@ namespace TubumuMeeting.Mediasoup
             }
 
             // ssrc is optional.
-            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 ssrc 的数据类型。在强类型语言中不需要。
 
             // rid is optional.
-            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 rid 的数据类型。在强类型语言中不需要。
 
             // rtx is optional.
-            // 在 Node.js 实现中，判断了 id 的数据类型。在强类型语言中不需要。
+            // 在 Node.js 实现中，判断了 rtx 的数据类型。在强类型语言中不需要。
             if (encoding.Rtx != null)
             {
                 // RTX ssrc is mandatory if rtx is present.
@@ -1045,9 +1045,19 @@ namespace TubumuMeeting.Mediasoup
 
             var consumableEncodings = consumableParams.Encodings.DeepClone<List<RtpEncodingParameters>>();
 
-            foreach (var encoding in consumableEncodings)
+            var baseSsrc = Utils.GenerateRandomNumber();
+            var baseRtxSsrc = Utils.GenerateRandomNumber();
+
+            for (var i = 0; i < consumableEncodings.Count; ++i)
             {
-                if (!enableRtx)
+                var encoding = consumableEncodings[i];
+                encoding.Ssrc = (uint)(baseSsrc + i);
+
+                if (enableRtx)
+                {
+                    encoding.Rtx = new Rtx { Ssrc = (uint)(baseRtxSsrc + i) };
+                }
+                else
                 {
                     // 在 Node.js 实现中，delete 了 rtx 。
                     encoding.Rtx = null;
@@ -1093,7 +1103,7 @@ namespace TubumuMeeting.Mediasoup
             else if (a != null && b == null)
             {
                 // b 为 null的情况下，确保不存在于 a
-                var got = a.TryGetValue("packetization-mode", out var _);
+                var got = a.ContainsKey("packetization-mode");
                 if (got)
                 {
                     return false;
@@ -1102,7 +1112,7 @@ namespace TubumuMeeting.Mediasoup
             else if (a == null && b != null)
             {
                 // a 为 null的情况下，确保不存在于 b
-                var got = b.TryGetValue("packetization-mode", out var _);
+                var got = b.ContainsKey("packetization-mode");
                 if (got)
                 {
                     return false;
@@ -1138,11 +1148,11 @@ namespace TubumuMeeting.Mediasoup
                                 return false;
                             }
 
-                            string selectedProfileLevelId;
+                            string? selectedProfileLevelId;
 
                             try
                             {
-                                selectedProfileLevelId = H264ProfileLevelId.GenerateProfileLevelIdForAnswer(aCodec.Parameters, bCodec.Parameters);  // TODO: (alby)注意 null 引用
+                                selectedProfileLevelId = H264ProfileLevelId.GenerateProfileLevelIdForAnswer(aCodec.Parameters, bCodec.Parameters);
                             }
                             catch (Exception)
                             {
@@ -1153,7 +1163,7 @@ namespace TubumuMeeting.Mediasoup
                             {
                                 if (!selectedProfileLevelId.IsNullOrWhiteSpace())
                                 {
-                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId;  // TODO: (alby)注意 null 引用
+                                    aCodec.Parameters["profile-level-id"] = selectedProfileLevelId!;
                                 }
                                 else
                                 {
@@ -1200,7 +1210,7 @@ namespace TubumuMeeting.Mediasoup
                 return false;
             }
 
-            var apiInteger = Int32.Parse(apt.ToString());
+            var apiInteger = Convert.ToInt32(apt);
             if (payloadType != apiInteger)
             {
                 return false;

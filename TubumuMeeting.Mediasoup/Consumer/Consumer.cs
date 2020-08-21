@@ -49,12 +49,19 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        private ConsumerInternalData Internal { get; set; }
+        private readonly ConsumerInternalData _internal;
+
+        private readonly object _closeLock = new object();
 
         /// <summary>
         /// Consumer id.
         /// </summary>
-        public string ConsumerId => Internal.ConsumerId;
+        public string ConsumerId => _internal.ConsumerId;
+
+        /// <summary>
+        /// Consumer id.
+        /// </summary>
+        public string ProducerId => _internal.ConsumerId;
 
         #region Consumer data.
 
@@ -81,15 +88,32 @@ namespace TubumuMeeting.Mediasoup
         private readonly Channel _channel;
 
         /// <summary>
+        /// PayloadChannel instance.
+        /// </summary>
+        private readonly PayloadChannel _payloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
+        /// [扩展]RoomId.
+        /// </summary>
+        public string? RoomId { get; set; }
+
+        /// <summary>
+        /// [扩展]Source.
+        /// </summary>
+        public string? Source { get; set; }
+
+        // TODO: (alby) Closed 的使用及线程安全。
+        /// <summary>
         /// Whether the Consumer is closed.
         /// </summary>
         public bool Closed { get; private set; }
 
+        // TODO: (alby) Paused 的使用及线程安全。
         /// <summary>
         /// Paused flag.
         /// </summary>
@@ -142,6 +166,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits resume</para>
         /// <para>@emits score - (score: ConsumerScore)</para>
         /// <para>@emits layerschange - (layers: ConsumerLayers | undefined)</para>
+        /// <para>@emits rtp - (packet: Buffer)</para>
         /// <para>@emits trace - (trace: ConsumerTraceEventData)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
@@ -161,6 +186,7 @@ namespace TubumuMeeting.Mediasoup
             RtpParameters rtpParameters,
             ConsumerType type,
             Channel channel,
+            PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             bool paused,
             bool producerPaused,
@@ -171,7 +197,7 @@ namespace TubumuMeeting.Mediasoup
             _logger = loggerFactory.CreateLogger<Consumer>();
 
             // Internal
-            Internal = consumerInternalData;
+            _internal = consumerInternalData;
 
             // Data
             Kind = kind;
@@ -179,6 +205,7 @@ namespace TubumuMeeting.Mediasoup
             Type = type;
 
             _channel = channel;
+            _payloadChannel = payloadChannel;
             AppData = appData;
             Paused = paused;
             ProducerPaused = producerPaused;
@@ -198,20 +225,28 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            lock (_closeLock)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
+                _logger.LogDebug($"Close() | Consumer:{ConsumerId}");
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                Closed = true;
 
-            // Fire and forget
-            _channel.RequestAsync(MethodId.CONSUMER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
 
-            Emit("@close");
+                // Fire and forget
+                _channel.RequestAsync(MethodId.CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
-            // Emit observer event.
-            Observer.Emit("close");
+                Emit("@close");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>
@@ -224,17 +259,25 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("TransportClosed()");
+            lock (_closeLock)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
+                _logger.LogDebug($"TransportClosed() | Consumer:{ConsumerId}");
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                Closed = true;
 
-            Emit("transportclose");
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
 
-            // Emit observer event.
-            Observer.Emit("close");
+                Emit("transportclose");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>
@@ -242,9 +285,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
+            _logger.LogDebug($"DumpAsync() | Consumer:{ConsumerId}");
 
-            return _channel.RequestAsync(MethodId.CONSUMER_DUMP, Internal);
+            return _channel.RequestAsync(MethodId.CONSUMER_DUMP, _internal);
         }
 
         /// <summary>
@@ -252,9 +295,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> GetStatsAsync()
         {
-            _logger.LogDebug("GetStatsAsync()");
+            _logger.LogDebug($"GetStatsAsync() | Consumer:{ConsumerId}");
 
-            return _channel.RequestAsync(MethodId.CONSUMER_GET_STATS, Internal);
+            return _channel.RequestAsync(MethodId.CONSUMER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -262,11 +305,11 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task PauseAsync()
         {
-            _logger.LogDebug("PauseAsync()");
+            _logger.LogDebug($"PauseAsync() | Consumer:{ConsumerId}");
 
             var wasPaused = Paused || ProducerPaused;
 
-            await _channel.RequestAsync(MethodId.CONSUMER_PAUSE, Internal);
+            await _channel.RequestAsync(MethodId.CONSUMER_PAUSE, _internal);
 
             Paused = true;
 
@@ -282,11 +325,11 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task ResumeAsync()
         {
-            _logger.LogDebug("ResumeAsync()");
+            _logger.LogDebug($"ResumeAsync() | Consumer:{ConsumerId}");
 
             var wasPaused = Paused || ProducerPaused;
 
-            await _channel.RequestAsync(MethodId.CONSUMER_RESUME, Internal);
+            await _channel.RequestAsync(MethodId.CONSUMER_RESUME, _internal);
 
             Paused = false;
 
@@ -302,10 +345,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task SetPreferredLayersAsync(ConsumerLayers consumerLayers)
         {
-            _logger.LogDebug("SetPreferredLayersAsync()");
+            _logger.LogDebug($"SetPreferredLayersAsync() | Consumer:{ConsumerId}");
 
             var reqData = consumerLayers;
-            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, Internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PREFERRED_LAYERS, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetPreferredLayersResponseData>(status!);
             PreferredLayers = responseData;
         }
@@ -315,10 +358,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task SetPriorityAsync(int priority)
         {
-            _logger.LogDebug("SetPriorityAsync()");
+            _logger.LogDebug($"SetPriorityAsync() | Consumer:{ConsumerId}");
 
             var reqData = new { Priority = priority };
-            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, Internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status!);
             Priority = responseData.Priority;
         }
@@ -328,10 +371,10 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task UnsetPriorityAsync()
         {
-            _logger.LogDebug("UnsetPriorityAsync()");
+            _logger.LogDebug($"UnsetPriorityAsync() | Consumer:{ConsumerId}");
 
             var reqData = new { Priority = 1 };
-            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, Internal, reqData);
+            var status = await _channel.RequestAsync(MethodId.CONSUMER_SET_PRIORITY, _internal, reqData);
             var responseData = JsonConvert.DeserializeObject<ConsumerSetOrUnsetPriorityResponseData>(status!);
 
             Priority = responseData.Priority;
@@ -342,9 +385,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task RequestKeyFrameAsync()
         {
-            _logger.LogDebug("RequestKeyFrameAsync()");
+            _logger.LogDebug($"RequestKeyFrameAsync() | Consumer:{ConsumerId}");
 
-            return _channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, Internal);
+            return _channel.RequestAsync(MethodId.CONSUMER_REQUEST_KEY_FRAME, _internal);
         }
 
         /// <summary>
@@ -352,13 +395,13 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task EnableTraceEventAsync(TraceEventType[] types)
         {
-            _logger.LogDebug("EnableTraceEventAsync()");
+            _logger.LogDebug($"EnableTraceEventAsync() | Consumer:{ConsumerId}");
 
             var reqData = new
             {
                 Types = types ?? Array.Empty<TraceEventType>()
             };
-            return _channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, Internal, reqData);
+            return _channel.RequestAsync(MethodId.CONSUMER_ENABLE_TRACE_EVENT, _internal, reqData);
         }
 
         #region Event Handlers
@@ -366,6 +409,7 @@ namespace TubumuMeeting.Mediasoup
         private void HandleWorkerNotifications()
         {
             _channel.MessageEvent += OnChannelMessage;
+            _payloadChannel.MessageEvent += OnPayloadChannelMessage;
         }
 
         private void OnChannelMessage(string targetId, string @event, string data)
@@ -379,6 +423,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "producerclose":
                     {
+                        // TODO: (alby)线程安全
                         if (Closed)
                         {
                             break;
@@ -477,12 +522,41 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event{@event}");
                         break;
                     }
             }
         }
 
-        #endregion
+        private void OnPayloadChannelMessage(string targetId, string @event, NotifyData notifyData, ArraySegment<byte> payload)
+        {
+            if (targetId != ConsumerId)
+            {
+                return;
+            }
+
+            switch (@event)
+            {
+                case "rtp":
+                    {
+                        // TODO: (alby)线程安全
+                        if (Closed)
+                            break;
+
+                        Emit("rtp", payload);
+
+                        break;
+                    }
+
+                default:
+                    {
+                        _logger.LogError($"Ignoring unknown event \"{@event}\"");
+                        break;
+                    }
+            }
+        }
     }
+
+    #endregion
 }
+

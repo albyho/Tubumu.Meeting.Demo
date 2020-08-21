@@ -36,9 +36,9 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
-        /// <para>@emits newconsumer - (producer: Producer)</para>
+        /// <para>@emits newconsumer - (consumer: Consumer)</para>
         /// <para>@emits newdataproducer - (dataProducer: DataProducer)</para>
-        /// <para>@emits newdataconsumer - (dataProducer: DataProducer)</para>
+        /// <para>@emits newdataconsumer - (dataConsumer: DataConsumer)</para>
         /// <para>@emits sctpstatechange - (sctpState: SctpState)</para>
         /// <para>@emits trace - (trace: TransportTraceEventData)</para>   
         /// </summary>
@@ -81,37 +81,63 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the PipeTransport.
         /// </summary>
-        public override void Close()
+        public override async Task CloseAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            base.Close();
+                if (SctpState.HasValue)
+                {
+                    SctpState = Mediasoup.SctpState.Closed;
+                }
+
+                await base.CloseAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override void RouterClosed()
+        public override async Task RouterClosedAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            base.RouterClosed();
+                if (SctpState.HasValue)
+                {
+                    SctpState = Mediasoup.SctpState.Closed;
+                }
+
+                await base.RouterClosedAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
@@ -155,68 +181,99 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug("ConsumeAsync()");
 
-            if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
+            await ConsumersLock.WaitAsync();
+            try
             {
-                throw new Exception("missing producerId");
+                if (consumerOptions.ProducerId.IsNullOrWhiteSpace())
+                {
+                    throw new Exception("missing producerId");
+                }
+
+                var producer = GetProducerById(consumerOptions.ProducerId);
+                if (producer == null)
+                {
+                    throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
+                }
+
+                // This may throw.
+                var rtpParameters = ORTC.GetPipeConsumerRtpParameters(producer.ConsumableRtpParameters, Rtx);
+
+                var @internal = new ConsumerInternalData
+                (
+                    Internal.RouterId,
+                    Internal.TransportId,
+                    consumerOptions.ProducerId,
+                    Guid.NewGuid().ToString()
+                );
+
+                var reqData = new
+                {
+                    producer.Kind,
+                    RtpParameters = rtpParameters,
+                    Type = ConsumerType.Pipe,
+                    ConsumableRtpEncodings = producer.ConsumableRtpParameters.Encodings,
+                };
+
+                var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
+                var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status!);
+
+                var data = new
+                {
+                    producer.Kind,
+                    RtpParameters = rtpParameters,
+                    Type = ConsumerType.Pipe,
+                };
+
+                // 在 Node.js 实现中， 创建 Consumer 对象时没提供 score 和 preferredLayers 参数，且 score = { score: 10, producerScore: 10 }。
+                var consumer = new Consumer(_loggerFactory,
+                    @internal,
+                    data.Kind,
+                    data.RtpParameters,
+                    data.Type,
+                    Channel,
+                    PayloadChannel,
+                    AppData,
+                    responseData.Paused,
+                    responseData.ProducerPaused,
+                    responseData.Score,
+                    responseData.PreferredLayers);
+
+                Consumers[consumer.ConsumerId] = consumer;
+
+                consumer.On("@close", async _ =>
+                {
+                    await ConsumersLock.WaitAsync();
+                    try
+                    {
+                        Consumers.Remove(consumer.ConsumerId);
+                    }
+                    finally
+                    {
+                        ConsumersLock.Set();
+                    }
+                });
+                consumer.On("@producerclose", async _ =>
+                {
+                    await ConsumersLock.WaitAsync();
+                    try
+                    {
+                        Consumers.Remove(consumer.ConsumerId);
+                    }
+                    finally
+                    {
+                        ConsumersLock.Set();
+                    }
+                });
+
+                // Emit observer event.
+                Observer.Emit("newconsumer", consumer);
+
+                return consumer;
             }
-
-            var producer = GetProducerById(consumerOptions.ProducerId);
-            if (producer == null)
+            finally
             {
-                throw new Exception($"Producer with id {consumerOptions.ProducerId} not found");
+                ConsumersLock.Set();
             }
-
-            // This may throw.
-            var rtpParameters = ORTC.GetPipeConsumerRtpParameters(producer.ConsumableRtpParameters, Rtx);
-
-            var @internal = new ConsumerInternalData
-            (
-                Internal.RouterId,
-                Internal.TransportId,
-                consumerOptions.ProducerId,
-                Guid.NewGuid().ToString()
-            );
-
-            var reqData = new
-            {
-                producer.Kind,
-                RtpParameters = rtpParameters,
-                Type = ConsumerType.Pipe,
-                ConsumableRtpEncodings = producer.ConsumableRtpParameters.Encodings,
-            };
-
-            var status = await Channel.RequestAsync(MethodId.TRANSPORT_CONSUME, @internal, reqData);
-            var responseData = JsonConvert.DeserializeObject<TransportConsumeResponseData>(status!);
-
-            var data = new
-            {
-                producer.Kind,
-                RtpParameters = rtpParameters,
-                Type = ConsumerType.Pipe,
-            };
-
-            // 在 Node.js 实现中， 创建 Consumer 对象时没提供 score 和 preferredLayers 参数，且 score = { score: 10, producerScore: 10 }。
-            var consumer = new Consumer(_loggerFactory,
-                @internal,
-                data.Kind,
-                data.RtpParameters,
-                data.Type,
-                Channel,
-                AppData,
-                responseData.Paused,
-                responseData.ProducerPaused,
-                responseData.Score,
-                responseData.PreferredLayers);
-
-            Consumers[consumer.ConsumerId] = consumer;
-
-            consumer.On("@close", _ => Consumers.Remove(consumer.ConsumerId));
-            consumer.On("@producerclose", _ => Consumers.Remove(consumer.ConsumerId));
-
-            // Emit observer event.
-            Observer.Emit("newconsumer", consumer);
-
-            return consumer;
         }
 
         #region Event Handlers
@@ -262,7 +319,7 @@ namespace TubumuMeeting.Mediasoup
 
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event{@event}");
                         break;
                     }
             }

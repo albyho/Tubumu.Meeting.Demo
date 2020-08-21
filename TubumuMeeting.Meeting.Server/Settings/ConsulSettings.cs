@@ -2,6 +2,8 @@
 {
     public class ConsulSettings
     {
+        public bool Enabled { get; set; }
+
         public string ServiceName { get; set; }
 
         public string ServiceIP { get; set; }

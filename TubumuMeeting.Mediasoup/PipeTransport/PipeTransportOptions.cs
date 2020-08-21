@@ -21,9 +21,15 @@ namespace TubumuMeeting.Mediasoup
 
         /// <summary>
         /// Maximum allowed size for SCTP messages sent by DataProducers.
-        /// Default 1073741823.
+        /// Default 268435456.
         /// </summary>
-        public int? MaxSctpMessageSize { get; set; } = 1073741823;
+        public int? MaxSctpMessageSize { get; set; } = 268435456;
+
+        /// <summary>
+        /// Maximum SCTP send buffer used by DataConsumers.
+        /// Default 268435456.
+        /// </summary>
+        public int? SctpSendBufferSize { get; set; } = 268435456;
 
         /// <summary>
         /// Enable RTX and NACK for RTP retransmission. Useful if both Routers are

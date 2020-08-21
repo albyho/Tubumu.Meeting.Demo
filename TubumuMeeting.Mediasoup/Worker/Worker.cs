@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Threading;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Libuv;
 
@@ -14,7 +15,7 @@ namespace TubumuMeeting.Mediasoup
     /// <summary>
     /// A worker represents a mediasoup C++ subprocess that runs in a single CPU core and handles Router instances.
     /// </summary>
-    public class Worker : EventEmitter
+    public class Worker : EventEmitter, IDisposable
     {
         #region Constants
 
@@ -69,17 +70,28 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly List<Router> _routers = new List<Router>();
 
+        /// <summary>
+        /// Locker.
+        /// </summary>
+        private readonly object _routersLock = new object();
+
         #endregion
 
-        #region Public Properties
-
-        // Closed flag.
+        // TODO: (alby) Closed 的使用及线程安全。
+        /// <summary>
+        /// Closed flag.
+        /// </summary>
         public bool Closed { get; private set; }
 
-        // Custom app data.
-        public Dictionary<string, object>? AppData { get; }
+        /// <summary>
+        /// Close locker.
+        /// </summary>
+        private readonly AsyncAutoResetEvent _closeLock = new AsyncAutoResetEvent();
 
-        #endregion
+        /// <summary>
+        /// Custom app data.
+        /// </summary>
+        public Dictionary<string, object>? AppData { get; }
 
         public EventEmitter Observer { get; } = new EventEmitter();
 
@@ -99,6 +111,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Worker>();
+            _closeLock.Set();
 
             var workerPath = mediasoupOptions.MediasoupStartupSettings.WorkerPath;
             if (workerPath.IsNullOrWhiteSpace())
@@ -162,10 +175,17 @@ namespace TubumuMeeting.Mediasoup
                 args.Add($"--dtlsPrivateKeyFile={workerSettings.DtlsPrivateKeyFile}");
             }
 
-            _logger.LogDebug($"Worker() | spawning worker process: {args.ToArray().Join(" ")}");
+            _logger.LogDebug($"Worker() | Spawning worker process: {args.Join(" ")}");
 
             _pipes = new Pipe[StdioCount];
-            // 忽略标准输入
+
+            // fd 0 (stdin)   : Just ignore it. (忽略标准输入)
+            // fd 1 (stdout)  : Pipe it for 3rd libraries that log their own stuff.
+            // fd 2 (stderr)  : Same as stdout.
+            // fd 3 (channel) : Producer Channel fd.
+            // fd 4 (channel) : Consumer Channel fd.
+            // fd 5 (channel) : Producer PayloadChannel fd.
+            // fd 6 (channel) : Consumer PayloadChannel fd.
             for (var i = 1; i < StdioCount; i++)
             {
                 _pipes[i] = new Pipe() { Writeable = true, Readable = true };
@@ -188,22 +208,20 @@ namespace TubumuMeeting.Mediasoup
             catch (Exception ex)
             {
                 _child = null;
-                Close();
+                CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
                 if (!_spawnDone)
                 {
                     _spawnDone = true;
-                    _logger.LogError($"Worker() | worker process failed [pid:{ProcessId}]: {ex.Message}");
+                    _logger.LogError(ex, $"Worker() | Worker process failed [pid:{ProcessId}]");
                     Emit("@failure", ex);
                 }
                 else
                 {
                     // 执行到这里的可能性？
-                    _logger.LogError($"Worker() | worker process error [pid:{ProcessId}]: {ex.Message}");
+                    _logger.LogError(ex, $"Worker() | Worker process error [pid:{ProcessId}]");
                     Emit("died", ex);
                 }
-
-                throw;
             }
 
             _channel = new Channel(_loggerFactory.CreateLogger<Channel>(), _pipes[3], _pipes[4], ProcessId);
@@ -214,32 +232,54 @@ namespace TubumuMeeting.Mediasoup
             _pipes.ForEach(m => m?.Resume());
         }
 
-        public void Close()
+        public async Task CloseAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            Closed = true;
-
-            // Kill the worker process.
-            if (_child != null)
+            await _closeLock.WaitAsync();
+            try
             {
-                // Remove event listeners but leave a fake 'error' hander to avoid
-                // propagation.
-                _child.Kill(15/*SIGTERM*/);
-                _child = null;
+                if (Closed)
+                {
+                    return;
+                }
+
+                _logger.LogDebug("CloseAsync()");
+
+                Closed = true;
+
+                // Kill the worker process.
+                if (_child != null)
+                {
+                    // Remove event listeners but leave a fake 'error' hander to avoid
+                    // propagation.
+                    _child.Kill(15/*SIGTERM*/);
+                    _child = null;
+                }
+
+                // Close the Channel instance.
+                _channel?.Close();
+
+                // Close the PayloadChannel instance.
+                _payloadChannel?.Close();
+
+                // Close every Router.
+                foreach (var router in _routers)
+                {
+                    await router.WorkerClosedAsync();
+                }
+                _routers.Clear();
+
+                // Emit observer event.
+                Observer.Emit("close");
             }
-
-            // Close the Channel instance.
-            _channel?.Close();
-
-            // Close the PayloadChannel instance.
-            _payloadChannel?.Close();
-
-            // Emit observer event.
-            Observer.Emit("close");
+            finally
+            {
+                _closeLock.Set();
+            }
         }
 
         #region Request
@@ -281,7 +321,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task<Router> CreateRouterAsync(RouterOptions routerOptions)
         {
-            _logger.LogDebug("CreateRouter()");
+            _logger.LogDebug("CreateRouterAsync()");
 
             // This may throw.
             var rtpCapabilities = ORTC.GenerateRouterRtpCapabilities(routerOptions.MediaCodecs);
@@ -292,9 +332,19 @@ namespace TubumuMeeting.Mediasoup
 
             var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, _payloadChannel, AppData);
 
-            _routers.Add(router);
+            lock (_routersLock)
+            {
+                _routers.Add(router);
+            }
 
-            router.On("@close", _ => _routers.Remove(router));
+            router.On("@close", _ =>
+            {
+                lock (_routersLock)
+                {
+                    _routers.Remove(router);
+                }
+                return Task.CompletedTask;
+            });
 
             // Emit observer event.
             Observer.Emit("newrouter", router);
@@ -318,7 +368,6 @@ namespace TubumuMeeting.Mediasoup
             if (!_spawnDone)
             {
                 _spawnDone = true;
-                _logger.LogDebug($"OnChannelRunning() | worker process running [pid:{targetId}]");
                 Emit("@success");
             }
         }
@@ -326,7 +375,7 @@ namespace TubumuMeeting.Mediasoup
         private void OnExit(Process process)
         {
             _child = null;
-            Close();
+            CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
             if (!_spawnDone)
             {
@@ -334,26 +383,26 @@ namespace TubumuMeeting.Mediasoup
 
                 if (process.ExitCode == 42)
                 {
-                    _logger.LogError($"OnExit() | worker process failed due to wrong settings [pid:{ProcessId}]");
+                    _logger.LogError($"OnExit() | Worker process failed due to wrong settings [pid:{ProcessId}]");
                     Emit("@failure", new Exception("wrong settings"));
                 }
                 else
                 {
-                    _logger.LogError($"OnExit() | worker process failed unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
+                    _logger.LogError($"OnExit() | Worker process failed unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
                     Emit("@failure", new Exception($"[pid:{ProcessId}, code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
-
                 }
             }
             else
             {
-                _logger.LogError($"OnExit() | [pid:{ProcessId}] worker process died unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
-                Emit("died", new Exception($"[pid:{ProcessId}, code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
+                _logger.LogError($"OnExit() | Worker process died unexpectedly [pid:{ProcessId}, code:{process.ExitCode}, signal:{process.TermSignal}]");
+                Emit("died", new Exception($"Worker process died unexpectedly [pid:{ProcessId}, code:{ process.ExitCode}, signal:{ process.TermSignal}]"));
             }
         }
 
         #endregion
 
         #region IDisposable Support
+
         private bool disposedValue = false; // 要检测冗余调用
 
         protected virtual void Dispose(bool disposing)
@@ -389,6 +438,7 @@ namespace TubumuMeeting.Mediasoup
             // TODO: 如果在以上内容中替代了终结器，则取消注释以下行。
             // GC.SuppressFinalize(this);
         }
+
         #endregion
     }
 }

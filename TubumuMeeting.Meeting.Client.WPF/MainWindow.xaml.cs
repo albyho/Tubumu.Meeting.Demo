@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Net.Sockets;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.AspNetCore.SignalR.Client;
-using TubumuMeeting.Mediasoup;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
-using System.Collections;
-using System.Diagnostics;
 using System.Windows.Interop;
-using System.ComponentModel;
+using Microsoft.AspNetCore.SignalR.Client;
+using Newtonsoft.Json;
+using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Client.WPF
 {
@@ -30,7 +28,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
     public delegate void CALLBACKNEWCONSUMERREADY(IntPtr param1, IntPtr param2);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct CallBackFunStruct 
+    public struct CallBackFunStruct
     {
         public CALLBACKCONNECTSERVER2 FunCallBackConnectServer2;
         public CALLBACKCONNECTSERVER4 FunCallBackConnectServer4;
@@ -38,7 +36,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
         public CALLBACKNEWCONSUMERREADY FunCallBackNewConsumerReady;
     };
 
-    internal static class RtclientLib 
+    internal static class RtclientLib
     {
         private const string LibRTClientDllName = "runtimes/win/native/librtclient.dll";
 
@@ -194,10 +192,10 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 RtpParameters rtpParameters = JsonConvert.DeserializeObject<RtpParameters>(rtps);
 
                 string strappdata = Marshal.PtrToStringAnsi(param4);
-                Dictionary<string, object> appdata = JsonConvert.DeserializeObject<Dictionary<string, object> >(strappdata);
+                Dictionary<string, object> appdata = JsonConvert.DeserializeObject<Dictionary<string, object>>(strappdata);
 
                 ProduceRequest request = new ProduceRequest();
-                request.TransportId = Marshal.PtrToStringAnsi(param1);
+                //request.TransportId = Marshal.PtrToStringAnsi(param1);
                 request.Kind = (Marshal.PtrToStringAnsi(param2) == "audio") ? MediaKind.Audio : MediaKind.Video;
                 request.RtpParameters = rtpParameters;
                 request.AppData = appdata;
@@ -238,7 +236,6 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 string peerid = Marshal.PtrToStringAnsi(param2);
                 var request = new NewConsumerReturnRequest();
                 request.ConsumerId = id;
-                request.PeerId = peerid;
                 var result = await connection.InvokeAsync<dynamic>("NewConsumerReturn", request);
                 int i = 0;
             }
@@ -264,7 +261,8 @@ namespace TubumuMeeting.Meeting.Client.WPF
             };
 
             //
-            stCallBackFunStruct = new CallBackFunStruct {
+            stCallBackFunStruct = new CallBackFunStruct
+            {
                 FunCallBackConnectServer2 = CallBackConnectServer2,
                 FunCallBackConnectServer4 = CallBackConnectServer4,
                 FunCallBackJoinRoom = CallBackJoinRoom,
@@ -459,7 +457,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
                     Producing = false,
                 });
                 IntPtr param = Marshal.StringToHGlobalAnsi(result.ToString());
-                
+
                 RtclientLib.CreateSendTransport(param);
                 //Marshal.FreeHGlobal(param);
                 result = await connection.InvokeAsync<dynamic>("CreateWebRtcTransport", new CreateWebRtcTransportRequest

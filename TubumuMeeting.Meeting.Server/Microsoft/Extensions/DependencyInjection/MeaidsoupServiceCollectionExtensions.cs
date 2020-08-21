@@ -1,5 +1,6 @@
 ﻿using System;
 using TubumuMeeting.Mediasoup;
+using TubumuMeeting.Meeting;
 using TubumuMeeting.Meeting.Server;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -13,7 +14,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton(mediasoupOptions);
             services.AddSingleton<MediasoupServer>();
             services.AddTransient<Worker>();
-            services.AddSingleton<MeetingManager>();
+            services.AddSingleton<Scheduler>();
+            services.AddSingleton<BadDisconnectSocketService>();
             return services;
         }
     }

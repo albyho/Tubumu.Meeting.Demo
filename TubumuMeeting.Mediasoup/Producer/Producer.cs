@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -42,12 +43,18 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        private ProducerInternalData Internal { get; set; }
+        private readonly ProducerInternalData _internal;
+
+        private readonly Timer _checkConsumersTimer;
+
+        private readonly object _closeLock = new object();
+
+        private const int CheckConsumersTimeSeconds = 10;
 
         /// <summary>
         /// Producer id.
         /// </summary>
-        public string ProducerId => Internal.ProducerId;
+        public string ProducerId => _internal.ProducerId;
 
         #region Producer data.
 
@@ -79,15 +86,32 @@ namespace TubumuMeeting.Mediasoup
         private readonly Channel _channel;
 
         /// <summary>
+        /// Channel instance.
+        /// </summary>
+        private readonly PayloadChannel _payloadChannel;
+
+        /// <summary>
         /// App custom data.
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
+        /// [扩展]Consumers
+        /// </summary>
+        private readonly Dictionary<string, Consumer> _consumers = new Dictionary<string, Consumer>();
+
+        /// <summary>
+        /// [扩展]Source.
+        /// </summary>
+        public string? Source { get; set; }
+
+        // TODO: (alby) Closed 的使用及线程安全。
+        /// <summary>
         /// Whether the Producer is closed.
         /// </summary>
         public bool Closed { get; private set; }
 
+        // TODO: (alby) Paused 的使用及线程安全。
         /// <summary>
         /// Paused flag.
         /// </summary>
@@ -134,6 +158,7 @@ namespace TubumuMeeting.Mediasoup
             ProducerType type,
             RtpParameters consumableRtpParameters,
             Channel channel,
+            PayloadChannel payloadChannel,
             Dictionary<string, object>? appData,
             bool paused
             )
@@ -141,7 +166,7 @@ namespace TubumuMeeting.Mediasoup
             _logger = loggerFactory.CreateLogger<Producer>();
 
             // Internal
-            Internal = producerInternalData;
+            _internal = producerInternalData;
 
             // Data
             Kind = kind;
@@ -150,8 +175,11 @@ namespace TubumuMeeting.Mediasoup
             ConsumableRtpParameters = consumableRtpParameters;
 
             _channel = channel;
+            _payloadChannel = payloadChannel;
             AppData = appData;
             Paused = paused;
+
+            _checkConsumersTimer = new Timer(CheckConsumers, null, TimeSpan.FromSeconds(CheckConsumersTimeSeconds), TimeSpan.FromMilliseconds(-1));
 
             HandleWorkerNotifications();
         }
@@ -166,20 +194,30 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("Close()");
+            lock (_closeLock)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
+                _logger.LogDebug($"Close() | Producer:{ProducerId}");
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                Closed = true;
 
-            // Fire and forget
-            _channel.RequestAsync(MethodId.PRODUCER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
+                _checkConsumersTimer.Dispose();
 
-            Emit("close");
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
 
-            // Emit observer event.
-            Observer.Emit("close");
+                // Fire and forget
+                _channel.RequestAsync(MethodId.PRODUCER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
+
+                Emit("close");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>
@@ -192,17 +230,25 @@ namespace TubumuMeeting.Mediasoup
                 return;
             }
 
-            _logger.LogDebug("TransportClosed()");
+            lock (_closeLock)
+            {
+                if (Closed)
+                {
+                    return;
+                }
 
-            Closed = true;
+                _logger.LogDebug($"TransportClosed() | Producer:{ProducerId}");
 
-            // Remove notification subscriptions.
-            _channel.MessageEvent -= OnChannelMessage;
+                Closed = true;
 
-            Emit("transportclose");
+                // Remove notification subscriptions.
+                _channel.MessageEvent -= OnChannelMessage;
 
-            // Emit observer event.
-            Observer.Emit("close");
+                Emit("transportclose");
+
+                // Emit observer event.
+                Observer.Emit("close");
+            }
         }
 
         /// <summary>
@@ -210,9 +256,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
+            _logger.LogDebug($"DumpAsync() | Producer:{ProducerId}");
 
-            return _channel.RequestAsync(MethodId.PRODUCER_DUMP, Internal);
+            return _channel.RequestAsync(MethodId.PRODUCER_DUMP, _internal);
         }
 
         /// <summary>
@@ -220,9 +266,9 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task<string?> GetStatsAsync()
         {
-            _logger.LogDebug("GetStatsAsync()");
+            _logger.LogDebug($"GetStatsAsync() | Producer:{ProducerId}");
 
-            return _channel.RequestAsync(MethodId.PRODUCER_GET_STATS, Internal);
+            return _channel.RequestAsync(MethodId.PRODUCER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -230,11 +276,11 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task PauseAsync()
         {
-            _logger.LogDebug("PauseAsync()");
+            _logger.LogDebug($"PauseAsync() | Producer:{ProducerId}");
 
             var wasPaused = Paused;
 
-            await _channel.RequestAsync(MethodId.PRODUCER_PAUSE, Internal);
+            await _channel.RequestAsync(MethodId.PRODUCER_PAUSE, _internal);
 
             Paused = true;
 
@@ -250,11 +296,11 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task ResumeAsync()
         {
-            _logger.LogDebug("ResumeAsync()");
+            _logger.LogDebug($"ResumeAsync() | Producer:{ProducerId}");
 
             var wasPaused = Paused;
 
-            await _channel.RequestAsync(MethodId.PRODUCER_RESUME, Internal);
+            await _channel.RequestAsync(MethodId.PRODUCER_RESUME, _internal);
 
             Paused = false;
 
@@ -270,14 +316,43 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Task EnableTraceEventAsync(TraceEventType[] types)
         {
-            _logger.LogDebug("EnableTraceEventAsync()");
+            _logger.LogDebug($"EnableTraceEventAsync() | Producer:{ProducerId}");
 
             var reqData = new
             {
                 Types = types ?? Array.Empty<TraceEventType>()
             };
 
-            return _channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, Internal, reqData);
+            return _channel.RequestAsync(MethodId.PRODUCER_ENABLE_TRACE_EVENT, _internal, reqData);
+        }
+
+        /// <summary>
+        /// Send RTP packet (just valid for Producers created on a DirectTransport).
+        /// </summary>
+        /// <param name="rtpPacket"></param>
+        public void Send(byte[] rtpPacket)
+        {
+            _payloadChannel.Notify("producer.send", _internal, null, rtpPacket);
+        }
+
+        public void AddConsumer(Consumer consumer)
+        {
+            CheckClosed();
+            lock (_closeLock)
+            {
+                CheckClosed();
+
+                _consumers[consumer.ConsumerId] = consumer;
+            }
+        }
+
+        public void RemoveConsumer(string consumerId)
+        {
+            // 关闭后也允许移除
+            lock (_closeLock)
+            {
+                _consumers.Remove(consumerId);
+            }
         }
 
         #region Event Handlers
@@ -332,9 +407,53 @@ namespace TubumuMeeting.Mediasoup
                     }
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event{@event}");
                         break;
                     }
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void CheckConsumers(object state)
+        {
+            if (Closed)
+            {
+                _checkConsumersTimer.Dispose();
+                return;
+            }
+
+            lock (_closeLock)
+            {
+                if (Closed)
+                {
+                    _checkConsumersTimer.Dispose();
+                    return;
+                }
+
+                if (_consumers.Count == 0)
+                {
+                    // 防止死锁
+                    ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        Close();
+                    });
+                    _checkConsumersTimer.Dispose();
+                }
+                else
+                {
+                    _checkConsumersTimer.Change(TimeSpan.FromSeconds(CheckConsumersTimeSeconds), TimeSpan.FromMilliseconds(-1));
+                }
+            }
+        }
+
+        private void CheckClosed()
+        {
+            if (Closed)
+            {
+                throw new Exception($"CheckClosed() | Producer:{ProducerId} was closed");
             }
         }
 

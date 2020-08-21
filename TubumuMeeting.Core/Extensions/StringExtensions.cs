@@ -141,6 +141,26 @@ namespace Tubumu.Core.Extensions
             return string.IsNullOrWhiteSpace(source);
         }
 
+        /// <summary>
+        /// NullOrWhiteSpaceReplace
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static string NullOrWhiteSpaceReplace(this string source, string newValue)
+        {
+            return !string.IsNullOrWhiteSpace(source) ? source : newValue;
+        }
+
+        /// <summary>
+        /// NullOrEmptyReplace
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static string NullOrEmptyReplace(this string source, string newValue)
+        {
+            return !string.IsNullOrEmpty(source) ? source : newValue;
+        }
+
         #endregion
 
         #region 字符串格式化

@@ -5,7 +5,7 @@ namespace TubumuMeeting.Mediasoup
 {
     public class CreateWebRtcTransportResult
     {
-        public string Id { get; set; }
+        public string TransportId { get; set; }
 
         public IceParameters IceParameters { get; set; }
 

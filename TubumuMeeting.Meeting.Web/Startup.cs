@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -111,7 +112,6 @@ namespace TubumuMeeting.Web
                         OnChallenge = async context =>
                         {
                             //_logger.LogError($"Authentication Challenge(OnChallenge): {context.Request.Path}");
-                            // TODO: (alby)为不同客户端返回不同的内容
                             var body = Encoding.UTF8.GetBytes("{\"code\": 400, \"message\": \"Authentication Challenge\"}");
                             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                             context.Response.ContentType = "application/json";
@@ -166,6 +166,19 @@ namespace TubumuMeeting.Web
                 if (routerSettings != null && !routerSettings.RtpCodecCapabilities.IsNullOrEmpty())
                 {
                     options.MediasoupSettings.RouterSettings = routerSettings;
+
+                    // Fix RtpCodecCapabilities[x].Parameters 。从配置文件反序列化时将数字转换成了字符串，这里进行修正。
+                    foreach (var codec in routerSettings.RtpCodecCapabilities.Where(m => m.Parameters != null))
+                    {
+                        foreach (var key in codec.Parameters.Keys.ToArray())
+                        {
+                            var value = codec.Parameters[key];
+                            if (value != null && Int32.TryParse(value.ToString(), out var intValue))
+                            {
+                                codec.Parameters[key] = intValue;
+                            }
+                        }
+                    }
                 }
 
                 // WebRtcTransportSettings
@@ -188,8 +201,12 @@ namespace TubumuMeeting.Web
             }
             else
             {
+                app.UseHsts();
                 app.UseHttpsRedirection();
             }
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.UseRouting();
 
@@ -197,8 +214,6 @@ namespace TubumuMeeting.Web
             app.UseAuthorization();
 
             app.UseCors("DefaultPolicy");
-
-            app.UseMediasoup();
 
             app.UseEndpoints(endpoints =>
             {
@@ -226,14 +241,17 @@ namespace TubumuMeeting.Web
                 });
             });
 
-            try
+            var consulSettings = Configuration.GetSection("ConsulSettings").Get<ConsulSettings>();
+            if (consulSettings.Enabled)
             {
-                var consulSettings = Configuration.GetSection("ConsulSettings").Get<ConsulSettings>();
-                app.UseConsul(lifetime, consulSettings);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "UseConsul()");
+                try
+                {
+                    app.UseConsul(lifetime, consulSettings);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "UseConsul()");
+                }
             }
         }
     }

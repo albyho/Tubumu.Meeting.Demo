@@ -1,185 +1,131 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Meeting.Server
 {
-    /// <summary>
-    /// MeetingMessage
-    /// </summary>
-    public class MeetingMessage
-    {
-        public int Code { get; set; } = 200;
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string? InternalCode { get; set; }
-
-        public string Message { get; set; } = "Success";
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public object? Data { get; set; }
-
-        public static string Stringify(int code, string message, string? data = null)
-        {
-            if (data == null)
-            {
-                return $"{{\"code\":{code},\"message\":\"{message}\"}}";
-            }
-            return $"{{\"code\":{code},\"message\":\"{message}\",\"data\":{data}}}";
-        }
-    }
-
-    public interface IPeer
-    {
-        Task PeerHandled(MeetingMessage message);
-
-        Task NewConsumer(MeetingMessage message);
-
-        Task ReceiveMessage(MeetingMessage message);
-    }
-
     [Authorize]
     public partial class MeetingHub : Hub<IPeer>
     {
         private readonly ILogger<MeetingHub> _logger;
-        private readonly MediasoupOptions _mediasoupOptions;
-        private readonly MeetingManager _meetingManager;
         private readonly IHubContext<MeetingHub, IPeer> _hubContext;
-
-        public MeetingHub(ILogger<MeetingHub> logger, MeetingManager meetingManager, MediasoupOptions mediasoupOptions, IHubContext<MeetingHub, IPeer> hubContext)
-        {
-            _logger = logger;
-            _meetingManager = meetingManager;
-            _mediasoupOptions = mediasoupOptions;
-            _hubContext = hubContext;
-        }
-
-        public override Task OnConnectedAsync()
-        {
-            ClosePeer();
-
-            var handleResult = _meetingManager.HandlePeer(UserId, "Guest");
-            if (handleResult)
-            {
-                return Clients.Caller.PeerHandled(new MeetingMessage { Code = 200, Message = "连接成功" });
-            }
-
-            return Clients.Caller.PeerHandled(new MeetingMessage { Code = 400, Message = "连接失败" });
-        }
-
-        public override Task OnDisconnectedAsync(Exception exception)
-        {
-            ClosePeer();
-
-            return base.OnDisconnectedAsync(exception);
-        }
-
-        private void ClosePeer()
-        {
-            if(Room != null)
-            {
-                foreach (var otherPeer in Room.Peers.Values)
-                {
-                    if (otherPeer.PeerId == UserId)
-                    {
-                        continue;
-                    }
-
-                    var client = _hubContext.Clients.User(otherPeer.PeerId);
-                    client.ReceiveMessage(new MeetingMessage
-                    {
-                        Code = 200,
-                        InternalCode = "peerClosed",
-                        Message = "peerClosed",
-                        Data = new { PeerId = UserId }
-                    }).ContinueWithOnFaultedHandleLog(_logger);
-                }
-
-                // Iterate and close all mediasoup Transport associated to this Peer, so all
-                // its Producers and Consumers will also be closed.
-                foreach (var transport in Peer!.Transports.Values)
-                {
-                    transport.Close();
-                }
-            }
-
-            _meetingManager.ClosePeer(UserId);
-        }
+        private readonly BadDisconnectSocketService _badDisconnectSocketService;
+        private readonly Scheduler _scheduler;
 
         private string UserId => Context.User.Identity.Name;
+        private string ConnectionId => Context.ConnectionId;
 
-        private Peer? Peer => _meetingManager.Peers.TryGetValue(UserId, out var peer) ? peer : null;
+        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, BadDisconnectSocketService badDisconnectSocketService,Scheduler scheduler)
+        {
+            _logger = logger;
+            _hubContext = hubContext;
+            _scheduler = scheduler;
+            _badDisconnectSocketService = badDisconnectSocketService;
+        }
 
-        private Room? Room => Peer?.Room;
+        public override async Task OnConnectedAsync()
+        {
+            await LeaveAsync();
+            _badDisconnectSocketService.CacheContext(Context);
+            await base.OnConnectedAsync();
+        }
+
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            await LeaveAsync();
+            await base.OnDisconnectedAsync(exception);
+        }
+
+        #region Private
+
+        private async Task LeaveAsync()
+        {
+            var leaveResult = await _scheduler.LeaveAsync(UserId);
+            if (leaveResult != null)
+            {
+                // Message: peerLeave
+                SendNotification(leaveResult.OtherPeerIds, "peerLeave", new { PeerId = leaveResult.SelfPeer.PeerId });
+                _badDisconnectSocketService.DisconnectClient(leaveResult.SelfPeer.ConnectionId);
+            }
+        }
+
+        #endregion
     }
 
     public partial class MeetingHub
     {
-        public async Task<MeetingMessage> EnterRoom(Guid roomId)
+        public MeetingMessage GetRouterRtpCapabilities()
         {
-            if (!await _meetingManager.PeerEnterRoomAsync(UserId, roomId))
-            {
-                return new MeetingMessage { Code = 400, Message = "EnterRoom 失败" };
-            }
-
-            return new MeetingMessage { Code = 200, Message = "EnterRoom 成功" };
+            var rtpCapabilities = _scheduler.DefaultRtpCapabilities;
+            return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
-        public Task<MeetingMessage> GetRouterRtpCapabilities()
+        public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
-            if (Room == null)
+            if (!await _scheduler.JoinAsync(UserId, ConnectionId, joinRequest))
             {
-                return Task.FromResult(new MeetingMessage { Code = 400, Message = "GetRouterRtpCapabilities 失败" });
+                return new MeetingMessage { Code = 400, Message = "Join 失败" };
             }
 
-            var rtpCapabilities = Room.Router.RtpCapabilities;
-            return Task.FromResult(new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities });
+            return new MeetingMessage { Code = 200, Message = "Join 成功" };
+        }
+
+        public async Task<MeetingMessage> SetPeerAppData(SetPeerAppDataRequest setPeerAppDataRequest)
+        {
+            var peerPeerAppDataResult = await _scheduler.SetPeerAppDataAsync(UserId, ConnectionId, setPeerAppDataRequest);
+
+            // Message: peerPeerAppDataChanged
+            SendNotification(peerPeerAppDataResult.OtherPeerIds, "peerPeerAppDataChanged", new
+            {
+                PeerId = UserId,
+                AppData = peerPeerAppDataResult.AppData,
+            });
+
+            return new MeetingMessage { Code = 200, Message = "SetRoomAppData 成功" };
+        }
+
+        public async Task<MeetingMessage> UnsetPeerAppData(UnsetPeerAppDataRequest unsetPeerAppDataRequest)
+        {
+            var peerPeerAppDataResult = await _scheduler.UnsetPeerAppDataAsync(UserId, ConnectionId, unsetPeerAppDataRequest);
+
+            // Message: peerPeerAppDataChanged
+            SendNotification(peerPeerAppDataResult.OtherPeerIds, "peerPeerAppDataChanged", new
+            {
+                PeerId = UserId,
+                AppData = peerPeerAppDataResult.AppData,
+            });
+
+            return new MeetingMessage { Code = 200, Message = "UnsetPeerAppData 成功" };
+        }
+
+        public async Task<MeetingMessage> ClearPeerAppData()
+        {
+            var peerPeerAppDataResult = await _scheduler.ClearPeerAppDataAsync(UserId, ConnectionId);
+
+            // Message: peerPeerAppDataChanged
+            SendNotification(peerPeerAppDataResult.OtherPeerIds, "peerPeerAppDataChanged", new
+            {
+                PeerId = UserId,
+                AppData = peerPeerAppDataResult.AppData,
+            });
+
+            return new MeetingMessage { Code = 200, Message = "ClearPeerAppData 成功" };
         }
 
         public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            if (Room == null)
-            {
-                return new MeetingMessage { Code = 400, Message = "CreateWebRtcTransport 失败" };
-            }
-
-            var webRtcTransportSettings = _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings;
-            var webRtcTransportOptions = new WebRtcTransportOptions
-            {
-                ListenIps = webRtcTransportSettings.ListenIps,
-                InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate,
-                MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize,
-                EnableSctp = createWebRtcTransportRequest.SctpCapabilities != null,
-                NumSctpStreams = createWebRtcTransportRequest.SctpCapabilities?.NumStreams,
-                AppData = new Dictionary<string, object>
-                {
-                    { "Consuming", createWebRtcTransportRequest.Consuming },
-                    { "Producing", createWebRtcTransportRequest.Producing },
-                },
-            };
-
-            if (createWebRtcTransportRequest.ForceTcp)
-            {
-                webRtcTransportOptions.EnableUdp = false;
-                webRtcTransportOptions.EnableTcp = true;
-            }
-
-            var transport = await Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
-            if (transport == null)
-            {
-                return new MeetingMessage { Code = 400, Message = "CreateWebRtcTransport 失败" };
-            }
-
+            var transport = await _scheduler.CreateWebRtcTransportAsync(UserId, ConnectionId, createWebRtcTransportRequest);
             transport.On("sctpstatechange", sctpState =>
             {
                 _logger.LogDebug($"WebRtcTransport \"sctpstatechange\" event [sctpState:{sctpState}]");
+                return Task.CompletedTask;
             });
 
             transport.On("dtlsstatechange", value =>
@@ -189,6 +135,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     _logger.LogWarning($"WebRtcTransport dtlsstatechange event [dtlsState:{value}]");
                 }
+                return Task.CompletedTask;
             });
 
             // NOTE: For testing.
@@ -204,39 +151,23 @@ namespace TubumuMeeting.Meeting.Server
                 if (traceData.Type == TransportTraceEventType.BWE && traceData.Direction == TraceEventDirection.Out)
                 {
                     // Message: downlinkBwe
-                    var client = _hubContext.Clients.User(peerId.ToString());
-                    client.ReceiveMessage(new MeetingMessage
+                    SendNotification(peerId, "downlinkBwe", new
                     {
-                        Code = 200,
-                        InternalCode = "downlinkBwe",
-                        Message = "downlinkBwe",
-                        Data = new
-                        {
-                            DesiredBitrate = traceData.Info["desiredBitrate"],
-                            EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"],
-                            AvailableBitrate = traceData.Info["availableBitrate"]
-                        }
-                    }).ContinueWithOnFaultedHandleLog(_logger);
+                        DesiredBitrate = traceData.Info["desiredBitrate"],
+                        EffectiveDesiredBitrate = traceData.Info["effectiveDesiredBitrate"],
+                        AvailableBitrate = traceData.Info["availableBitrate"]
+                    });
                 }
+                return Task.CompletedTask;
             });
-
-            // Store the WebRtcTransport into the Peer data Object.
-            Peer!.Transports[transport.TransportId] = transport;
-
-            // If set, apply max incoming bitrate limit.
-            if (webRtcTransportSettings.MaximumIncomingBitrate.HasValue && webRtcTransportSettings.MaximumIncomingBitrate.Value > 0)
-            {
-                // Fire and forget
-                transport.SetMaxIncomingBitrateAsync(webRtcTransportSettings.MaximumIncomingBitrate.Value).ContinueWithOnFaultedHandleLog(_logger);
-            }
 
             return new MeetingMessage
             {
                 Code = 200,
-                Message = "CreateWebRtcTransport 成功",
+                Message = $"CreateWebRtcTransport 成功({(createWebRtcTransportRequest.Producing ? "Producing" : "Consuming")})",
                 Data = new CreateWebRtcTransportResult
                 {
-                    Id = transport.TransportId,
+                    TransportId = transport.TransportId,
                     IceParameters = transport.IceParameters,
                     IceCandidates = transport.IceCandidates,
                     DtlsParameters = transport.DtlsParameters,
@@ -247,449 +178,392 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<MeetingMessage> ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
-            if (Room == null || !Peer!.Transports.TryGetValue(connectWebRtcTransportRequest.TransportId, out var transport))
+            try
             {
-                return new MeetingMessage { Code = 400, Message = "ConnectWebRtcTransport 失败" };
+                if (!await _scheduler.ConnectWebRtcTransportAsync(UserId, ConnectionId, connectWebRtcTransportRequest))
+                {
+                    return new MeetingMessage { Code = 400, Message = $"ConnectWebRtcTransport 失败: TransportId: {connectWebRtcTransportRequest.TransportId}" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new MeetingMessage { Code = 400, Message = $"ConnectWebRtcTransport 失败: TransportId: {connectWebRtcTransportRequest.TransportId}, {ex.Message}" };
             }
 
-            await transport.ConnectAsync(connectWebRtcTransportRequest.DtlsParameters);
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
+        }
+
+        public async Task<MeetingMessage> JoinRoom(JoinRoomRequest joinRoomRequest)
+        {
+            var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, ConnectionId, joinRoomRequest);
+
+            // 将自身的信息告知给房间内的其他人
+            var otherPeerIds = joinRoomResult.Peers.Select(m => m.Peer.PeerId).Where(m => m != joinRoomResult.SelfPeer.Peer.PeerId).ToArray();
+            // Message: peerJoinRoom
+            SendNotification(otherPeerIds, "peerJoinRoom", joinRoomResult.SelfPeer);
+
+            var data = new
+            {
+                RoomId = joinRoomRequest.RoomId,
+                Peers = joinRoomResult.Peers,
+            };
+            return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = data };
+        }
+
+        public async Task<MeetingMessage> LeaveRoom(string roomId)
+        {
+            var leaveRoomResult = await _scheduler.LeaveRoomAsync(UserId, ConnectionId, roomId);
+
+            // Message: peerLeaveRoom
+            SendNotification(leaveRoomResult.OtherPeerIds, "peerLeaveRoom", new
+            {
+                RoomId = roomId,
+                PeerId = UserId
+            });
+
+            return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
+        }
+
+        public async Task<MeetingMessage> SetRoomAppData(SetRoomAppDataRequest setRoomAppDataRequest)
+        {
+            var peerRoomAppDataResult = await _scheduler.SetRoomAppDataAsync(UserId, ConnectionId, setRoomAppDataRequest);
+
+            // Message: peerRoomAppDataChanged
+            SendNotification(peerRoomAppDataResult.OtherPeerIds, "peerRoomAppDataChanged", new
+            {
+                RoomId = setRoomAppDataRequest.RoomId,
+                PeerId = UserId,
+                AppData = peerRoomAppDataResult.AppData,
+            });
+
+            return new MeetingMessage { Code = 200, Message = "SetRoomAppData 成功" };
+        }
+
+        public async Task<MeetingMessage> UnsetRoomAppData(UnsetRoomAppDataRequest unsetRoomAppDataRequest)
+        {
+            var peerRoomAppDataResult = await _scheduler.UnsetRoomAppDataAsync(UserId, ConnectionId, unsetRoomAppDataRequest);
+
+            // Message: peerRoomAppDataChanged
+            SendNotification(peerRoomAppDataResult.OtherPeerIds, "peerRoomAppDataChanged", new
+            {
+                RoomId = unsetRoomAppDataRequest.RoomId,
+                PeerId = UserId,
+                RoomAppData = peerRoomAppDataResult.AppData,
+            });
+
+            return new MeetingMessage { Code = 200, Message = "UnsetRoomAppData 成功" };
+        }
+
+        public async Task<MeetingMessage> ClearRoomAppData(string roomId)
+        {
+            var peerRoomAppDataResult = await _scheduler.ClearRoomAppDataAsync(UserId, ConnectionId, roomId);
+
+            // Message: peerRoomAppDataChanged
+            SendNotification(peerRoomAppDataResult.OtherPeerIds, "peerRoomAppDataChanged", new
+            {
+                RoomId = roomId,
+                PeerId = UserId,
+                RoomAppData = peerRoomAppDataResult.AppData,
+            });
+
+            return new MeetingMessage { Code = 200, Message = "ClearRoomAppData 成功" };
+        }
+
+        public async Task<MeetingMessage> Pull(PullRequest consumeRequest)
+        {
+            var consumeResult = await _scheduler.PullAsync(UserId, ConnectionId, consumeRequest);
+            var consumerPeer = consumeResult.ConsumePeer;
+            var producerPeer = consumeResult.ProducePeer;
+            var roomId = consumeRequest.RoomId;
+
+            foreach (var producer in consumeResult.ExistsProducers)
+            {
+                // 本 Peer 消费其他 Peer
+                CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
+            }
+
+            if (!consumeResult.ProduceSources.IsNullOrEmpty())
+            {
+                // Message: produceSources
+                SendNotification(consumeResult.ProducePeer.PeerId, "produceSources", new
+                {
+                    RoomId = consumeResult.RoomId,
+                    ProduceSources = consumeResult.ProduceSources
+                });
+            }
+
+            return new MeetingMessage { Code = 200, Message = "Pull 成功" };
         }
 
         public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
         {
-            if (Room == null || !Peer!.Transports.TryGetValue(produceRequest.TransportId, out var transport))
+            var peerId = UserId;
+            ProduceResult produceResult;
+            try
             {
-                return new MeetingMessage { Code = 400, Message = "Produce 失败" };
+                produceResult = await _scheduler.ProduceAsync(peerId, ConnectionId, produceRequest);
+            }
+            catch (Exception ex)
+            {
+                return new MeetingMessage
+                {
+                    Code = 400,
+                    Message = $"Produce 失败:{ex.Message}",
+                };
             }
 
-            // Add peerId into appData to later get the associated Peer during
-            // the 'loudest' event of the audioLevelObserver.
-            produceRequest.AppData["peerId"] = Peer.PeerId;
+            var producerPeer = produceResult.ProducerPeer;
+            var producer = produceResult.Producer;
 
-            var producer = await transport.ProduceAsync(new ProducerOptions
+            foreach (var item in produceResult.PullPaddingConsumerPeerWithRoomIds)
             {
-                Kind = produceRequest.Kind,
-                RtpParameters = produceRequest.RtpParameters,
-                AppData = produceRequest.AppData,
-            });
+                var consumerPeer = item.ConsumerPeer;
+                var roomId = item.RoomId;
 
-            // Store the Producer into the Peer data Object.
-            Peer.Producers[producer.ProducerId] = producer;
+                // 其他 Peer 消费本 Peer
+                CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
+            }
+
+            // NOTE: For Testing
+            //CreateConsumer(producerPeer, producerPeer, producer, "1").ContinueWithOnFaultedHandleLog(_logger);
 
             // Set Producer events.
-            var peerId = Peer.PeerId;
             producer.On("score", score =>
             {
                 var data = (ProducerScore[])score!;
                 // Message: producerScore
-                var client = _hubContext.Clients.User(peerId.ToString());
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "producerScore",
-                    Message = "producerScore",
-                    Data = new { ProducerId = producer.ProducerId, Score = data }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendNotification(peerId, "producerScore", new { ProducerId = producer.ProducerId, Score = data });
+                return Task.CompletedTask;
             });
             producer.On("videoorientationchange", videoOrientation =>
             {
                 var data = (ProducerVideoOrientation)videoOrientation!;
-                _logger.LogDebug($"producer.On() | producer \"videoorientationchange\" event [producerId:\"{producer.ProducerId}\", videoOrientation:\"{videoOrientation}\"]");
+                _logger.LogDebug($"producer.On() | Producer \"videoorientationchange\" Event [producerId:\"{producer.ProducerId}\", VideoOrientation:\"{videoOrientation}\"]");
+                return Task.CompletedTask;
+            });
+            producer.Observer.On("close", _ =>
+            {
+                SendNotification(peerId, "producerClosed", new { ProducerId = producer.ProducerId });
+                return Task.CompletedTask;
             });
 
-            // Optimization: Create a server-side Consumer for each Peer.
-            foreach (var otherPeer in Room.Peers.Values)
+            string? source = null;
+            if (produceRequest.AppData.TryGetValue("source", out var sourceObj))
             {
-                if (otherPeer.PeerId == UserId)
-                {
-                    continue;
-                }
-
-                // 其他 Peer 消费本 Peer
-                CreateConsumer(otherPeer, Peer, producer).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
-            // Add into the audioLevelObserver.
-            if (produceRequest.Kind == MediaKind.Audio)
-            {
-                Room.AudioLevelObserver.AddProducerAsync(producer.ProducerId).ContinueWithOnFaultedHandleLog(_logger);
+                source = sourceObj.ToString();
             }
 
             return new MeetingMessage
             {
                 Code = 200,
                 Message = "Produce 成功",
-                Data = new ProduceResult { Id = producer.ProducerId }
+                Data = new { Id = producer.ProducerId, Source = source }
             };
         }
 
-        public Task<MeetingMessage> Join(JoinRequest joinRequest)
+        public async Task<MeetingMessage> CloseProducer(string producerId)
         {
-            if (Room == null || !_meetingManager.JoinPeer(UserId, joinRequest.RtpCapabilities, joinRequest.SctpCapabilities))
+            if (!await _scheduler.CloseProducerAsync(UserId, ConnectionId, producerId))
             {
-                return Task.FromResult(new MeetingMessage { Code = 400, Message = "Join 失败" });
+                return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
 
-            foreach (var otherPeer in Room.Peers.Values)
-            {
-                if (otherPeer.PeerId == UserId)
-                {
-                    continue;
-                }
-
-                foreach (var producer in otherPeer.Producers.Values)
-                {
-                    // 本 Peer 消费其他 Peer
-                    CreateConsumer(Peer!, otherPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
-                }
-
-                // Notify the new Peer to all other Peers.
-                // Message: newPeer
-                var client = _hubContext.Clients.User(otherPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "newPeer",
-                    Message = "newPeer",
-                    Data = new { Id = Peer!.PeerId, Peer.DisplayName, }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
-            return Task.FromResult(new MeetingMessage { Code = 200, Message = "Join 成功" });
-        }
-
-        public Task<MeetingMessage> CloseProducer(string producerId)
-        {
-            if (Room == null || !Peer!.Producers.TryGetValue(producerId, out var producer))
-            {
-                return Task.FromResult(new MeetingMessage { Code = 400, Message = "CloseProducer 失败" });
-            }
-
-            producer.Close();
-            Peer.Producers.Remove(producerId);
-            return Task.FromResult(new MeetingMessage { Code = 200, Message = "CloseProducer 成功" });
-        }
-
-        public async Task<MeetingMessage> RestartIce(string transportId)
-        {
-            if (Room == null || !Peer!.Transports.TryGetValue(transportId, out var transport))
-            {
-                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
-            }
-
-            if (!(transport is WebRtcTransport webRtcTransport))
-            {
-                return new MeetingMessage { Code = 400, Message = "RestartIce 失败" };
-            }
-
-            var iceParameters = await webRtcTransport.RestartIceAsync();
-            return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
+            return new MeetingMessage { Code = 200, Message = "CloseProducer 成功" };
         }
 
         public async Task<MeetingMessage> PauseProducer(string producerId)
         {
-            if (Room == null || !Peer!.Producers.TryGetValue(producerId, out var producer))
+            if (!await _scheduler.PauseProducerAsync(UserId, ConnectionId, producerId))
             {
-                return new MeetingMessage { Code = 400, Message = "PauseProducer 失败" };
+                return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
-
-            await producer.PauseAsync();
 
             return new MeetingMessage { Code = 200, Message = "PauseProducer 成功" };
         }
 
         public async Task<MeetingMessage> ResumeProducer(string producerId)
         {
-            if (Room == null || !Peer!.Producers.TryGetValue(producerId, out var producer))
+            if (!await _scheduler.ResumeProducerAsync(UserId, ConnectionId, producerId))
             {
-                return new MeetingMessage { Code = 400, Message = "ResumeProducer 失败" };
+                return new MeetingMessage { Code = 400, Message = "CloseProducer 失败" };
             }
-
-            await producer.ResumeAsync();
 
             return new MeetingMessage { Code = 200, Message = "ResumeProducer 成功" };
         }
 
+        public async Task<MeetingMessage> CloseConsumer(string consumerId)
+        {
+            if (!await _scheduler.CloseConsumerAsync(UserId, ConnectionId, consumerId))
+            {
+                return new MeetingMessage { Code = 400, Message = "CloseConsumer 失败" };
+            }
+
+            return new MeetingMessage { Code = 200, Message = "CloseConsumer 成功" };
+        }
+
         public async Task<MeetingMessage> PauseConsumer(string consumerId)
         {
-            if (Room == null || !Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!await _scheduler.PauseConsumerAsync(UserId, ConnectionId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "PauseConsumer 失败" };
             }
-
-            await consumer.PauseAsync();
 
             return new MeetingMessage { Code = 200, Message = "PauseConsumer 成功" };
         }
 
         public async Task<MeetingMessage> ResumeConsumer(string consumerId)
         {
-            if (Room == null || !Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            try
             {
-                return new MeetingMessage { Code = 400, Message = "ResumeConsumer 失败" };
-            }
+                var consumer = await _scheduler.ResumeConsumerAsync(UserId, ConnectionId, consumerId);
+                if (consumer == null)
+                {
+                    return new MeetingMessage { Code = 400, Message = "ResumeConsumer 失败" };
+                }
 
-            await consumer.ResumeAsync();
+                // Message: consumerScore
+                SendNotification(UserId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = consumer.Score });
+            }
+            catch (Exception ex)
+            {
+                return new MeetingMessage
+                {
+                    Code = 400,
+                    Message = $"ResumeConsumer 失败:{ex.Message}",
+                };
+            }
 
             return new MeetingMessage { Code = 200, Message = "ResumeConsumer 成功" };
         }
 
         public async Task<MeetingMessage> SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
-            if (Room == null || !Peer!.Consumers.TryGetValue(setConsumerPreferedLayersRequest.ConsumerId, out var consumer))
+            if (!await _scheduler.SetConsumerPreferedLayersAsync(UserId, ConnectionId, setConsumerPreferedLayersRequest))
             {
                 return new MeetingMessage { Code = 400, Message = "SetConsumerPreferedLayers 失败" };
             }
-
-            await consumer.SetPreferredLayersAsync(setConsumerPreferedLayersRequest);
 
             return new MeetingMessage { Code = 200, Message = "SetConsumerPreferedLayers 成功" };
         }
 
         public async Task<MeetingMessage> SetConsumerPriority(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
-            if (Room == null || !Peer!.Consumers.TryGetValue(setConsumerPriorityRequest.ConsumerId, out var consumer))
+            if (!await _scheduler.SetConsumerPriorityAsync(UserId, ConnectionId, setConsumerPriorityRequest))
             {
-                return new MeetingMessage { Code = 400, Message = "SetConsumerPriority 失败" };
+                return new MeetingMessage { Code = 400, Message = "SetConsumerPreferedLayers 失败" };
             }
-
-            await consumer.SetPriorityAsync(setConsumerPriorityRequest.Priority);
 
             return new MeetingMessage { Code = 200, Message = "SetConsumerPriority 成功" };
         }
 
         public async Task<MeetingMessage> RequestConsumerKeyFrame(string consumerId)
         {
-            if (Room == null || !Peer!.Consumers.TryGetValue(consumerId, out var consumer))
+            if (!await _scheduler.RequestConsumerKeyFrameAsync(UserId, ConnectionId, consumerId))
             {
                 return new MeetingMessage { Code = 400, Message = "RequestConsumerKeyFrame 失败" };
             }
 
-            await consumer.RequestKeyFrameAsync();
-
             return new MeetingMessage { Code = 200, Message = "RequestConsumerKeyFrame 成功" };
-        }
-
-        public async Task<MeetingMessage> ProduceData(ProduceDataRequest produceDataRequest)
-        {
-            if (Room == null || !Peer!.Transports.TryGetValue(produceDataRequest.TransportId, out var transport))
-            {
-                return new MeetingMessage { Code = 400, Message = "ProduceData 失败" };
-            }
-
-            var dataProducer = await transport.ProduceDataAsync(new DataProducerOptions
-            {
-                Id = produceDataRequest.TransportId,
-                SctpStreamParameters = produceDataRequest.SctpStreamParameters,
-                Label = produceDataRequest.Label,
-                Protocol = produceDataRequest.Protocol,
-                AppData = produceDataRequest.AppData,
-            });
-
-            // Store the Producer into the protoo Peer data Object.
-            Peer.DataProducers[dataProducer.DataProducerId] = dataProducer;
-
-            // Create a server-side DataConsumer for each Peer.
-            foreach (var otherPeer in Room.Peers.Values)
-            {
-                if (otherPeer.PeerId == UserId)
-                {
-                    continue;
-                }
-
-                // 其他 Peer 消费本 Peer
-                CreateDataConsumer(otherPeer, Peer, dataProducer).ContinueWithOnFaultedHandleLog(_logger);
-            }
-
-            return new MeetingMessage { Code = 200, Message = "ProduceData 成功" };
         }
 
         public async Task<MeetingMessage> GetTransportStats(string transportId)
         {
-            if (Room == null || !Peer!.Transports.TryGetValue(transportId, out var transport))
-            {
-                return new MeetingMessage { Code = 400, Message = "GetTransportStats 失败" };
-            }
-
-            var status = await transport.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            // TODO: (alby)实际上有 WebTransportStat、PlainTransportStat、PipeTransportStat 和 DirectTransportStat。这里反序列化后会丢失数据。
-            var data = JsonConvert.DeserializeObject<TransportStat>(status!);
-
+            var data = await _scheduler.GetTransportStatsAsync(UserId, ConnectionId, transportId);
             return new MeetingMessage { Code = 200, Message = "GetTransportStats 成功", Data = data };
         }
 
         public async Task<MeetingMessage> GetProducerStats(string producerId)
         {
-            if (Room == null || !Peer!.Producers.TryGetValue(producerId, out var producer))
-            {
-                return new MeetingMessage { Code = 400, Message = "GetProducerStats 失败" };
-            }
-            var status = await producer.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<ProducerStat>(status!);
-
+            var data = await _scheduler.GetProducerStatsAsync(UserId, ConnectionId, producerId);
             return new MeetingMessage { Code = 200, Message = "GetProducerStats 成功", Data = data };
         }
 
         public async Task<MeetingMessage> GetConsumerStats(string consumerId)
         {
-            if (Room == null || !Peer!.Consumers.TryGetValue(consumerId, out var consumer))
-            {
-                return new MeetingMessage { Code = 400, Message = "GetConsumerStats 失败" };
-            }
-
-            var status = await consumer.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<ConsumerStat>(status!);
-
+            var data = await _scheduler.GetConsumerStatsAsync(UserId, ConnectionId, consumerId);
             return new MeetingMessage { Code = 200, Message = "GetConsumerStats 成功", Data = data };
         }
 
-        public async Task<MeetingMessage> GetDataConsumerStats(string dataConsumerId)
+        public async Task<MeetingMessage> RestartIce(string transportId)
         {
-            if (Room == null || !Peer!.DataConsumers.TryGetValue(dataConsumerId, out var dataConsumer))
-            {
-                return new MeetingMessage { Code = 400, Message = "GetDataConsumerStats 失败" };
-            }
-
-            var status = await dataConsumer.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<DataConsumerStat>(status!);
-
-            return new MeetingMessage { Code = 200, Message = "GetDataConsumerStats 成功", Data = data };
+            var iceParameters = await _scheduler.RestartIceAsync(UserId, ConnectionId, transportId);
+            return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
-        public async Task<MeetingMessage> GetDataProducerStats(string dataProducerId)
+        public async Task<MeetingMessage> SendMessage(SendMessageRequest sendMessageRequest)
         {
-            if (Room == null || !Peer!.DataProducers.TryGetValue(dataProducerId, out var dataProducer))
+            string[] otherPeerIds;
+            if (sendMessageRequest.RoomId.IsNullOrWhiteSpace())
             {
-                return new MeetingMessage { Code = 400, Message = "GetDataProducerStats 失败" };
+                otherPeerIds = await _scheduler.GetOtherPeerIdsAsync(UserId, ConnectionId);
             }
-            var status = await dataProducer.GetStatsAsync();
-            // TODO: (alby)考虑不进行反序列化
-            var data = JsonConvert.DeserializeObject<DataProducerStat>(status!);
+            else
+            {
+                otherPeerIds = await _scheduler.GetOtherPeerIdsInRoomAsync(UserId, ConnectionId, sendMessageRequest.RoomId!);
+            }
 
-            return new MeetingMessage { Code = 200, Message = "GetDataProducerStats 成功", Data = data };
+            // Message: newMessage
+            SendNotification(otherPeerIds, "newMessage", new
+            {
+                RoomId = sendMessageRequest.RoomId,
+                Message = sendMessageRequest.Message,
+            });
+
+            return new MeetingMessage { Code = 200, Message = "RestartIce 成功" };
         }
 
-        #region CreateConsumer
+        #region Private Methods
 
-        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
+        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer, string roomId)
         {
-            _logger.LogDebug($"CreateConsumer() | [consumerPeer:\"{consumerPeer.PeerId}\", producerPeer:\"{producerPeer.PeerId}\", producer:\"{producer.ProducerId}\"]");
-
-            if(Room == null)
-            {
-                _logger.LogError($"CreateConsumer() | [Room is null]");
-                return;
-            }
-
-            // Optimization:
-            // - Create the server-side Consumer. If video, do it paused.
-            // - Tell its Peer about it and wait for its response.
-            // - Upon receipt of the response, resume the server-side Consumer.
-            // - If video, this will mean a single key frame requested by the
-            //   server-side Consumer (when resuming it).
-
-            // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
-            if (consumerPeer.RtpCapabilities == null || !Room.Router.CanConsume(producer.ProducerId, consumerPeer.RtpCapabilities))
-            {
-                return;
-            }
-
-            // Must take the Transport the remote Peer is using for consuming.
-            var transport = consumerPeer.GetConsumerTransport();
-            // This should not happen.
-            if (transport == null)
-            {
-                _logger.LogWarning("CreateConsumer() | Transport for consuming not found");
-                return;
-            }
+            _logger.LogDebug($"CreateConsumer() | [ConsumerPeer:\"{consumerPeer.PeerId}\", ProducerPeer:\"{producerPeer.PeerId}\", Producer:\"{producer.ProducerId}\"]");
 
             // Create the Consumer in paused mode.
             Consumer consumer;
 
             try
             {
-                consumer = await transport.ConsumeAsync(new ConsumerOptions
-                {
-                    ProducerId = producer.ProducerId,
-                    RtpCapabilities = consumerPeer.RtpCapabilities,
-                    Paused = producer.Kind == MediaKind.Video
-                });
+                consumer = await _scheduler.ConsumeAsync(producerPeer.PeerId, consumerPeer.PeerId, producer.ProducerId, roomId);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
+                _logger.LogWarning(ex, "CreateConsumer()");
                 return;
             }
-
-            // Store the Consumer into the consumerPeer data Object.
-            consumerPeer.Consumers[consumer.ConsumerId] = consumer;
 
             consumer.On("score", (score) =>
             {
                 var data = (ConsumerScore)score!;
                 // Message: consumerScore
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerScore",
-                    Message = "consumerScore",
-                    Data = new { ConsumerId = consumer.ConsumerId, Score = data }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendNotification(consumerPeer.PeerId, "consumerScore", new { ConsumerId = consumer.ConsumerId, Score = data });
+                return Task.CompletedTask;
             });
 
             // Set Consumer events.
             consumer.On("transportclose", _ =>
             {
-                // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.ConsumerId);
+                return Task.CompletedTask;
             });
 
             consumer.On("producerclose", _ =>
             {
-                // Remove from its map.
-                consumerPeer.Consumers.Remove(consumer.ConsumerId);
-
                 // Message: consumerClosed
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerClosed",
-                    Message = "consumerClosed",
-                    Data = new { ConsumerId = consumer.ConsumerId }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendNotification(consumerPeer.PeerId, "consumerClosed", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
             });
 
             consumer.On("producerpause", _ =>
             {
                 // Message: consumerPaused
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerPaused",
-                    Message = "consumerPaused",
-                    Data = new { ConsumerId = consumer.ConsumerId }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendNotification(consumerPeer.PeerId, "consumerPaused", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
             });
 
             consumer.On("producerresume", _ =>
             {
                 // Message: consumerResumed
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerResumed",
-                    Message = "consumerResumed",
-                    Data = new { ConsumerId = consumer.ConsumerId }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendNotification(consumerPeer.PeerId, "consumerResumed", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
             });
 
             consumer.On("layerschange", layers =>
@@ -697,176 +571,58 @@ namespace TubumuMeeting.Meeting.Server
                 var data = (ConsumerLayers?)layers;
 
                 // Message: consumerLayersChanged
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "consumerLayersChanged",
-                    Message = "consumerLayersChanged",
-                    Data = new { ConsumerId = consumer.ConsumerId, SpatialLayer = data != null ? (int?)data.SpatialLayer : null, TemporalLayer = data != null ? (int?)data.TemporalLayer : null }
-                }).ContinueWithOnFaultedHandleLog(_logger);
+                SendNotification(consumerPeer.PeerId, "consumerLayersChanged", new { ConsumerId = consumer.ConsumerId });
+                return Task.CompletedTask;
+            });
+
+            // NOTE: For testing.
+            // await consumer.enableTraceEvent([ 'rtp', 'keyframe', 'nack', 'pli', 'fir' ]);
+            // await consumer.enableTraceEvent([ 'pli', 'fir' ]);
+            // await consumer.enableTraceEvent([ 'keyframe' ]);
+
+            consumer.On("trace", trace =>
+            {
+                _logger.LogDebug($"consumer \"trace\" event [producerId:{consumer.ConsumerId}, trace:{trace}]");
+                return Task.CompletedTask;
             });
 
             // Send a request to the remote Peer with Consumer parameters.
-            try
+            // Message: newConsumer
+
+            SendNotification(consumerPeer.PeerId, "newConsumer", new ConsumeInfo
             {
-                // Message: newConsumer
-                var client = _hubContext.Clients.User(consumerPeer.PeerId);
-                await client.NewConsumer(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "newConsumer",
-                    Message = "newConsumer",
-                    Data = new
-                    {
-                        PeerId = producerPeer.PeerId,
-                        Kind = consumer.Kind,
-                        ProducerId = producer.ProducerId,
-                        Id = consumer.ConsumerId,
-                        RtpParameters = consumer.RtpParameters,
-                        Type = consumer.Type,
-                        AppData = producer.AppData,
-                        ProducerPaused = consumer.ProducerPaused,
-                        ConsumerPeerId = consumerPeer.PeerId, // 为了方便 NewConsumerReturn 查找 Consumer
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"CreateConsumer() | [error:\"{ex}\"]");
-            }
+                RoomId = roomId,
+                ProducerPeerId = producerPeer.PeerId,
+                Kind = consumer.Kind,
+                ProducerId = producer.ProducerId,
+                ConsumerId = consumer.ConsumerId,
+                RtpParameters = consumer.RtpParameters,
+                Type = consumer.Type,
+                ProducerAppData = producer.AppData,
+                ProducerPaused = consumer.ProducerPaused,
+            });
         }
 
-        public async Task<MeetingMessage> NewConsumerReturn(NewConsumerReturnRequest newConsumerReturnRequest)
+        private void SendNotification(string peerId, string type, object data)
         {
-            _logger.LogDebug($"NewConsumerReady() | [peerId:\"{newConsumerReturnRequest.PeerId}\", consumerId:\"{newConsumerReturnRequest.ConsumerId}\"]");
-
-            if (!_meetingManager.Peers.TryGetValue(newConsumerReturnRequest.PeerId, out var consumerPeer) ||
-                consumerPeer.Closed ||
-                !consumerPeer.Consumers.TryGetValue(newConsumerReturnRequest.ConsumerId, out var consumer) ||
-                consumer.Closed)
+            // For Testing
+            if (type == "consumerLayersChanged" || type == "consumerScore" || type == "producerScore") return;
+            var client = _hubContext.Clients.User(peerId);
+            client.Notify(new MeetingNotification
             {
-                return new MeetingMessage { Code = 400, Message = "NewConsumerReturn 失败" };
-            }
-
-            // Now that we got the positive response from the remote Peer and, if
-            // video, resume the Consumer to ask for an efficient key frame.
-            await consumer.ResumeAsync();
-
-            // Message: consumerScore
-            var client = _hubContext.Clients.User(consumerPeer.PeerId);
-            client.ReceiveMessage(new MeetingMessage
-            {
-                Code = 200,
-                InternalCode = "consumerScore",
-                Message = "consumerScore",
-                Data = new
-                {
-                    ConsumerId = consumer.ConsumerId,
-                    Score = consumer.Score,
-                }
+                Type = type,
+                Data = data
             }).ContinueWithOnFaultedHandleLog(_logger);
-
-            return new MeetingMessage { Code = 200, Message = "NewConsumerReturn 成功" };
         }
 
-        #endregion
-
-        #region CreateDataConsumer
-
-        /// <summary>
-        /// Creates a mediasoup DataConsumer for the given mediasoup DataProducer.
-        /// </summary>
-        /// <param name="dataConsumerPeer"></param>
-        /// <param name="dataProducerPeer"></param>
-        /// <param name="dataProducer"></param>
-        /// <returns></returns>
-        private async Task CreateDataConsumer(Peer dataConsumerPeer, Peer dataProducerPeer, DataProducer dataProducer)
+        private void SendNotification(IReadOnlyList<string> peerIds, string type, object data)
         {
-            // NOTE: Don't create the DataConsumer if the remote Peer cannot consume it.
-            if (dataConsumerPeer.SctpCapabilities == null)
+            var client = _hubContext.Clients.Users(peerIds);
+            client.Notify(new MeetingNotification
             {
-                return;
-            }
-
-            // Must take the Transport the remote Peer is using for consuming.
-            var transport = dataConsumerPeer.GetConsumerTransport();
-            // This should not happen.
-            if (transport == null)
-            {
-                _logger.LogWarning("CreateDataConsumer() | Transport for consuming not found");
-                return;
-            }
-
-            // Create the DataConsumer.
-            DataConsumer dataConsumer;
-
-            try
-            {
-                dataConsumer = await transport.ConsumeDataAsync(new DataConsumerOptions
-                {
-                    DataProducerId = dataProducer.DataProducerId,
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"CreateDataConsumer() | [error:\"{ex}\"]");
-                return;
-            }
-
-            // Store the DataConsumer into the protoo dataConsumerPeer data Object.
-            dataConsumerPeer.DataConsumers[dataConsumer.DataConsumerId] = dataConsumer;
-
-            // Set DataConsumer events.
-            dataConsumer.On("transportclose", _ =>
-            {
-                // Remove from its map.
-                dataConsumerPeer.DataConsumers.Remove(dataConsumer.DataConsumerId);
-            });
-
-            dataConsumer.On("dataproducerclose", _ =>
-            {
-                // Remove from its map.
-                dataConsumerPeer.DataConsumers.Remove(dataConsumer.DataConsumerId);
-
-                // Message: consumerClosed
-                var client = _hubContext.Clients.User(dataConsumerPeer.PeerId);
-                client.ReceiveMessage(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "dataConsumerClosed",
-                    Message = "dataConsumerClosed",
-                    Data = new { DataConsumerId = dataConsumer.DataConsumerId }
-                }).ContinueWithOnFaultedHandleLog(_logger);
-            });
-
-            // Send a protoo request to the remote Peer with Consumer parameters.
-            try
-            {
-                // Message: newConsumer
-                var client = _hubContext.Clients.User(dataConsumerPeer.PeerId);
-                await client.NewConsumer(new MeetingMessage
-                {
-                    Code = 200,
-                    InternalCode = "newDataConsumer",
-                    Message = "newDataConsumer",
-                    Data = new
-                    {
-                        PeerId = dataProducerPeer?.PeerId,
-                        DataProducerId = dataProducer.DataProducerId,
-                        Id = dataConsumer.DataConsumerId,
-                        SctpStreamParameters = dataConsumer.SctpStreamParameters,
-                        Lablel = dataConsumer.Label,
-                        Protocol = dataConsumer.Protocol,
-                        AppData = dataProducer.AppData,
-                        // CreateDataConsumer 和 CreateConsumer 不同，前者在请求客户端后不进行后续操作。所以，这里不用加一个 DataConsumerPeerId 属性。
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"CreateDataConsumer() | [error:\"{ex}\"]");
-            }
+                Type = type,
+                Data = data
+            }).ContinueWithOnFaultedHandleLog(_logger);
         }
 
         #endregion

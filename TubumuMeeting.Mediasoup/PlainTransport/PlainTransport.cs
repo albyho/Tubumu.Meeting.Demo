@@ -36,9 +36,9 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newproducer - (producer: Producer)</para>
-        /// <para>@emits newconsumer - (producer: Producer)</para>
+        /// <para>@emits newconsumer - (consumer: Consumer)</para>
         /// <para>@emits newdataproducer - (dataProducer: DataProducer)</para>
-        /// <para>@emits newdataconsumer - (dataProducer: DataProducer)</para>
+        /// <para>@emits newdataconsumer - (dataConsumer: DataConsumer)</para>
         /// <para>@emits tuple - (tuple: TransportTuple)</para>
         /// <para>@emits rtcptuple - (rtcpTuple: TransportTuple)</para>
         /// <para>@emits sctpstatechange - (sctpState: SctpState)</para>
@@ -86,37 +86,63 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the PlainTransport.
         /// </summary>
-        public override void Close()
+        public override async Task CloseAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            base.Close();
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.CloseAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
         /// Router was closed.
         /// </summary>
-        public override void RouterClosed()
+        public override async Task RouterClosedAsync()
         {
             if (Closed)
             {
                 return;
             }
 
-            if (SctpState.HasValue)
+            await CloseLock.WaitAsync();
+            try
             {
-                SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
-            }
+                if (Closed)
+                {
+                    return;
+                }
 
-            base.RouterClosed();
+                if (SctpState.HasValue)
+                {
+                    SctpState = TubumuMeeting.Mediasoup.SctpState.Closed;
+                }
+
+                await base.RouterClosedAsync();
+            }
+            finally
+            {
+                CloseLock.Set();
+            }
         }
 
         /// <summary>
@@ -226,7 +252,7 @@ namespace TubumuMeeting.Mediasoup
 
                 default:
                     {
-                        _logger.LogError($"OnChannelMessage() | ignoring unknown event{@event}");
+                        _logger.LogError($"OnChannelMessage() | Ignoring unknown event{@event}");
                         break;
                     }
             }
