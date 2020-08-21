@@ -344,7 +344,7 @@ export default {
 
       for(let i = 0; i < joinRoomData.peers.length; i++) {
         const {peer, roomId, roomSources} = joinRoomData.peers[i];
-        if(peer.peerId == this.peerId || !roomSources || roomSources.length === 0) continue;
+        if(peer.peerId === this.peerId || !roomSources || roomSources.length === 0) continue;
         this.pull(roomId, peer.peerId, roomSources)
       }
 
@@ -552,7 +552,7 @@ if(this.peerId === '1000') {
         case 'peerJoinRoom': {
           // eslint-disable-next-line no-unused-vars
           const {peer, roomId, roomSources } = data.data;
-          if(peer.peerId != this.peerId && roomSources && roomSources.length !== 0) {
+          if(peer.peerId !== this.peerId && roomSources && roomSources.length !== 0) {
             await this.pull(roomId, peer.peerId, roomSources);
           }
           break;
