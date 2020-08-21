@@ -401,11 +401,7 @@ namespace TubumuMeeting.Meeting.Server
                             using (await _consumersLock.WriteLockAsync())
                             {
                                 _consumers.Remove(consumer.ConsumerId);
-
-                                using (await producerPeer._producersLock.WriteLockAsync())
-                                {
-                                    producer.RemoveConsumer(consumer.ConsumerId);
-                                }
+                                producer.RemoveConsumer(consumer.ConsumerId);
                             }
                         });
 
