@@ -76,6 +76,28 @@ namespace TubumuMeeting.Mediasoup
         }
 
         /// <summary>
+        /// Emits the event and associated data
+        /// </summary>
+        /// <param name="eventName">The event name to call methods for</param>
+        /// <param name="data">The data to call all the methods with</param>
+        public void EmitSync(string eventName, object? data = null)
+        {
+            _rwl.EnterReadLock();
+            if (!_events.TryGetValue(eventName, out List<Func<object?, Task>> subscribedMethods))
+            {
+                //throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
+            }
+            else
+            {
+                foreach (var f in subscribedMethods)
+                {
+                    f(data);
+                }
+            }
+            _rwl.ExitReadLock();
+        }
+
+        /// <summary>
         /// Removes [method] from the event
         /// </summary>
         /// <param name="eventName">Event name to remove function from</param>

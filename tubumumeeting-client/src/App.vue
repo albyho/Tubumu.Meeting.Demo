@@ -301,7 +301,9 @@ export default {
         forceTcp: false,
         producing: false,
         consuming: true,
-        sctpCapabilities: undefined // 使用 DataChannel 并且会 consume 则取 this.mediasoupDevice.sctpCapabilities
+        sctpCapabilities: this._useDataChannel
+							? this._mediasoupDevice.sctpCapabilities
+							: undefined
       });
 
       // CreateWebRtcTransport(消费)成功, createRecvTransport

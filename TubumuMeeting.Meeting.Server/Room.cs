@@ -38,7 +38,6 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncAutoResetEvent _closeLock = new AsyncAutoResetEvent();
 
-        // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
         /// Whether the Room is closed.
         /// </summary>

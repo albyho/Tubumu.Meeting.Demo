@@ -45,7 +45,7 @@ namespace TubumuMeeting.Meeting.Server
 
         // TODO: (alby) _joined 的使用及线程安全。
         [JsonIgnore]
-        private bool _joined { get; private set; }
+        private bool _joined;
 
         private readonly WebRtcTransportSettings _webRtcTransportSettings;
 
