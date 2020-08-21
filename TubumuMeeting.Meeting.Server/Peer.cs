@@ -15,6 +15,7 @@ namespace TubumuMeeting.Meeting.Server
     {
         public string PeerId { get; }
 
+        [JsonIgnore]
         public string ConnectionId { get; }
 
         public string DisplayName { get; }
@@ -42,7 +43,9 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Peer> _logger;
 
-        public bool Joined { get; private set; }
+        // TODO: (alby) _joined 的使用及线程安全。
+        [JsonIgnore]
+        private bool _joined { get; private set; }
 
         private readonly WebRtcTransportSettings _webRtcTransportSettings;
 
@@ -102,7 +105,7 @@ namespace TubumuMeeting.Meeting.Server
             Sources = sources ?? Array.Empty<string>();
             AppData = appData ?? new Dictionary<string, object>();
             _pullPaddingsLock.Set();
-            Joined = true;
+            _joined = true;
         }
 
         /// <summary>
@@ -692,19 +695,19 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         public async Task LeaveAsync()
         {
-            if (!Joined)
+            if (!_joined)
             {
                 return;
             }
 
             using (await _transportsLock.WriteLockAsync())
             {
-                if (!Joined)
+                if (!_joined)
                 {
                     return;
                 }
 
-                Joined = false;
+                _joined = false;
 
                 // Iterate and close all mediasoup Transport associated to this Peer, so all
                 // its Producers and Consumers will also be closed.
@@ -740,7 +743,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private void CheckJoined()
         {
-            if (!Joined)
+            if (!_joined)
             {
                 throw new Exception($"CheckClosed() | Peer:{PeerId} is not joined.");
             }

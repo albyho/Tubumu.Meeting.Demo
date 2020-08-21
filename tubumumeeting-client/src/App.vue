@@ -118,8 +118,8 @@ export default {
         const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
-            `${host}/hubs/meetingHub?access_token=${accessTokens[this.peerId]}`, {
-              accessTokenFactory: () => this.props.accessTokens[this.state.peerId],
+            `${host}/hubs/meetingHub`, {
+              accessTokenFactory: () => accessTokens[this.peerId],
               skipNegotiation: true,
               transport: signalR.HttpTransportType.WebSockets,
             }
