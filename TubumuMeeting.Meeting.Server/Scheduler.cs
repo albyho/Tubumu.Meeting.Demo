@@ -46,7 +46,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncAutoResetEvent _roomAppDataLock = new AsyncAutoResetEvent();
 
-        private Router _router;
+        private Router? _router;
 
         #endregion Private Fields
 
@@ -93,6 +93,11 @@ namespace TubumuMeeting.Meeting.Server
                     {
                         MediaCodecs = mediaCodecs
                     });
+                    if(_router == null)
+                    {
+                        _logger.LogError($"PeerJoinAsync() | Worker maybe closed.");
+                        return false;
+                    }
                 }
 
                 peer = new Peer(_loggerFactory,

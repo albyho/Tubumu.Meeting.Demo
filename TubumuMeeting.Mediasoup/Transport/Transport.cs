@@ -48,6 +48,11 @@ namespace TubumuMeeting.Mediasoup
         protected bool Closed { get; private set; }
 
         /// <summary>
+        /// Close locker.
+        /// </summary>
+        protected readonly AsyncAutoResetEvent CloseLock = new AsyncAutoResetEvent();
+
+        /// <summary>
         /// Internal data.
         /// </summary>
         protected TransportInternalData Internal { get; set; }
@@ -141,11 +146,6 @@ namespace TubumuMeeting.Mediasoup
         /// DataConsumers locker.
         /// </summary>
         protected readonly AsyncAutoResetEvent DataConsumersLock = new AsyncAutoResetEvent();
-
-        /// <summary>
-        /// Close locker.
-        /// </summary>
-        protected readonly AsyncAutoResetEvent CloseLock = new AsyncAutoResetEvent();
 
         /// <summary>
         /// RTCP CNAME for Producers.

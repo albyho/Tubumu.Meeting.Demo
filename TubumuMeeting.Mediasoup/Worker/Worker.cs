@@ -246,7 +246,7 @@ namespace TubumuMeeting.Mediasoup
                     return;
                 }
 
-                _logger.LogDebug("CloseAsync()");
+                _logger.LogDebug("CloseAsync() | Worker");
 
                 _closed = true;
 
