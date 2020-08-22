@@ -77,11 +77,10 @@ namespace TubumuMeeting.Mediasoup
 
         #endregion Private Fields
 
-        // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
         /// Closed flag.
         /// </summary>
-        public bool Closed { get; private set; }
+        private bool _closed;
 
         /// <summary>
         /// Close locker.
@@ -234,7 +233,7 @@ namespace TubumuMeeting.Mediasoup
 
         public async Task CloseAsync()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
@@ -242,14 +241,14 @@ namespace TubumuMeeting.Mediasoup
             await _closeLock.WaitAsync();
             try
             {
-                if (Closed)
+                if (_closed)
                 {
                     return;
                 }
 
                 _logger.LogDebug("CloseAsync()");
 
-                Closed = true;
+                _closed = true;
 
                 // Kill the worker process.
                 if (_child != null)
@@ -287,69 +286,142 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Dump Worker.
         /// </summary>
-        public Task<string?> DumpAsync()
+        public async Task<string?> DumpAsync()
         {
-            _logger.LogDebug("DumpAsync()");
-            return _channel.RequestAsync(MethodId.WORKER_DUMP);
+            if (_closed)
+            {
+                return null;
+            }
+
+            await _closeLock.WaitAsync();
+            try
+            {
+                if (_closed)
+                {
+                    return null;
+                }
+
+                _logger.LogDebug("DumpAsync()");
+                return await _channel.RequestAsync(MethodId.WORKER_DUMP);
+            }
+            finally
+            {
+                _closeLock.Set();
+            }
         }
 
         /// <summary>
         /// Get mediasoup-worker process resource usage.
         /// </summary>
-        public Task<string?> GetResourceUsageAsync()
+        public async Task<string?> GetResourceUsageAsync()
         {
-            _logger.LogDebug("GetResourceUsageAsync()");
-            return _channel.RequestAsync(MethodId.WORKER_GET_RESOURCE_USAGE);
+            if (_closed)
+            {
+                return null;
+            }
+
+            await _closeLock.WaitAsync();
+            try
+            {
+                if (_closed)
+                {
+                    return null;
+                }
+
+                _logger.LogDebug("GetResourceUsageAsync()");
+                return await _channel.RequestAsync(MethodId.WORKER_GET_RESOURCE_USAGE);
+            }
+            finally
+            {
+                _closeLock.Set();
+            }
         }
 
         /// <summary>
         /// Updates the worker settings in runtime. Just a subset of the worker settings can be updated.
         /// </summary>
-        public Task<string?> UpdateSettingsAsync(WorkerUpdateableSettings workerUpdateableSettings)
+        public async Task<string?> UpdateSettingsAsync(WorkerUpdateableSettings workerUpdateableSettings)
         {
-            _logger.LogDebug("UpdateSettingsAsync()");
-            var reqData = new
+            if (_closed)
             {
-                LogLevel = workerUpdateableSettings?.LogLevel.GetEnumStringValue(),
-                LogTags = workerUpdateableSettings?.LogTags.Select(m => m.GetEnumStringValue()),
-            };
-            return _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS, null, reqData);
+                return null;
+            }
+
+            await _closeLock.WaitAsync();
+            try
+            {
+                if (_closed)
+                {
+                    return null;
+                }
+
+                _logger.LogDebug("UpdateSettingsAsync()");
+                var reqData = new
+                {
+                    LogLevel = workerUpdateableSettings?.LogLevel.GetEnumStringValue(),
+                    LogTags = workerUpdateableSettings?.LogTags.Select(m => m.GetEnumStringValue()),
+                };
+                return await _channel.RequestAsync(MethodId.WORKER_UPDATE_SETTINGS, null, reqData);
+
+            }
+            finally
+            {
+                _closeLock.Set();
+            }
         }
 
         /// <summary>
         /// Create a Router.
         /// </summary>
-        public async Task<Router> CreateRouterAsync(RouterOptions routerOptions)
+        public async Task<Router?> CreateRouterAsync(RouterOptions routerOptions)
         {
-            _logger.LogDebug("CreateRouterAsync()");
-
-            // This may throw.
-            var rtpCapabilities = ORTC.GenerateRouterRtpCapabilities(routerOptions.MediaCodecs);
-
-            var @internal = new { RouterId = Guid.NewGuid().ToString() };
-
-            await _channel.RequestAsync(MethodId.WORKER_CREATE_ROUTER, @internal);
-
-            var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, _payloadChannel, AppData);
-
-            lock (_routersLock)
+            if (_closed)
             {
-                _routers.Add(router);
+                return null;
             }
 
-            router.On("@close", _ =>
+            await _closeLock.WaitAsync();
+            try
             {
+                if (_closed)
+                {
+                    return null;
+                }
+
+                _logger.LogDebug("CreateRouterAsync()");
+
+                // This may throw.
+                var rtpCapabilities = ORTC.GenerateRouterRtpCapabilities(routerOptions.MediaCodecs);
+
+                var @internal = new { RouterId = Guid.NewGuid().ToString() };
+
+                await _channel.RequestAsync(MethodId.WORKER_CREATE_ROUTER, @internal);
+
+                var router = new Router(_loggerFactory, @internal.RouterId, rtpCapabilities, _channel, _payloadChannel, AppData);
+
                 lock (_routersLock)
                 {
-                    _routers.Remove(router);
+                    _routers.Add(router);
                 }
-                return Task.CompletedTask;
-            });
 
-            // Emit observer event.
-            Observer.Emit("newrouter", router);
+                router.On("@close", _ =>
+                {
+                    lock (_routersLock)
+                    {
+                        _routers.Remove(router);
+                    }
+                    return Task.CompletedTask;
+                });
 
-            return router;
+                // Emit observer event.
+                Observer.Emit("newrouter", router);
+
+                return router;
+            }
+            finally
+            {
+                _closeLock.Set();
+            }
         }
 
         #endregion Request

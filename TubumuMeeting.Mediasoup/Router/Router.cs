@@ -45,16 +45,11 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly PayloadChannel _payloadChannel;
 
-        /// <summary>
-        /// App custom data.
-        /// </summary>
-        public Dictionary<string, object>? AppData { get; private set; }
-
         // TODO: (alby)线程安全及 Closed 的使用。
         /// <summary>
         /// Whether the Router is closed.
         /// </summary>
-        public bool Closed { get; private set; }
+        private bool _closed;
 
         /// <summary>
         /// Transports map.
@@ -80,6 +75,11 @@ namespace TubumuMeeting.Mediasoup
         /// Router to PipeTransport map.
         /// </summary>
         private readonly ConcurrentDictionary<Router, PipeTransport[]> _mapRouterPipeTransports = new ConcurrentDictionary<Router, PipeTransport[]>();
+
+        /// <summary>
+        /// App custom data.
+        /// </summary>
+        public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
         /// Observer instance.
@@ -127,14 +127,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task CloseAsync()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             _logger.LogDebug("CloseAsync() | Router");
 
-            Closed = true;
+            _closed = true;
 
             // Fire and forget
             _channel.RequestAsync(MethodId.ROUTER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
@@ -152,14 +152,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public async Task WorkerClosedAsync()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             _logger.LogDebug($"WorkerClosedAsync() | Router:{RouterId}");
 
-            Closed = true;
+            _closed = true;
 
             await CloseInternalAsync();
 
