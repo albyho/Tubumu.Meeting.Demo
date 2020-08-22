@@ -539,7 +539,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "rtp":
                     {
-                        // TODO: (alby)线程安全
+                        // TODO: (alby) _closed 的使用及线程安全。
                         if (_closed)
                             break;
 
