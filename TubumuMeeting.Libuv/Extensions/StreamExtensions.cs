@@ -105,7 +105,7 @@ namespace TubumuMeeting.Libuv.Extensions
             hashAlgorithm.TransformFinalBlock(input.Array, input.Offset, input.Count);
         }
 
-        private static byte[] emptyBuffer = new byte[0];
+        private static readonly byte[] emptyBuffer = new byte[0];
 
         public static void TransformFinalBlock(this HashAlgorithm hashAlgorithm)
         {

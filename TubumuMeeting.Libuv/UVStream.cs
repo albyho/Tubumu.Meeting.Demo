@@ -24,7 +24,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_shutdown(IntPtr req, IntPtr handle, callback callback);
 
-        private uv_stream_t* stream;
+        private readonly uv_stream_t* stream;
 
         private long PendingWrites { get; set; }
 
@@ -99,7 +99,7 @@ namespace TubumuMeeting.Libuv
             Invoke(uv_read_stop);
         }
 
-        private static read_callback read_cb = rcallback;
+        private static readonly read_callback read_cb = rcallback;
 
         private static void rcallback(IntPtr streamPointer, IntPtr size, ref uv_buf_t buf)
         {

@@ -5,7 +5,7 @@ namespace TubumuMeeting.Libuv
 {
     public class LoopBackend
     {
-        private IntPtr nativeHandle;
+        private readonly IntPtr nativeHandle;
 
         internal LoopBackend(Loop loop)
         {

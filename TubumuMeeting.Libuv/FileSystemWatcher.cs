@@ -25,7 +25,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_fs_event_init(IntPtr loop, IntPtr handle);
 
-        private static uv_fs_event_cb fs_event_callback;
+        private static readonly uv_fs_event_cb fs_event_callback;
 
         static FileSystemWatcher()
         {

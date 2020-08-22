@@ -95,7 +95,7 @@ namespace TubumuMeeting.Libuv
         internal static extern int uv_spawn(IntPtr loop, IntPtr handle, ref uv_process_options_t options);
 
         private uv_process_options_t process_options;
-        private Action<Process> exitCallback;
+        private readonly Action<Process> exitCallback;
 
         internal Process(Loop loop, ProcessOptions options, Action<Process> exitCallback)
             : base(loop, HandleType.UV_PROCESS)

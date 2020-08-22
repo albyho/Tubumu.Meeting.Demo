@@ -81,7 +81,7 @@ namespace TubumuMeeting.Libuv
             Ensure.Success(r);
         }
 
-        private static uv_timer_cb cb = OnTick;
+        private static readonly uv_timer_cb cb = OnTick;
 
         private static void OnTick(IntPtr handle)
         {

@@ -91,7 +91,7 @@ namespace Tubumu.Core.Utilities.Cryptography
         public static Byte[] EncryptFromStringToByteArray(string encryptString, string key = null)
         {
             Byte[] inputByteArray = Encoding.UTF8.GetBytes(encryptString);
-            
+
             return EncryptFromByteArrayToByteArray(inputByteArray, key);
         }
 
@@ -125,7 +125,7 @@ namespace Tubumu.Core.Utilities.Cryptography
         {
             Byte[] inputByteArray = Encoding.UTF8.GetBytes(encryptString);
             var encryptBuffer = EncryptFromByteArrayToByteArray(inputByteArray, key);
-            
+
             return Convert.ToBase64String(encryptBuffer);
         }
 

@@ -114,7 +114,7 @@ namespace TubumuMeeting.Libuv
 
         private Action closeCallback;
 
-        private static close_callback close_cb = CloseCallback;
+        private static readonly close_callback close_cb = CloseCallback;
 
         private static void CloseCallback(IntPtr handlePointer)
         {

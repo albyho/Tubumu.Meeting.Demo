@@ -36,7 +36,7 @@ namespace TubumuMeeting.Libuv
     {
         public Action Callback { get; protected set; }
 
-        private Action cb;
+        private readonly Action cb;
 
         public CAction(Action callback)
             : base()
@@ -60,7 +60,7 @@ namespace TubumuMeeting.Libuv
     {
         public Action<T1> Callback { get; protected set; }
 
-        private Action<T1> cb;
+        private readonly Action<T1> cb;
 
         public CAction(Action<T1> callback)
             : base()
@@ -84,7 +84,7 @@ namespace TubumuMeeting.Libuv
     {
         public Action<T1, T2> Callback { get; protected set; }
 
-        private Action<T1, T2> cb;
+        private readonly Action<T1, T2> cb;
 
         public CAction(Action<T1, T2> callback)
             : base()
@@ -108,7 +108,7 @@ namespace TubumuMeeting.Libuv
     {
         public Action<T1, T2, T3> Callback { get; protected set; }
 
-        private Action<T1, T2, T3> cb;
+        private readonly Action<T1, T2, T3> cb;
 
         public CAction(Action<T1, T2, T3> callback)
         {

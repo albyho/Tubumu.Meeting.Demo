@@ -132,7 +132,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        private static uv_exit_cb cb = exit;
+        private static readonly uv_exit_cb cb = exit;
 
         private static void exit(IntPtr handlePointer, long exit_status, int term_signal)
         {

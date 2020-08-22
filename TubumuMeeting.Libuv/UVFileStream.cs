@@ -109,7 +109,7 @@ namespace TubumuMeeting.Libuv
 
         public bool Readable { get; private set; }
 
-        private byte[] buffer = new byte[0x1000];
+        private readonly byte[] buffer = new byte[0x1000];
         private bool reading = false;
         private int readposition = 0;
 
@@ -168,7 +168,7 @@ namespace TubumuMeeting.Libuv
         public event Action<ArraySegment<byte>> Data;
 
         private int writeoffset = 0;
-        private Queue<Tuple<ArraySegment<byte>, Action<Exception>>> queue = new Queue<Tuple<ArraySegment<byte>, Action<Exception>>>();
+        private readonly Queue<Tuple<ArraySegment<byte>, Action<Exception>>> queue = new Queue<Tuple<ArraySegment<byte>, Action<Exception>>>();
 
         private void HandleWrite(Exception ex, int size)
         {

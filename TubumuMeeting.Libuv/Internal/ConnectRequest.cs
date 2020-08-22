@@ -22,7 +22,7 @@ namespace TubumuMeeting.Libuv
 
     unsafe internal class ConnectRequest : CallbackPermaRequest
     {
-        private uv_connect_t* connect;
+        private readonly uv_connect_t* connect;
 
         public ConnectRequest()
             : base(RequestType.UV_CONNECT)

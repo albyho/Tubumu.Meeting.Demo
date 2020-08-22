@@ -138,7 +138,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             var cStream = new CryptoStream(mStream, provider.CreateEncryptor(keyBytes, keyIV), CryptoStreamMode.Write);
             cStream.Write(inputByteArray, 0, inputByteArray.Length);
             cStream.FlushFinalBlock();
-            
+
             return Convert.ToBase64String(mStream.ToArray());
         }
 
@@ -151,7 +151,7 @@ namespace Tubumu.Core.Utilities.Cryptography
         public static string EncryptFromStringToHex(string encryptString, string key = null)
         {
             var encryptBuffer = EncryptFromStringToByteArray(encryptString, key);
-            
+
             return HexFromByteArray(encryptBuffer);
         }
 
@@ -230,7 +230,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             }
 
             Byte[] inputByteArray = Convert.FromBase64String(decryptBase64String);
-            
+
             return DecryptFromByteArrayToByteArray(inputByteArray, key);
         }
 
@@ -260,7 +260,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             var cStream = new CryptoStream(mStream, provider.CreateDecryptor(keyBytes, keyIV), CryptoStreamMode.Write);
             cStream.Write(inputByteArray, 0, inputByteArray.Length);
             cStream.FlushFinalBlock();
-           
+
             return Encoding.UTF8.GetString(mStream.ToArray());
         }
 
@@ -277,7 +277,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             {
                 decryptBuffer[i] = Convert.ToByte(decryptString.Substring(i * 2, 2), 16);
             }
-           
+
             return Encoding.UTF8.GetString(DecryptFromByteArrayToByteArray(decryptBuffer, key)).Replace("\0", "");
         }
 
@@ -300,7 +300,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             {
                 sb.AppendFormat("{0:X2}", item);
             }
-           
+
             return sb.ToString();
         }
 
@@ -318,7 +318,7 @@ namespace Tubumu.Core.Utilities.Cryptography
 
                 return keyBytes.Length == 8 ? keyBytes : keyBytes.SubArray(8);
             }
-            
+
             return Encoding.UTF8.GetBytes(DefaultKey);
         }
 

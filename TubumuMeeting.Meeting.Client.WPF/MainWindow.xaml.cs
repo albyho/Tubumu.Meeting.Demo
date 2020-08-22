@@ -66,7 +66,7 @@ namespace TubumuMeeting.Meeting.Client.WPF
 
     public class User32API
     {
-        private static Hashtable processWnd = null;
+        private static readonly Hashtable processWnd = null;
 
         public delegate bool WNDENUMPROC(IntPtr hwnd, uint lParam);
 

@@ -11,8 +11,8 @@ namespace TubumuMeeting.Libuv
         {
         }
 
-        private Action before;
-        private Action after;
+        private readonly Action before;
+        private readonly Action after;
 
         public WorkRequest(Action before, Action after)
             : this()

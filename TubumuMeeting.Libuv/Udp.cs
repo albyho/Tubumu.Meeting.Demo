@@ -105,7 +105,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_udp_recv_start(IntPtr handle, alloc_callback alloc_callback, recv_start_callback callback);
 
-        private static recv_start_callback recv_start_cb = recv_callback;
+        private static readonly recv_start_callback recv_start_cb = recv_callback;
 
         private static void recv_callback(IntPtr handlePointer, IntPtr nread, ref uv_buf_t buf, IntPtr sockaddr, ushort flags)
         {

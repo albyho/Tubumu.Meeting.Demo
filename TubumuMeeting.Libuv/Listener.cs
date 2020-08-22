@@ -24,7 +24,7 @@ namespace TubumuMeeting.Libuv
 
         public int DefaultBacklog { get; set; }
 
-        private static callback listen_cb = listen_callback;
+        private static readonly callback listen_cb = listen_callback;
 
         private static void listen_callback(IntPtr handlePointer, int status)
         {

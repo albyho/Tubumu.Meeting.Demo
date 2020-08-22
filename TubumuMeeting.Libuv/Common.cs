@@ -150,7 +150,7 @@ namespace TubumuMeeting.Libuv
         }
 
 #if DEBUG
-        private static HashSet<IntPtr> pointers = new HashSet<IntPtr>();
+        private static readonly HashSet<IntPtr> pointers = new HashSet<IntPtr>();
 #endif
 
         internal static IntPtr Alloc(RequestType type)
