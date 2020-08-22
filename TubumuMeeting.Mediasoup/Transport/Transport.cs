@@ -41,6 +41,12 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<Transport> _logger;
 
+        // TODO: (alby) Closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the Transport is closed.
+        /// </summary>
+        protected bool Closed { get; private set; }
+
         /// <summary>
         /// Internal data.
         /// </summary>
@@ -80,11 +86,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
-        // TODO: (alby) Closed 的使用及线程安全。
-        /// <summary>
-        /// Whether the Transport is closed.
-        /// </summary>
-        public bool Closed { get; private set; }
 
         /// <summary>
         /// Method to retrieve Router RTP capabilities.

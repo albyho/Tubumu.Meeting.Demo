@@ -21,6 +21,12 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<Router> _logger;
 
+        // TODO: (alby) _closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the Router is closed.
+        /// </summary>
+        private bool _closed;
+
         #region Internal data.
 
         public string RouterId { get; }
@@ -44,12 +50,6 @@ namespace TubumuMeeting.Mediasoup
         /// PayloadChannel instance.
         /// </summary>
         private readonly PayloadChannel _payloadChannel;
-
-        // TODO: (alby)线程安全及 Closed 的使用。
-        /// <summary>
-        /// Whether the Router is closed.
-        /// </summary>
-        private bool _closed;
 
         /// <summary>
         /// Transports map.

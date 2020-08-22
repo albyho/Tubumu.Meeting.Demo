@@ -46,15 +46,21 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<DataConsumer> _logger;
 
+        // TODO: (alby) _closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the DataConsumer is closed.
+        /// </summary>
+        private bool _closed;
+
         /// <summary>
         /// Internal data.
         /// </summary>
-        private DataConsumerInternalData Internal { get; set; }
+        private DataConsumerInternalData _internal;
 
         /// <summary>
         /// DataConsumer id.
         /// </summary>
-        public string DataConsumerId => Internal.DataConsumerId;
+        public string DataConsumerId => _internal.DataConsumerId;
 
         #region DataConsumer data.
 
@@ -90,11 +96,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
-        // TODO: (alby) Closed 的使用及线程安全。
-        /// <summary>
-        /// Whether the DataConsumer is closed.
-        /// </summary>
-        public bool Closed { get; private set; }
 
         /// <summary>
         /// Observer instance.
@@ -134,7 +135,7 @@ namespace TubumuMeeting.Mediasoup
             _logger = loggerFactory.CreateLogger<DataConsumer>();
 
             // Internal
-            Internal = dataConsumerInternalData;
+            _internal = dataConsumerInternalData;
 
             // Data
             SctpStreamParameters = sctpStreamParameters;
@@ -153,20 +154,20 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void Close()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             _logger.LogDebug($"Close() | DataConsumer:{DataConsumerId}");
 
-            Closed = true;
+            _closed = true;
 
             // Remove notification subscriptions.
             _channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            _channel.RequestAsync(MethodId.DATA_CONSUMER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.DATA_CONSUMER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("@close");
 
@@ -179,14 +180,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void TransportClosed()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
-            _logger.LogDebug($"TransportClosed() | DataConsumer:{DataConsumerId}");
+            _logger.LogDebug($"Transport_closed() | DataConsumer:{DataConsumerId}");
 
-            Closed = true;
+            _closed = true;
 
             // Remove notification subscriptions.
             _channel.MessageEvent -= OnChannelMessage;
@@ -204,7 +205,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"DumpAsync() | DataConsumer:{DataConsumerId}");
 
-            return _channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, Internal);
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_DUMP, _internal);
         }
 
         /// <summary>
@@ -214,7 +215,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"GetStatsAsync() | DataConsumer:{DataConsumerId}");
 
-            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, Internal);
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -228,7 +229,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug($"SetBufferedAmountLowThreshold() | Threshold:{threshold}");
 
             var reqData = new { Threshold = threshold };
-            await _channel.RequestAsync(MethodId.DATA_CONSUMER_SET_BUFFERED_AMOUNT_LOW_THRESHOLD, Internal, reqData);
+            await _channel.RequestAsync(MethodId.DATA_CONSUMER_SET_BUFFERED_AMOUNT_LOW_THRESHOLD, _internal, reqData);
         }
 
         /// <summary>
@@ -270,7 +271,7 @@ namespace TubumuMeeting.Mediasoup
 
             var requestData = new NotifyData { PPID = ppid.Value };
 
-            _payloadChannel.Notify("dataConsumer.send", Internal, requestData, Encoding.UTF8.GetBytes(message));
+            _payloadChannel.Notify("dataConsumer.send", _internal, requestData, Encoding.UTF8.GetBytes(message));
 
             return Task.CompletedTask;
         }
@@ -298,7 +299,7 @@ namespace TubumuMeeting.Mediasoup
 
             var requestData = new NotifyData { PPID = ppid.Value };
 
-            _payloadChannel.Notify("dataConsumer.send", Internal, requestData, message);
+            _payloadChannel.Notify("dataConsumer.send", _internal, requestData, message);
 
             return Task.CompletedTask;
         }
@@ -308,7 +309,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug("GetBufferedAmountAsync()");
 
             // 返回的是 JSON 格式，取其 bufferedAmount 属性。
-            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_BUFFERED_AMOUNT, Internal);
+            return _channel.RequestAsync(MethodId.DATA_CONSUMER_GET_BUFFERED_AMOUNT, _internal);
         }
 
         #region Event Handlers
@@ -330,13 +331,13 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "dataproducerclose":
                     {
-                        // TODO: (alby)线程安全
-                        if (Closed)
+                        // TODO: (alby) _closed 的使用及线程安全。
+                        if (_closed)
                         {
                             break;
                         }
 
-                        Closed = true;
+                        _closed = true;
 
                         // Remove notification subscriptions.
                         _channel.MessageEvent -= OnChannelMessage;
@@ -382,8 +383,8 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "message":
                     {
-                        // TODO: (alby)线程安全
-                        if (Closed)
+                        // TODO: (alby) _closed 的使用及线程安全。
+                        if (_closed)
                         {
                             break;
                         }

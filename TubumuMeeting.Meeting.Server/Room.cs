@@ -51,12 +51,12 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private readonly ILogger<Room> _logger;
 
-        private readonly AsyncAutoResetEvent _closeLock = new AsyncAutoResetEvent();
-
         /// <summary>
         /// Whether the Room is closed.
         /// </summary>
-        public bool Closed { get; private set; }
+        private bool _closed;
+
+        private readonly AsyncAutoResetEvent _closeLock = new AsyncAutoResetEvent();
 
         public Router Router { get; private set; }
 
@@ -68,12 +68,12 @@ namespace TubumuMeeting.Meeting.Server
             RoomId = roomId;
             Name = name.NullOrWhiteSpaceReplace("Default");
             _closeLock.Set();
-            Closed = false;
+            _closed = false;
         }
 
         public async Task CloseAsync()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
@@ -81,14 +81,14 @@ namespace TubumuMeeting.Meeting.Server
             await _closeLock.WaitAsync();
             try
             {
-                if (Closed)
+                if (_closed)
                 {
                     return;
                 }
 
                 _logger.LogDebug($"Close() | Room:{RoomId}");
 
-                Closed = true;
+                _closed = true;
 
                 await Router.CloseAsync();
             }

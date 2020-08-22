@@ -375,10 +375,6 @@ namespace TubumuMeeting.Meeting.Server
                         {
                             throw new Exception($"ConsumeAsync() | Peer:{PeerId} - ProducerPeer:{producerPeer.PeerId} has no Producer:{producerId}");
                         }
-                        if (producer.Closed)
-                        {
-                            throw new Exception($"ConsumeAsync() | Peer:{PeerId} - ProducerPeer:{producerPeer.PeerId} Producer:{producerId} was closed.");
-                        }
 
                         if (_rtpCapabilities == null || !_router.CanConsume(producer.ProducerId, _rtpCapabilities))
                         {

@@ -46,12 +46,24 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<Consumer> _logger;
 
+        // TODO: (alby) _closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the Consumer is closed.
+        /// </summary>
+        private bool _closed;
+
+        private readonly object _closeLock = new object();
+
+        // TODO: (alby) _paused 的使用及线程安全。
+        /// <summary>
+        /// Paused flag.
+        /// </summary>
+        private bool _paused;
+
         /// <summary>
         /// Internal data.
         /// </summary>
         private readonly ConsumerInternalData _internal;
-
-        private readonly object _closeLock = new object();
 
         /// <summary>
         /// Consumer id.
@@ -91,7 +103,7 @@ namespace TubumuMeeting.Mediasoup
         /// PayloadChannel instance.
         /// </summary>
         private readonly PayloadChannel _payloadChannel;
-
+       
         /// <summary>
         /// App custom data.
         /// </summary>
@@ -106,18 +118,6 @@ namespace TubumuMeeting.Mediasoup
         /// [扩展]Source.
         /// </summary>
         public string? Source { get; set; }
-
-        // TODO: (alby) Closed 的使用及线程安全。
-        /// <summary>
-        /// Whether the Consumer is closed.
-        /// </summary>
-        public bool Closed { get; private set; }
-
-        // TODO: (alby) Paused 的使用及线程安全。
-        /// <summary>
-        /// Paused flag.
-        /// </summary>
-        public bool Paused { get; private set; }
 
         /// <summary>
         /// Whether the associate Producer is paused.
@@ -207,7 +207,7 @@ namespace TubumuMeeting.Mediasoup
             _channel = channel;
             _payloadChannel = payloadChannel;
             AppData = appData;
-            Paused = paused;
+            _paused = paused;
             ProducerPaused = producerPaused;
             Score = score;
             PreferredLayers = preferredLayers;
@@ -220,21 +220,21 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void Close()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             lock (_closeLock)
             {
-                if (Closed)
+                if (_closed)
                 {
                     return;
                 }
 
                 _logger.LogDebug($"Close() | Consumer:{ConsumerId}");
 
-                Closed = true;
+                _closed = true;
 
                 // Remove notification subscriptions.
                 _channel.MessageEvent -= OnChannelMessage;
@@ -254,21 +254,21 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void TransportClosed()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             lock (_closeLock)
             {
-                if (Closed)
+                if (_closed)
                 {
                     return;
                 }
 
                 _logger.LogDebug($"TransportClosed() | Consumer:{ConsumerId}");
 
-                Closed = true;
+                _closed = true;
 
                 // Remove notification subscriptions.
                 _channel.MessageEvent -= OnChannelMessage;
@@ -307,11 +307,11 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"PauseAsync() | Consumer:{ConsumerId}");
 
-            var wasPaused = Paused || ProducerPaused;
+            var wasPaused = _paused || ProducerPaused;
 
             await _channel.RequestAsync(MethodId.CONSUMER_PAUSE, _internal);
 
-            Paused = true;
+            _paused = true;
 
             // Emit observer event.
             if (!wasPaused)
@@ -327,11 +327,11 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"ResumeAsync() | Consumer:{ConsumerId}");
 
-            var wasPaused = Paused || ProducerPaused;
+            var wasPaused = _paused || ProducerPaused;
 
             await _channel.RequestAsync(MethodId.CONSUMER_RESUME, _internal);
 
-            Paused = false;
+            _paused = false;
 
             // Emit observer event.
             if (wasPaused && !ProducerPaused)
@@ -423,13 +423,13 @@ namespace TubumuMeeting.Mediasoup
             {
                 case "producerclose":
                     {
-                        // TODO: (alby)线程安全
-                        if (Closed)
+                        // TODO: (alby) _closed 的使用及线程安全。
+                        if (_closed)
                         {
                             break;
                         }
 
-                        Closed = true;
+                        _closed = true;
 
                         // Remove notification subscriptions.
                         _channel.MessageEvent -= OnChannelMessage;
@@ -449,7 +449,7 @@ namespace TubumuMeeting.Mediasoup
                             break;
                         }
 
-                        var wasPaused = Paused || ProducerPaused;
+                        var wasPaused = _paused || ProducerPaused;
 
                         ProducerPaused = true;
 
@@ -470,14 +470,14 @@ namespace TubumuMeeting.Mediasoup
                             break;
                         }
 
-                        var wasPaused = Paused || ProducerPaused;
+                        var wasPaused = _paused || ProducerPaused;
 
                         ProducerPaused = false;
 
                         Emit("producerresume");
 
                         // Emit observer event.
-                        if (wasPaused && !Paused)
+                        if (wasPaused && !_paused)
                         {
                             Observer.Emit("resume");
                         }
@@ -540,7 +540,7 @@ namespace TubumuMeeting.Mediasoup
                 case "rtp":
                     {
                         // TODO: (alby)线程安全
-                        if (Closed)
+                        if (_closed)
                             break;
 
                         Emit("rtp", payload);

@@ -29,6 +29,12 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<PayloadChannel> _logger;
 
+        // TODO: (alby) _closed 的使用及线程安全。
+        /// <summary>
+        /// Closed flag.
+        /// </summary>
+        private bool _closed;
+
         /// <summary>
         /// Unix Socket instance for sending messages to the worker process.
         /// </summary>
@@ -43,11 +49,6 @@ namespace TubumuMeeting.Mediasoup
         /// Worker process PID.
         /// </summary>
         private readonly int _processId;
-
-        /// <summary>
-        /// Closed flag.
-        /// </summary>
-        private bool _closed = false;
 
         /// <summary>
         /// Next id for messages sent to the worker process.

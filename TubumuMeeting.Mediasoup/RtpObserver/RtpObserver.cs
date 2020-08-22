@@ -32,6 +32,18 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<RtpObserver> _logger;
 
+        // TODO: (alby) _closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the Producer is closed.
+        /// </summary>
+        private bool _closed;
+
+        // TODO: (alby) _paused 的使用及线程安全。
+        /// <summary>
+        /// Paused flag.
+        /// </summary>
+        private bool _paused;
+
         /// <summary>
         /// Internal data.
         /// </summary>
@@ -52,17 +64,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
-        // TODO: (alby) Closed 的使用及线程安全。
-        /// <summary>
-        /// Whether the Producer is closed.
-        /// </summary>
-        public bool Closed { get; private set; }
-
-        // TODO: (alby) Paused 的使用及线程安全。
-        /// <summary>
-        /// Paused flag.
-        /// </summary>
-        public bool Paused { get; private set; }
 
         /// <summary>
         /// Method to retrieve a Producer.
@@ -116,14 +117,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void Close()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             _logger.LogDebug($"Close() | RtpObserver:{Internal.RtpObserverId}");
 
-            Closed = true;
+            _closed = true;
 
             // Remove notification subscriptions.
             Channel.MessageEvent -= OnChannelMessage;
@@ -142,14 +143,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void RouterClosed()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             _logger.LogDebug($"RouterClosed() | RtpObserver:{Internal.RtpObserverId}");
 
-            Closed = true;
+            _closed = true;
 
             // Remove notification subscriptions.
             Channel.MessageEvent -= OnChannelMessage;
@@ -167,11 +168,11 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"PauseAsync() | RtpObserver:{Internal.RtpObserverId}");
 
-            var wasPaused = Paused;
+            var wasPaused = _paused;
 
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_PAUSE, Internal);
 
-            Paused = true;
+            _paused = true;
 
             // Emit observer event.
             if (!wasPaused)
@@ -187,11 +188,11 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"ResumeAsync() | RtpObserver:{Internal.RtpObserverId}");
 
-            var wasPaused = Paused;
+            var wasPaused = _paused;
 
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_RESUME, Internal);
 
-            Paused = false;
+            _paused = false;
 
             // Emit observer event.
             if (wasPaused)

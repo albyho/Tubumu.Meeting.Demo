@@ -39,15 +39,21 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<DataProducer> _logger;
 
+        // TODO: (alby) Closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the DataProducer is closed.
+        /// </summary>
+        private bool _closed;
+
         /// <summary>
         /// Internal data.
         /// </summary>
-        private DataProducerInternalData Internal { get; set; }
+        private DataProducerInternalData _internal;
 
         /// <summary>
         /// DataProducer id.
         /// </summary>
-        public string DataProducerId => Internal.DataProducerId;
+        public string DataProducerId => _internal.DataProducerId;
 
         #region Producer data.
 
@@ -83,12 +89,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
-        // TODO: (alby) Closed 的使用及线程安全。
-        /// <summary>
-        /// Whether the DataProducer is closed.
-        /// </summary>
-        public bool Closed { get; private set; }
-
         /// <summary>
         /// Observer instance.
         /// </summary>
@@ -122,7 +122,7 @@ namespace TubumuMeeting.Mediasoup
             _logger = loggerFactory.CreateLogger<DataProducer>();
 
             // Internal
-            Internal = dataProducerInternalData;
+            _internal = dataProducerInternalData;
 
             // Data
             SctpStreamParameters = sctpStreamParameters;
@@ -141,20 +141,20 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void Close()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             _logger.LogDebug($"Close() | DataProducer:{DataProducerId}");
 
-            Closed = true;
+            _closed = true;
 
             // Remove notification subscriptions.
             //_channel.MessageEvent -= OnChannelMessage;
 
             // Fire and forget
-            _channel.RequestAsync(MethodId.DATA_PRODUCER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
+            _channel.RequestAsync(MethodId.DATA_PRODUCER_CLOSE, _internal).ContinueWithOnFaultedHandleLog(_logger);
 
             Emit("close");
 
@@ -167,14 +167,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void TransportClosed()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             _logger.LogDebug($"TransportClosed() | DataProducer:{DataProducerId}");
 
-            Closed = true;
+            _closed = true;
 
             // Remove notification subscriptions.
             //_channel.MessageEvent -= OnChannelMessage;
@@ -192,7 +192,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"DumpAsync() | DataProducer:{DataProducerId}");
 
-            return _channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP, Internal);
+            return _channel.RequestAsync(MethodId.DATA_PRODUCER_DUMP, _internal);
         }
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"GetStatsAsync() | DataProducer:{DataProducerId}");
 
-            return _channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, Internal);
+            return _channel.RequestAsync(MethodId.DATA_PRODUCER_GET_STATS, _internal);
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace TubumuMeeting.Mediasoup
 
             var notifyData = new NotifyData { PPID = ppid.Value };
 
-            _payloadChannel.Notify("dataProducer.send", Internal, notifyData, Encoding.UTF8.GetBytes(message));
+            _payloadChannel.Notify("dataProducer.send", _internal, notifyData, Encoding.UTF8.GetBytes(message));
 
             return Task.CompletedTask;
         }
@@ -272,7 +272,7 @@ namespace TubumuMeeting.Mediasoup
 
             var notifyData = new NotifyData { PPID = ppid.Value };
 
-            _payloadChannel.Notify("dataProducer.send", Internal, notifyData, message);
+            _payloadChannel.Notify("dataProducer.send", _internal, notifyData, message);
 
             return Task.CompletedTask;
         }

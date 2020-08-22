@@ -40,14 +40,26 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<Producer> _logger;
 
+        // TODO: (alby) _closed 的使用及线程安全。
+        /// <summary>
+        /// Whether the Producer is closed.
+        /// </summary>
+        private bool _closed;
+
+        private readonly object _closeLock = new object();
+
+        // TODO: (alby) _paused 的使用及线程安全。
+        /// <summary>
+        /// Paused flag.
+        /// </summary>
+        private bool _paused;
+
         /// <summary>
         /// Internal data.
         /// </summary>
         private readonly ProducerInternalData _internal;
 
         private readonly Timer _checkConsumersTimer;
-
-        private readonly object _closeLock = new object();
 
         private const int CheckConsumersTimeSeconds = 10;
 
@@ -104,18 +116,6 @@ namespace TubumuMeeting.Mediasoup
         /// [扩展]Source.
         /// </summary>
         public string? Source { get; set; }
-
-        // TODO: (alby) Closed 的使用及线程安全。
-        /// <summary>
-        /// Whether the Producer is closed.
-        /// </summary>
-        public bool Closed { get; private set; }
-
-        // TODO: (alby) Paused 的使用及线程安全。
-        /// <summary>
-        /// Paused flag.
-        /// </summary>
-        public bool Paused { get; private set; }
 
         /// <summary>
         /// Current score.
@@ -177,7 +177,7 @@ namespace TubumuMeeting.Mediasoup
             _channel = channel;
             _payloadChannel = payloadChannel;
             AppData = appData;
-            Paused = paused;
+            _paused = paused;
 
             _checkConsumersTimer = new Timer(CheckConsumers, null, TimeSpan.FromSeconds(CheckConsumersTimeSeconds), TimeSpan.FromMilliseconds(-1));
 
@@ -189,21 +189,21 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void Close()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             lock (_closeLock)
             {
-                if (Closed)
+                if (_closed)
                 {
                     return;
                 }
 
                 _logger.LogDebug($"Close() | Producer:{ProducerId}");
 
-                Closed = true;
+                _closed = true;
 
                 _checkConsumersTimer.Dispose();
 
@@ -225,21 +225,21 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public void TransportClosed()
         {
-            if (Closed)
+            if (_closed)
             {
                 return;
             }
 
             lock (_closeLock)
             {
-                if (Closed)
+                if (_closed)
                 {
                     return;
                 }
 
                 _logger.LogDebug($"TransportClosed() | Producer:{ProducerId}");
 
-                Closed = true;
+                _closed = true;
 
                 // Remove notification subscriptions.
                 _channel.MessageEvent -= OnChannelMessage;
@@ -278,11 +278,11 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"PauseAsync() | Producer:{ProducerId}");
 
-            var wasPaused = Paused;
+            var wasPaused = _paused;
 
             await _channel.RequestAsync(MethodId.PRODUCER_PAUSE, _internal);
 
-            Paused = true;
+            _paused = true;
 
             // Emit observer event.
             if (!wasPaused)
@@ -298,11 +298,11 @@ namespace TubumuMeeting.Mediasoup
         {
             _logger.LogDebug($"ResumeAsync() | Producer:{ProducerId}");
 
-            var wasPaused = Paused;
+            var wasPaused = _paused;
 
             await _channel.RequestAsync(MethodId.PRODUCER_RESUME, _internal);
 
-            Paused = false;
+            _paused = false;
 
             // Emit observer event.
             if (wasPaused)
@@ -419,7 +419,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void CheckConsumers(object state)
         {
-            if (Closed)
+            if (_closed)
             {
                 _checkConsumersTimer.Dispose();
                 return;
@@ -427,7 +427,7 @@ namespace TubumuMeeting.Mediasoup
 
             lock (_closeLock)
             {
-                if (Closed)
+                if (_closed)
                 {
                     _checkConsumersTimer.Dispose();
                     return;
@@ -451,7 +451,7 @@ namespace TubumuMeeting.Mediasoup
 
         private void CheckClosed()
         {
-            if (Closed)
+            if (_closed)
             {
                 throw new Exception($"CheckClosed() | Producer:{ProducerId} was closed");
             }
