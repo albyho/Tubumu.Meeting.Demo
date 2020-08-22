@@ -7,7 +7,7 @@ namespace TubumuMeeting.Libuv
     public class Udp : HandleBase, IMessageSender<UdpMessage>, IMessageReceiver<UdpReceiveMessage>, ITrySend<UdpMessage>, IBindable<Udp, IPEndPoint>
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void recv_start_callback(IntPtr handle, IntPtr nread, ref uv_buf_t buf, IntPtr sockaddr, ushort flags);
+        private delegate void recv_start_callback(IntPtr handle, IntPtr nread, ref uv_buf_t buf, IntPtr sockaddr, ushort flags);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_udp_init(IntPtr loop, IntPtr handle);
@@ -18,7 +18,8 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_udp_bind(IntPtr handle, ref sockaddr_in6 sockaddr, uint flags);
 
-        ByteBufferAllocatorBase allocator;
+        private ByteBufferAllocatorBase allocator;
+
         public ByteBufferAllocatorBase ByteBufferAllocator
         {
             get
@@ -41,7 +42,7 @@ namespace TubumuMeeting.Libuv
         {
         }
 
-        void Bind(IPAddress ipAddress, int port, bool dualstack)
+        private void Bind(IPAddress ipAddress, int port, bool dualstack)
         {
             CheckDisposed();
 
@@ -102,15 +103,17 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        extern static int uv_udp_recv_start(IntPtr handle, alloc_callback alloc_callback, recv_start_callback callback);
+        private static extern int uv_udp_recv_start(IntPtr handle, alloc_callback alloc_callback, recv_start_callback callback);
 
-        static recv_start_callback recv_start_cb = recv_callback;
-        static void recv_callback(IntPtr handlePointer, IntPtr nread, ref uv_buf_t buf, IntPtr sockaddr, ushort flags)
+        private static recv_start_callback recv_start_cb = recv_callback;
+
+        private static void recv_callback(IntPtr handlePointer, IntPtr nread, ref uv_buf_t buf, IntPtr sockaddr, ushort flags)
         {
             var handle = FromIntPtr<Udp>(handlePointer);
             handle.recv_callback(handlePointer, nread, sockaddr, flags);
         }
-        void recv_callback(IntPtr handle, IntPtr nread, IntPtr sockaddr, ushort flags)
+
+        private void recv_callback(IntPtr handle, IntPtr nread, IntPtr sockaddr, ushort flags)
         {
             int n = (int)nread;
 
@@ -132,7 +135,6 @@ namespace TubumuMeeting.Libuv
                 Message(msg);
             }
         }
-
 
         public void Resume()
         {
@@ -195,7 +197,6 @@ namespace TubumuMeeting.Libuv
                 Invoke(uv_udp_set_multicast_loop, value ? 1 : 0);
             }
         }
-
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_udp_getsockname(IntPtr handle, IntPtr addr, ref int length);

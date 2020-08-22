@@ -9,6 +9,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return Chmod(Loop.Constructor, path, mode);
         }
+
         public static Task Chmod(Loop loop, string path, int mode)
         {
             return HelperFunctions.Wrap(loop, path, mode, UVFile.Chmod);
@@ -18,6 +19,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return Chown(Loop.Constructor, path, uid, gid);
         }
+
         public static Task Chown(Loop loop, string path, int uid, int gid)
         {
             return HelperFunctions.Wrap(loop, path, uid, gid, UVFile.Chown);
@@ -27,6 +29,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return Link(Loop.Constructor, path, newPath);
         }
+
         public static Task Link(Loop loop, string path, string newPath)
         {
             return HelperFunctions.Wrap(loop, path, newPath, UVFile.Link);
@@ -36,6 +39,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return Unlink(Loop.Constructor, path);
         }
+
         public static Task Unlink(Loop loop, string path)
         {
             return HelperFunctions.Wrap(loop, path, UVFile.Unlink);
@@ -45,6 +49,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return Open(Loop.Constructor, path, access);
         }
+
         public static Task<UVFile> Open(Loop loop, string path, UVFileAccess access)
         {
             return HelperFunctions.Wrap<Loop, string, UVFileAccess, UVFile>(loop, path, access, UVFile.Open);
@@ -54,6 +59,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap(loop, path, newPath, UVFile.Symlink);
         }
+
         public static Task Symlink(string path, string newPath)
         {
             return Symlink(Loop.Constructor, path, newPath);
@@ -63,6 +69,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, string, string>(loop, path, UVFile.Readlink);
         }
+
         public static Task<string> Readlink(string path)
         {
             return Readlink(Loop.Constructor, path);
@@ -74,14 +81,17 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, int, ArraySegment<byte>, int>(loop, offset, data, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, int offset, ArraySegment<byte> data)
         {
             return HelperFunctions.Wrap<int, ArraySegment<byte>, int>(offset, data, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, Loop loop, ArraySegment<byte> data)
         {
             return HelperFunctions.Wrap<Loop, ArraySegment<byte>, int>(loop, data, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, ArraySegment<byte> data)
         {
             return HelperFunctions.Wrap<ArraySegment<byte>, int>(data, file.Read);
@@ -91,14 +101,17 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, int, byte[], int, int, int>(loop, offset, data, index, count, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, int offset, byte[] data, int index, int count)
         {
             return HelperFunctions.Wrap<int, byte[], int, int, int>(offset, data, index, count, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, Loop loop, byte[] data, int index, int count)
         {
             return HelperFunctions.Wrap<Loop, byte[], int, int, int>(loop, data, index, count, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, byte[] data, int index, int count)
 
         {
@@ -109,20 +122,23 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, int, byte[], int>(loop, offset, data, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, int offset, byte[] data)
         {
             return HelperFunctions.Wrap<int, byte[], int>(offset, data, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, Loop loop, byte[] data)
         {
             return HelperFunctions.Wrap<Loop, byte[], int>(loop, data, file.Read);
         }
+
         public static Task<int> ReadAsync(this UVFile file, byte[] data)
         {
             return HelperFunctions.Wrap<byte[], int>(data, file.Read);
         }
 
-        #endregion
+        #endregion ReadAsync
 
         #region WriteAsync
 
@@ -130,14 +146,17 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, int, ArraySegment<byte>, int>(loop, offset, data, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, int offset, ArraySegment<byte> data)
         {
             return HelperFunctions.Wrap<int, ArraySegment<byte>, int>(offset, data, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, Loop loop, ArraySegment<byte> data)
         {
             return HelperFunctions.Wrap<Loop, ArraySegment<byte>, int>(loop, data, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, ArraySegment<byte> data)
         {
             return HelperFunctions.Wrap<ArraySegment<byte>, int>(data, file.Write);
@@ -147,14 +166,17 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, int, byte[], int, int, int>(loop, offset, data, index, count, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, int offset, byte[] data, int index, int count)
         {
             return HelperFunctions.Wrap<int, byte[], int, int, int>(offset, data, index, count, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, Loop loop, byte[] data, int index, int count)
         {
             return HelperFunctions.Wrap<Loop, byte[], int, int, int>(loop, data, index, count, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, byte[] data, int index, int count)
 
         {
@@ -165,25 +187,29 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, int, byte[], int>(loop, offset, data, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, int offset, byte[] data)
         {
             return HelperFunctions.Wrap<int, byte[], int>(offset, data, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, Loop loop, byte[] data)
         {
             return HelperFunctions.Wrap<Loop, byte[], int>(loop, data, file.Write);
         }
+
         public static Task<int> WriteAsync(this UVFile file, byte[] data)
         {
             return HelperFunctions.Wrap<byte[], int>(data, file.Write);
         }
 
-        #endregion
+        #endregion WriteAsync
 
         public static Task SyncAsync(this UVFile file, Loop loop)
         {
             return HelperFunctions.Wrap(loop, file.Sync);
         }
+
         public static Task SyncAsync(this UVFile file)
         {
             return file.SyncAsync(file.Loop);
@@ -193,6 +219,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap(loop, file.DataSync);
         }
+
         public static Task DataSyncAsync(this UVFile file)
         {
             return file.DataSyncAsync(file.Loop);
@@ -202,6 +229,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap(loop, offset, file.Truncate);
         }
+
         public static Task TruncateSync(this UVFile file, int offset)
         {
             return file.TruncateSync(file.Loop, offset);
@@ -211,6 +239,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap(loop, mode, file.Chmod);
         }
+
         public static Task ChmodAsync(this UVFile file, int mode)
         {
             return file.ChmodAsync(file.Loop, mode);
@@ -220,6 +249,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap(loop, uid, gid, file.Chown);
         }
+
         public static Task ChownAsync(this UVFile file, int uid, int gid)
         {
             return file.ChownAsync(file.Loop, uid, gid);
@@ -229,6 +259,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, string, UVFileStat>(loop, path, UVFile.Stat);
         }
+
         public static Task<UVFileStat> Stat(string path)
         {
             return Stat(Loop.Constructor, path);
@@ -238,6 +269,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
         {
             return HelperFunctions.Wrap<Loop, UVFileStat>(loop, file.Stat);
         }
+
         public static Task<UVFileStat> StatAsync(this UVFile file)
         {
             return file.StatAsync(file.Loop);

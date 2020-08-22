@@ -94,8 +94,8 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_spawn(IntPtr loop, IntPtr handle, ref uv_process_options_t options);
 
-        uv_process_options_t process_options;
-        Action<Process> exitCallback;
+        private uv_process_options_t process_options;
+        private Action<Process> exitCallback;
 
         internal Process(Loop loop, ProcessOptions options, Action<Process> exitCallback)
             : base(loop, HandleType.UV_PROCESS)
@@ -113,7 +113,7 @@ namespace TubumuMeeting.Libuv
             Close();
         }
 
-        uv_process_t* process
+        private uv_process_t* process
         {
             get
             {

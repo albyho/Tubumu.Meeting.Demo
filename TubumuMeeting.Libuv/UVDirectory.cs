@@ -16,30 +16,37 @@ namespace TubumuMeeting.Libuv
             int r = uv_fs_mkdir(loop.NativeHandle, fsr.Handle, path, mode, FileSystemRequest.CallbackDelegate);
             Ensure.Success(r);
         }
+
         public static void Create(Loop loop, string path, int mode)
         {
             Create(loop, path, mode, null);
         }
+
         public static void Create(Loop loop, string path, Action<Exception> callback)
         {
             Create(loop, path, 511, callback);
         }
+
         public static void Create(Loop loop, string path)
         {
             Create(loop, path, 511);
         }
+
         public static void Create(string path, int mode, Action<Exception> callback)
         {
             Create(Loop.Constructor, path, mode, callback);
         }
+
         public static void Create(string path, Action<Exception> callback)
         {
             Create(Loop.Constructor, path, 511, callback);
         }
+
         public static void Create(string path, int mode)
         {
             Create(path, mode, null);
         }
+
         public static void Create(string path)
         {
             Create(path, 511);
@@ -55,14 +62,17 @@ namespace TubumuMeeting.Libuv
             int r = uv_fs_rmdir(loop.NativeHandle, fsr.Handle, path, FileSystemRequest.CallbackDelegate);
             Ensure.Success(r);
         }
+
         public static void Delete(Loop loop, string path)
         {
             Delete(loop, path, null);
         }
+
         public static void Delete(string path, Action<Exception> callback)
         {
             Delete(Loop.Constructor, path, callback);
         }
+
         public static void Delete(string path)
         {
             Delete(path, null);
@@ -78,14 +88,17 @@ namespace TubumuMeeting.Libuv
             int r = uv_fs_rename(loop.NativeHandle, fsr.Handle, path, newPath, fsr.End);
             Ensure.Success(r);
         }
+
         public static void Rename(Loop loop, string path, string newPath)
         {
             Rename(loop, path, newPath, null);
         }
+
         public static void Rename(string path, string newPath, Action<Exception> callback)
         {
             Rename(Loop.Constructor, path, newPath, callback);
         }
+
         public static void Rename(string path, string newPath)
         {
             Rename(path, newPath, null);

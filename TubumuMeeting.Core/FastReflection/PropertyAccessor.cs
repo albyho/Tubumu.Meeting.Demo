@@ -128,6 +128,6 @@ namespace Tubumu.Core.FastReflection
             SetValue(instance, value);
         }
 
-        #endregion
+        #endregion IPropertyAccessor Members
     }
 }

@@ -25,7 +25,7 @@ namespace TubumuMeeting.Mediasoup
 
         public SrtpParameters? SrtpParameters { get; private set; }
 
-        #endregion
+        #endregion Producer data.
 
         /// <summary>
         /// <para>Events:</para>
@@ -258,6 +258,6 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Event Handlers
     }
 }

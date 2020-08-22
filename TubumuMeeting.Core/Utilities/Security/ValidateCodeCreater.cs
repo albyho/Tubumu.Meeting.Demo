@@ -114,7 +114,7 @@ namespace Tubumu.Core.Utilities.Security
                             //FilterQuality = SKFilterQuality.High,
                             //HintingLevel = SKPaintHinting.Full,
 
-                            //IsEmbeddedBitmapText = true,                    
+                            //IsEmbeddedBitmapText = true,
                             //LcdRenderText = true,
                             //Style = SKPaintStyle.StrokeAndFill,
                             //TextEncoding = SKTextEncoding.Utf8,

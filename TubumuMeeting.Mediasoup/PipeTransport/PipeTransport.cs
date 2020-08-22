@@ -27,7 +27,7 @@ namespace TubumuMeeting.Mediasoup
 
         public SrtpParameters? SrtpParameters { get; private set; }
 
-        #endregion
+        #endregion PipeTransport data.
 
         /// <summary>
         /// <para>Events:</para>
@@ -40,7 +40,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits newdataproducer - (dataProducer: DataProducer)</para>
         /// <para>@emits newdataconsumer - (dataConsumer: DataConsumer)</para>
         /// <para>@emits sctpstatechange - (sctpState: SctpState)</para>
-        /// <para>@emits trace - (trace: TransportTraceEventData)</para>   
+        /// <para>@emits trace - (trace: TransportTraceEventData)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
         /// <param name="transportInternalData"></param>
@@ -325,6 +325,6 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Event Handlers
     }
 }

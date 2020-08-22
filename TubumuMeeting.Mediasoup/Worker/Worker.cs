@@ -21,7 +21,7 @@ namespace TubumuMeeting.Mediasoup
 
         private const int StdioCount = 7;
 
-        #endregion
+        #endregion Constants
 
         #region Private Fields
 
@@ -75,7 +75,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly object _routersLock = new object();
 
-        #endregion
+        #endregion Private Fields
 
         // TODO: (alby) Closed 的使用及线程安全。
         /// <summary>
@@ -352,7 +352,7 @@ namespace TubumuMeeting.Mediasoup
             return router;
         }
 
-        #endregion
+        #endregion Request
 
         #region Event handles
 
@@ -399,7 +399,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Event handles
 
         #region IDisposable Support
 
@@ -439,6 +439,6 @@ namespace TubumuMeeting.Mediasoup
             // GC.SuppressFinalize(this);
         }
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

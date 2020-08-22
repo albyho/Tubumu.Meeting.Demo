@@ -25,7 +25,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap(ipAddress, port, data, index, count, sender.Send<TMessage>);
         }
 
-        #endregion
+        #endregion IPAddress string
 
         #region IPAddress
 
@@ -41,7 +41,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap(ipAddress, port, data, index, count, sender.Send<TMessage>);
         }
 
-        #endregion
+        #endregion IPAddress
 
         #region TEndPoint
 
@@ -57,7 +57,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap(endPoint, data, index, count, sender.Send);
         }
 
-        #endregion
+        #endregion TEndPoint
 
         #region TMessage
 
@@ -73,7 +73,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap(ipAddress, port, payload, sender.Send);
         }
 
-        #endregion
+        #endregion TMessage
 
         public static Task SendAsync<TMessage, TEndPoint, TPayload>(this IMessageSender<TMessage> sender, TEndPoint endPoint, TPayload payload)
             where TMessage : IMessage<TEndPoint, TPayload>, new()

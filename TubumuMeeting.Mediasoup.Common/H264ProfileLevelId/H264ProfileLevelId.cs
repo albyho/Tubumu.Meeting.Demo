@@ -17,6 +17,7 @@ namespace TubumuMeeting.Mediasoup
         // All values are equal to ten times the level number, except level 1b which is
         // special.
         public const int Level1_b = 0;
+
         public const int Level1 = 10;
         public const int Level1_1 = 11;
         public const int Level1_2 = 12;
@@ -36,7 +37,7 @@ namespace TubumuMeeting.Mediasoup
 
         /// <summary>
         /// Default ProfileLevelId.
-        /// 
+        ///
         /// TODO: The default should really be profile Baseline and level 1 according to
         /// the spec: https://tools.ietf.org/html/rfc6184#section-8.1. In order to not
         /// break backwards compatibility with older versions of WebRTC where external
@@ -343,7 +344,7 @@ namespace TubumuMeeting.Mediasoup
             return ProfileLevelIdToString(new ProfileLevelId(local_profile_level_id.Profile, answer_level));
         }
 
-        #region Private Methods 
+        #region Private Methods
 
         // Compare H264 levels and handle the level 1b case.
         private static bool IsLessLevel(int a, int b)
@@ -371,6 +372,6 @@ namespace TubumuMeeting.Mediasoup
             return parameters.TryGetValue("level-asymmetry-allowed", out var level_asymmetry_allowed) && level_asymmetry_allowed.ToString() == "1";
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

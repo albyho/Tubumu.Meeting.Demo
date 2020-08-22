@@ -20,11 +20,14 @@ namespace TubumuMeeting.Libuv
             {
                 case UVErrorCode.EINVAL:
                     return new ArgumentException(UVException.StringError(systemErrorCode));
+
                 case UVErrorCode.ENOENT:
                     var path = (name == null ? System.IO.Directory.GetCurrentDirectory() : Path.Combine(System.IO.Directory.GetCurrentDirectory(), name));
                     return new System.IO.FileNotFoundException(string.Format("Could not find file '{0}'.", path), path);
+
                 case UVErrorCode.ENOTSUP:
                     return new NotSupportedException();
+
                 default:
                     break;
             }

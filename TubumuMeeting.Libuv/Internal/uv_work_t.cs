@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace TubumuMeeting.Libuv
 {
     [StructLayout(LayoutKind.Sequential)]
-    struct uv_work_t
+    internal struct uv_work_t
     {
         public IntPtr loop;
         public IntPtr work_cb;

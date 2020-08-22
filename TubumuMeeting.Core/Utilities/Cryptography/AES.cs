@@ -46,6 +46,7 @@ namespace Tubumu.Core.Utilities.Cryptography
                 cs.FlushFinalBlock();
                 cipherBytes = ms.ToArray();
             }
+
             return cipherBytes;
         }
 
@@ -90,6 +91,7 @@ namespace Tubumu.Core.Utilities.Cryptography
         public static Byte[] EncryptFromStringToByteArray(string encryptString, string key = null)
         {
             Byte[] inputByteArray = Encoding.UTF8.GetBytes(encryptString);
+            
             return EncryptFromByteArrayToByteArray(inputByteArray, key);
         }
 
@@ -108,6 +110,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             {
                 sb.AppendFormat("{0:X2}", item);
             }
+
             return sb.ToString();
             //return BitConverter.ToString(encryptBuffer).Replace("-", "");
         }
@@ -122,11 +125,11 @@ namespace Tubumu.Core.Utilities.Cryptography
         {
             Byte[] inputByteArray = Encoding.UTF8.GetBytes(encryptString);
             var encryptBuffer = EncryptFromByteArrayToByteArray(inputByteArray, key);
+            
             return Convert.ToBase64String(encryptBuffer);
-
         }
 
-        #endregion
+        #endregion 加密
 
         #region 解密
 
@@ -179,6 +182,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             {
                 return Array.Empty<byte>();
             }
+
             return DecryptFromByteArrayToByteArray(buffer, key);
         }
 
@@ -217,10 +221,11 @@ namespace Tubumu.Core.Utilities.Cryptography
             {
                 return Array.Empty<byte>();
             }
+
             return DecryptFromByteArrayToByteArray(buffer, key);
         }
 
-        #endregion
+        #endregion 解密
 
         #region Private Methods
 
@@ -235,6 +240,7 @@ namespace Tubumu.Core.Utilities.Cryptography
             {
                 buffer[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
             }
+
             return buffer;
         }
 
@@ -250,9 +256,10 @@ namespace Tubumu.Core.Utilities.Cryptography
 
                 return keyBytes.Length == 16 ? keyBytes : keyBytes.SubArray(16);
             }
+
             return Encoding.UTF8.GetBytes(DefaultKey);
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

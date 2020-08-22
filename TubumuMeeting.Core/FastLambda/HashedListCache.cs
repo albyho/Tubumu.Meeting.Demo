@@ -122,6 +122,6 @@ namespace Tubumu.Core.FastLambda
             // GC.SuppressFinalize(this);
         }
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

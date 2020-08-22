@@ -80,7 +80,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public ConsumerType Type { get; }
 
-        #endregion
+        #endregion Consumer data.
 
         /// <summary>
         /// Channel instance.
@@ -557,6 +557,5 @@ namespace TubumuMeeting.Mediasoup
         }
     }
 
-    #endregion
+    #endregion Event Handlers
 }
-

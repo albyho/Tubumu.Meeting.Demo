@@ -1,6 +1,6 @@
 ﻿namespace TubumuMeeting.Libuv
 {
-    struct uv_stat_t
+    internal struct uv_stat_t
     {
         public ulong st_dev;
         public ulong st_mode;

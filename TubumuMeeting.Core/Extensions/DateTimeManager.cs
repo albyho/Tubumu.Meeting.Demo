@@ -69,27 +69,35 @@ namespace Tubumu.Core.Extensions
                 case DateInterval.Second:
                     lngDateDiffValue = (long)timeSpan.TotalSeconds;
                     break;
+
                 case DateInterval.Minute:
                     lngDateDiffValue = (long)timeSpan.TotalMinutes;
                     break;
+
                 case DateInterval.Hour:
                     lngDateDiffValue = (long)timeSpan.TotalHours;
                     break;
+
                 case DateInterval.Day:
                     lngDateDiffValue = (long)timeSpan.Days;
                     break;
+
                 case DateInterval.Week:
                     lngDateDiffValue = (long)(timeSpan.Days / 7);
                     break;
+
                 case DateInterval.Month:
                     lngDateDiffValue = (long)(timeSpan.Days / 30);
                     break;
+
                 case DateInterval.Quarter:
                     lngDateDiffValue = (long)((timeSpan.Days / 30) / 3);
                     break;
+
                 case DateInterval.Year:
                     lngDateDiffValue = (long)(timeSpan.Days / 365);
                     break;
+
                 default:
                     throw new NotImplementedException(interval.ToString());
             }

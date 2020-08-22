@@ -128,13 +128,11 @@ namespace TubumuMeeting.Libuv
         public IPCPipe()
             : this(Loop.Constructor)
         {
-
         }
 
         public IPCPipe(Loop loop)
             : base(loop, true)
         {
-
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
@@ -179,9 +177,11 @@ namespace TubumuMeeting.Libuv
                     case HandleType.UV_UDP:
                         handle = new Udp(Loop);
                         break;
+
                     case HandleType.UV_TCP:
                         handle = new Tcp(Loop);
                         break;
+
                     case HandleType.UV_NAMED_PIPE:
                         handle = new Pipe(Loop);
                         break;

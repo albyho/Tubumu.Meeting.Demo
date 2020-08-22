@@ -66,7 +66,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string Protocol { get; }
 
-        #endregion
+        #endregion Producer data.
 
         /// <summary>
         /// Channel instance.
@@ -284,6 +284,6 @@ namespace TubumuMeeting.Mediasoup
             // No need to subscribe to any event.
         }
 
-        #endregion
+        #endregion Event Handlers
     }
 }

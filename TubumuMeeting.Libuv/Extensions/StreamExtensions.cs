@@ -57,7 +57,7 @@ namespace TubumuMeeting.Libuv.Extensions
         }
     }
 
-    static class TcpClientExtensions
+    internal static class TcpClientExtensions
     {
         public static async Task ConnectAsync(this TcpClient client, IPEndPoint ipEndPoint)
         {
@@ -105,7 +105,7 @@ namespace TubumuMeeting.Libuv.Extensions
             hashAlgorithm.TransformFinalBlock(input.Array, input.Offset, input.Count);
         }
 
-        static byte[] emptyBuffer = new byte[0];
+        private static byte[] emptyBuffer = new byte[0];
 
         public static void TransformFinalBlock(this HashAlgorithm hashAlgorithm)
         {

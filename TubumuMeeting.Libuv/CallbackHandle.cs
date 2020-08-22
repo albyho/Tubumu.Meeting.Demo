@@ -20,7 +20,7 @@ namespace TubumuMeeting.Libuv
         {
         }
 
-        static void uv_handle(IntPtr handle)
+        private static void uv_handle(IntPtr handle)
         {
             FromIntPtr<CallbackHandle>(handle).OnCallback();
         }
@@ -41,6 +41,7 @@ namespace TubumuMeeting.Libuv
         }
 
         public abstract void Start();
+
         public abstract void Stop();
 
         protected void Invoke(Func<IntPtr, uv_handle_cb, int> function)

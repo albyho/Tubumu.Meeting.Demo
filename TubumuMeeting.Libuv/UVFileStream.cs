@@ -51,7 +51,7 @@ namespace TubumuMeeting.Libuv
             Loop = loop;
         }
 
-        UVFile uvfile;
+        private UVFile uvfile;
 
         public void OpenRead(string path, Action<Exception> callback)
         {
@@ -72,13 +72,16 @@ namespace TubumuMeeting.Libuv
                 case UVFileAccess.Read:
                     Readable = true;
                     break;
+
                 case UVFileAccess.Write:
                     Writeable = true;
                     break;
+
                 case UVFileAccess.ReadWrite:
                     Writeable = true;
                     Readable = true;
                     break;
+
                 default:
                     throw new ArgumentException("access not supported");
             }
@@ -106,11 +109,11 @@ namespace TubumuMeeting.Libuv
 
         public bool Readable { get; private set; }
 
-        byte[] buffer = new byte[0x1000];
-        bool reading = false;
-        int readposition = 0;
+        private byte[] buffer = new byte[0x1000];
+        private bool reading = false;
+        private int readposition = 0;
 
-        void HandleRead(Exception ex, int size)
+        private void HandleRead(Exception ex, int size)
         {
             if (!reading)
             {
@@ -141,7 +144,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        void WorkRead()
+        private void WorkRead()
         {
             uvfile.Read(Loop, readposition, new ArraySegment<byte>(buffer, 0, buffer.Length), HandleRead);
         }
@@ -157,16 +160,17 @@ namespace TubumuMeeting.Libuv
             reading = false;
         }
 
-        void OnData(ArraySegment<byte> data)
+        private void OnData(ArraySegment<byte> data)
         {
             Data?.Invoke(data);
         }
+
         public event Action<ArraySegment<byte>> Data;
 
-        int writeoffset = 0;
-        Queue<Tuple<ArraySegment<byte>, Action<Exception>>> queue = new Queue<Tuple<ArraySegment<byte>, Action<Exception>>>();
+        private int writeoffset = 0;
+        private Queue<Tuple<ArraySegment<byte>, Action<Exception>>> queue = new Queue<Tuple<ArraySegment<byte>, Action<Exception>>>();
 
-        void HandleWrite(Exception ex, int size)
+        private void HandleWrite(Exception ex, int size)
         {
             var tuple = queue.Dequeue();
 
@@ -178,7 +182,7 @@ namespace TubumuMeeting.Libuv
             WorkWrite();
         }
 
-        void WorkWrite()
+        private void WorkWrite()
         {
             if (queue.Count == 0)
             {
@@ -197,7 +201,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        void Finish(Exception ex)
+        private void Finish(Exception ex)
         {
             uvfile.Close((ex2) =>
             {
@@ -207,7 +211,7 @@ namespace TubumuMeeting.Libuv
             });
         }
 
-        void OnDrain()
+        private void OnDrain()
         {
             Drain?.Invoke();
         }
@@ -228,8 +232,9 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        bool shutdown = false;
-        Action<Exception> shutdownCallback = null;
+        private bool shutdown = false;
+        private Action<Exception> shutdownCallback = null;
+
         public void Shutdown(Action<Exception> callback)
         {
             shutdown = true;
@@ -240,7 +245,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        void Close(Action<Exception> callback)
+        private void Close(Action<Exception> callback)
         {
             if (!IsClosed && !IsClosing)
             {
@@ -249,7 +254,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        void Close()
+        private void Close()
         {
             Close((ex) => { });
         }

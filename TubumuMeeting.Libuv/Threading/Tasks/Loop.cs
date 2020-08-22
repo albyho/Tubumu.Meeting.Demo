@@ -7,7 +7,8 @@ namespace TubumuMeeting.Libuv
 {
     public partial class Loop
     {
-        TaskFactory taskfactory = null;
+        private TaskFactory taskfactory = null;
+
         public TaskFactory TaskFactory
         {
             get

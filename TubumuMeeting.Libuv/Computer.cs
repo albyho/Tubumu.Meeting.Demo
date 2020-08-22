@@ -111,7 +111,6 @@ namespace TubumuMeeting.Libuv
         public IPAddress Address { get; protected set; }
         public IPAddress Netmask { get; protected set; }
 
-
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_interface_addresses(out IntPtr address, out int count);
 
@@ -156,7 +155,6 @@ namespace TubumuMeeting.Libuv
         public double Last { get; protected set; }
         public double Five { get; protected set; }
         public double Fifteen { get; protected set; }
-
     }
 
     public static class Computer

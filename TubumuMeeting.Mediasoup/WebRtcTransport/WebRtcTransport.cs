@@ -32,7 +32,7 @@ namespace TubumuMeeting.Mediasoup
 
         public string? DtlsRemoteCert { get; private set; }
 
-        #endregion
+        #endregion WebRtcTransport data.
 
         /// <summary>
         /// <para>Events:</para>
@@ -309,6 +309,6 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Event Handlers
     }
 }

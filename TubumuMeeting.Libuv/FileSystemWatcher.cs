@@ -20,12 +20,13 @@ namespace TubumuMeeting.Libuv
     public class FileSystemWatcher : Handle
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void uv_fs_event_cb(IntPtr handle, string filename, int events, int status);
+        private delegate void uv_fs_event_cb(IntPtr handle, string filename, int events, int status);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_fs_event_init(IntPtr loop, IntPtr handle);
 
-        static uv_fs_event_cb fs_event_callback;
+        private static uv_fs_event_cb fs_event_callback;
+
         static FileSystemWatcher()
         {
             fs_event_callback = fs_event;
@@ -54,7 +55,7 @@ namespace TubumuMeeting.Libuv
             Invoke(uv_fs_event_start, fs_event_callback, path, (int)flags);
         }
 
-        static void fs_event(IntPtr handlePointer, string filename, int events, int status)
+        private static void fs_event(IntPtr handlePointer, string filename, int events, int status)
         {
             var handle = FromIntPtr<FileSystemWatcher>(handlePointer);
             if (status != 0)
@@ -65,12 +66,11 @@ namespace TubumuMeeting.Libuv
             {
                 handle.OnChange(filename, (FileSystemEvent)events);
             }
-
         }
 
         public event Action<string, FileSystemEvent> Change;
 
-        void OnChange(string filename, FileSystemEvent @event)
+        private void OnChange(string filename, FileSystemEvent @event)
         {
             if (Change != null)
             {

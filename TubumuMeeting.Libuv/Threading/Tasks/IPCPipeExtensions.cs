@@ -38,6 +38,6 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap<Handle, string, int>(handle, text, pipe.Write);
         }
 
-        #endregion
+        #endregion Write string
     }
 }

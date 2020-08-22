@@ -21,8 +21,10 @@ namespace Tubumu.Core.Extensions
             {
                 case ExpressionType.MemberAccess:
                     return ((MemberExpression)expression.Body).Member.Name;
+
                 case ExpressionType.Convert:
                     return ((MemberExpression)((UnaryExpression)expression.Body).Operand).Member.Name;
+
                 default:
                     return null;
             }

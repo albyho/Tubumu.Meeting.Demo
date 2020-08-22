@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace TubumuMeeting.Libuv
 {
-    enum uv_run_mode : int
+    internal enum uv_run_mode : int
     {
         UV_RUN_DEFAULT = 0,
         UV_RUN_ONCE,
@@ -14,27 +14,27 @@ namespace TubumuMeeting.Libuv
     public partial class Loop : IDisposable
     {
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern IntPtr uv_default_loop();
+        private static extern IntPtr uv_default_loop();
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_loop_init(IntPtr handle);
+        private static extern int uv_loop_init(IntPtr handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_loop_close(IntPtr ptr);
+        private static extern int uv_loop_close(IntPtr ptr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern IntPtr uv_loop_size();
+        private static extern IntPtr uv_loop_size();
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_run(IntPtr loop, uv_run_mode mode);
+        private static extern void uv_run(IntPtr loop, uv_run_mode mode);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_update_time(IntPtr loop);
+        private static extern void uv_update_time(IntPtr loop);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern ulong uv_now(IntPtr loop);
+        private static extern ulong uv_now(IntPtr loop);
 
-        static Loop @default;
+        private static Loop @default;
 
         public static Loop Default
         {
@@ -87,7 +87,7 @@ namespace TubumuMeeting.Libuv
         {
         }
 
-        static IntPtr CreateLoop()
+        private static IntPtr CreateLoop()
         {
             IntPtr ptr = UV.Alloc(uv_loop_size().ToInt32());
             int r = uv_loop_init(ptr);
@@ -95,7 +95,7 @@ namespace TubumuMeeting.Libuv
             return ptr;
         }
 
-        unsafe uv_loop_t* loop_t
+        private unsafe uv_loop_t* loop_t
         {
             get
             {
@@ -248,10 +248,10 @@ namespace TubumuMeeting.Libuv
         }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void walk_cb(IntPtr handle, IntPtr arg);
+        private delegate void walk_cb(IntPtr handle, IntPtr arg);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_walk(IntPtr loop, walk_cb cb, IntPtr arg);
+        private static extern void uv_walk(IntPtr loop, walk_cb cb, IntPtr arg);
 
         private static readonly walk_cb walk_callback = WalkCallback;
 
@@ -330,7 +330,8 @@ namespace TubumuMeeting.Libuv
             RefCount--;
         }
 
-        LoopBackend loopBackend;
+        private LoopBackend loopBackend;
+
         public LoopBackend Backend
         {
             get
@@ -344,7 +345,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern void uv_stop(IntPtr loop);
+        private static extern void uv_stop(IntPtr loop);
 
         public void Stop()
         {
@@ -352,7 +353,7 @@ namespace TubumuMeeting.Libuv
         }
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        static extern int uv_loop_alive(IntPtr loop);
+        private static extern int uv_loop_alive(IntPtr loop);
 
         public bool IsAlive
         {

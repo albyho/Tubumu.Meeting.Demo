@@ -20,6 +20,7 @@ namespace TubumuMeeting.Libuv
         /// </summary>
         /// <value>The system error code.</value>
         public int SystemErrorCode { get; protected set; }
+
         public string Name { get; protected set; }
         public string Description { get; protected set; }
 
@@ -36,7 +37,6 @@ namespace TubumuMeeting.Libuv
             : this(systemErrorCode, ErrorName(systemErrorCode), StringError(systemErrorCode))
         {
         }
-
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern sbyte* uv_strerror(int systemErrorCode);
@@ -89,24 +89,34 @@ namespace TubumuMeeting.Libuv
                 {
                     case UVErrorCode.EINTR:
                         return SocketError.Interrupted;
+
                     case UVErrorCode.EACCES:
                         return SocketError.AccessDenied;
+
                     case UVErrorCode.EFAULT:
                         return SocketError.Fault;
+
                     case UVErrorCode.EINVAL:
                         return SocketError.InvalidArgument;
+
                     case UVErrorCode.EMFILE:
                         return SocketError.TooManyOpenSockets;
+
                     case UVErrorCode.EAGAIN:
                         return SocketError.WouldBlock;
+
                     case UVErrorCode.EALREADY:
                         return SocketError.AlreadyInProgress;
+
                     case UVErrorCode.ENOTSOCK:
                         return SocketError.NotSocket;
+
                     case UVErrorCode.EDESTADDRREQ:
                         return SocketError.DestinationAddressRequired;
+
                     case UVErrorCode.EMSGSIZE:
                         return SocketError.MessageSize;
+
                     case UVErrorCode.EPROTOTYPE:
                         return SocketError.ProtocolType;
                     // SocketError.ProtocolOption
@@ -118,29 +128,40 @@ namespace TubumuMeeting.Libuv
                     // SocketError.ProtocolFamilyNotSupported
                     case UVErrorCode.EAFNOSUPPORT:
                         return SocketError.AddressFamilyNotSupported;
+
                     case UVErrorCode.EADDRINUSE:
                         return SocketError.AddressAlreadyInUse;
+
                     case UVErrorCode.EADDRNOTAVAIL:
                         return SocketError.AddressNotAvailable;
+
                     case UVErrorCode.ENETDOWN:
                         return SocketError.NetworkDown;
+
                     case UVErrorCode.ENETUNREACH:
                         return SocketError.NetworkUnreachable;
                     // SocketError.NetworkReset
                     case UVErrorCode.ECONNABORTED:
                         return SocketError.ConnectionAborted;
+
                     case UVErrorCode.ECONNRESET:
                         return SocketError.ConnectionReset;
+
                     case UVErrorCode.ENOBUFS:
                         return SocketError.NoBufferSpaceAvailable;
+
                     case UVErrorCode.EISCONN:
                         return SocketError.IsConnected;
+
                     case UVErrorCode.ENOTCONN:
                         return SocketError.NotConnected;
+
                     case UVErrorCode.ESHUTDOWN:
                         return SocketError.Shutdown;
+
                     case UVErrorCode.ETIMEDOUT:
                         return SocketError.TimedOut;
+
                     case UVErrorCode.ECONNREFUSED:
                         return SocketError.ConnectionRefused;
                     // WSAELOOP

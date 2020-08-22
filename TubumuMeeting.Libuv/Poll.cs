@@ -11,7 +11,7 @@ namespace TubumuMeeting.Libuv
 
     public class Poll : Handle
     {
-        delegate void poll_callback(IntPtr handle, int status, int events);
+        private delegate void poll_callback(IntPtr handle, int status, int events);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_poll_init(IntPtr loop, IntPtr handle, int fd);
@@ -43,16 +43,16 @@ namespace TubumuMeeting.Libuv
             Invoke(uv_poll_stop);
         }
 
-        event poll_callback poll_cb;
+        private event poll_callback poll_cb;
 
-        void pollcallback(IntPtr handle, int status, int events)
+        private void pollcallback(IntPtr handle, int status, int events)
         {
             OnEvent((PollEvent)events);
         }
 
         public event Action<PollEvent> Event;
 
-        void OnEvent(PollEvent events)
+        private void OnEvent(PollEvent events)
         {
             if (Event != null)
             {

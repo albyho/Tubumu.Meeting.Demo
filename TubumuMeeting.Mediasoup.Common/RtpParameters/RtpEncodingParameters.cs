@@ -49,6 +49,7 @@ namespace TubumuMeeting.Mediasoup
         /// Others.
         /// </summary>
         public int? ScaleResolutionDownBy;
+
         public int? MaxBitrate;
     }
 }

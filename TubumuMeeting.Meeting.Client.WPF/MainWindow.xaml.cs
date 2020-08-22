@@ -14,7 +14,6 @@ using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Client.WPF
 {
-
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void CALLBACKCONNECTSERVER2(IntPtr param1, IntPtr param2);
 
@@ -63,7 +62,6 @@ namespace TubumuMeeting.Meeting.Client.WPF
 
         [DllImport(LibRTClientDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Destroy();
-
     }
 
     public class User32API
@@ -181,7 +179,6 @@ namespace TubumuMeeting.Meeting.Client.WPF
             {
                 messagesList.Items.Add(ex.ToString());
             }
-
         }
 
         private async void CallBackConnectServer4(IntPtr param1, IntPtr param2, IntPtr param3, IntPtr param4)
@@ -329,7 +326,6 @@ namespace TubumuMeeting.Meeting.Client.WPF
             int i = 0;
             //switch (interval)
             //{
-
             //}
         }
 
@@ -371,7 +367,6 @@ namespace TubumuMeeting.Meeting.Client.WPF
 
                 //connectwebrtctransport
 
-
                 //Marshal.FreeHGlobal(param);
                 result = await connection.InvokeAsync<dynamic>("CreateWebRtcTransport", new CreateWebRtcTransportRequest
                 {
@@ -382,8 +377,6 @@ namespace TubumuMeeting.Meeting.Client.WPF
                 param = Marshal.StringToHGlobalAnsi(result.ToString());
                 RtclientLib.CreateRecvTransport(param);
                 RtclientLib.JoinRoom(new WindowInteropHelper(this).Handle);
-
-
             }
             catch (Exception ex)
             {

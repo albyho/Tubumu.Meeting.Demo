@@ -48,7 +48,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private Router _router;
 
-        #endregion
+        #endregion Private Fields
 
         public RtpCapabilities DefaultRtpCapabilities { get; private set; }
 

@@ -25,7 +25,6 @@ namespace TubumuMeeting.Libuv
             Modify = stat.st_mtim.ToDateTime();
             Change = stat.st_ctim.ToDateTime();
             Birth = stat.st_birthtim.ToDateTime();
-
         }
 
         public UVFileStat()

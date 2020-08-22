@@ -95,7 +95,7 @@ namespace Tubumu.Core.Extensions
 
         */
 
-        #endregion
+        #endregion Like
 
         /// <summary>
         /// WhereOrContains

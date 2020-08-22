@@ -65,12 +65,15 @@ namespace TubumuMeeting.Libuv
                 case HandleType.UV_TCP:
                     r = Open(uv_tcp_open_unix, uv_tcp_open_windows, NativeHandle, fileDescriptor);
                     break;
+
                 case HandleType.UV_UDP:
                     r = Open(uv_udp_open_unix, uv_udp_open_windows, NativeHandle, fileDescriptor);
                     break;
+
                 case HandleType.UV_NAMED_PIPE:
                     r = uv_pipe_open(NativeHandle, fileDescriptor.ToInt32());
                     break;
+
                 default:
                     throw new NotSupportedException();
             }
@@ -78,4 +81,3 @@ namespace TubumuMeeting.Libuv
         }
     }
 }
-

@@ -72,10 +72,10 @@ namespace TubumuMeeting.Core
         object IEnumerator.Current => _current;
 
 #pragma warning disable CA1063 // Implement IDisposable Correctly
+
         public void Dispose()
 #pragma warning restore CA1063 // Implement IDisposable Correctly
         {
-
         }
 
         public void Reset()
@@ -93,7 +93,7 @@ namespace TubumuMeeting.Core
             return this;
         }
 
-        #endregion
+        #endregion IEnumerator, IEnumerable
 
         private static int ExtractPayloadLength(ArraySegment<byte> buffer, int offset)
         {

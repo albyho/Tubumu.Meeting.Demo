@@ -792,7 +792,6 @@ namespace TubumuMeeting.Mediasoup
 
             foreach (var capExt in caps.HeaderExtensions!)
             {
-
                 // Just take RTP header extension that can be used in Consumers.
                 if (capExt.Kind != kind || (capExt.Direction != RtpHeaderExtensionDirection.SendReceive && capExt.Direction != RtpHeaderExtensionDirection.SendOnly))
                 {
@@ -1219,6 +1218,6 @@ namespace TubumuMeeting.Mediasoup
             return true;
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

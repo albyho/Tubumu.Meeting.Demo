@@ -42,12 +42,15 @@ namespace TubumuMeeting.Libuv
         }
 
         public abstract bool Closed { get; }
+
         public abstract void Close();
+
         public abstract bool TryGetSymbol(string name, out IntPtr pointer);
+
         public abstract IntPtr GetSymbol(string name);
     }
 
-    class LibuvDynamicLibrary : DynamicLibrary
+    internal class LibuvDynamicLibrary : DynamicLibrary
     {
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal extern static int uv_dlopen(IntPtr name, IntPtr handle);
@@ -67,7 +70,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv")]
         internal extern static IntPtr uv_dlerror_free(IntPtr handle);
 
-        IntPtr handle = IntPtr.Zero;
+        private IntPtr handle = IntPtr.Zero;
 
         public override bool Closed
         {
@@ -77,7 +80,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        void Check(int ret)
+        private void Check(int ret)
         {
             if (ret < 0)
             {
@@ -125,9 +128,9 @@ namespace TubumuMeeting.Libuv
         }
     }
 
-    class WindowsDynamicLibrary : DynamicLibrary
+    internal class WindowsDynamicLibrary : DynamicLibrary
     {
-        IntPtr handle = IntPtr.Zero;
+        private IntPtr handle = IntPtr.Zero;
 
         public void Check(IntPtr ptr)
         {

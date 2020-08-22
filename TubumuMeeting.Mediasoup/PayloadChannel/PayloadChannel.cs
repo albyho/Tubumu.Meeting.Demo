@@ -20,7 +20,7 @@ namespace TubumuMeeting.Mediasoup
 
         private const int NsPayloadMaxLen = 4194304;
 
-        #endregion
+        #endregion Constants
 
         #region Private Fields
 
@@ -69,13 +69,13 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private OngoingNotification? _ongoingNotification;
 
-        #endregion
+        #endregion Private Fields
 
         #region Events
 
         public event Action<string, string, NotifyData, ArraySegment<byte>>? MessageEvent;
 
-        #endregion
+        #endregion Events
 
         public PayloadChannel(ILogger<PayloadChannel> logger, UVStream producerSocket, UVStream consumerSocket, int processId)
         {
@@ -119,7 +119,6 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception)
             {
-
             }
 
             try
@@ -128,7 +127,6 @@ namespace TubumuMeeting.Mediasoup
             }
             catch (Exception)
             {
-
             }
         }
 
@@ -166,7 +164,6 @@ namespace TubumuMeeting.Mediasoup
                             _logger.LogError(ex, "_producerSocket.Write() | Error");
                         }
                     });
-
                 }
                 catch (Exception ex)
                 {
@@ -184,7 +181,6 @@ namespace TubumuMeeting.Mediasoup
                             _logger.LogError(ex, "_producerSocket.Write() | Error");
                         }
                     });
-
                 }
                 catch (Exception ex)
                 {
@@ -368,7 +364,7 @@ namespace TubumuMeeting.Mediasoup
             _logger.LogDebug(exception, "ProducerSocketOnError() | Producer Channel error");
         }
 
-        #endregion
+        #endregion Event handles
 
         #region Private Methods
 
@@ -441,6 +437,6 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

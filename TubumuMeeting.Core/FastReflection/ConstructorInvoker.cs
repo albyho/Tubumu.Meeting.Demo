@@ -87,6 +87,6 @@ namespace Tubumu.Core.FastReflection
             return Invoke(parameters);
         }
 
-        #endregion
+        #endregion IConstructorInvoker Members
     }
 }

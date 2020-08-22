@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace TubumuMeeting.Libuv
 {
-    enum uv_process_flags : uint
+    internal enum uv_process_flags : uint
     {
         UV_PROCESS_SETUID = (1 << 0),
         UV_PROCESS_SETGID = (1 << 1),
@@ -11,7 +11,7 @@ namespace TubumuMeeting.Libuv
         UV_PROCESS_DETACHED = (1 << 3)
     };
 
-    enum uv_stdio_flags : int
+    internal enum uv_stdio_flags : int
     {
         UV_IGNORE = 0x00,
         UV_CREATE_PIPE = 0x01,
@@ -22,14 +22,14 @@ namespace TubumuMeeting.Libuv
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct uv_stdio_container_stream_t
+    internal struct uv_stdio_container_stream_t
     {
         public uv_stdio_flags flags;
         public IntPtr stream;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    unsafe struct uv_process_options_t : IDisposable
+    internal unsafe struct uv_process_options_t : IDisposable
     {
         // fields
 
@@ -42,14 +42,14 @@ namespace TubumuMeeting.Libuv
         public uint flags;
 
         public int stdio_count;
-        uv_stdio_container_stream_t* stdio;
+        private uv_stdio_container_stream_t* stdio;
 
         public int uid;
         public int gid;
 
         // functions
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void uv_exit_cb(IntPtr handle, long exit_status, int term_signal);
+        private delegate void uv_exit_cb(IntPtr handle, long exit_status, int term_signal);
 
         public uv_process_options_t(Process process, ProcessOptions options)
         {
@@ -65,7 +65,6 @@ namespace TubumuMeeting.Libuv
             args = alloc(options.Arguments);
             env = alloc(options.Environment);
             cwd = Marshal.StringToHGlobalAnsi(options.CurrentWorkingDirectory);
-
 
             // all fields have to be set
             flags = 0;
@@ -133,9 +132,9 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        static uv_exit_cb cb = exit;
+        private static uv_exit_cb cb = exit;
 
-        static void exit(IntPtr handlePointer, long exit_status, int term_signal)
+        private static void exit(IntPtr handlePointer, long exit_status, int term_signal)
         {
             var process = Handle.FromIntPtr<Process>(handlePointer);
             process.OnExit(exit_status, term_signal);
@@ -165,7 +164,7 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        static IntPtr alloc(string[] args)
+        private static IntPtr alloc(string[] args)
         {
             if (args == null)
             {
@@ -181,7 +180,7 @@ namespace TubumuMeeting.Libuv
             return arr;
         }
 
-        static void free(ref IntPtr ptr)
+        private static void free(ref IntPtr ptr)
         {
             if (ptr == IntPtr.Zero)
             {

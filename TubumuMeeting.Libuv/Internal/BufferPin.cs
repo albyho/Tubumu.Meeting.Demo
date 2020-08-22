@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace TubumuMeeting.Libuv
 {
-    class BufferPin : IDisposable
+    internal class BufferPin : IDisposable
     {
         public byte[] Buffer { get; protected set; }
         public GCHandle GCHandle { get; protected set; }
@@ -74,6 +74,7 @@ namespace TubumuMeeting.Libuv
                 return At(Offset);
             }
         }
+
         public IntPtr End
         {
             get
@@ -86,10 +87,12 @@ namespace TubumuMeeting.Libuv
         {
             return At((IntPtr)offset);
         }
+
         public IntPtr At(long offset)
         {
             return At((IntPtr)offset);
         }
+
         public IntPtr At(IntPtr offset)
         {
             return (IntPtr)(Pointer.ToInt64() + offset.ToInt64());

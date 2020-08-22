@@ -17,7 +17,7 @@ namespace TubumuMeeting.Libuv
 
         internal GCHandle GCHandle { get; set; }
 
-        uv_handle_t* handle
+        private uv_handle_t* handle
         {
             get
             {
@@ -110,13 +110,13 @@ namespace TubumuMeeting.Libuv
         private static extern void uv_close(IntPtr handle, close_callback cb);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void close_callback(IntPtr handle);
+        private delegate void close_callback(IntPtr handle);
 
-        Action closeCallback;
+        private Action closeCallback;
 
-        static close_callback close_cb = CloseCallback;
+        private static close_callback close_cb = CloseCallback;
 
-        static void CloseCallback(IntPtr handlePointer)
+        private static void CloseCallback(IntPtr handlePointer)
         {
             var handle = Handle.FromIntPtr<Handle>(handlePointer);
             handle.Cleanup(handlePointer, handle.closeCallback);

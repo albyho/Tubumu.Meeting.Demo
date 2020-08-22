@@ -73,7 +73,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public string Protocol { get; }
 
-        #endregion
+        #endregion DataConsumer data.
 
         /// <summary>
         /// Channel instance.
@@ -404,6 +404,6 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Event Handlers
     }
 }

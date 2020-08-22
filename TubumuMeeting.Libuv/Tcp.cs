@@ -25,7 +25,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_tcp_bind(IntPtr handle, ref sockaddr_in6 sockaddr, uint flags);
 
-        void Bind(IPAddress ipAddress, int port, bool dualstack)
+        private void Bind(IPAddress ipAddress, int port, bool dualstack)
         {
             CheckDisposed();
 

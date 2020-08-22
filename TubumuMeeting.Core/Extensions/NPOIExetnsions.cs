@@ -54,15 +54,19 @@ namespace Tubumu.Core.Extensions
                 case CellType.Numeric:
                     targetCell.SetCellValue(sourceCell.NumericCellValue);
                     break;
+
                 case CellType.String:
                     targetCell.SetCellValue(sourceCell.StringCellValue);
                     break;
+
                 case CellType.Formula:
                     targetCell.SetCellValue(sourceCell.NumericCellValue);
                     break;
+
                 case CellType.Blank:
                     targetCell.SetCellValue(sourceCell.NumericCellValue);
                     break;
+
                 default:
                     throw new Exception(String.Format("{0}{1} 不是数字、字符串或基于数字的公式", sourceCellName, sourceRow.RowNum + 1));
             }

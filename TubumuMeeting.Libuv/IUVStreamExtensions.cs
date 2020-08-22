@@ -27,6 +27,7 @@ namespace TubumuMeeting.Libuv
             Ensure.ArgumentNotNull(data, "data");
             stream.Write(data, 0, data.Length, callback);
         }
+
         public static void Write(this IUVStream<ArraySegment<byte>> stream, byte[] data)
         {
             stream.Write(data, null);
@@ -37,7 +38,7 @@ namespace TubumuMeeting.Libuv
             stream.Write(data, null);
         }
 
-        #endregion
+        #endregion Write
 
         #region Write string
 
@@ -47,20 +48,23 @@ namespace TubumuMeeting.Libuv
             stream.Write(bytes, callback);
             return bytes.Length;
         }
+
         public static int Write(this IUVStream<ArraySegment<byte>> stream, string text, Action<Exception> callback)
         {
             return stream.Write(Encoding.UTF8, text, callback);
         }
+
         public static int Write(this IUVStream<ArraySegment<byte>> stream, Encoding enc, string text)
         {
             return stream.Write(enc, text, null);
         }
+
         public static int Write(this IUVStream<ArraySegment<byte>> stream, string text)
         {
             return stream.Write(Encoding.UTF8, text);
         }
 
-        #endregion
+        #endregion Write string
 
         #region Shutdown
 
@@ -74,7 +78,7 @@ namespace TubumuMeeting.Libuv
             stream.Shutdown((_) => callback());
         }
 
-        #endregion
+        #endregion Shutdown
 
         #region End
 
@@ -83,6 +87,7 @@ namespace TubumuMeeting.Libuv
             stream.Write(data, index, count);
             stream.Shutdown(callback);
         }
+
         public static void End(this IUVStream<ArraySegment<byte>> stream, byte[] data, int index, int count)
         {
             stream.End(data, index, count, null);
@@ -93,6 +98,7 @@ namespace TubumuMeeting.Libuv
             stream.Write(data);
             stream.Shutdown(callback);
         }
+
         public static void End(this IUVStream<ArraySegment<byte>> stream, byte[] data)
         {
             stream.Write(data, null);
@@ -103,6 +109,7 @@ namespace TubumuMeeting.Libuv
             stream.Write(data);
             stream.Shutdown(callback);
         }
+
         public static void End(this IUVStream<ArraySegment<byte>> stream, ArraySegment<byte> data)
         {
             stream.End(data, null);
@@ -114,19 +121,22 @@ namespace TubumuMeeting.Libuv
             stream.Shutdown(callback);
             return size;
         }
+
         public static int End(this IUVStream<ArraySegment<byte>> stream, string text, Action<Exception> callback)
         {
             return stream.End(Encoding.UTF8, text, callback);
         }
+
         public static int End(this IUVStream<ArraySegment<byte>> stream, Encoding encoding, string text)
         {
             return stream.End(encoding, text, null);
         }
+
         public static int End(this IUVStream<ArraySegment<byte>> stream, string text)
         {
             return stream.End(Encoding.UTF8, text);
         }
 
-        #endregion
+        #endregion End
     }
 }

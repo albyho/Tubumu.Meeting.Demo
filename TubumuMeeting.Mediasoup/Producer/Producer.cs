@@ -78,7 +78,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public RtpParameters ConsumableRtpParameters { get; }
 
-        #endregion
+        #endregion Producer data.
 
         /// <summary>
         /// Channel instance.
@@ -140,7 +140,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>@emits resume</para>
         /// <para>@emits score - (score: ProducerScore[])</para>
         /// <para>@emits videoorientationchange - (videoOrientation: ProducerVideoOrientation)</para>
-        /// <para>@emits trace - (trace: ProducerTraceEventData)</para>      
+        /// <para>@emits trace - (trace: ProducerTraceEventData)</para>
         /// </summary>
         /// <param name="loggerFactory"></param>
         /// <param name="producerInternalData"></param>
@@ -413,7 +413,7 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Event Handlers
 
         #region Private Methods
 
@@ -457,6 +457,6 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

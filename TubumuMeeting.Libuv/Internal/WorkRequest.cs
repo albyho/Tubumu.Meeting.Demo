@@ -2,7 +2,7 @@ using System;
 
 namespace TubumuMeeting.Libuv
 {
-    unsafe class WorkRequest : PermaRequest
+    internal unsafe class WorkRequest : PermaRequest
     {
         public static readonly int Size = UV.Sizeof(TubumuMeeting.Libuv.RequestType.UV_WORK);
 
@@ -11,8 +11,8 @@ namespace TubumuMeeting.Libuv
         {
         }
 
-        Action before;
-        Action after;
+        private Action before;
+        private Action after;
 
         public WorkRequest(Action before, Action after)
             : this()

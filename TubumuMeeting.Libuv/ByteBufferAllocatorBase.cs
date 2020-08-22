@@ -22,7 +22,7 @@ namespace TubumuMeeting.Libuv
             GC.SuppressFinalize(this);
         }
 
-        void Alloc(IntPtr data, int size, out uv_buf_t buf)
+        private void Alloc(IntPtr data, int size, out uv_buf_t buf)
         {
             IntPtr ptr;
             size = Alloc(size, out ptr);
@@ -30,7 +30,9 @@ namespace TubumuMeeting.Libuv
         }
 
         public abstract int Alloc(int size, out IntPtr pointer);
+
         public abstract void Dispose(bool disposing);
+
         public abstract ArraySegment<byte> Retrieve(int size);
     }
 }

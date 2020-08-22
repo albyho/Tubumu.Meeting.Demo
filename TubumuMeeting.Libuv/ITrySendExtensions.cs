@@ -22,7 +22,7 @@ namespace TubumuMeeting.Libuv
             return sender.TrySend(IPAddress.Parse(ipAddress), port, new ArraySegment<byte>(data, index, count));
         }
 
-        #endregion
+        #endregion IPAddress string
 
         #region IPAddress
 
@@ -41,7 +41,7 @@ namespace TubumuMeeting.Libuv
             return sender.TrySend(new IPEndPoint(ipAddress, port), new ArraySegment<byte>(data, index, count));
         }
 
-        #endregion
+        #endregion IPAddress
 
         #region TEndPoint
 
@@ -59,7 +59,7 @@ namespace TubumuMeeting.Libuv
             return sender.TrySend(endPoint, new ArraySegment<byte>(data, index, count));
         }
 
-        #endregion
+        #endregion TEndPoint
 
         #region TMessage
 
@@ -77,7 +77,7 @@ namespace TubumuMeeting.Libuv
             return sender.TrySend(new IPEndPoint(ipAddress, port), payload);
         }
 
-        #endregion
+        #endregion TMessage
 
         public static int TrySend<TMessage, TEndPoint, TPayload>(this ITrySend<TMessage> sender, TEndPoint endPoint, TPayload payload)
             where TMessage : IMessage<TEndPoint, TPayload>, new()

@@ -4,7 +4,7 @@ namespace TubumuMeeting.Libuv
 {
     public class CopyingByteBufferAllocator : ByteBufferAllocatorBase
     {
-        BufferPin pin;
+        private BufferPin pin;
 
         public byte[] Buffer
         {

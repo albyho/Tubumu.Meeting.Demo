@@ -24,6 +24,6 @@ namespace Tubumu.Core.FastReflection
             return Create(key);
         }
 
-        #endregion
+        #endregion IFastReflectionFactory<PropertyInfo,IPropertyAccessor> Members
     }
 }

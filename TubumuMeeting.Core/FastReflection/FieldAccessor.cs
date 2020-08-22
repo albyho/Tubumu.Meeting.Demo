@@ -78,6 +78,6 @@ namespace Tubumu.Core.FastReflection
             return GetValue(instance);
         }
 
-        #endregion
+        #endregion IFieldAccessor Members
     }
 }

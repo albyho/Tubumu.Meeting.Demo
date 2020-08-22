@@ -48,7 +48,7 @@ namespace Tubumu.Core.Extensions.Ip
         }
 
         /// <summary>
-        /// Int32 转 IPAddress 
+        /// Int32 转 IPAddress
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>

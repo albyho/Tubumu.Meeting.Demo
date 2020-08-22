@@ -8,12 +8,12 @@
         Title="MainWindow" Height="480" Width="800">
     <Grid Margin="0,0,20,20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="109*"/>
-            <ColumnDefinition Width="288*"/>
+            <ColumnDefinition Width="109*" />
+            <ColumnDefinition Width="288*" />
         </Grid.ColumnDefinitions>
         <Button x:Name="ConnectButton" Content="Connect" Click="ConnectButton_Click" HorizontalAlignment="Left" Margin="267.138,10.713,0,0" VerticalAlignment="Top" Width="160" Height="30" Grid.Column="1" />
-        <TextBox x:Name="messageTextBox" HorizontalAlignment="Left" Height="26" Margin="73,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="392.531" Grid.ColumnSpan="2"/>
-        <ListBox x:Name="messagesList" HorizontalAlignment="Left" Height="380.429" Margin="73,48.571,0,0" VerticalAlignment="Top" Width="392.531" RenderTransformOrigin="-0.304,0.109" BorderThickness="1" Grid.ColumnSpan="2" BorderBrush="Gainsboro"/>
-        <Label Content="RoomId" HorizontalAlignment="Left" Height="26" Margin="10,10,0,0" VerticalAlignment="Top" Width="58"/>
+        <TextBox x:Name="messageTextBox" HorizontalAlignment="Left" Height="26" Margin="73,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="392.531" Grid.ColumnSpan="2" />
+        <ListBox x:Name="messagesList" HorizontalAlignment="Left" Height="380.429" Margin="73,48.571,0,0" VerticalAlignment="Top" Width="392.531" RenderTransformOrigin="-0.304,0.109" BorderThickness="1" Grid.ColumnSpan="2" BorderBrush="Gainsboro" />
+        <Label Content="RoomId" HorizontalAlignment="Left" Height="26" Margin="10,10,0,0" VerticalAlignment="Top" Width="58" />
     </Grid>
 </Window>

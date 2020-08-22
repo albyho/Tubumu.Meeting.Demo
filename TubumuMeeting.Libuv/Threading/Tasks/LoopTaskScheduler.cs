@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace TubumuMeeting.Libuv.Threading.Tasks
 {
-    class LoopTaskScheduler : TaskScheduler
+    internal class LoopTaskScheduler : TaskScheduler
     {
         static LoopTaskScheduler()
         {

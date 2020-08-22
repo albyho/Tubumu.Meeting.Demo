@@ -22,7 +22,7 @@ namespace TubumuMeeting.Meeting.Server
         private string UserId => Context.User.Identity.Name;
         private string ConnectionId => Context.ConnectionId;
 
-        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, BadDisconnectSocketService badDisconnectSocketService,Scheduler scheduler)
+        public MeetingHub(ILogger<MeetingHub> logger, IHubContext<MeetingHub, IPeer> hubContext, BadDisconnectSocketService badDisconnectSocketService, Scheduler scheduler)
         {
             _logger = logger;
             _hubContext = hubContext;
@@ -56,7 +56,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        #endregion
+        #endregion Private
     }
 
     public partial class MeetingHub
@@ -625,6 +625,6 @@ namespace TubumuMeeting.Meeting.Server
             }).ContinueWithOnFaultedHandleLog(_logger);
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

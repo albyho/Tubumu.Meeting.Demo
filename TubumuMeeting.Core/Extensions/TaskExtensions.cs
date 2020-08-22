@@ -94,14 +94,18 @@ namespace Tubumu.Core.Extensions
             {
                 case TaskStatus.RanToCompletion:
                     return resultSetter.TrySetResult(task is Task<TResult> taskLocal ? taskLocal.Result : default);
+
                 case TaskStatus.Faulted:
                     return resultSetter.TrySetException(task.Exception.InnerExceptions);
+
                 case TaskStatus.Canceled:
                     return resultSetter.TrySetCanceled();
+
                 default:
                     throw new InvalidOperationException("The task was not completed.");
             }
         }
+
         /// <summary>
         /// Attempts to transfer the result of a Task to the TaskCompletionSource.
         /// </summary>

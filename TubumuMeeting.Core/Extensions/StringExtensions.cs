@@ -68,7 +68,7 @@ namespace Tubumu.Core.Extensions
             }
         }
 
-        #endregion
+        #endregion Guid相关
 
         #region 字符串截取
 
@@ -113,11 +113,9 @@ namespace Tubumu.Core.Extensions
                 return (source.Length > len * 2) ? source.Substring(0, len * 2) + att : source;
             }
             return (source.Length > len) ? source.Substring(0, len) + att : source;
-
-
         }
 
-        #endregion
+        #endregion 字符串截取
 
         #region 字符串空 / null 校验
 
@@ -161,7 +159,7 @@ namespace Tubumu.Core.Extensions
             return !string.IsNullOrEmpty(source) ? source : newValue;
         }
 
-        #endregion
+        #endregion 字符串空 / null 校验
 
         #region 字符串格式化
 
@@ -224,7 +222,7 @@ namespace Tubumu.Core.Extensions
             return String.Format(provider, format, args);
         }
 
-        #endregion
+        #endregion 字符串格式化
 
         #region 串联字符串集合
 
@@ -286,7 +284,7 @@ namespace Tubumu.Core.Extensions
             return String.Join(separator, enumerable.Select(selector));
         }
 
-        #endregion
+        #endregion 串联字符串集合
 
         #region 目录相关
 
@@ -383,7 +381,7 @@ namespace Tubumu.Core.Extensions
             return !path.IsNullOrWhiteSpace() && VirtualDirectoryRegex.IsMatch(path);
         }
 
-        #endregion
+        #endregion 目录相关
 
         /// <summary>
         /// 字符串重复
@@ -547,6 +545,6 @@ namespace Tubumu.Core.Extensions
             return py;
         }
 
-        #endregion
+        #endregion 拼音
     }
 }

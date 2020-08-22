@@ -116,6 +116,6 @@ namespace Tubumu.Core.FastReflection
             return Invoke(instance, parameters);
         }
 
-        #endregion
+        #endregion IMethodInvoker Members
     }
 }

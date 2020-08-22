@@ -3,7 +3,7 @@
 namespace TubumuMeeting.Libuv
 {
     [StructLayout(LayoutKind.Sequential)]
-    unsafe struct uv_dirent_t
+    internal unsafe struct uv_dirent_t
     {
         public sbyte* name;
         public UVDirectoryEntityType type;

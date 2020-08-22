@@ -6,7 +6,7 @@ namespace TubumuMeeting.Libuv
     public partial class HandleBase : ISendBufferSize, IReceiveBufferSize
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate int buffer_size_function(IntPtr handle, out int value);
+        private delegate int buffer_size_function(IntPtr handle, out int value);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_send_buffer_size(IntPtr handle, out int value);
@@ -14,7 +14,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_recv_buffer_size(IntPtr handle, out int value);
 
-        int Invoke(buffer_size_function function, int value)
+        private int Invoke(buffer_size_function function, int value)
         {
             CheckDisposed();
 
@@ -23,7 +23,7 @@ namespace TubumuMeeting.Libuv
             return r;
         }
 
-        int Apply(buffer_size_function buffer_size, int value)
+        private int Apply(buffer_size_function buffer_size, int value)
         {
             return Invoke(buffer_size, value);
         }

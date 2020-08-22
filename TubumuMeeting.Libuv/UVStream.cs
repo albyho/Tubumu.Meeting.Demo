@@ -24,9 +24,9 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_shutdown(IntPtr req, IntPtr handle, callback callback);
 
-        uv_stream_t* stream;
+        private uv_stream_t* stream;
 
-        long PendingWrites { get; set; }
+        private long PendingWrites { get; set; }
 
         public long WriteQueueSize
         {
@@ -38,12 +38,12 @@ namespace TubumuMeeting.Libuv
             }
         }
 
-        ByteBufferAllocatorBase allocator;
+        private ByteBufferAllocatorBase allocator;
+
         public ByteBufferAllocatorBase ByteBufferAllocator
         {
             get
             {
-
                 return allocator ?? Loop.ByteBufferAllocator;
             }
             set
@@ -99,14 +99,15 @@ namespace TubumuMeeting.Libuv
             Invoke(uv_read_stop);
         }
 
-        static read_callback read_cb = rcallback;
-        static void rcallback(IntPtr streamPointer, IntPtr size, ref uv_buf_t buf)
+        private static read_callback read_cb = rcallback;
+
+        private static void rcallback(IntPtr streamPointer, IntPtr size, ref uv_buf_t buf)
         {
             var stream = FromIntPtr<UVStream>(streamPointer);
             stream.rcallback(streamPointer, size);
         }
 
-        void rcallback(IntPtr streamPointer, IntPtr size)
+        private void rcallback(IntPtr streamPointer, IntPtr size)
         {
             long nread = size.ToInt64();
             if (nread == 0)
@@ -152,7 +153,7 @@ namespace TubumuMeeting.Libuv
 
         public event Action<ArraySegment<byte>> Data;
 
-        void OnDrain()
+        private void OnDrain()
         {
             Drain?.Invoke();
         }
@@ -255,6 +256,7 @@ namespace TubumuMeeting.Libuv
         internal static extern int uv_is_readable(IntPtr handle);
 
         internal bool readable;
+
         public bool Readable
         {
             get
@@ -273,6 +275,7 @@ namespace TubumuMeeting.Libuv
         internal static extern int uv_is_writable(IntPtr handle);
 
         internal bool writeable;
+
         public bool Writeable
         {
             get
@@ -286,7 +289,6 @@ namespace TubumuMeeting.Libuv
                 writeable = value;
             }
         }
-
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal extern static int uv_try_write(IntPtr handle, uv_buf_t[] bufs, int nbufs);

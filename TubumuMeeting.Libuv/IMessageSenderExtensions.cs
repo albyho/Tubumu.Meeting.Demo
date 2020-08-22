@@ -34,7 +34,7 @@ namespace TubumuMeeting.Libuv
             sender.Send(ipAddress, port, data, index, count, null);
         }
 
-        #endregion
+        #endregion IPAddress string
 
         #region IPAddress
 
@@ -65,7 +65,7 @@ namespace TubumuMeeting.Libuv
             sender.Send(ipAddress, port, data, index, count, null);
         }
 
-        #endregion
+        #endregion IPAddress
 
         #region TEndPoint
 
@@ -95,7 +95,7 @@ namespace TubumuMeeting.Libuv
             sender.Send(endPoint, data, index, count, null);
         }
 
-        #endregion
+        #endregion TEndPoint
 
         #region TMessage
 
@@ -126,7 +126,7 @@ namespace TubumuMeeting.Libuv
             sender.Send(ipAddress, port, payload, null);
         }
 
-        #endregion
+        #endregion TMessage
 
         public static void Send<TMessage, TEndPoint, TPayload>(this IMessageSender<TMessage> sender, TEndPoint endPoint, TPayload payload, Action<Exception> callback)
             where TMessage : IMessage<TEndPoint, TPayload>, new()

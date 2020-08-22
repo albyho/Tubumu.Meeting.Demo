@@ -69,7 +69,7 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap<string, int>(text, stream.Write);
         }
 
-        #endregion
+        #endregion WriteAsync
 
         public static Task ShutdownAsync(this IUVStream<ArraySegment<byte>> stream)
         {

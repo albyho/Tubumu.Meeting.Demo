@@ -234,7 +234,6 @@ namespace Tubumu.Core.Extensions.Object
 
             if (source != null)
             {
-
                 var serializer = new XmlSerializer(source.GetType());
 
                 if (noneXsn)
@@ -323,6 +322,7 @@ namespace Tubumu.Core.Extensions.Object
                 case TypeCode.Double:
                 case TypeCode.Single:
                     return true;
+
                 default:
                     return false;
             }

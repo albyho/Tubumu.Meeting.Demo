@@ -1,6 +1,6 @@
 namespace TubumuMeeting.Libuv
 {
-    enum RequestType : int
+    internal enum RequestType : int
     {
         UV_UNKNOWN_REQ = 0,
         UV_REQ,

@@ -137,12 +137,16 @@ namespace Tubumu.Core.Extensions
             {
                 case ".gif":
                     return SKEncodedImageFormat.Gif;
+
                 case ".png":
                     return SKEncodedImageFormat.Png;
+
                 case ".webp":
                     return SKEncodedImageFormat.Webp;
+
                 case ".bmp":
                     return SKEncodedImageFormat.Bmp;
+
                 case ".jpeg":
                     return SKEncodedImageFormat.Jpeg;
             }

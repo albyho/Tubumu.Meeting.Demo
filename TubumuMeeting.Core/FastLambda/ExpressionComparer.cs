@@ -158,6 +158,7 @@ namespace Tubumu.Core.FastLambda
                 case ExpressionType.Quote:
                 case ExpressionType.TypeAs:
                     return CompareUnary((UnaryExpression)x, (UnaryExpression)y);
+
                 case ExpressionType.Add:
                 case ExpressionType.AddChecked:
                 case ExpressionType.Subtract:
@@ -182,31 +183,44 @@ namespace Tubumu.Core.FastLambda
                 case ExpressionType.LeftShift:
                 case ExpressionType.ExclusiveOr:
                     return CompareBinary((BinaryExpression)x, (BinaryExpression)y);
+
                 case ExpressionType.TypeIs:
                     return CompareTypeIs((TypeBinaryExpression)x, (TypeBinaryExpression)y);
+
                 case ExpressionType.Conditional:
                     return CompareConditional((ConditionalExpression)x, (ConditionalExpression)y);
+
                 case ExpressionType.Constant:
                     return CompareConstant((ConstantExpression)x, (ConstantExpression)y);
+
                 case ExpressionType.Parameter:
                     return CompareParameter((ParameterExpression)x, (ParameterExpression)y);
+
                 case ExpressionType.MemberAccess:
                     return CompareMemberAccess((MemberExpression)x, (MemberExpression)y);
+
                 case ExpressionType.Call:
                     return CompareMethodCall((MethodCallExpression)x, (MethodCallExpression)y);
+
                 case ExpressionType.Lambda:
                     return CompareLambda((LambdaExpression)x, (LambdaExpression)y);
+
                 case ExpressionType.New:
                     return CompareNew((NewExpression)x, (NewExpression)y);
+
                 case ExpressionType.NewArrayInit:
                 case ExpressionType.NewArrayBounds:
                     return CompareNewArray((NewArrayExpression)x, (NewArrayExpression)y);
+
                 case ExpressionType.Invoke:
                     return CompareInvocation((InvocationExpression)x, (InvocationExpression)y);
+
                 case ExpressionType.MemberInit:
                     return CompareMemberInit((MemberInitExpression)x, (MemberInitExpression)y);
+
                 case ExpressionType.ListInit:
                     return CompareListInit((ListInitExpression)x, (ListInitExpression)y);
+
                 default:
                     throw new NotSupportedException(String.Format("Unhandled expression type: '{0}'", x.NodeType));
             }

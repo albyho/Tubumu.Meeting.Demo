@@ -63,7 +63,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public SctpState? SctpState { get; protected set; }
 
-        #endregion
+        #endregion Transport data. This is set by the subclass.
 
         /// <summary>
         /// Channel instance.
@@ -490,7 +490,6 @@ namespace TubumuMeeting.Mediasoup
                     PayloadChannel,
                     producerOptions.AppData,
                     producerOptions.Paused!.Value);
-
 
                 Producers[producer.ProducerId] = producer;
 
@@ -934,6 +933,6 @@ namespace TubumuMeeting.Mediasoup
             throw new Exception("No sctpStreamId available");
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

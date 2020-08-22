@@ -27,13 +27,13 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly object _internal;
 
-        #endregion
+        #endregion Internal data.
 
         #region Router data.
 
         public RtpCapabilities RtpCapabilities { get; }
 
-        #endregion
+        #endregion Router data.
 
         /// <summary>
         /// Channel instance.
@@ -93,7 +93,7 @@ namespace TubumuMeeting.Mediasoup
         /// <para>Observer events:</para>
         /// <para>@emits close</para>
         /// <para>@emits newtransport - (transport: Transport)</para>
-        /// <para>@emits newrtpobserver - (rtpObserver: RtpObserver)</para>  
+        /// <para>@emits newrtpobserver - (rtpObserver: RtpObserver)</para>
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="routerId"></param>
@@ -869,6 +869,6 @@ namespace TubumuMeeting.Mediasoup
             return RouterId.GetHashCode();
         }
 
-        #endregion
+        #endregion IEquatable<T>
     }
 }

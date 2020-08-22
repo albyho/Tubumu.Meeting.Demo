@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace TubumuMeeting.Libuv
 {
-    class HelperFunctions
+    internal class HelperFunctions
     {
 #if TASK_STATUS
 		static System.Reflection.FieldInfo monoStatusField;
@@ -138,6 +138,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task Wrap<T1, T2>(T1 arg1, T2 arg2, Action<T1, T2, Action<Exception>> action)
         {
             var tcs = new TaskCompletionSource<object>();
@@ -154,6 +155,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task Wrap<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3, Action<T1, T2, T3, Action<Exception>> action)
         {
             var tcs = new TaskCompletionSource<object>();
@@ -170,6 +172,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task Wrap<T1, T2, T3, T4>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, Action<T1, T2, T3, T4, Action<Exception>> action)
         {
             var tcs = new TaskCompletionSource<object>();
@@ -186,6 +189,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task Wrap<T1, T2, T3, T4, T5>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, Action<T1, T2, T3, T4, T5, Action<Exception>> action)
         {
             var tcs = new TaskCompletionSource<object>();
@@ -230,6 +234,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task<TResult> Wrap<T1, T2, TResult>(T1 arg1, T2 arg2, Func<T1, T2, Action<Exception>, TResult> func)
         {
             var tcs = new TaskCompletionSource<TResult>();
@@ -302,6 +307,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task<TResult> Wrap<T1, T2, TResult>(T1 arg1, T2 arg2, Action<T1, T2, Action<Exception, TResult>> action)
         {
             var tcs = new TaskCompletionSource<TResult>();
@@ -318,6 +324,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task<TResult> Wrap<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3, Action<T1, T2, T3, Action<Exception, TResult>> action)
         {
             var tcs = new TaskCompletionSource<TResult>();
@@ -334,6 +341,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task<TResult> Wrap<T1, T2, T3, T4, TResult>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, Action<T1, T2, T3, T4, Action<Exception, TResult>> action)
         {
             var tcs = new TaskCompletionSource<TResult>();
@@ -350,6 +358,7 @@ namespace TubumuMeeting.Libuv
             }
             return tcs.Task;
         }
+
         public static Task<TResult> Wrap<T1, T2, T3, T4, T5, TResult>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, Action<T1, T2, T3, T4, T5, Action<Exception, TResult>> action)
         {
             var tcs = new TaskCompletionSource<TResult>();

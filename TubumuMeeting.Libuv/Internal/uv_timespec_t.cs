@@ -2,7 +2,7 @@
 
 namespace TubumuMeeting.Libuv
 {
-    struct uv_timespec_t
+    internal struct uv_timespec_t
     {
         public IntPtr tv_sec;
         public IntPtr tv_nsec;

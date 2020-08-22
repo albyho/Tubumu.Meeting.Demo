@@ -77,8 +77,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         internal extern static int uv_ip6_name(IntPtr src, byte[] dst, IntPtr size);
 
-
-        static bool IsMapping(byte[] data)
+        private static bool IsMapping(byte[] data)
         {
             if (data.Length != 16)
             {
@@ -96,7 +95,7 @@ namespace TubumuMeeting.Libuv
             return data[10] == data[11] && data[11] == 0xff;
         }
 
-        static IPAddress GetMapping(byte[] data)
+        private static IPAddress GetMapping(byte[] data)
         {
             var ip = new byte[4];
             for (int i = 0; i < 4; i++)
@@ -132,7 +131,7 @@ namespace TubumuMeeting.Libuv
             return new IPEndPoint(ip, ntohs(sa->sin_port));
         }
 
-        static int strlen(byte[] bytes)
+        private static int strlen(byte[] bytes)
         {
             int i = 0;
             while (i < bytes.Length && bytes[i] != 0)
@@ -151,7 +150,7 @@ namespace TubumuMeeting.Libuv
         }
 
 #if DEBUG
-        static HashSet<IntPtr> pointers = new HashSet<IntPtr>();
+        private static HashSet<IntPtr> pointers = new HashSet<IntPtr>();
 #endif
 
         internal static IntPtr Alloc(RequestType type)
@@ -189,7 +188,9 @@ namespace TubumuMeeting.Libuv
 			Marshal.FreeHGlobal(ptr);
 #endif
         }
+
 #if DEBUG
+
         public static int PointerCount
         {
             get
@@ -213,6 +214,7 @@ namespace TubumuMeeting.Libuv
             }
             Console.WriteLine("]");
         }
+
 #endif
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
@@ -268,6 +270,7 @@ namespace TubumuMeeting.Libuv
         }
 
         internal delegate int bind(IntPtr handle, ref sockaddr_in sockaddr, uint flags);
+
         internal delegate int bind6(IntPtr handle, ref sockaddr_in6 sockaddr, uint flags);
 
         internal static void Bind(Handle handle, bind bind, bind6 bind6, IPAddress ipAddress, int port, bool dualstack)

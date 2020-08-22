@@ -19,7 +19,7 @@ namespace TubumuMeeting.Libuv
             client.Connect(IPAddress.Parse(ipAddress), port, callback);
         }
 
-        #endregion
+        #endregion IP Extensions
 
         public static void Connect<TType, TEndPoint>(this IConnectable<TType, TEndPoint> client, ILocalAddress<TEndPoint> remote, Action<Exception> callback)
         {

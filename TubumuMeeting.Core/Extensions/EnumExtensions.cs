@@ -44,7 +44,6 @@ namespace Tubumu.Core.Extensions
                 throw new ArgumentNullException(nameof(type));
             }
 
-
             if (!type.IsEnum)
             {
                 throw new ArgumentOutOfRangeException(nameof(type), "The parameter named \"type\" is not an enum.");
@@ -190,7 +189,7 @@ namespace Tubumu.Core.Extensions
             }
         }
 
-        #endregion
+        #endregion Private Methods
     }
 
     public sealed class EnumStringValueAttribute : Attribute

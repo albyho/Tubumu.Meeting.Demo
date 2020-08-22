@@ -13,11 +13,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private readonly ILogger<DirectTransport> _logger;
 
-        #region DirectTransport data.
-
-
-        #endregion
-
         /// <summary>
         /// <para>Events:</para>
         /// <para>@emits rtcp - (packet: Buffer)</para>
@@ -220,6 +215,6 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        #endregion
+        #endregion Event Handlers
     }
 }

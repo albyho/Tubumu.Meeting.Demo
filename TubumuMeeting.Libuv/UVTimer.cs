@@ -6,7 +6,7 @@ namespace TubumuMeeting.Libuv
     public class UVTimer : Handle
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void uv_timer_cb(IntPtr loop);
+        private delegate void uv_timer_cb(IntPtr loop);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_timer_init(IntPtr loop, IntPtr timer);
@@ -26,7 +26,7 @@ namespace TubumuMeeting.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern ulong uv_timer_get_repeat(IntPtr timer);
 
-        Action onehit;
+        private Action onehit;
 
         public UVTimer()
             : this(Loop.Constructor)
@@ -81,14 +81,14 @@ namespace TubumuMeeting.Libuv
             Ensure.Success(r);
         }
 
-        static uv_timer_cb cb = OnTick;
+        private static uv_timer_cb cb = OnTick;
 
-        static void OnTick(IntPtr handle)
+        private static void OnTick(IntPtr handle)
         {
             FromIntPtr<UVTimer>(handle).OnTick();
         }
 
-        void OnTick()
+        private void OnTick()
         {
             var cb = onehit;
             if (cb != null)
@@ -107,10 +107,12 @@ namespace TubumuMeeting.Libuv
         {
             Start(0, repeat);
         }
+
         public void Start(TimeSpan timeout, TimeSpan repeat)
         {
             Start((ulong)timeout.TotalMilliseconds, (ulong)repeat.TotalMilliseconds);
         }
+
         public void Start(TimeSpan repeat)
         {
             Start(TimeSpan.Zero, repeat);

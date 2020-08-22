@@ -1,6 +1,6 @@
 namespace TubumuMeeting.Libuv
 {
-    enum uv_udp_flags : short
+    internal enum uv_udp_flags : short
     {
         UV_UDP_IPV6ONLY = 1,
         UV_UDP_PARTIAL = 2
