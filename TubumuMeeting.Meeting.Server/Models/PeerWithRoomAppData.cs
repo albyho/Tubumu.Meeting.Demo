@@ -20,7 +20,22 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool Equals(PeerWithRoomAppData other)
         {
+            if (other == null)
+                return false;
+
             return Peer.PeerId == other.Peer.PeerId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            var tObj = obj as PeerWithRoomAppData;
+            if (tObj == null)
+                return false;
+            else
+                return Peer.PeerId == tObj.Peer.PeerId;
         }
 
         public override int GetHashCode()

@@ -22,7 +22,22 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool Equals(Peer other)
         {
+            if (other == null)
+                return false;
+
             return PeerId == other.PeerId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            var tObj = obj as Peer;
+            if (tObj == null)
+                return false;
+            else
+                return PeerId == tObj.PeerId;
         }
 
         public override int GetHashCode()
@@ -44,7 +59,6 @@ namespace TubumuMeeting.Meeting.Server
         private readonly ILogger<Peer> _logger;
 
         // TODO: (alby) _joined 的使用及线程安全。
-        [JsonIgnore]
         private bool _joined;
 
         private readonly WebRtcTransportSettings _webRtcTransportSettings;

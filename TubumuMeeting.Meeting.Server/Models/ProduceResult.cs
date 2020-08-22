@@ -1,4 +1,5 @@
-﻿using TubumuMeeting.Mediasoup;
+﻿using System;
+using TubumuMeeting.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {
@@ -21,10 +22,35 @@ namespace TubumuMeeting.Meeting.Server
         public ConsumerPeerWithRoomId[] PullPaddingConsumerPeerWithRoomIds { get; set; }
     }
 
-    public class ConsumerPeerWithRoomId
+    public class ConsumerPeerWithRoomId : IEquatable<ConsumerPeerWithRoomId>
     {
         public Peer ConsumerPeer { get; set; }
 
         public string RoomId { get; set; }
+
+        public bool Equals(ConsumerPeerWithRoomId other)
+        {
+            if (other == null)
+                return false;
+
+            return RoomId == other.RoomId && ConsumerPeer.PeerId == other.ConsumerPeer.PeerId;
+        }
+
+        public override bool Equals(Object obj)
+        {
+            if (obj == null)
+                return false;
+
+            var tObj = obj as ConsumerPeerWithRoomId;
+            if (tObj == null)
+                return false;
+            else
+                return RoomId == tObj.RoomId && ConsumerPeer.PeerId == tObj.ConsumerPeer.PeerId;
+        }
+
+        public override int GetHashCode()
+        {
+            return RoomId.GetHashCode() ^ ConsumerPeer.PeerId.GetHashCode();
+        }
     }
 }

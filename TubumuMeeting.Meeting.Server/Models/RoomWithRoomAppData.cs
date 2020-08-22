@@ -20,7 +20,22 @@ namespace TubumuMeeting.Meeting.Server
 
         public bool Equals(RoomWithRoomAppData other)
         {
+            if (other == null)
+                return false;
+
             return Room.RoomId == other.Room.RoomId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            var tObj = obj as RoomWithRoomAppData;
+            if (tObj == null)
+                return false;
+            else
+                return Room.RoomId == tObj.Room.RoomId;
         }
 
         public override int GetHashCode()
