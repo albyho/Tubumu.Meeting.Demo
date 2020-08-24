@@ -157,17 +157,19 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private int _nextMidForConsumers = 0;
 
+        private object _nextMidForConsumersLock = new object();
+
         /// <summary>
         /// Buffer with available SCTP stream ids.
         /// </summary>
         private int[]? _sctpStreamIds;
 
+        private object _sctpStreamIdsLock = new object();
+
         /// <summary>m
         /// Next SCTP stream id.
         /// </summary>
         private int _nextSctpStreamId;
-
-        private object _sctpStreamIdsLock = new object();
 
         /// <summary>
         /// Observer instance.
@@ -559,14 +561,17 @@ namespace TubumuMeeting.Mediasoup
             // This may throw.
             var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities);
 
-            // Set MID.
-            rtpParameters.Mid = Interlocked.Increment(ref _nextMidForConsumers).ToString();
-
-            // We use up to 8 bytes for MID (string).
-            if (_nextMidForConsumers == 100_000_000)
+            lock(_nextMidForConsumersLock)
             {
-                _logger.LogDebug($"ConsumeAsync() | Reaching max MID value {_nextMidForConsumers}");
-                _nextMidForConsumers = 0;
+                // Set MID.
+                rtpParameters.Mid = (_nextMidForConsumers++).ToString();
+
+                // We use up to 8 bytes for MID (string).
+                if (_nextMidForConsumers == 100_000_000)
+                {
+                    _logger.LogDebug($"ConsumeAsync() | Reaching max MID value {_nextMidForConsumers}");
+                    _nextMidForConsumers = 0;
+                }
             }
 
             var @internal = new ConsumerInternalData
