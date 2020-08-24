@@ -23,7 +23,6 @@ namespace TubumuMeeting.Core
     {
         private readonly ArraySegment<byte> _buffer;
         private int _offset;
-        private Payload _current;
 
         public Netstring(ArraySegment<byte> buffer, int offset = 0)
         {
@@ -62,14 +61,14 @@ namespace TubumuMeeting.Core
                 return false;
             }
 
-            _current = ExtractPayload();
+            Current = ExtractPayload();
 
             return true;
         }
 
-        public Payload Current => _current;
+        public Payload Current { get; private set; }
 
-        object IEnumerator.Current => _current;
+        object IEnumerator.Current => Current;
 
 #pragma warning disable CA1063 // Implement IDisposable Correctly
 
