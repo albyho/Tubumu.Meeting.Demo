@@ -33,8 +33,7 @@ namespace TubumuMeeting.Meeting.Server
             if (obj == null)
                 return false;
 
-            var tObj = obj as Peer;
-            if (tObj == null)
+            if (!(obj is Peer tObj))
                 return false;
             else
                 return PeerId == tObj.PeerId;

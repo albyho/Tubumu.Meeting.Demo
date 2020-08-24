@@ -157,14 +157,14 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private int _nextMidForConsumers = 0;
 
-        private object _nextMidForConsumersLock = new object();
+        private readonly object _nextMidForConsumersLock = new object();
 
         /// <summary>
         /// Buffer with available SCTP stream ids.
         /// </summary>
         private int[]? _sctpStreamIds;
 
-        private object _sctpStreamIdsLock = new object();
+        private readonly object _sctpStreamIdsLock = new object();
 
         /// <summary>m
         /// Next SCTP stream id.

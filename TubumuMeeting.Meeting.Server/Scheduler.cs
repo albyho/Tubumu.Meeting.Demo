@@ -26,19 +26,19 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly MediasoupServer _mediasoupServer;
 
-        private Dictionary<string, Peer> _peers { get; } = new Dictionary<string, Peer>();
+        private readonly Dictionary<string, Peer> _peers = new Dictionary<string, Peer>();
 
         private readonly AsyncReaderWriterLock _peersLock = new AsyncReaderWriterLock();
 
-        private Dictionary<string, Room> _rooms { get; } = new Dictionary<string, Room>();
+        private readonly Dictionary<string, Room> _rooms = new Dictionary<string, Room>();
 
         private readonly AsyncAutoResetEvent _roomsLock = new AsyncAutoResetEvent();
 
-        private Dictionary<string, List<RoomWithRoomAppData>> _peerRooms { get; } = new Dictionary<string, List<RoomWithRoomAppData>>();
+        private readonly Dictionary<string, List<RoomWithRoomAppData>> _peerRooms = new Dictionary<string, List<RoomWithRoomAppData>>();
 
         private readonly AsyncReaderWriterLock _peerRoomsLock = new AsyncReaderWriterLock();
 
-        private Dictionary<string, List<PeerWithRoomAppData>> _roomPeers { get; } = new Dictionary<string, List<PeerWithRoomAppData>>();
+        private readonly Dictionary<string, List<PeerWithRoomAppData>> _roomPeers = new Dictionary<string, List<PeerWithRoomAppData>>();
 
         private readonly AsyncReaderWriterLock _roomPeersLock = new AsyncReaderWriterLock();
 

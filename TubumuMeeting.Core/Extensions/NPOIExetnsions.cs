@@ -191,7 +191,7 @@ namespace Tubumu.Core.Extensions
             catch (Exception)
             {
                 var file = new FileStream(path, FileMode.Open, FileAccess.Read);
-                book = new HSSFWorkbook();
+                book = new HSSFWorkbook(file);
             }
 
             return book;

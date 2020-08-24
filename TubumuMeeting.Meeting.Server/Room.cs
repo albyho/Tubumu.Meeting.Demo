@@ -26,8 +26,7 @@ namespace TubumuMeeting.Meeting.Server
             if (obj == null)
                 return false;
 
-            var tObj = obj as Room;
-            if (tObj == null)
+            if (!(obj is Room tObj))
                 return false;
             else
                 return RoomId == tObj.RoomId;
