@@ -2,7 +2,7 @@
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace Tubumu.Modules.Core.Models
+namespace Tubumu.Core.Models
 {
     /// <summary>
     /// 排序信息

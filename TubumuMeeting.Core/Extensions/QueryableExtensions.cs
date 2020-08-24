@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Tubumu.Modules.Core.Models;
+using Tubumu.Core.Models;
 
 namespace Tubumu.Core.Extensions
 {

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using JetBrains.Annotations;
 using Tubumu.Core.Extensions;
 
-namespace Tubumu.Modules.Core
+namespace Tubumu.Core
 {
     [DebuggerStepThrough]
     public static class Check

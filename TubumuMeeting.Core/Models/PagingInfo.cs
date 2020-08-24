@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 
-namespace Tubumu.Modules.Core.Models
+namespace Tubumu.Core.Models
 {
     /// <summary>
     /// 分页信息
