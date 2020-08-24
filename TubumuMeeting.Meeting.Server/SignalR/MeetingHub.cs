@@ -61,12 +61,21 @@ namespace TubumuMeeting.Meeting.Server
 
     public partial class MeetingHub
     {
+        /// <summary>
+        /// Get RTP capabilities of router.
+        /// </summary>
+        /// <returns></returns>
         public MeetingMessage<RtpCapabilities> GetRouterRtpCapabilities()
         {
             var rtpCapabilities = _scheduler.DefaultRtpCapabilities;
             return new MeetingMessage<RtpCapabilities> { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
+        /// <summary>
+        /// Join meeting.
+        /// </summary>
+        /// <param name="joinRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
         {
             if (!await _scheduler.JoinAsync(UserId, ConnectionId, joinRequest))
@@ -77,6 +86,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "Join 成功" };
         }
 
+        /// <summary>
+        /// Set peer's appData.
+        /// </summary>
+        /// <param name="setPeerAppDataRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> SetPeerAppData(SetPeerAppDataRequest setPeerAppDataRequest)
         {
             var peerPeerAppDataResult = await _scheduler.SetPeerAppDataAsync(UserId, ConnectionId, setPeerAppDataRequest);
@@ -91,6 +105,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "SetRoomAppData 成功" };
         }
 
+        /// <summary>
+        /// Unset peer'ss appData.
+        /// </summary>
+        /// <param name="unsetPeerAppDataRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> UnsetPeerAppData(UnsetPeerAppDataRequest unsetPeerAppDataRequest)
         {
             var peerPeerAppDataResult = await _scheduler.UnsetPeerAppDataAsync(UserId, ConnectionId, unsetPeerAppDataRequest);
@@ -105,6 +124,10 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "UnsetPeerAppData 成功" };
         }
 
+        /// <summary>
+        /// Clear peer's appData.
+        /// </summary>
+        /// <returns></returns>
         public async Task<MeetingMessage> ClearPeerAppData()
         {
             var peerPeerAppDataResult = await _scheduler.ClearPeerAppDataAsync(UserId, ConnectionId);
@@ -119,6 +142,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ClearPeerAppData 成功" };
         }
 
+        /// <summary>
+        /// Create WebRTC transport.
+        /// </summary>
+        /// <param name="createWebRtcTransportRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage<CreateWebRtcTransportResult>> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
             var transport = await _scheduler.CreateWebRtcTransportAsync(UserId, ConnectionId, createWebRtcTransportRequest);
@@ -176,6 +204,11 @@ namespace TubumuMeeting.Meeting.Server
             };
         }
 
+        /// <summary>
+        /// Connect WebRTC transport.
+        /// </summary>
+        /// <param name="connectWebRtcTransportRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> ConnectWebRtcTransport(ConnectWebRtcTransportRequest connectWebRtcTransportRequest)
         {
             try
@@ -193,6 +226,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
         }
 
+        /// <summary>
+        /// Join room.
+        /// </summary>
+        /// <param name="joinRoomRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage<JoinRoomResponse>> JoinRoom(JoinRoomRequest joinRoomRequest)
         {
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, ConnectionId, joinRoomRequest);
@@ -210,6 +248,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage<JoinRoomResponse> { Code = 200, Message = "JoinRoom 成功", Data = data };
         }
 
+        /// <summary>
+        /// Leave room.
+        /// </summary>
+        /// <param name="roomId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> LeaveRoom(string roomId)
         {
             var leaveRoomResult = await _scheduler.LeaveRoomAsync(UserId, ConnectionId, roomId);
@@ -224,6 +267,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
         }
 
+        /// <summary>
+        /// Set room's appData of peer.
+        /// </summary>
+        /// <param name="setRoomAppDataRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> SetRoomAppData(SetRoomAppDataRequest setRoomAppDataRequest)
         {
             var peerRoomAppDataResult = await _scheduler.SetRoomAppDataAsync(UserId, ConnectionId, setRoomAppDataRequest);
@@ -239,6 +287,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "SetRoomAppData 成功" };
         }
 
+        /// <summary>
+        /// Unset room's appData of peer.
+        /// </summary>
+        /// <param name="unsetRoomAppDataRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> UnsetRoomAppData(UnsetRoomAppDataRequest unsetRoomAppDataRequest)
         {
             var peerRoomAppDataResult = await _scheduler.UnsetRoomAppDataAsync(UserId, ConnectionId, unsetRoomAppDataRequest);
@@ -254,6 +307,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "UnsetRoomAppData 成功" };
         }
 
+        /// <summary>
+        /// Clear room's appData of peer.
+        /// </summary>
+        /// <param name="roomId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> ClearRoomAppData(string roomId)
         {
             var peerRoomAppDataResult = await _scheduler.ClearRoomAppDataAsync(UserId, ConnectionId, roomId);
@@ -269,6 +327,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ClearRoomAppData 成功" };
         }
 
+        /// <summary>
+        /// Pull medias.
+        /// </summary>
+        /// <param name="consumeRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> Pull(PullRequest consumeRequest)
         {
             var consumeResult = await _scheduler.PullAsync(UserId, ConnectionId, consumeRequest);
@@ -295,6 +358,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "Pull 成功" };
         }
 
+        /// <summary>
+        /// Produce media.
+        /// </summary>
+        /// <param name="produceRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage<ProduceRespose>> Produce(ProduceRequest produceRequest)
         {
             var peerId = UserId;
@@ -355,6 +423,11 @@ namespace TubumuMeeting.Meeting.Server
             };
         }
 
+        /// <summary>
+        /// Close producer.
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> CloseProducer(string producerId)
         {
             if (!await _scheduler.CloseProducerAsync(UserId, ConnectionId, producerId))
@@ -365,6 +438,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "CloseProducer 成功" };
         }
 
+        /// <summary>
+        /// Pause producer.
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> PauseProducer(string producerId)
         {
             if (!await _scheduler.PauseProducerAsync(UserId, ConnectionId, producerId))
@@ -375,6 +453,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "PauseProducer 成功" };
         }
 
+        /// <summary>
+        /// Resume producer.
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> ResumeProducer(string producerId)
         {
             if (!await _scheduler.ResumeProducerAsync(UserId, ConnectionId, producerId))
@@ -385,6 +468,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ResumeProducer 成功" };
         }
 
+        /// <summary>
+        /// Close consumer.
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> CloseConsumer(string consumerId)
         {
             if (!await _scheduler.CloseConsumerAsync(UserId, ConnectionId, consumerId))
@@ -395,6 +483,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "CloseConsumer 成功" };
         }
 
+        /// <summary>
+        /// Pause consumer.
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> PauseConsumer(string consumerId)
         {
             if (!await _scheduler.PauseConsumerAsync(UserId, ConnectionId, consumerId))
@@ -405,6 +498,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "PauseConsumer 成功" };
         }
 
+        /// <summary>
+        /// Resume consumer.
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> ResumeConsumer(string consumerId)
         {
             try
@@ -430,6 +528,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ResumeConsumer 成功" };
         }
 
+        /// <summary>
+        /// Set consumer's preferedLayers.
+        /// </summary>
+        /// <param name="setConsumerPreferedLayersRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> SetConsumerPreferedLayers(SetConsumerPreferedLayersRequest setConsumerPreferedLayersRequest)
         {
             if (!await _scheduler.SetConsumerPreferedLayersAsync(UserId, ConnectionId, setConsumerPreferedLayersRequest))
@@ -440,6 +543,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "SetConsumerPreferedLayers 成功" };
         }
 
+        /// <summary>
+        /// Set consumer's priority.
+        /// </summary>
+        /// <param name="setConsumerPriorityRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> SetConsumerPriority(SetConsumerPriorityRequest setConsumerPriorityRequest)
         {
             if (!await _scheduler.SetConsumerPriorityAsync(UserId, ConnectionId, setConsumerPriorityRequest))
@@ -450,6 +558,11 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "SetConsumerPriority 成功" };
         }
 
+        /// <summary>
+        /// Request key-frame.
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> RequestConsumerKeyFrame(string consumerId)
         {
             if (!await _scheduler.RequestConsumerKeyFrameAsync(UserId, ConnectionId, consumerId))
@@ -460,30 +573,55 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "RequestConsumerKeyFrame 成功" };
         }
 
+        /// <summary>
+        /// Get transport's state.
+        /// </summary>
+        /// <param name="transportId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage<TransportStat>> GetTransportStats(string transportId)
         {
             var data = await _scheduler.GetTransportStatsAsync(UserId, ConnectionId, transportId);
             return new MeetingMessage<TransportStat> { Code = 200, Message = "GetTransportStats 成功", Data = data };
         }
 
+        /// <summary>
+        /// Get producer's state.
+        /// </summary>
+        /// <param name="producerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage<ProducerStat>> GetProducerStats(string producerId)
         {
             var data = await _scheduler.GetProducerStatsAsync(UserId, ConnectionId, producerId);
             return new MeetingMessage<ProducerStat> { Code = 200, Message = "GetProducerStats 成功", Data = data };
         }
 
+        /// <summary>
+        /// Get consumer's state.
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage<ConsumerStat>> GetConsumerStats(string consumerId)
         {
             var data = await _scheduler.GetConsumerStatsAsync(UserId, ConnectionId, consumerId);
             return new MeetingMessage<ConsumerStat> { Code = 200, Message = "GetConsumerStats 成功", Data = data };
         }
 
+        /// <summary>
+        /// Restart ICE.
+        /// </summary>
+        /// <param name="transportId"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage<IceParameters?>> RestartIce(string transportId)
         {
             var iceParameters = await _scheduler.RestartIceAsync(UserId, ConnectionId, transportId);
             return new MeetingMessage<IceParameters?> { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
+        /// <summary>
+        /// Send message to other peers in rooms.
+        /// </summary>
+        /// <param name="sendMessageRequest"></param>
+        /// <returns></returns>
         public async Task<MeetingMessage> SendMessage(SendMessageRequest sendMessageRequest)
         {
             string[] otherPeerIds;
