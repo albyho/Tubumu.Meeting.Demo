@@ -223,6 +223,8 @@ namespace TubumuMeeting.Web
                 });
             });
 
+            app.UseSigSpec(options => { options.Hubs = new[] { typeof(MeetingHub) }; });
+
             // SignalR
             app.UseEndpoints(endpoints =>
             {

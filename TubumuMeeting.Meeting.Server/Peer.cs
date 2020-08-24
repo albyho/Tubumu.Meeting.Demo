@@ -292,15 +292,14 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<PeerProduceResult> ProduceAsync(ProduceRequest produceRequest)
         {
-            if (produceRequest.AppData == null || !produceRequest.AppData.TryGetValue("source", out var sourceObj))
+            if (produceRequest.Source.IsNullOrWhiteSpace())
             {
-                throw new Exception($"ProduceAsync() | Peer:{PeerId} AppData[\"source\"] is null.");
+                throw new Exception($"ProduceAsync() | Peer:{PeerId} AppData[\"source\"] is null or white space.");
             }
-            var source = sourceObj.ToString();
 
-            if (Sources == null || !Sources.Contains(source))
+            if (Sources == null || !Sources.Contains(produceRequest.Source))
             {
-                throw new Exception($"ProduceAsync() | Source:\"{ source }\" cannot be produce.");
+                throw new Exception($"ProduceAsync() | Source:\"{ produceRequest.Source }\" cannot be produce.");
             }
 
             // Add peerId into appData to later get the associated Peer during
@@ -321,11 +320,11 @@ namespace TubumuMeeting.Meeting.Server
 
                     using (await _producersLock.WriteLockAsync())
                     {
-                        var producer = _producers.Values.FirstOrDefault(m => m.Source == source);
+                        var producer = _producers.Values.FirstOrDefault(m => m.Source == produceRequest.Source);
                         if (producer != null)
                         {
-                            //throw new Exception($"ProduceAsync() | Source:\"{ source }\" is exists.");
-                            _logger.LogWarning($"ProduceAsync() | Source:\"{ source }\" is exists.");
+                            //throw new Exception($"ProduceAsync() | Source:\"{ produceRequest.Source }\" is exists.");
+                            _logger.LogWarning($"ProduceAsync() | Source:\"{ produceRequest.Source }\" is exists.");
                             return new PeerProduceResult
                             {
                                 Producer = producer,
@@ -341,7 +340,7 @@ namespace TubumuMeeting.Meeting.Server
                         });
 
                         // Store producer source
-                        producer.Source = source;
+                        producer.Source = produceRequest.Source;
 
                         // Store the Producer into the Peer data Object.
                         _producers[producer.ProducerId] = producer;

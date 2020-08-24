@@ -239,6 +239,7 @@ export default {
                 transportId: this.sendTransport.id,
                 kind,
                 rtpParameters,
+                source: appData.source,
                 appData
               });
               if (result.code !== 200) {

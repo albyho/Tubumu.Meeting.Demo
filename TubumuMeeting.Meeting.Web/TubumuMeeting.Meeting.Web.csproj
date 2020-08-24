@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Redis" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.7" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
+    <PackageReference Include="SigSpec.AspNetCore" Version="0.2.0" />
   </ItemGroup>
 
   <ItemGroup>

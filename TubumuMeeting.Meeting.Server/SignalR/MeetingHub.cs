@@ -61,10 +61,10 @@ namespace TubumuMeeting.Meeting.Server
 
     public partial class MeetingHub
     {
-        public MeetingMessage GetRouterRtpCapabilities()
+        public MeetingMessage<RtpCapabilities> GetRouterRtpCapabilities()
         {
             var rtpCapabilities = _scheduler.DefaultRtpCapabilities;
-            return new MeetingMessage { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
+            return new MeetingMessage<RtpCapabilities> { Code = 200, Message = "GetRouterRtpCapabilities 成功", Data = rtpCapabilities };
         }
 
         public async Task<MeetingMessage> Join(JoinRequest joinRequest)
@@ -119,7 +119,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ClearPeerAppData 成功" };
         }
 
-        public async Task<MeetingMessage> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
+        public async Task<MeetingMessage<CreateWebRtcTransportResult>> CreateWebRtcTransport(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
             var transport = await _scheduler.CreateWebRtcTransportAsync(UserId, ConnectionId, createWebRtcTransportRequest);
             transport.On("sctpstatechange", sctpState =>
@@ -161,7 +161,7 @@ namespace TubumuMeeting.Meeting.Server
                 return Task.CompletedTask;
             });
 
-            return new MeetingMessage
+            return new MeetingMessage<CreateWebRtcTransportResult>
             {
                 Code = 200,
                 Message = $"CreateWebRtcTransport 成功({(createWebRtcTransportRequest.Producing ? "Producing" : "Consuming")})",
@@ -193,7 +193,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
         }
 
-        public async Task<MeetingMessage> JoinRoom(JoinRoomRequest joinRoomRequest)
+        public async Task<MeetingMessage<JoinRoomResponse>> JoinRoom(JoinRoomRequest joinRoomRequest)
         {
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, ConnectionId, joinRoomRequest);
 
@@ -202,12 +202,12 @@ namespace TubumuMeeting.Meeting.Server
             // Message: peerJoinRoom
             SendNotification(otherPeerIds, "peerJoinRoom", joinRoomResult.SelfPeer);
 
-            var data = new
+            var data = new JoinRoomResponse
             {
                 RoomId = joinRoomRequest.RoomId,
                 Peers = joinRoomResult.Peers,
             };
-            return new MeetingMessage { Code = 200, Message = "JoinRoom 成功", Data = data };
+            return new MeetingMessage<JoinRoomResponse> { Code = 200, Message = "JoinRoom 成功", Data = data };
         }
 
         public async Task<MeetingMessage> LeaveRoom(string roomId)
@@ -295,7 +295,7 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "Pull 成功" };
         }
 
-        public async Task<MeetingMessage> Produce(ProduceRequest produceRequest)
+        public async Task<MeetingMessage<ProduceRespose>> Produce(ProduceRequest produceRequest)
         {
             var peerId = UserId;
             ProduceResult produceResult;
@@ -305,7 +305,7 @@ namespace TubumuMeeting.Meeting.Server
             }
             catch (Exception ex)
             {
-                return new MeetingMessage
+                return new MeetingMessage<ProduceRespose>
                 {
                     Code = 400,
                     Message = $"Produce 失败:{ex.Message}",
@@ -347,17 +347,11 @@ namespace TubumuMeeting.Meeting.Server
                 return Task.CompletedTask;
             });
 
-            string? source = null;
-            if (produceRequest.AppData.TryGetValue("source", out var sourceObj))
-            {
-                source = sourceObj.ToString();
-            }
-
-            return new MeetingMessage
+            return new MeetingMessage<ProduceRespose>
             {
                 Code = 200,
                 Message = "Produce 成功",
-                Data = new { Id = producer.ProducerId, Source = source }
+                Data = new ProduceRespose { Id = producer.ProducerId, Source = produceRequest.Source }
             };
         }
 
@@ -466,28 +460,28 @@ namespace TubumuMeeting.Meeting.Server
             return new MeetingMessage { Code = 200, Message = "RequestConsumerKeyFrame 成功" };
         }
 
-        public async Task<MeetingMessage> GetTransportStats(string transportId)
+        public async Task<MeetingMessage<TransportStat>> GetTransportStats(string transportId)
         {
             var data = await _scheduler.GetTransportStatsAsync(UserId, ConnectionId, transportId);
-            return new MeetingMessage { Code = 200, Message = "GetTransportStats 成功", Data = data };
+            return new MeetingMessage<TransportStat> { Code = 200, Message = "GetTransportStats 成功", Data = data };
         }
 
-        public async Task<MeetingMessage> GetProducerStats(string producerId)
+        public async Task<MeetingMessage<ProducerStat>> GetProducerStats(string producerId)
         {
             var data = await _scheduler.GetProducerStatsAsync(UserId, ConnectionId, producerId);
-            return new MeetingMessage { Code = 200, Message = "GetProducerStats 成功", Data = data };
+            return new MeetingMessage<ProducerStat> { Code = 200, Message = "GetProducerStats 成功", Data = data };
         }
 
-        public async Task<MeetingMessage> GetConsumerStats(string consumerId)
+        public async Task<MeetingMessage<ConsumerStat>> GetConsumerStats(string consumerId)
         {
             var data = await _scheduler.GetConsumerStatsAsync(UserId, ConnectionId, consumerId);
-            return new MeetingMessage { Code = 200, Message = "GetConsumerStats 成功", Data = data };
+            return new MeetingMessage<ConsumerStat> { Code = 200, Message = "GetConsumerStats 成功", Data = data };
         }
 
-        public async Task<MeetingMessage> RestartIce(string transportId)
+        public async Task<MeetingMessage<IceParameters?>> RestartIce(string transportId)
         {
             var iceParameters = await _scheduler.RestartIceAsync(UserId, ConnectionId, transportId);
-            return new MeetingMessage { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
+            return new MeetingMessage<IceParameters?> { Code = 200, Message = "RestartIce 成功", Data = iceParameters };
         }
 
         public async Task<MeetingMessage> SendMessage(SendMessageRequest sendMessageRequest)

@@ -14,9 +14,6 @@ namespace TubumuMeeting.Meeting.Server
 
         public string Message { get; set; } = "Success";
 
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public object? Data { get; set; }
-
         public static string Stringify(int code, string message, string? data = null)
         {
             if (data == null)
@@ -25,5 +22,14 @@ namespace TubumuMeeting.Meeting.Server
             }
             return $"{{\"code\":{code},\"message\":\"{message}\",\"data\":{data}}}";
         }
+    }
+
+    /// <summary>
+    /// MeetingMessage
+    /// </summary>
+    public class MeetingMessage<T> : MeetingMessage
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public T Data { get; set; }
     }
 }
