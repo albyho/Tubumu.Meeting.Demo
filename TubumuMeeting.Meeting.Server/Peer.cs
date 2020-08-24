@@ -814,7 +814,6 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _transportsLock.WriteLockAsync())
                 {
-
                     // Iterate and close all mediasoup Transport associated to this Peer, so all
                     // its Producers and Consumers will also be closed.
                     foreach (var item in _transports.Values)
