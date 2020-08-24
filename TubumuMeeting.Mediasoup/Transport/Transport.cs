@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
@@ -91,7 +92,6 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         public Dictionary<string, object>? AppData { get; private set; }
 
-
         /// <summary>
         /// Method to retrieve Router RTP capabilities.
         /// </summary>
@@ -166,6 +166,8 @@ namespace TubumuMeeting.Mediasoup
         /// Next SCTP stream id.
         /// </summary>
         private int _nextSctpStreamId;
+
+        private object _sctpStreamIdsLock = new object();
 
         /// <summary>
         /// Observer instance.
@@ -558,7 +560,7 @@ namespace TubumuMeeting.Mediasoup
             var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities);
 
             // Set MID.
-            rtpParameters.Mid = $"{_nextMidForConsumers++}";
+            rtpParameters.Mid = Interlocked.Increment(ref _nextMidForConsumers).ToString();
 
             // We use up to 8 bytes for MID (string).
             if (_nextMidForConsumers == 100_000_000)
@@ -784,14 +786,17 @@ namespace TubumuMeeting.Mediasoup
 
                 sctpStreamParameters = dataProducer.SctpStreamParameters.DeepClone<SctpStreamParameters>();
                 // This may throw.
-                sctpStreamId = GetNextSctpStreamId();
-
-                if (_sctpStreamIds == null || sctpStreamId > _sctpStreamIds.Length - 1)
+                lock(_sctpStreamIdsLock)
                 {
-                    throw new IndexOutOfRangeException(nameof(_sctpStreamIds));
+                    sctpStreamId = GetNextSctpStreamId();
+
+                    if (_sctpStreamIds == null || sctpStreamId > _sctpStreamIds.Length - 1)
+                    {
+                        throw new IndexOutOfRangeException(nameof(_sctpStreamIds));
+                    }
+                    _sctpStreamIds[sctpStreamId] = 1;
+                    sctpStreamParameters.StreamId = sctpStreamId;
                 }
-                _sctpStreamIds[sctpStreamId] = 1;
-                sctpStreamParameters.StreamId = sctpStreamId;
             }
             // If this is a DirectTransport, sctpStreamParameters must not be used.
             else
@@ -841,9 +846,12 @@ namespace TubumuMeeting.Mediasoup
                 try
                 {
                     DataConsumers.Remove(dataConsumer.DataConsumerId);
-                    if (_sctpStreamIds != null && sctpStreamId >= 0)
+                    lock(_sctpStreamIdsLock)
                     {
-                        _sctpStreamIds[sctpStreamId] = 0;
+                        if (_sctpStreamIds != null && sctpStreamId >= 0)
+                        {
+                            _sctpStreamIds[sctpStreamId] = 0;
+                        }
                     }
                 }
                 finally
@@ -858,9 +866,12 @@ namespace TubumuMeeting.Mediasoup
                 try
                 {
                     DataConsumers.Remove(dataConsumer.DataConsumerId);
-                    if (_sctpStreamIds != null && sctpStreamId >= 0)
+                    lock(_sctpStreamIdsLock)
                     {
-                        _sctpStreamIds[sctpStreamId] = 0;
+                        if (_sctpStreamIds != null && sctpStreamId >= 0)
+                        {
+                            _sctpStreamIds[sctpStreamId] = 0;
+                        }
                     }
                 }
                 finally
