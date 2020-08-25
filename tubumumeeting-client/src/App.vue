@@ -29,6 +29,18 @@
                </el-form-item>
               </el-form>
             </div>
+            <div class="demo-block" v-if="roomsForm.roomIds.length">
+              <el-form ref="peersForm" :model="peersForm" label-width="80px" size="mini">
+                <el-form-item>
+                  <el-tree
+                    :data="peersForm.rooms"
+                    :props="defaultProps"
+                    accordion
+                    @node-click="onPeerNodeClick">
+                  </el-tree>
+               </el-form-item>
+              </el-form>
+            </div>
           </el-aside>
           <el-main>
             <video id="localVideo" ref="localVideo" v-if="form.produce" :srcObject.prop="localVideoStream" autoplay playsinline />
@@ -110,7 +122,6 @@ export default {
       localVideoStream: null,
       remoteVideoStreams: {},
       remoteAudioStreams: {},
-      peers: new Map(),
       producers: new Map(),
       consumers: new Map(),
       dataProducer: null,
@@ -121,6 +132,13 @@ export default {
       },
       roomsForm: {
         roomIds: [],
+      },
+      peersForm: {
+        rooms: []
+      },
+      defaultProps: {
+          children: 'children',
+          label: 'label'
       },
       form: {
         consume: true,
@@ -161,6 +179,18 @@ export default {
   },
   methods: {
     async onJoin() {
+      if(this.joinForm.isJoined) {
+        if(this.connection) {
+          this.connection.stop();
+        }
+        let result = await this.connection.invoke('Leave');
+        if (result.code !== 200) {
+          logger.error('onJoin() | Leave failure.');
+          return;
+        }
+        this.joinForm.isJoined = false;
+        return;
+      }
       try {
         const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
         this.connection = new signalR.HubConnectionBuilder()
@@ -185,11 +215,14 @@ export default {
           // })
           .build();
 
+        this.connection.onclose(e => logger.error(e));
+
         this.connection.on('Notify', async data => {
           await this.processNotification(data);
         });
         await this.connection.start();
         await this.start();
+        this.joinForm.isJoined = true;
       } catch (e) {
         logger.debug(e.message);
       }
@@ -381,8 +414,6 @@ export default {
       this.recvTransport.on('connectionstatechange', connectionState => {
         logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
-
-      this.joinForm.isJoined = true;
     },
     async onRoomsChanged(value, direction, movedKeys) {
       if (direction === 'right') {
@@ -399,7 +430,30 @@ export default {
 
           const joinRoomData = result.data;
           logger.debug('Peers: %o', joinRoomData.peers);
-
+          const roomId = joinRoomData.roomId;
+          let matchedRoom;
+          for(let j = 0; j < this.peersForm.rooms.length; j++) {
+            let room = this.peersForm.rooms[j];
+            if(room.roomId === roomId) {
+              matchedRoom = room;
+              break;
+            }
+          }
+          if(!matchedRoom) {
+            matchedRoom = {
+              roomId,
+              label: `Room ${roomId}`,
+              children:[]
+            }
+            this.peersForm.rooms.push(matchedRoom);
+          }
+          for(let i = 0; i < joinRoomData.peers.length; i++) {
+            let peerRoom = joinRoomData.peers[i]
+            matchedRoom.children.push({
+              label:  `Peer ${peerRoom.peer.peerId}`,
+              info: peerRoom
+            })
+          }
           // for(let i = 0; i < joinRoomData.peers.length; i++) {
           //   const {peer, roomId, roomSources} = joinRoomData.peers[i];
           //   if(peer.peerId === this.joinForm.peerId || !roomSources || roomSources.length === 0) continue;
@@ -415,6 +469,10 @@ export default {
           }
         }
       }
+    },
+    async onPeerNodeClick(data) {
+      logger.debug('onPeerNodeClick() | %o', data);
+      await this.pull(data.info.roomId, data.info.peer.peerId, data.info.roomSources)
     },
     async processNewConsumer(data) {
       const {
