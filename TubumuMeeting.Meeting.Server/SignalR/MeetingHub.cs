@@ -240,6 +240,7 @@ namespace TubumuMeeting.Meeting.Server
             // Message: peerJoinRoom
             SendNotification(otherPeerIds, "peerJoinRoom", joinRoomResult.SelfPeer);
 
+            // 返回包括自身的房间内的所有人的信息
             var data = new JoinRoomResponse
             {
                 RoomId = joinRoomRequest.RoomId,

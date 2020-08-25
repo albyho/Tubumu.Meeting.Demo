@@ -280,7 +280,7 @@ namespace TubumuMeeting.Mediasoup
             Observer.Emit("close");
         }
 
-        private async Task CloseIternalAsync(bool tellRoute)
+        private async Task CloseIternalAsync(bool tellRouter)
         {
             // Close every Producer.
             await ProducersLock.WaitAsync();
@@ -324,7 +324,7 @@ namespace TubumuMeeting.Mediasoup
                     dataProducer.TransportClosed();
 
                     // If call by CloseAsync()
-                    if (tellRoute)
+                    if (tellRouter)
                     {
                         // Must tell the Router.
                         Emit("@dataproducerclose", dataProducer);
