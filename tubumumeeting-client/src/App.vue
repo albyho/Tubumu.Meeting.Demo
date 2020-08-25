@@ -1,12 +1,41 @@
 <template>
   <div id="app">
     <el-container>
-      <el-header>Meeting</el-header>
-      <el-main>
-        <video id="localVideo" ref="localVideo" v-if="produce" :srcObject.prop="localVideoStream" autoplay playsinline />
-        <video v-for="(value, key) in remoteVideoStreams" :key="key" :srcObject.prop="value" autoplay playsinline />
-        <audio v-for="(value, key) in remoteAudioStreams" :key="key" :srcObject.prop="value" autoplay />
-      </el-main>
+      <el-header>Demo</el-header>
+        <el-container>
+          <el-aside width="800px">            
+            <div class="demo-block">
+              <el-form ref="joinForm" :inline="true" label-width="80px" size="mini">
+                <el-form-item label="Peer:">
+                  <el-select v-model="joinForm.peerId" :disabled="joinForm.isJoined" clearable placeholder="请选择">
+                    <el-option :label="`Peer ${index}`" v-for="(item, index) in accessTokens" :key="item" :value="index"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="onJoin">{{(!joinForm.isJoined ? "Join" : "Leave")}}</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div class="demo-block" v-if="joinForm.isJoined">
+              <el-form ref="roomsForm" :model="roomsForm" label-width="80px" size="mini">
+                <el-form-item>
+                  <el-transfer
+                      :titles="['可选房间', '已在房间']"
+                      :button-texts="['离开房间', '进入房间']"
+                      @change="onRoomsChanged"
+                      v-model="roomsForm.roomIds"
+                      :data="rooms">
+                    </el-transfer>
+               </el-form-item>
+              </el-form>
+            </div>
+          </el-aside>
+          <el-main>
+            <video id="localVideo" ref="localVideo" v-if="form.produce" :srcObject.prop="localVideoStream" autoplay playsinline />
+            <video v-for="(value, key) in remoteVideoStreams" :key="key" :srcObject.prop="value" autoplay playsinline />
+            <audio v-for="(value, key) in remoteAudioStreams" :key="key" :srcObject.prop="value" autoplay />
+          </el-main>
+        </el-container>
     </el-container>
   </div>
 </template>
@@ -66,14 +95,10 @@ export default {
   components: {},
   data() {
     return {
-      peerId: null,
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
       recvTransport: null,
-      consume: true,
-      produce: false,
-      useDataChannel: false,
       nextDataChannelTestNumber: 0,
       webcams: {},
       audioDevices: {},
@@ -85,24 +110,36 @@ export default {
       localVideoStream: null,
       remoteVideoStreams: {},
       remoteAudioStreams: {},
-      rooms: new Map(),
       peers: new Map(),
       producers: new Map(),
       consumers: new Map(),
       dataProducer: null,
-      dataConsumers: new Map()
-    };
-  },
-  async mounted() {
-    await this.run();
-  },
-  methods: {
-    async run() {
-      try {
-        const { peerId, peerid } = querystring.parse(location.search.replace('?', ''));
-        this.peerId = peerId || peerid;
-        this.produce = this.peerId !== '0' && this.peerId !== '1';
-        const accessTokens = [
+      dataConsumers: new Map(),
+      joinForm: {
+        peerId: null,
+        isJoined: false
+      },
+      roomsForm: {
+        roomIds: [],
+      },
+      form: {
+        consume: true,
+        produce: true,
+        useDataChannel: false
+      },
+      rooms: [
+        { key: 0, label: "Room 0"},
+        { key: 1, label: "Room 1"},
+        { key: 2, label: "Room 2"},
+        { key: 3, label: "Room 3"},
+        { key: 4, label: "Room 4"},
+        { key: 5, label: "Room 5"},
+        { key: 6, label: "Room 6"},
+        { key: 7, label: "Room 7"},
+        { key: 8, label: "Room 8"},
+        { key: 9, label: "Room 9"}
+      ],
+      accessTokens: [
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMCIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.lX6ff6ZFNb4z-4otDcUAZ48qwD8rZAGM5_Rt4HlHgug',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.5w00ixg06pRPxcdbtbmRVI6Wy_Ta9qsSJc3D7PE3chQ',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMiIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.q2tKWUa6i4u0VpZDhA8Fw92NoV_g9YQeWD-OeF7fAvU',
@@ -113,13 +150,23 @@ export default {
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiNyIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.V_S8YRRCOWP5-TG8S_cvlWdaXEKpsgY34lt3FiCgqGw',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOCIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.fl1jA6DEQyXwIb6KRDUlEthR2G7-Je3OiaZHJ3tzk9M',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE'
-        ];
-
+        ]
+    };
+  },
+  async mounted() {
+    const { peerId, peerid } = querystring.parse(location.search.replace('?', ''));
+    this.joinForm.peerId = peerId || peerid;
+    // For Testing
+    // this.form.produce = this.joinForm.peerId !== '0' && this.joinForm.peerId !== '1';
+  },
+  methods: {
+    async onJoin() {
+      try {
         const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub`, {
-              accessTokenFactory: () => accessTokens[this.peerId],
+              accessTokenFactory: () => this.accessTokens[this.joinForm.peerId],
               skipNegotiation: true,
               transport: signalR.HttpTransportType.WebSockets,
             }
@@ -176,7 +223,7 @@ export default {
       // GetRouterRtpCapabilities 成功, Join
       result = await this.connection.invoke('Join', {
         rtpCapabilities: this.mediasoupDevice.rtpCapabilities,
-        sctpCapabilities: this.useDataChannel && this.consume
+        sctpCapabilities: this.form.useDataChannel && this.form.consume
 						? this.mediasoupDevice.sctpCapabilities
 						: undefined,
         displayName: 'Guest',
@@ -188,13 +235,13 @@ export default {
         return;
       }
 
-      if(this.produce) {
+      if(this.form.produce) {
         // Join成功，CreateWebRtcTransport(生产) 
         result = await this.connection.invoke('CreateWebRtcTransport', {
           forceTcp: false,
           producing: true,
           consuming: false,
-          sctpCapabilities: this.useDataChannel
+          sctpCapabilities: this.form.useDataChannel
 							? this.mediasoupDevice.sctpCapabilities
 							: undefined
         });
@@ -302,7 +349,7 @@ export default {
         forceTcp: false,
         producing: false,
         consuming: true,
-        sctpCapabilities: this._useDataChannel
+        sctpCapabilities: this.form.useDataChannel
 							? this._mediasoupDevice.sctpCapabilities
 							: undefined
       });
@@ -335,35 +382,39 @@ export default {
         logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
 
-      // createRecvTransport成功, JoinRoom
-      result = await this.connection.invoke('JoinRoom', {
-        roomId: '0',
-        RoomSources: ['webcam', 'mic'],
-        RoomAppData: {}
-      });
-      if (result.code !== 200) {
-        logger.error('processNotification() | JoinRoom failure.');
-        return;
-      }
+      this.joinForm.isJoined = true;
+    },
+    async onRoomsChanged(value, direction, movedKeys) {
+      if (direction === 'right') {
+        for(let i = 0; i < movedKeys.length; i++) {
+          let result = await this.connection.invoke('JoinRoom', {
+            roomId: movedKeys[i],
+            roomSources: ['webcam', 'mic'],
+            roomAppData: {}
+          });
+          if (result.code !== 200) {
+            logger.error('processNotification() | JoinRoom failure.');
+            return;
+          }
 
-      const joinRoomData = result.data;
-      logger.debug('Peers: %o', joinRoomData.peers);
+          const joinRoomData = result.data;
+          logger.debug('Peers: %o', joinRoomData.peers);
 
-      for(let i = 0; i < joinRoomData.peers.length; i++) {
-        const {peer, roomId, roomSources} = joinRoomData.peers[i];
-        if(peer.peerId === this.peerId || !roomSources || roomSources.length === 0) continue;
-        this.pull(roomId, peer.peerId, roomSources)
+          // for(let i = 0; i < joinRoomData.peers.length; i++) {
+          //   const {peer, roomId, roomSources} = joinRoomData.peers[i];
+          //   if(peer.peerId === this.joinForm.peerId || !roomSources || roomSources.length === 0) continue;
+          //   await this.pull(roomId, peer.peerId, roomSources)
+          // }
+        }
+      } else {
+        for(let i = 0; i < movedKeys.length; i++) {
+          let result = await this.connection.invoke('LeaveRoom', movedKeys[i]);
+          if (result.code !== 200) {
+            logger.error('processNotification() | JoinRoom failure.');
+            return;
+          }
+        }
       }
-
-// 临时
-if(this.peerId === '1000') {
-      if(this.produce && this.mediasoupDevice.canProduce('audio')) {
-       await this.enableMic();
-      }
-      if(this.produce && this.mediasoupDevice.canProduce('video')) {
-       await this.enableWebcam();
-      }
-}
     },
     async processNewConsumer(data) {
       const {
@@ -559,7 +610,7 @@ if(this.peerId === '1000') {
         case 'peerJoinRoom': {
           // eslint-disable-next-line no-unused-vars
           const {peer, roomId, roomSources } = data.data;
-          if(peer.peerId !== this.peerId && roomSources && roomSources.length !== 0) {
+          if(peer.peerId !== this.joinForm.peerId && roomSources && roomSources.length !== 0) {
             await this.pull(roomId, peer.peerId, roomSources);
           }
           break;
@@ -580,7 +631,7 @@ if(this.peerId === '1000') {
 
         case 'produceSources':
         {
-          if(!this.produce) break;
+          if(!this.form.produce) break;
 
           const { /*roomId, */produceSources } = data.data;
           for(let i =0; i < produceSources.length; i++){
@@ -680,7 +731,7 @@ if(this.peerId === '1000') {
     {
       logger.debug('enableChatDataProducer()');
 
-      if (!this.useDataChannel)
+      if (!this.form.useDataChannel)
         return;
 
       try
@@ -1016,6 +1067,16 @@ body {
 .el-header,
 .el-footer {
   line-height: 60px;
+}
+
+.demo-block
+{
+  border:1px solid #ebebeb;
+  border-radius:3px;
+  transition:.2s;
+  background-color: #ececec;
+  padding-top: 16px;
+  margin-bottom: 8px;
 }
 
 video {

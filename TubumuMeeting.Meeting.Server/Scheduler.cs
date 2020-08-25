@@ -363,6 +363,7 @@ namespace TubumuMeeting.Meeting.Server
                 var allPeers = new List<PeerWithRoomAppData>();
                 using (await _peerRoomsLock.WriteLockAsync())
                 {
+                    // peerRooms: Peer 所在的所有 Room
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
                         peerRooms = new List<RoomWithRoomAppData>();
@@ -372,7 +373,8 @@ namespace TubumuMeeting.Meeting.Server
                     var roomSources = joinRoomRequest.RoomSources ?? Array.Empty<string>();
                     var roomAppData = joinRoomRequest.RoomAppData ?? new Dictionary<string, object>();
 
-                    var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == room.RoomId);
+                    // 
+                    var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == joinRoomRequest.RoomId);
                     if (peerRoom == null)
                     {
                         peerRoom = new RoomWithRoomAppData(room);
@@ -384,13 +386,14 @@ namespace TubumuMeeting.Meeting.Server
 
                     using (await _roomPeersLock.WriteLockAsync())
                     {
-                        if (!_roomPeers.TryGetValue(room.RoomId, out var roomPeers))
+                        // 当前 Room 的所有 Peer
+                        if (!_roomPeers.TryGetValue(joinRoomRequest.RoomId, out var roomPeers))
                         {
                             roomPeers = new List<PeerWithRoomAppData>();
-                            _roomPeers[room.RoomId] = roomPeers;
+                            _roomPeers[joinRoomRequest.RoomId] = roomPeers;
                         }
 
-                        roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId);
+                        roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId && m.RoomId == joinRoomRequest.RoomId);
                         if (roomPeer == null)
                         {
                             roomPeer = new PeerWithRoomAppData(peer);
@@ -400,16 +403,7 @@ namespace TubumuMeeting.Meeting.Server
                         roomPeer.RoomSources = roomSources;
                         roomPeer.RoomAppData = roomAppData;
 
-                        foreach (var roomLocal in peerRooms)
-                        {
-                            if (_roomPeers.TryGetValue(roomLocal.Room.RoomId, out var roomPeersLocal))
-                            {
-                                foreach (var otherPeer in roomPeersLocal)
-                                {
-                                    allPeers.Add(otherPeer);
-                                }
-                            }
-                        }
+                        allPeers.AddRange(roomPeers);
                     }
                 }
 
