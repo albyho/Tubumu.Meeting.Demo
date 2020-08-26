@@ -833,7 +833,8 @@ namespace TubumuMeeting.Meeting.Server
 
                 _joined = false;
 
-                using (await _transportsLock.ReadLockAsync())
+                // !!!注意：这里用 WriteLockAsync，因为 Transport 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
+                using (await _transportsLock.WriteLockAsync())
                 {
                     // Iterate and close all mediasoup Transport associated to this Peer, so all
                     // its Producers and Consumers will also be closed.
