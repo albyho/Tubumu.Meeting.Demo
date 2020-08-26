@@ -351,6 +351,7 @@ namespace TubumuMeeting.Mediasoup
             // 关闭后也允许移除
             lock (_closeLock)
             {
+                _logger.LogDebug($"RemoveConsumer: {consumerId}");
                 _consumers.Remove(consumerId);
             }
         }
@@ -432,6 +433,8 @@ namespace TubumuMeeting.Mediasoup
                     _checkConsumersTimer.Dispose();
                     return;
                 }
+
+                _logger.LogDebug($"CheckConsumer() | Producer: {_internal.ProducerId} Consumers: {_consumers.Count}");
 
                 if (_consumers.Count == 0)
                 {

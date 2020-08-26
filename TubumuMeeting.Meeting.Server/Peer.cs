@@ -432,6 +432,8 @@ namespace TubumuMeeting.Meeting.Server
                             //consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
                             consumer.Observer.On("close", async _ =>
                             {
+                                _logger.LogDebug($"Consumer: {consumer.ConsumerId} closed.");
+
                                 using (await _consumersLock.WriteLockAsync())
                                 {
                                     _consumers.Remove(consumer.ConsumerId);
@@ -540,7 +542,6 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     consumer.Close();
-                    _consumers.Remove(consumerId);
                     return true;
                 }
             }

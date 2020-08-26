@@ -373,7 +373,6 @@ namespace TubumuMeeting.Meeting.Server
                     var roomSources = joinRoomRequest.RoomSources ?? Array.Empty<string>();
                     var roomAppData = joinRoomRequest.RoomAppData ?? new Dictionary<string, object>();
 
-                    // 
                     var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == joinRoomRequest.RoomId);
                     if (peerRoom == null)
                     {
@@ -386,7 +385,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     using (await _roomPeersLock.WriteLockAsync())
                     {
-                        // 当前 Room 的所有 Peer
+                        // roomPeers: 当前 Room 的所有 Peer
                         if (!_roomPeers.TryGetValue(joinRoomRequest.RoomId, out var roomPeers))
                         {
                             roomPeers = new List<PeerWithRoomAppData>();
@@ -430,7 +429,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _peerRoomsLock.WriteLockAsync())
                 {
-                    // Peer 和 Room 的关系
+                    // peerRooms: Peer 所在的所有 Room
                     if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
                         throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists in Room:{roomId}.");
@@ -440,25 +439,19 @@ namespace TubumuMeeting.Meeting.Server
 
                     using (await _roomPeersLock.WriteLockAsync())
                     {
-                        // Room 和 Peer 的关系
+                        // roomPeers: 当前 Room 的所有 Peer
                         if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
                         {
                             throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists in Room:{roomId}.");
                         }
 
-                        var otherPeerIds = new List<string>();
-                        foreach (var room in peerRooms)
-                        {
-                            foreach (var otherPeer in roomPeers)
-                            {
-                                otherPeerIds.Add(otherPeer.Peer.PeerId);
-                            }
-
-                            var selfPeer = roomPeers.First(m => m.Peer.PeerId == peerId);
-                            roomPeers.Remove(selfPeer);
-                        }
-
                         roomPeers.RemoveAll(m => m.Peer.PeerId == peerId);
+
+                        var otherPeerIds = new List<string>();
+                        foreach (var otherPeer in roomPeers)
+                        {
+                            otherPeerIds.Add(otherPeer.Peer.PeerId);
+                        }
 
                         // 离开房间
                         await peer.LeaveRoomAsync(roomId);
