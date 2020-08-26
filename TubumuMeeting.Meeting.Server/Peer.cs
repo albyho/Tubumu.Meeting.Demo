@@ -793,7 +793,8 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckJoined();
 
-                using (await _consumersLock.ReadLockAsync())
+                // !!!注意：这里用 WriteLockAsync，因为 Consumer 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
+                using (await _consumersLock.WriteLockAsync())
                 {
                     // 停止本 Peer 在该 Room 的消费
                     foreach (var consumer in _consumers.Values)

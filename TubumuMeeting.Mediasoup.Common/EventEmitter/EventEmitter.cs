@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -22,14 +24,24 @@ namespace TubumuMeeting.Mediasoup
         }
         */
 
+        private readonly ILogger<EventEmitter>? _logger;
         private readonly Dictionary<string, List<Func<object?, Task>>> _events;
         private readonly ReaderWriterLockSlim _rwl;
 
         /// <summary>
         /// The EventEmitter object to subscribe to events with
         /// </summary>
-        public EventEmitter()
+        public EventEmitter() : this(null)
         {
+        }
+
+        /// <summary>
+        /// The EventEmitter object to subscribe to events with
+        /// </summary>
+        /// <param name="loggerFactory"></param>
+        public EventEmitter(ILoggerFactory? loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger<EventEmitter>();
             _events = new Dictionary<string, List<Func<object?, Task>>>();
             _rwl = new ReaderWriterLockSlim();
         }
@@ -69,29 +81,16 @@ namespace TubumuMeeting.Mediasoup
             {
                 foreach (var f in subscribedMethods)
                 {
-                    ThreadPool.QueueUserWorkItem(m => f(m), data);
-                }
-            }
-            _rwl.ExitReadLock();
-        }
-
-        /// <summary>
-        /// Emits the event and associated data
-        /// </summary>
-        /// <param name="eventName">The event name to call methods for</param>
-        /// <param name="data">The data to call all the methods with</param>
-        public void EmitSync(string eventName, object? data = null)
-        {
-            _rwl.EnterReadLock();
-            if (!_events.TryGetValue(eventName, out List<Func<object?, Task>> subscribedMethods))
-            {
-                //throw new DoesNotExistException(string.Format("Event [{0}] does not exist in the emitter. Consider calling EventEmitter.On", eventName));
-            }
-            else
-            {
-                foreach (var f in subscribedMethods)
-                {
-                    f(data);
+                    // For Testing
+                    //f(data).ConfigureAwait(false).GetAwaiter().GetResult();
+                    if (_logger != null)
+                    {
+                        f(data).ContinueWithOnFaultedHandleLog(_logger); ;
+                    }
+                    else
+                    {
+                        f(data);
+                    }
                 }
             }
             _rwl.ExitReadLock();
