@@ -787,7 +787,14 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _consumersLock.ReadLockAsync())
                 {
+                    // 停止本 Peer 在该 Room 的消费
                     _consumers.Values.Where(m => m.RoomId == roomId).ForEach(m => m.Close());
+
+                    using(await _producersLock.ReadLockAsync())
+                    {
+                        // 停止其他 Peer 在该 Room 对本 Peer 生产的消费
+                        _producers.Values.ForEach(m => m.StopConsumersInRoom(roomId));
+                    }
                 }
             }
         }

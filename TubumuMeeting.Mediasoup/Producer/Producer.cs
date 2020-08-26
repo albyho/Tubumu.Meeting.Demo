@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Mediasoup
@@ -351,8 +353,18 @@ namespace TubumuMeeting.Mediasoup
             // 关闭后也允许移除
             lock (_closeLock)
             {
-                _logger.LogDebug($"RemoveConsumer: {consumerId}");
+                _logger.LogDebug($"RemoveConsumer() | Producer:{ProducerId} ConsumerId:{consumerId}");
                 _consumers.Remove(consumerId);
+            }
+        }
+
+        public void StopConsumersInRoom(string roomId)
+        {
+            // 关闭后也允许停止
+            lock (_closeLock)
+            {
+                _logger.LogDebug($"StopConsumers() | Producer:{ProducerId} RoomId:{roomId}");
+                _consumers.Values.Where(m => m.RoomId == roomId).ForEach(m => m.Close());
             }
         }
 
