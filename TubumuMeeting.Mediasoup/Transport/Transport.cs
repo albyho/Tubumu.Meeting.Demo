@@ -306,7 +306,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 foreach (var consumer in Consumers.Values)
                 {
-                    consumer.TransportClosed();
+                   await consumer.TransportClosedAsync();
                 }
                 Consumers.Clear();
             }

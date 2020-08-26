@@ -708,10 +708,9 @@ namespace TubumuMeeting.Mediasoup
                     pipeConsumer.Observer.On("resume", async _ => await pipeProducer.ResumeAsync());
 
                     // Pipe events from the pipe Producer to the pipe Consumer.
-                    pipeProducer.Observer.On("close", _ =>
+                    pipeProducer.Observer.On("close", async _ =>
                     {
-                        pipeConsumer.Close();
-                        return Task.CompletedTask;
+                        await pipeConsumer.CloseAsync();
                     });
 
                     return new PipeToRouterResult { PipeConsumer = pipeConsumer, PipeProducer = pipeProducer };
@@ -722,7 +721,7 @@ namespace TubumuMeeting.Mediasoup
 
                     if (pipeConsumer != null)
                     {
-                        pipeConsumer.Close();
+                        await pipeConsumer.CloseAsync();
                     }
 
                     if (pipeProducer != null)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
@@ -129,7 +130,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<WebRtcTransport> CreateWebRtcTransportAsync(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            using(await _joinedLock.ReadLockAsync())
+            using (await _joinedLock.ReadLockAsync())
             {
                 CheckJoined();
 
@@ -180,12 +181,15 @@ namespace TubumuMeeting.Meeting.Server
                     _transports[transport.TransportId] = transport;
                 }
 
-                transport.On("@close", async _ =>
+                transport.Observer.On("close", async _ =>
                 {
+                    _logger.LogDebug($"Event:close xxxxx Transport: {transport.TransportId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                     using (await _transportsLock.WriteLockAsync())
                     {
+                        _logger.LogDebug($"Event:close ----- Transport: {transport.TransportId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                         _transports.Remove(transport.TransportId);
                     }
+                    _logger.LogDebug($"Event:close +++++ Transport: {transport.TransportId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                 });
 
                 // If set, apply max incoming bitrate limit.
@@ -238,6 +242,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _consumersLock.ReadLockAsync())
                 {
+                    // producerPeer 也有可能是本 Peer
                     using (await producerPeer._producersLock.ReadLockAsync())
                     {
                         var producerProducers = producerPeer._producers.Values.Where(m => sources.Contains(m.Source)).ToArray();
@@ -342,21 +347,21 @@ namespace TubumuMeeting.Meeting.Server
                         // Store producer source
                         producer.Source = produceRequest.Source;
 
-                        // Store the Producer into the Peer data Object.
-                        _producers[producer.ProducerId] = producer;
-
-                        //producer.On("@close", _ => _producers.Remove(producer.ProducerId));
-                        //producer.On("transportclose", _ => _producers.Remove(producer.ProducerId));
+                        //producer.On("@close", _ => ...);
+                        //producer.On("transportclose", _ => ...);
                         producer.Observer.On("close", async _ =>
                         {
+                            _logger.LogDebug($"Event:close xxxxx Producer: {producer.ProducerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                             using (await _producersLock.WriteLockAsync())
                             {
+                                _logger.LogDebug($"Event:close ----- Producer: {producer.ProducerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                                 _producers.Remove(producer.ProducerId);
 
                                 await _pullPaddingsLock.WaitAsync();
                                 _pullPaddings.Clear();
                                 _pullPaddingsLock.Set();
                             }
+                            _logger.LogDebug($"Event:close +++++ Producer: {producer.ProducerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                         });
 
                         await _pullPaddingsLock.WaitAsync();
@@ -366,6 +371,9 @@ namespace TubumuMeeting.Meeting.Server
                             _pullPaddings.Remove(item);
                         }
                         _pullPaddingsLock.Set();
+
+                        // Store the Producer into the Peer data Object.
+                        _producers[producer.ProducerId] = producer;
 
                         return new PeerProduceResult
                         {
@@ -401,7 +409,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     using (await _consumersLock.WriteLockAsync())
                     {
-                        using (await producerPeer._producersLock.WriteLockAsync())
+                        using (await producerPeer._producersLock.ReadLockAsync())
                         {
                             if (!producerPeer._producers.TryGetValue(producerId, out var producer))
                             {
@@ -424,22 +432,23 @@ namespace TubumuMeeting.Meeting.Server
                             consumer.RoomId = roomId;
                             consumer.Source = producer.Source;
 
-                            // Store the Consumer into the consumerPeer data Object.
-                            _consumers[consumer.ConsumerId] = consumer;
-
-                            //consumer.On("@close", _ => _consumers.Remove(consumer.ConsumerId));
-                            //consumer.On("producerclose", _ => _consumers.Remove(consumer.ConsumerId));
-                            //consumer.On("transportclose", _ => _consumers.Remove(consumer.ConsumerId));
+                            //consumer.On("@close", _ => ...);
+                            //consumer.On("producerclose", _ => ...);
+                            //consumer.On("transportclose", _ => ...);
                             consumer.Observer.On("close", async _ =>
                             {
-                                _logger.LogDebug($"Consumer: {consumer.ConsumerId} closed.");
-
+                                _logger.LogDebug($"Event:close xxxxx Consumer: {consumer.ConsumerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                                 using (await _consumersLock.WriteLockAsync())
                                 {
+                                    _logger.LogDebug($"Event:close ----- Consumer: {consumer.ConsumerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                                     _consumers.Remove(consumer.ConsumerId);
                                     producer.RemoveConsumer(consumer.ConsumerId);
                                 }
+                                _logger.LogDebug($"Event:close +++++ Consumer: {consumer.ConsumerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                             });
+
+                            // Store the Consumer into the consumerPeer data Object.
+                            _consumers[consumer.ConsumerId] = consumer;
 
                             producer.AddConsumer(consumer);
 
@@ -461,7 +470,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckJoined();
 
-                using (await _producersLock.WriteLockAsync())
+                using (await _producersLock.ReadLockAsync())
                 {
                     if (!_producers.TryGetValue(producerId, out var producer))
                     {
@@ -469,7 +478,6 @@ namespace TubumuMeeting.Meeting.Server
                     }
 
                     producer.Close();
-                    _producers.Remove(producerId);
                     return true;
                 }
             }
@@ -534,14 +542,14 @@ namespace TubumuMeeting.Meeting.Server
             {
                 CheckJoined();
 
-                using (await _consumersLock.WriteLockAsync())
+                using (await _consumersLock.ReadLockAsync())
                 {
                     if (!_consumers.TryGetValue(consumerId, out var consumer))
                     {
                         throw new Exception($"CloseConsumerAsync() | Peer:{PeerId} has no Cmonsumer:{consumerId}.");
                     }
 
-                    consumer.Close();
+                    await consumer.CloseAsync();
                     return true;
                 }
             }
@@ -788,12 +796,18 @@ namespace TubumuMeeting.Meeting.Server
                 using (await _consumersLock.ReadLockAsync())
                 {
                     // 停止本 Peer 在该 Room 的消费
-                    _consumers.Values.Where(m => m.RoomId == roomId).ForEach(m => m.Close());
-
-                    using(await _producersLock.ReadLockAsync())
+                    foreach (var consumer in _consumers.Values)
                     {
-                        // 停止其他 Peer 在该 Room 对本 Peer 生产的消费
-                        _producers.Values.ForEach(m => m.StopConsumersInRoom(roomId));
+                        consumer.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
+                    }
+
+                    using (await _producersLock.ReadLockAsync())
+                    {
+                        // 停止其他 Peer 在该 Room 对本 Peer 生产的消费(有可能本 Peer 消费本 Peer)
+                        foreach (var producer in _producers.Values)
+                        {
+                            producer.StopConsumersInRoom(roomId);
+                        }
                     }
                 }
             }
@@ -818,15 +832,14 @@ namespace TubumuMeeting.Meeting.Server
 
                 _joined = false;
 
-                using (await _transportsLock.WriteLockAsync())
+                using (await _transportsLock.ReadLockAsync())
                 {
                     // Iterate and close all mediasoup Transport associated to this Peer, so all
                     // its Producers and Consumers will also be closed.
-                    foreach (var item in _transports.Values)
+                    foreach (var transport in _transports.Values)
                     {
-                        await item.CloseAsync();
+                        transport.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
                     }
-                    _transports.Clear();
                 }
             }
         }

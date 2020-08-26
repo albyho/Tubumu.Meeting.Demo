@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup.Extensions;
@@ -52,7 +53,7 @@ namespace TubumuMeeting.Mediasoup
         /// </summary>
         private bool _closed;
 
-        private readonly object _closeLock = new object();
+        private readonly AsyncReaderWriterLock _closeLock = new AsyncReaderWriterLock();
 
         // TODO: (alby) _paused 的使用及线程安全。
         /// <summary>
@@ -218,14 +219,14 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Close the Producer.
         /// </summary>
-        public void Close()
+        public async Task CloseAsync()
         {
             if (_closed)
             {
                 return;
             }
 
-            lock (_closeLock)
+            using (await _closeLock.WriteLockAsync())
             {
                 if (_closed)
                 {
@@ -252,14 +253,14 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Transport was closed.
         /// </summary>
-        public void TransportClosed()
+        public async Task TransportClosedAsync()
         {
             if (_closed)
             {
                 return;
             }
 
-            lock (_closeLock)
+            using (await _closeLock.WriteLockAsync())
             {
                 if (_closed)
                 {

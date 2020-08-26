@@ -364,7 +364,10 @@ namespace TubumuMeeting.Mediasoup
             lock (_closeLock)
             {
                 _logger.LogDebug($"StopConsumers() | Producer:{ProducerId} RoomId:{roomId}");
-                _consumers.Values.Where(m => m.RoomId == roomId).ForEach(m => m.Close());
+                foreach (var consumer in _consumers.Values.Where(m => m.RoomId == roomId))
+                {
+                    consumer.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
+                }
             }
         }
 

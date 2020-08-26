@@ -186,6 +186,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 throw new Exception($"{nameof(parameters)} type is not DtlsParameters");
             }
+
             return ConnectAsync(dtlsParameters);
         }
 

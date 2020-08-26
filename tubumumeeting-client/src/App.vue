@@ -33,6 +33,8 @@
               <el-form ref="peersForm" :model="peersForm" label-width="80px" size="mini">
                 <el-form-item>
                   <el-tree
+                    default-expand-all
+                    highlight-current
                     :data="peersForm.rooms"
                     :props="defaultProps"
                     @node-click="onPeerNodeClick">
@@ -42,7 +44,7 @@
             </div>
           </el-aside>
           <el-main>
-            <video id="localVideo" ref="localVideo" v-if="form.produce" :srcObject.prop="localVideoStream" autoplay playsinline />
+            <video id="localVideo" ref="localVideo" v-if="form.produce&&localVideoStream" :srcObject.prop="localVideoStream" autoplay playsinline />
             <video v-for="(value, key) in remoteVideoStreams" :key="key" :srcObject.prop="value" autoplay playsinline />
             <audio v-for="(value, key) in remoteAudioStreams" :key="key" :srcObject.prop="value" autoplay />
           </el-main>
@@ -939,7 +941,6 @@ export default {
       if (this.webcamProducer) return;
       if (this.mediasoupDevice && !this.mediasoupDevice.canProduce('video')) {
         logger.error('enableWebcam() | cannot produce video');
-
         return;
       }
 
@@ -1051,6 +1052,7 @@ export default {
       if (!this.webcamProducer) return;
       this.webcamProducer.close();
       this.webcamProducer = null;
+      this.localVideoStream = null;
     },
     async _updateAudioDevices() {
       logger.debug('_updateAudioDevices()');
