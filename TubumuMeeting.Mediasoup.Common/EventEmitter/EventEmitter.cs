@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -24,24 +25,14 @@ namespace TubumuMeeting.Mediasoup
         }
         */
 
-        private readonly ILogger<EventEmitter>? _logger;
         private readonly Dictionary<string, List<Func<object?, Task>>> _events;
         private readonly ReaderWriterLockSlim _rwl;
 
         /// <summary>
         /// The EventEmitter object to subscribe to events with
         /// </summary>
-        public EventEmitter() : this(null)
+        public EventEmitter()
         {
-        }
-
-        /// <summary>
-        /// The EventEmitter object to subscribe to events with
-        /// </summary>
-        /// <param name="loggerFactory"></param>
-        public EventEmitter(ILoggerFactory? loggerFactory)
-        {
-            _logger = loggerFactory?.CreateLogger<EventEmitter>();
             _events = new Dictionary<string, List<Func<object?, Task>>>();
             _rwl = new ReaderWriterLockSlim();
         }
@@ -83,14 +74,14 @@ namespace TubumuMeeting.Mediasoup
                 {
                     // For Testing
                     //f(data).ConfigureAwait(false).GetAwaiter().GetResult();
-                    if (_logger != null)
+                    f(data).ContinueWith(val =>
                     {
-                        f(data).ContinueWithOnFaultedHandleLog(_logger); ;
-                    }
-                    else
-                    {
-                        f(data);
-                    }
+                        val.Exception.Handle(ex =>
+                        {
+                            Debug.WriteLine("Emit fail:{0}", ex);
+                            return true;
+                        });
+                    }, TaskContinuationOptions.OnlyOnFaulted);
                 }
             }
             _rwl.ExitReadLock();
