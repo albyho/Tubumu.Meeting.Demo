@@ -625,15 +625,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<MeetingMessage> SendMessage(SendMessageRequest sendMessageRequest)
         {
-            string[] otherPeerIds;
-            if (sendMessageRequest.RoomId.IsNullOrWhiteSpace())
-            {
-                otherPeerIds = await _scheduler.GetOtherPeerIdsAsync(UserId, ConnectionId);
-            }
-            else
-            {
-                otherPeerIds = await _scheduler.GetOtherPeerIdsInRoomAsync(UserId, ConnectionId, sendMessageRequest.RoomId!);
-            }
+            var otherPeerIds = await _scheduler.GetOtherPeerIdsAsync(UserId, ConnectionId, sendMessageRequest.RoomId!);
 
             // Message: newMessage
             SendNotification(otherPeerIds, "newMessage", new
@@ -642,7 +634,7 @@ namespace TubumuMeeting.Meeting.Server
                 Message = sendMessageRequest.Message,
             });
 
-            return new MeetingMessage { Code = 200, Message = "RestartIce 成功" };
+            return new MeetingMessage { Code = 200, Message = "SendMessage 成功" };
         }
 
         #region Private Methods
@@ -664,6 +656,7 @@ namespace TubumuMeeting.Meeting.Server
                 return;
             }
 
+            // Set Consumer events.
             consumer.On("score", (score) =>
             {
                 var data = (ConsumerScore)score!;
@@ -672,13 +665,11 @@ namespace TubumuMeeting.Meeting.Server
                 return Task.CompletedTask;
             });
 
-            // Set Consumer events.
-            consumer.On("transportclose", _ =>
-            {
-                return Task.CompletedTask;
-            });
-
-            consumer.On("producerclose", _ =>
+            // consumer.On("@close", _ => ...);
+            // consumer.On("@producerclose", _ => ...);
+            // consumer.On("producerclose", _ => ...);
+            // consumer.On("transportclose", _ => ...);
+            consumer.Observer.On("close", _ =>
             {
                 // Message: consumerClosed
                 SendNotification(consumerPeer.PeerId, "consumerClosed", new { ConsumerId = consumer.ConsumerId });
