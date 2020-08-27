@@ -1,6 +1,6 @@
 {
   "MediasoupStartupSettings": {
-    "MediasoupVersion": "3.6.16",
+    "MediasoupVersion": "3.6.18",
     //"WorkerPath": "C:\\Developer\\OpenSource\\Meeting\\worker\\Release\\mediasoup-worker",
     //"WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/Lab/w/Release/mediasoup-worker",
     "NumberOfWorkers": 1
@@ -79,7 +79,7 @@
       "ListenIps": [
         {
           "Ip": "0.0.0.0",
-          "AnnouncedIp": "192.168.0.124"
+          "AnnouncedIp": "192.168.18.233"
         }
       ],
       "InitialAvailableOutgoingBitrate": 1000000,

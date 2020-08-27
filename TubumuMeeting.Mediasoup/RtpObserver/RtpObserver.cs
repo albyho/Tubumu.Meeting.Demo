@@ -204,11 +204,11 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Add a Producer to the RtpObserver.
         /// </summary>
-        public async Task AddProducerAsync(string producerId)
+        public async Task AddProducerAsync(RtpObserverAddRemoveProducerOptions rtpObserverAddRemoveProducerOptions)
         {
             _logger.LogDebug($"AddProducerAsync() | RtpObserver:{Internal.RtpObserverId}");
 
-            var producer = GetProducerById(producerId);
+            var producer = GetProducerById(rtpObserverAddRemoveProducerOptions.ProducerId);
             if (producer == null)
             {
                 return;
@@ -218,7 +218,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 Internal.RouterId,
                 Internal.RtpObserverId,
-                ProducerId = producerId,
+                ProducerId = rtpObserverAddRemoveProducerOptions.ProducerId,
             };
 
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_ADD_PRODUCER, @internal);
@@ -230,11 +230,11 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Remove a Producer from the RtpObserver.
         /// </summary>
-        public async Task RemoveProducerAsync(string producerId)
+        public async Task RemoveProducerAsync(RtpObserverAddRemoveProducerOptions rtpObserverAddRemoveProducerOptions)
         {
             _logger.LogDebug($"RemoveProducerAsync() | RtpObserver:{Internal.RtpObserverId}");
 
-            var producer = GetProducerById(producerId);
+            var producer = GetProducerById(rtpObserverAddRemoveProducerOptions.ProducerId);
             if (producer == null)
             {
                 return;
@@ -244,7 +244,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 Internal.RouterId,
                 Internal.RtpObserverId,
-                ProducerId = producerId,
+                ProducerId = rtpObserverAddRemoveProducerOptions.ProducerId,
             };
             await Channel.RequestAsync(MethodId.RTP_OBSERVER_REMOVE_PRODUCER, @internal);
 

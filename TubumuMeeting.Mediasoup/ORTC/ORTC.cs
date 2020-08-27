@@ -912,12 +912,29 @@ namespace TubumuMeeting.Mediasoup
                 codec.RtcpFeedback = matchedCapCodec.RtcpFeedback;
 
                 consumerParams.Codecs.Add(codec);
+            }
 
-                if (!rtxSupported && IsRtxMimeType(codec.MimeType))
+            // Must sanitize the list of matched codecs by removing useless RTX codecs.
+            var codecsToRemove = new List<RtpCodecParameters>();
+            foreach (var codec in consumerParams.Codecs)
+            {
+                if (IsRtxMimeType(codec.MimeType))
                 {
-                    rtxSupported = true;
+                    // TODO: (alby)这里 apt 一定存在？
+                    var apt = Convert.ToInt32(codec.Parameters["apt"]);
+                    // Search for the associated media codec.
+                    var associatedMediaCodec = consumerParams.Codecs.FirstOrDefault(mediaCodec => mediaCodec.PayloadType == apt);
+                    if (associatedMediaCodec != null)
+                    {
+                        rtxSupported = true;
+                    }
+                    else
+                    {
+                        codecsToRemove.Add(codec);
+                    }
                 }
             }
+            codecsToRemove.ForEach(m => consumerParams.Codecs.Remove(m));
 
             // Ensure there is at least one media codec.
             if (consumerParams.Codecs.Count == 0 || IsRtxMimeType(consumerParams.Codecs[0].MimeType))
