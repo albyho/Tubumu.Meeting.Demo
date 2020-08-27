@@ -6,10 +6,12 @@
 
 `TubumuMeeting` 是基于 `mediasoup` 实现的视频会议系统，但将其服务端的 `Node.js` 模块使用 `ASP.NET Core` 重新进行了实现。有别于官方 Demo，本项目有如下特点：
 
-1. 服务端支持同一客户端进入多个 Room(本 Demo 目前只进入了单 Room);
+1. 服务端支持同一客户端进入多个 Room;
 2. 客户端启动时不主动 Produce;
 3. 客户端可根据需要 Pull 对端的支持的音视频进行 Consume，而对端按需 Produce；
 4. 客户端使用 Vue 实现。
+
+因为允许客户端进入多个 Room 的原因，目前存在的问题还没有对多 Worker 及多 Route 的提供支持。
 
 > 备注：在 mediasoupsettings.json 配置文件中搜索，将 AnnouncedIp 改为本机的局域网 IP。
 
