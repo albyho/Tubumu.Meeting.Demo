@@ -189,8 +189,8 @@ export default {
         this.micClosed();
         this.roomsForm.roomIds = [];
         this.peersForm.rooms = [];
-        this.remoteVideoStreams = [];
-        this.remoteAudioStreams = [];
+        this.remoteVideoStreams = {};
+        this.remoteAudioStreams = {};
         return;
       }
       try {
