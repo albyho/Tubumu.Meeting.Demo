@@ -139,9 +139,11 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _peerRoomsLock.WriteLockAsync())
                 {
+                    // otherPeerIds: 需要通知的 Peer
                     var otherPeerIds = new HashSet<string>();
                     if (_peerRooms.TryGetValue(peerId, out var peerRooms))
                     {
+                        // 解除本 Peer 和所有 Room 的关系
                         _peerRooms.Remove(peerId);
 
                         using (await _roomPeersLock.WriteLockAsync())
@@ -156,6 +158,7 @@ namespace TubumuMeeting.Meeting.Server
                                     }
 
                                     var selfPeer = roomPeers.First(m => m.Peer.PeerId == peerId);
+                                    // 从各个 Room 里解除本 Peer 的关系
                                     roomPeers.Remove(selfPeer);
                                 }
                             }
