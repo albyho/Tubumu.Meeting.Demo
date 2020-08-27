@@ -243,6 +243,8 @@ namespace TubumuMeeting.Mediasoup
 
                 _closed = true;
 
+                _checkConsumersTimer.Dispose();
+
                 // Remove notification subscriptions.
                 _channel.MessageEvent -= OnChannelMessage;
 

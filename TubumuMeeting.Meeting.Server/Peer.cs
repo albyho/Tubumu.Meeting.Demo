@@ -183,13 +183,10 @@ namespace TubumuMeeting.Meeting.Server
 
                 transport.Observer.On("close", async _ =>
                 {
-                    _logger.LogDebug($"Event:close xxxxx Transport: {transport.TransportId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                     using (await _transportsLock.WriteLockAsync())
                     {
-                        _logger.LogDebug($"Event:close ----- Transport: {transport.TransportId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                         _transports.Remove(transport.TransportId);
                     }
-                    _logger.LogDebug($"Event:close +++++ Transport: {transport.TransportId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                 });
 
                 // If set, apply max incoming bitrate limit.
@@ -351,17 +348,14 @@ namespace TubumuMeeting.Meeting.Server
                         //producer.On("transportclose", _ => ...);
                         producer.Observer.On("close", async _ =>
                         {
-                            _logger.LogDebug($"Event:close xxxxx Producer: {producer.ProducerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                             using (await _producersLock.WriteLockAsync())
                             {
-                                _logger.LogDebug($"Event:close ----- Producer: {producer.ProducerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                                 _producers.Remove(producer.ProducerId);
 
                                 await _pullPaddingsLock.WaitAsync();
                                 _pullPaddings.Clear();
                                 _pullPaddingsLock.Set();
                             }
-                            _logger.LogDebug($"Event:close +++++ Producer: {producer.ProducerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                         });
 
                         await _pullPaddingsLock.WaitAsync();
@@ -437,14 +431,11 @@ namespace TubumuMeeting.Meeting.Server
                             //consumer.On("transportclose", _ => ...);
                             consumer.Observer.On("close", async _ =>
                             {
-                                _logger.LogDebug($"Event:close xxxxx Consumer: {consumer.ConsumerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                                 using (await _consumersLock.WriteLockAsync())
                                 {
-                                    _logger.LogDebug($"Event:close ----- Consumer: {consumer.ConsumerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                                     _consumers.Remove(consumer.ConsumerId);
                                     producer.RemoveConsumer(consumer.ConsumerId);
                                 }
-                                _logger.LogDebug($"Event:close +++++ Consumer: {consumer.ConsumerId} ManagedThreadId: {Thread.CurrentThread.ManagedThreadId}");
                             });
 
                             // Store the Consumer into the consumerPeer data Object.
@@ -797,7 +788,7 @@ namespace TubumuMeeting.Meeting.Server
                 using (await _consumersLock.WriteLockAsync())
                 {
                     // 停止本 Peer 在该 Room 的消费
-                    foreach (var consumer in _consumers.Values)
+                    foreach (var consumer in _consumers.Values.Where(m => m.RoomId == roomId))
                     {
                         consumer.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
                     }

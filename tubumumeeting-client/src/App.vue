@@ -44,7 +44,7 @@
             </div>
           </el-aside>
           <el-main>
-            <video id="localVideo" ref="localVideo" v-if="form.produce&&localVideoStream" :srcObject.prop="localVideoStream" autoplay playsinline />
+            <video id="localVideo" ref="localVideo" v-if="!!webcamProducer" :srcObject.prop="localVideoStream" autoplay playsinline />
             <video v-for="(value, key) in remoteVideoStreams" :key="key" :srcObject.prop="value" autoplay playsinline />
             <audio v-for="(value, key) in remoteAudioStreams" :key="key" :srcObject.prop="value" autoplay />
           </el-main>
@@ -185,6 +185,12 @@ export default {
          await this.connection.stop();
         }
         this.joinForm.isJoined = false;
+        this.webcamClosed();
+        this.micClosed();
+        this.roomsForm.roomIds = [];
+        this.peersForm.rooms = [];
+        this.remoteVideoStreams = [];
+        this.remoteAudioStreams = [];
         return;
       }
       try {
@@ -1052,7 +1058,6 @@ export default {
       if (!this.webcamProducer) return;
       this.webcamProducer.close();
       this.webcamProducer = null;
-      this.localVideoStream = null;
     },
     async _updateAudioDevices() {
       logger.debug('_updateAudioDevices()');

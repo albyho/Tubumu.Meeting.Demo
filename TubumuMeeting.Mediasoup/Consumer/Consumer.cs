@@ -74,7 +74,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Consumer id.
         /// </summary>
-        public string ProducerId => _internal.ConsumerId;
+        public string ProducerId => _internal.ProducerId;
 
         #region Consumer data.
 
