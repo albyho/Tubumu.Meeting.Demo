@@ -97,6 +97,8 @@ namespace TubumuMeeting.Meeting.Server
 
         public Dictionary<string, object> AppData { get; set; }
 
+        public Room? Room { get; private set; }
+
         public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings,
             Router router,
             RtpCapabilities rtpCapabilities,
