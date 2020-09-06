@@ -35,23 +35,23 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncAutoResetEvent _roomsLock = new AsyncAutoResetEvent();
 
-        private readonly Dictionary<string, List<RoomWithRoomAppData>> _peerRooms = new Dictionary<string, List<RoomWithRoomAppData>>();
+        //private readonly Dictionary<string, List<RoomWithRoomAppData>> _peerRooms = new Dictionary<string, List<RoomWithRoomAppData>>();
 
         /// <summary>
         /// _peerRooms 锁。增改 List<RoomWithRoomAppData> 也应该用写锁。
         /// </summary>
-        private readonly AsyncReaderWriterLock _peerRoomsLock = new AsyncReaderWriterLock();
+        //private readonly AsyncReaderWriterLock _peerRoomsLock = new AsyncReaderWriterLock();
 
-        private readonly Dictionary<string, List<PeerWithRoomAppData>> _roomPeers = new Dictionary<string, List<PeerWithRoomAppData>>();
+        // private readonly Dictionary<string, List<PeerWithRoomAppData>> _roomPeers = new Dictionary<string, List<PeerWithRoomAppData>>();
 
         /// <summary>
         /// _roomPeers 锁。增改 List<PeerWithRoomAppData> 也应该用写锁。
         /// </summary>
-        private readonly AsyncReaderWriterLock _roomPeersLock = new AsyncReaderWriterLock();
+        //private readonly AsyncReaderWriterLock _roomPeersLock = new AsyncReaderWriterLock();
 
-        private readonly AsyncAutoResetEvent _peerAppDataLock = new AsyncAutoResetEvent();
+        //private readonly AsyncAutoResetEvent _peerAppDataLock = new AsyncAutoResetEvent();
 
-        private readonly AsyncAutoResetEvent _roomAppDataLock = new AsyncAutoResetEvent();
+        //private readonly AsyncAutoResetEvent _roomAppDataLock = new AsyncAutoResetEvent();
 
         private Router? _router;
 
@@ -72,8 +72,8 @@ namespace TubumuMeeting.Meeting.Server
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
 
             _roomsLock.Set();
-            _peerAppDataLock.Set();
-            _roomAppDataLock.Set();
+            //_peerAppDataLock.Set();
+            //_roomAppDataLock.Set();
         }
 
         public async Task<bool> JoinAsync(string peerId, string connectionId, JoinRequest joinRequest)
@@ -89,27 +89,8 @@ namespace TubumuMeeting.Meeting.Server
                     }
                 }
 
-                if (_router == null)
-                {
-                    // Router media codecs.
-                    var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
-
-                    // Create a mediasoup Router.
-                    var worker = _mediasoupServer.GetWorker();
-                    _router = await worker.CreateRouterAsync(new RouterOptions
-                    {
-                        MediaCodecs = mediaCodecs
-                    });
-                    if (_router == null)
-                    {
-                        _logger.LogError($"PeerJoinAsync() | Worker maybe closed.");
-                        return false;
-                    }
-                }
-
                 peer = new Peer(_loggerFactory,
                     _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings,
-                    _router,
                     joinRequest.RtpCapabilities,
                     joinRequest.SctpCapabilities,
                     peerId,
@@ -137,42 +118,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 _peers.Remove(peerId);
 
-                using (await _peerRoomsLock.WriteLockAsync())
-                {
-                    // otherPeerIds: 需要通知的 Peer
-                    var otherPeerIds = new HashSet<string>();
-                    if (_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        // 解除本 Peer 和所有 Room 的关系
-                        _peerRooms.Remove(peerId);
-
-                        using (await _roomPeersLock.WriteLockAsync())
-                        {
-                            foreach (var room in peerRooms)
-                            {
-                                if (_roomPeers.TryGetValue(room.Room.RoomId, out var roomPeers))
-                                {
-                                    foreach (var otherPeer in roomPeers.Where(m => m.Peer.PeerId != peerId))
-                                    {
-                                        otherPeerIds.Add(otherPeer.Peer.PeerId);
-                                    }
-
-                                    var selfPeer = roomPeers.First(m => m.Peer.PeerId == peerId);
-                                    // 从各个 Room 里解除本 Peer 的关系
-                                    roomPeers.Remove(selfPeer);
-                                }
-                            }
-                        }
-                    }
-
-                    await peer.LeaveAsync();
-
-                    return new LeaveResult
-                    {
-                        SelfPeer = peer,
-                        OtherPeerIds = otherPeerIds.ToArray(),
-                    };
-                }
+                return await peer.LeaveAsync();
             }
         }
 
@@ -187,40 +133,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                await _peerAppDataLock.WaitAsync();
-                foreach (var item in setPeerAppDataRequest.PeerAppData)
-                {
-                    peer.AppData[item.Key] = item.Value;
-                }
-                _peerAppDataLock.Set();
-
-                using (await _peerRoomsLock.ReadLockAsync())
-                {
-                    var otherPeerIds = new HashSet<string>();
-                    if (_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        using (await _roomPeersLock.ReadLockAsync())
-                        {
-                            foreach (var room in peerRooms)
-                            {
-                                if (_roomPeers.TryGetValue(room.Room.RoomId, out var roomPeers))
-                                {
-                                    foreach (var otherPeer in roomPeers.Where(m => m.Peer.PeerId != peerId))
-                                    {
-                                        otherPeerIds.Add(otherPeer.Peer.PeerId);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return new PeerAppDataResult
-                    {
-                        SelfPeerId = peerId,
-                        AppData = peer.AppData,
-                        OtherPeerIds = otherPeerIds.ToArray(),
-                    };
-                }
+                return await peer.SetPeerAppDataAsync(setPeerAppDataRequest);
             }
         }
 
@@ -235,40 +148,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                await _peerAppDataLock.WaitAsync();
-                foreach (var item in unsetPeerAppDataRequest.Keys)
-                {
-                    peer.AppData.Remove(item);
-                }
-                _peerAppDataLock.Set();
-
-                using (await _peerRoomsLock.ReadLockAsync())
-                {
-                    var otherPeerIds = new HashSet<string>();
-                    if (_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        using (await _roomPeersLock.ReadLockAsync())
-                        {
-                            foreach (var room in peerRooms)
-                            {
-                                if (_roomPeers.TryGetValue(room.Room.RoomId, out var roomPeers))
-                                {
-                                    foreach (var otherPeer in roomPeers.Where(m => m.Peer.PeerId != peerId))
-                                    {
-                                        otherPeerIds.Add(otherPeer.Peer.PeerId);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return new PeerAppDataResult
-                    {
-                        SelfPeerId = peerId,
-                        AppData = peer.AppData,
-                        OtherPeerIds = otherPeerIds.ToArray(),
-                    };
-                }
+                return await peer.UnsetPeerAppDataAsync(unsetPeerAppDataRequest);
             }
         }
 
@@ -283,37 +163,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                await _peerAppDataLock.WaitAsync();
-                peer.AppData.Clear();
-                _peerAppDataLock.Set();
-
-                using (await _peerRoomsLock.ReadLockAsync())
-                {
-                    var otherPeerIds = new HashSet<string>();
-                    if (_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        using (await _roomPeersLock.ReadLockAsync())
-                        {
-                            foreach (var room in peerRooms)
-                            {
-                                if (_roomPeers.TryGetValue(room.Room.RoomId, out var roomPeers))
-                                {
-                                    foreach (var otherPeer in roomPeers.Where(m => m.Peer.PeerId != peerId))
-                                    {
-                                        otherPeerIds.Add(otherPeer.Peer.PeerId);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return new PeerAppDataResult
-                    {
-                        SelfPeerId = peerId,
-                        AppData = peer.AppData,
-                        OtherPeerIds = otherPeerIds.ToArray(),
-                    };
-                }
+                return await peer.ClearPeerAppDataAsync();
             }
         }
 
@@ -364,67 +214,35 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 await _roomsLock.WaitAsync();
-                // Room 如果不存在则创建
-                if (!_rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
+                try
                 {
-                    room = new Room(_loggerFactory, _router, joinRoomRequest.RoomId, "Default");
-                    _rooms[room.RoomId] = room;
-                }
-
-                PeerWithRoomAppData roomPeer;
-                var allPeers = new List<PeerWithRoomAppData>();
-                using (await _peerRoomsLock.WriteLockAsync())
-                {
-                    // peerRooms: Peer 所在的所有 Room
-                    if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
+                    // Room 如果不存在则创建
+                    if (!_rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
                     {
-                        peerRooms = new List<RoomWithRoomAppData>();
-                        _peerRooms[peerId] = peerRooms;
-                    }
+                        // Router media codecs.
+                        var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
 
-                    var roomSources = joinRoomRequest.RoomSources ?? Array.Empty<string>();
-                    var roomAppData = joinRoomRequest.RoomAppData ?? new Dictionary<string, object>();
-
-                    var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == joinRoomRequest.RoomId);
-                    if (peerRoom == null)
-                    {
-                        peerRoom = new RoomWithRoomAppData(room);
-                        peerRooms.Add(peerRoom);
-                    }
-                    peerRoom.PeerId = peerId;
-                    peerRoom.RoomSources = roomSources;
-                    peerRoom.RoomAppData = roomAppData;
-
-                    using (await _roomPeersLock.WriteLockAsync())
-                    {
-                        // roomPeers: 当前 Room 的所有 Peer
-                        if (!_roomPeers.TryGetValue(joinRoomRequest.RoomId, out var roomPeers))
+                        // Create a mediasoup Router.
+                        var worker = _mediasoupServer.GetWorker();
+                        var router = await worker.CreateRouterAsync(new RouterOptions
                         {
-                            roomPeers = new List<PeerWithRoomAppData>();
-                            _roomPeers[joinRoomRequest.RoomId] = roomPeers;
+                            MediaCodecs = mediaCodecs
+                        });
+                        if (_router == null)
+                        {
+                            throw new Exception($"PeerJoinAsync() | Worker maybe closed.");
                         }
 
-                        roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId && m.RoomId == joinRoomRequest.RoomId);
-                        if (roomPeer == null)
-                        {
-                            roomPeer = new PeerWithRoomAppData(peer);
-                            roomPeers.Add(roomPeer);
-                        }
-                        roomPeer.RoomId = joinRoomRequest.RoomId;
-                        roomPeer.RoomSources = roomSources;
-                        roomPeer.RoomAppData = roomAppData;
-
-                        allPeers.AddRange(roomPeers);
+                        room = new Room(_loggerFactory, _router, joinRoomRequest.RoomId, "Default");
+                        _rooms[room.RoomId] = room;
                     }
+
+                    return await peer.JoinRoomAsync(room, joinRoomRequest.RoomSources, joinRoomRequest.RoomAppData);
                 }
-
-                _roomsLock.Set();
-
-                return new JoinRoomResult
+                finally
                 {
-                    SelfPeer = roomPeer,
-                    Peers = allPeers.ToArray(),
-                };
+                    _roomsLock.Set();
+                }
             }
         }
 
@@ -439,212 +257,177 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLock.WriteLockAsync())
-                {
-                    // peerRooms: Peer 所在的所有 Room
-                    if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists in Room:{roomId}.");
-                    }
-
-                    peerRooms.RemoveAll(m => m.Room.RoomId == roomId);
-
-                    using (await _roomPeersLock.WriteLockAsync())
-                    {
-                        // roomPeers: 当前 Room 的所有 Peer
-                        if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
-                        {
-                            throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists in Room:{roomId}.");
-                        }
-
-                        roomPeers.RemoveAll(m => m.Peer.PeerId == peerId);
-
-                        var otherPeerIds = new List<string>();
-                        foreach (var otherPeer in roomPeers)
-                        {
-                            otherPeerIds.Add(otherPeer.Peer.PeerId);
-                        }
-
-                        // 离开房间
-                        await peer.LeaveRoomAsync(roomId);
-
-                        return new LeaveRoomResult
-                        {
-                            SelfPeer = peer,
-                            OtherPeerIds = otherPeerIds.ToArray(),
-                        };
-                    }
-                }
+                return await peer.LeaveRoomAsync();
             }
         }
 
-        public async Task<PeerRoomAppDataResult> SetRoomAppDataAsync(string peerId, string connectionId, SetRoomAppDataRequest setRoomAppDataRequest)
-        {
-            using (await _peersLock.ReadLockAsync())
-            {
-                if (!_peers.TryGetValue(peerId, out var peer))
-                {
-                    throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists.");
-                }
+        //public async Task<PeerRoomAppDataResult> SetRoomAppDataAsync(string peerId, string connectionId, SetRoomAppDataRequest setRoomAppDataRequest)
+        //{
+        //    using (await _peersLock.ReadLockAsync())
+        //    {
+        //        if (!_peers.TryGetValue(peerId, out var peer))
+        //        {
+        //            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists.");
+        //        }
 
-                CheckConnection(peer, connectionId);
+        //        CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLock.ReadLockAsync())
-                {
-                    if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
-                    }
+        //        using (await _peerRoomsLock.ReadLockAsync())
+        //        {
+        //            if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
+        //            {
+        //                throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
+        //            }
 
-                    var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == setRoomAppDataRequest.RoomId);
-                    if (peerRoom == null)
-                    {
-                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{setRoomAppDataRequest.RoomId}.");
-                    }
+        //            var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == setRoomAppDataRequest.RoomId);
+        //            if (peerRoom == null)
+        //            {
+        //                throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{setRoomAppDataRequest.RoomId}.");
+        //            }
 
-                    using (await _roomPeersLock.ReadLockAsync())
-                    {
-                        if (!_roomPeers.TryGetValue(setRoomAppDataRequest.RoomId, out var roomPeers))
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
-                        }
+        //            using (await _roomPeersLock.ReadLockAsync())
+        //            {
+        //                if (!_roomPeers.TryGetValue(setRoomAppDataRequest.RoomId, out var roomPeers))
+        //                {
+        //                    throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
+        //                }
 
-                        var roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId);
-                        if (roomPeer == null)
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{setRoomAppDataRequest.RoomId}.");
-                        }
+        //                var roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId);
+        //                if (roomPeer == null)
+        //                {
+        //                    throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{setRoomAppDataRequest.RoomId}.");
+        //                }
 
-                        await _roomAppDataLock.WaitAsync();
-                        foreach (var item in setRoomAppDataRequest.RoomAppData)
-                        {
-                            peerRoom.RoomAppData[item.Key] = item.Value;
-                            roomPeer.RoomAppData[item.Key] = item.Value;
-                        }
-                        _roomAppDataLock.Set();
+        //                await _roomAppDataLock.WaitAsync();
+        //                foreach (var item in setRoomAppDataRequest.RoomAppData)
+        //                {
+        //                    peerRoom.RoomAppData[item.Key] = item.Value;
+        //                    roomPeer.RoomAppData[item.Key] = item.Value;
+        //                }
+        //                _roomAppDataLock.Set();
 
-                        // 只通知本房间
-                        return new PeerRoomAppDataResult
-                        {
-                            SelfPeerId = peerId,
-                            AppData = peerRoom.RoomAppData,
-                            OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
-                        };
-                    }
-                }
-            }
-        }
+        //                // 只通知本房间
+        //                return new PeerRoomAppDataResult
+        //                {
+        //                    SelfPeerId = peerId,
+        //                    AppData = peerRoom.RoomAppData,
+        //                    OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
+        //                };
+        //            }
+        //        }
+        //    }
+        //}
 
-        public async Task<PeerRoomAppDataResult> UnsetRoomAppDataAsync(string peerId, string connectionId, UnsetRoomAppDataRequest unsetRoomAppDataRequest)
-        {
-            using (await _peersLock.ReadLockAsync())
-            {
-                if (!_peers.TryGetValue(peerId, out var peer))
-                {
-                    throw new Exception($"UnsetRoomAppDataAsync() | Peer:{peerId} is not exists.");
-                }
+        //public async Task<PeerRoomAppDataResult> UnsetRoomAppDataAsync(string peerId, string connectionId, UnsetRoomAppDataRequest unsetRoomAppDataRequest)
+        //{
+        //    using (await _peersLock.ReadLockAsync())
+        //    {
+        //        if (!_peers.TryGetValue(peerId, out var peer))
+        //        {
+        //            throw new Exception($"UnsetRoomAppDataAsync() | Peer:{peerId} is not exists.");
+        //        }
 
-                CheckConnection(peer, connectionId);
+        //        CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLock.ReadLockAsync())
-                {
-                    if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
-                    }
+        //        using (await _peerRoomsLock.ReadLockAsync())
+        //        {
+        //            if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
+        //            {
+        //                throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
+        //            }
 
-                    var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == unsetRoomAppDataRequest.RoomId);
-                    if (peerRoom == null)
-                    {
-                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{unsetRoomAppDataRequest.RoomId}.");
-                    }
+        //            var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == unsetRoomAppDataRequest.RoomId);
+        //            if (peerRoom == null)
+        //            {
+        //                throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{unsetRoomAppDataRequest.RoomId}.");
+        //            }
 
-                    using (await _roomPeersLock.ReadLockAsync())
-                    {
-                        if (!_roomPeers.TryGetValue(unsetRoomAppDataRequest.RoomId, out var roomPeers))
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
-                        }
+        //            using (await _roomPeersLock.ReadLockAsync())
+        //            {
+        //                if (!_roomPeers.TryGetValue(unsetRoomAppDataRequest.RoomId, out var roomPeers))
+        //                {
+        //                    throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
+        //                }
 
-                        var roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId);
-                        if (roomPeer == null)
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{unsetRoomAppDataRequest.RoomId}.");
-                        }
+        //                var roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId);
+        //                if (roomPeer == null)
+        //                {
+        //                    throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{unsetRoomAppDataRequest.RoomId}.");
+        //                }
 
-                        await _roomAppDataLock.WaitAsync();
-                        foreach (var item in unsetRoomAppDataRequest.Keys)
-                        {
-                            peerRoom.RoomAppData.Remove(item);
-                            roomPeer.RoomAppData.Remove(item);
-                        }
-                        _roomAppDataLock.Set();
+        //                await _roomAppDataLock.WaitAsync();
+        //                foreach (var item in unsetRoomAppDataRequest.Keys)
+        //                {
+        //                    peerRoom.RoomAppData.Remove(item);
+        //                    roomPeer.RoomAppData.Remove(item);
+        //                }
+        //                _roomAppDataLock.Set();
 
-                        // 只通知本房间
-                        return new PeerRoomAppDataResult
-                        {
-                            SelfPeerId = peerId,
-                            AppData = peerRoom.RoomAppData,
-                            OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
-                        };
-                    }
-                }
-            }
-        }
+        //                // 只通知本房间
+        //                return new PeerRoomAppDataResult
+        //                {
+        //                    SelfPeerId = peerId,
+        //                    AppData = peerRoom.RoomAppData,
+        //                    OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
+        //                };
+        //            }
+        //        }
+        //    }
+        //}
 
-        public async Task<PeerRoomAppDataResult> ClearRoomAppDataAsync(string peerId, string connectionId, string roomId)
-        {
-            using (await _peersLock.ReadLockAsync())
-            {
-                if (!_peers.TryGetValue(peerId, out var peer))
-                {
-                    throw new Exception($"ClearRoomAppDataAsync() | Peer:{peerId} is not exists.");
-                }
+        //public async Task<PeerRoomAppDataResult> ClearRoomAppDataAsync(string peerId, string connectionId, string roomId)
+        //{
+        //    using (await _peersLock.ReadLockAsync())
+        //    {
+        //        if (!_peers.TryGetValue(peerId, out var peer))
+        //        {
+        //            throw new Exception($"ClearRoomAppDataAsync() | Peer:{peerId} is not exists.");
+        //        }
 
-                CheckConnection(peer, connectionId);
+        //        CheckConnection(peer, connectionId);
 
-                using (await _peerRoomsLock.ReadLockAsync())
-                {
-                    if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
-                    {
-                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
-                    }
+        //        using (await _peerRoomsLock.ReadLockAsync())
+        //        {
+        //            if (!_peerRooms.TryGetValue(peerId, out var peerRooms))
+        //            {
+        //                throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
+        //            }
 
-                    var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == roomId);
-                    if (peerRoom == null)
-                    {
-                        throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
-                    }
+        //            var peerRoom = peerRooms.FirstOrDefault(m => m.Room.RoomId == roomId);
+        //            if (peerRoom == null)
+        //            {
+        //                throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
+        //            }
 
-                    using (await _roomPeersLock.ReadLockAsync())
-                    {
-                        if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
-                        }
+        //            using (await _roomPeersLock.ReadLockAsync())
+        //            {
+        //                if (!_roomPeers.TryGetValue(roomId, out var roomPeers))
+        //                {
+        //                    throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
+        //                }
 
-                        var roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId);
-                        if (roomPeer == null)
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
-                        }
+        //                var roomPeer = roomPeers.FirstOrDefault(m => m.Peer.PeerId == peerId);
+        //                if (roomPeer == null)
+        //                {
+        //                    throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
+        //                }
 
-                        await _roomAppDataLock.WaitAsync();
-                        peerRoom.RoomAppData.Clear();
-                        roomPeer.RoomAppData.Clear();
-                        _roomAppDataLock.Set();
+        //                await _roomAppDataLock.WaitAsync();
+        //                peerRoom.RoomAppData.Clear();
+        //                roomPeer.RoomAppData.Clear();
+        //                _roomAppDataLock.Set();
 
-                        // 只通知本房间
-                        return new PeerRoomAppDataResult
-                        {
-                            SelfPeerId = peerId,
-                            AppData = peerRoom.RoomAppData,
-                            OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
-                        };
-                    }
-                }
-            }
-        }
+        //                // 只通知本房间
+        //                return new PeerRoomAppDataResult
+        //                {
+        //                    SelfPeerId = peerId,
+        //                    AppData = peerRoom.RoomAppData,
+        //                    OtherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray(),
+        //                };
+        //            }
+        //        }
+        //    }
+        //}
 
         public async Task<PullResult> PullAsync(string peerId, string connectionId, PullRequest pullRequest)
         {
@@ -662,46 +445,15 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} is not exists.");
                 }
 
-                using (await _peerRoomsLock.ReadLockAsync())
+                var pullResult = await peer.PullAsync(producePeer, pullRequest.RoomSources);
+
+                return new PullResult
                 {
-                    if (!_peerRooms.TryGetValue(peerId, out var consumerPeerRooms))
-                    {
-                        throw new Exception($"Pull() | Peer:{peerId} is not in any rooms.");
-                    }
-
-                    if (!_peerRooms.TryGetValue(pullRequest.ProducerPeerId, out var producerPeerRooms))
-                    {
-                        throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} is not in any rooms.");
-                    }
-
-                    var consumerPeerRoom = consumerPeerRooms.FirstOrDefault(m => m.Room.RoomId == pullRequest.RoomId);
-                    if (consumerPeerRoom == null)
-                    {
-                        throw new Exception($"Pull() | Peer:{peerId} is not in Room:{pullRequest.RoomId}.");
-                    }
-
-                    var producerPeerRoom = producerPeerRooms.FirstOrDefault(m => m.Room.RoomId == pullRequest.RoomId);
-                    if (consumerPeerRoom == null)
-                    {
-                        throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} is not in Room:{pullRequest.RoomId}.");
-                    }
-
-                    if (pullRequest.RoomSources.Except(producerPeerRoom.RoomSources).Any())
-                    {
-                        throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} can't produce some sources in Room:{pullRequest.RoomId}.");
-                    }
-
-                    var pullResult = await peer.PullAsync(producePeer, pullRequest.RoomId, pullRequest.RoomSources);
-
-                    return new PullResult
-                    {
-                        RoomId = pullRequest.RoomId,
-                        ConsumePeer = peer,
-                        ProducePeer = producePeer,
-                        ExistsProducers = pullResult.ExistsProducers,
-                        ProduceSources = pullResult.ProduceSources,
-                    };
-                }
+                    ConsumePeer = peer,
+                    ProducePeer = producePeer,
+                    ExistsProducers = pullResult.ExistsProducers,
+                    ProduceSources = pullResult.ProduceSources,
+                };
             }
         }
 
@@ -967,62 +719,18 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<string[]> GetOtherPeerIdsAsync(string peerId, string connectionId, string? roomId = null)
+        public async Task<string[]> GetOtherPeerIdsAsync(string peerId, string connectionId)
         {
             using (await _peersLock.ReadLockAsync())
             {
                 if (!_peers.TryGetValue(peerId, out var peer))
                 {
-                    throw new Exception($"GetOtherPeerIdsInRoom() | Peer:{peerId} is not exists.");
+                    throw new Exception($"GetOtherPeerIdsAsync() | Peer:{peerId} is not exists.");
                 }
 
                 CheckConnection(peer, connectionId);
 
-                // 获取所在指定 Room 的其他 Peer
-                if (!roomId.IsNullOrWhiteSpace())
-                {
-                    using (await _peerRoomsLock.ReadLockAsync())
-                    {
-                        var otherPeerIds = new HashSet<string>();
-                        if (_peerRooms.TryGetValue(peerId, out var peerRooms))
-                        {
-                            using (await _roomPeersLock.ReadLockAsync())
-                            {
-                                foreach (var room in peerRooms)
-                                {
-                                    if (_roomPeers.TryGetValue(room.Room.RoomId, out var roomPeers))
-                                    {
-                                        foreach (var otherPeer in roomPeers.Where(m => m.Peer.PeerId != peerId))
-                                        {
-                                            otherPeerIds.Add(otherPeer.Peer.PeerId);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        return otherPeerIds.ToArray();
-                    }
-                }
-                // 获取所在所有 Room 的其他 Peer
-                else
-                {
-                    using (await _roomPeersLock.ReadLockAsync())
-                    {
-                        if (!_roomPeers.TryGetValue(roomId!, out var roomPeers))
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not in any room.");
-                        }
-                        if (!roomPeers.Any(m => m.Peer.PeerId == peerId))
-                        {
-                            throw new Exception($"SetRoomAppDataAsync() | Peer:{peerId} is not exists in Room:{roomId}.");
-                        }
-
-                        var otherPeerIds = roomPeers.Where(m => m.Peer.PeerId != peerId).Select(m => m.Peer.PeerId).ToArray();
-
-                        return otherPeerIds;
-                    }
-                }
+                return await peer.GetOtherPeerIdsAsync();
             }
         }
 

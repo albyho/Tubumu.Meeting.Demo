@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
@@ -55,7 +57,11 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         private bool _closed;
 
-        private readonly AsyncAutoResetEvent _closeLock = new AsyncAutoResetEvent();
+        private readonly AsyncReaderWriterLock _closeLock = new AsyncReaderWriterLock();
+
+        private readonly Dictionary<string, PeerWithRoomAppData> _peers = new Dictionary<string, PeerWithRoomAppData>();
+
+        private readonly AsyncReaderWriterLock _peersLock = new AsyncReaderWriterLock();
 
         public Router Router { get; private set; }
 
@@ -66,8 +72,83 @@ namespace TubumuMeeting.Meeting.Server
             Router = router;
             RoomId = roomId;
             Name = name.NullOrWhiteSpaceReplace("Default");
-            _closeLock.Set();
             _closed = false;
+        }
+
+        public async Task<JoinRoomResult> PeerJoinAsync(Peer peer, IEnumerable<string>? roomSources, Dictionary<string, object>? roomAppData)
+        {
+            using (await _closeLock.ReadLockAsync())
+            {
+                if (_closed)
+                {
+                    throw new Exception($"PeerJoinAsync() | Room:{RoomId} was closed.");
+                }
+
+                using (await _peersLock.WriteLockAsync())
+                {
+                    if (_peers.ContainsKey(peer.PeerId))
+                    {
+                        throw new Exception($"PeerJoinAsync() | Peer:{peer.PeerId} was in Room:{RoomId} already.");
+                    }
+
+                    var selfPeer = new PeerWithRoomAppData(peer)
+                    {
+                        RoomSources = roomSources != null ? roomSources.ToArray() : Array.Empty<string>(),
+                        RoomAppData = roomAppData ?? new Dictionary<string, object>()
+                    };
+
+                    _peers[peer.PeerId] = selfPeer;
+
+                    return new JoinRoomResult
+                    {
+                        SelfPeer = selfPeer,
+                        Peers = _peers.Values.ToArray(),
+                    };
+                }
+            }
+        }
+
+        public async Task<LeaveRoomResult> PeerLeaveAsync(string peerId)
+        {
+            using (await _closeLock.ReadLockAsync())
+            {
+                if (_closed)
+                {
+                    throw new Exception($"PeerJoinAsync() | Room:{RoomId} was closed.");
+                }
+
+                using (await _peersLock.WriteLockAsync())
+                {
+                    if (!_peers.TryGetValue(peerId, out var peer))
+                    {
+                        throw new Exception($"PeerJoinAsync() | Peer:{peerId} is not in Room:{RoomId}.");
+                    }
+
+                    _peers.Remove(peerId);
+
+                    return new LeaveRoomResult
+                    {
+                        SelfPeer = peer.Peer,
+                        OtherPeerIds = _peers.Keys.ToArray()
+                    };
+                }
+            }
+        }
+
+        public async Task<string[]> GetPeerIdsAsync()
+        {
+            using (await _closeLock.ReadLockAsync())
+            {
+                if (_closed)
+                {
+                    throw new Exception($"PeerJoinAsync() | Room:{RoomId} was closed.");
+                }
+
+                using (await _peersLock.ReadLockAsync())
+                {
+                    return _peers.Keys.ToArray();
+                }
+            }
         }
 
         public async Task CloseAsync()
@@ -77,8 +158,7 @@ namespace TubumuMeeting.Meeting.Server
                 return;
             }
 
-            await _closeLock.WaitAsync();
-            try
+            using (await _closeLock.WriteLockAsync())
             {
                 if (_closed)
                 {
@@ -90,10 +170,6 @@ namespace TubumuMeeting.Meeting.Server
                 _closed = true;
 
                 await Router.CloseAsync();
-            }
-            finally
-            {
-                _closeLock.Set();
             }
         }
     }

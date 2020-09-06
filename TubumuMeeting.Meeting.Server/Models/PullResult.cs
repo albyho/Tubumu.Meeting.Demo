@@ -4,8 +4,6 @@ namespace TubumuMeeting.Meeting.Server
 {
     public class PullResult
     {
-        public string RoomId { get; set; }
-
         public Peer ConsumePeer { get; set; }
 
         public Peer ProducePeer { get; set; }
