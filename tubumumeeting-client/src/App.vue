@@ -183,6 +183,16 @@ export default {
   async mounted() {
     const { peerId, peerid } = querystring.parse(location.search.replace('?', ''));
     this.joinForm.peerId = peerId || peerid;
+    if(this.joinForm.peerId) {
+      this.joinForm.peerId = parseInt(this.joinForm.peerId);
+    }
+
+    const { roomId, roomid } = querystring.parse(location.search.replace('?', ''));
+    this.roomForm.roomId = roomId || roomid;
+    if(this.roomForm.roomId) {
+      this.roomForm.roomId = parseInt(this.roomForm.roomId);
+    }
+
     // For Testing
     // this.form.produce = this.joinForm.peerId !== '0' && this.joinForm.peerId !== '1';
   },
@@ -196,7 +206,6 @@ export default {
         this.roomForm.isJoinedRoom = false;
         this.webcamClosed();
         this.micClosed();
-        this.roomForm.roomId = null;
         this.peersForm.peers = [];
         this.remoteVideoStreams = {};
         this.remoteAudioStreams = {};
@@ -291,7 +300,6 @@ export default {
           logger.error('onJoinRoom() | JoinRoom failure.');
           return;
         }
-        this.roomForm.roomId = null;
         this.peersForm.peers = [];
         this.roomForm.isJoinedRoom = false;
         return;
@@ -769,7 +777,13 @@ export default {
         }
 
         case 'peerLeave': {
-
+          const { peerId } = data.data;
+          for(let i = this.peersForm.peers.length - 1; i > 0; i--) {
+            if(this.peersForm.peers[i].peerId === peerId) {
+              this.peersForm.peers.splice(i, 1);
+              break;
+            }
+          }
           break;
         }
 
