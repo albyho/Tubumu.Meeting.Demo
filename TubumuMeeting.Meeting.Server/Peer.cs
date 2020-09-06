@@ -93,7 +93,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncAutoResetEvent _pullPaddingsLock = new AsyncAutoResetEvent();
 
-        public RoomWithRoomAppData? ActiveRoom { get; private set; }
+        private RoomWithRoomAppData? _activeRoom;
 
         private readonly AsyncReaderWriterLock _activeRoomLock = new AsyncReaderWriterLock();
 
@@ -164,7 +164,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     CheckActiveRoom();
 
-                    var transport = await ActiveRoom!.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
+                    var transport = await _activeRoom!.Room.Router.CreateWebRtcTransportAsync(webRtcTransportOptions);
                     if (transport == null)
                     {
                         throw new Exception("CreateWebRtcTransportAsync() | Router.CreateWebRtcTransport faild");
@@ -249,11 +249,9 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _activeRoomLock.ReadLockAsync())
                 {
-                    var consumerActiveRoom = ActiveRoom;
-                    if (consumerActiveRoom == null)
-                    {
-                        throw new Exception($"PullAsync() | Peer:{PeerId} is not in any room.(Consumer)");
-                    }
+                    CheckActiveRoom();
+
+                    var consumerActiveRoom = _activeRoom!;
 
                     using (await _consumersLock.ReadLockAsync())
                     {
@@ -264,19 +262,28 @@ namespace TubumuMeeting.Meeting.Server
                         }
                         else
                         {
-                            using (await producerPeer._activeRoomLock.ReadLockAsync())
+                            using (await producerPeer._joinedLock.ReadLockAsync())
                             {
-                                var producerActiveRoom = producerPeer.ActiveRoom;
-                                if (producerActiveRoom == null)
-                                {
-                                    throw new Exception($"PullAsync() | Peer:{PeerId} is not in any room.(Producer)");
-                                }
+                                producerPeer.CheckJoined();
 
-                                if (producerActiveRoom.Room.RoomId == consumerActiveRoom.Room.RoomId)
+                                using (await producerPeer._activeRoomLock.ReadLockAsync())
                                 {
-                                    throw new Exception($"PullAsync() | Peer:{producerPeer.PeerId} and Peer:{PeerId} are not in the same room.");
+                                    producerPeer.CheckActiveRoom();
+
+                                    var producerActiveRoom = producerPeer._activeRoom!;
+
+                                    if (producerActiveRoom.Room.RoomId == consumerActiveRoom.Room.RoomId)
+                                    {
+                                        throw new Exception($"PullAsync() | Peer:{producerPeer.PeerId} and Peer:{PeerId} are not in the same room.");
+                                    }
+
+                                    if (sources.Except(producerActiveRoom.RoomSources).Any())
+                                    {
+                                        throw new Exception($"PullAsync() | Peer:{producerPeer.PeerId} can't produce some sources in Room.");
+                                    }
+
+                                    return await PullInternalAsync(producerPeer, sources);
                                 }
-                                return await PullInternalAsync(producerPeer, sources);
                             }
                         }
                     }
@@ -286,15 +293,10 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<PeerPullResult> PullInternalAsync(Peer producerPeer, IEnumerable<string> sources)
         {
-            var consumerActiveRoom = ActiveRoom!;
-            var producerActiveRoom = producerPeer.ActiveRoom!;
+            var consumerActiveRoom = _activeRoom!;
+            var producerActiveRoom = producerPeer._activeRoom!;
 
-            if (sources.Except(producerActiveRoom.RoomSources).Any())
-            {
-                throw new Exception($"Pull() | Peer:{producerPeer.PeerId} can't produce some sources in Room.");
-            }
-
-            var roomId = ActiveRoom!.Room.RoomId;
+            var roomId = _activeRoom!.Room.RoomId;
 
             using (await producerPeer._producersLock.ReadLockAsync())
             {
@@ -473,7 +475,7 @@ namespace TubumuMeeting.Meeting.Server
                                     throw new Exception($"ConsumeAsync() | Peer:{PeerId} - ProducerPeer:{producerPeer.PeerId} has no Producer:{producerId}");
                                 }
 
-                                if (_rtpCapabilities == null || !ActiveRoom!.Room.Router.CanConsume(producer.ProducerId, _rtpCapabilities))
+                                if (_rtpCapabilities == null || !_activeRoom!.Room.Router.CanConsume(producer.ProducerId, _rtpCapabilities))
                                 {
                                     throw new Exception($"ConsumeAsync() | Peer:{PeerId} Can not consume.");
                                 }
@@ -910,19 +912,19 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _activeRoomLock.WriteLockAsync())
                 {
-                    if (ActiveRoom != null)
+                    if (_activeRoom != null)
                     {
                         throw new Exception($"JoinRoomAsync() | Peer:{PeerId} was in Room:{room.RoomId} already.");
                     }
 
-                    ActiveRoom = new RoomWithRoomAppData(room)
+                    _activeRoom = new RoomWithRoomAppData(room)
                     {
                         PeerId = PeerId,
                         RoomSources = roomSources != null ? roomSources.ToArray() : Array.Empty<string>(),
                         RoomAppData = roomAppData ?? new Dictionary<string, object>(),
                     };
 
-                    return await ActiveRoom.Room.PeerJoinAsync(this, roomSources, roomAppData ?? new Dictionary<string, object>());
+                    return await _activeRoom.Room.PeerJoinAsync(this, roomSources, roomAppData ?? new Dictionary<string, object>());
                 }
             }
         }
@@ -941,7 +943,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     CheckActiveRoom();
 
-                    // !!!注意：这里用 WriteLockAsync，因为 Consumer 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
+                    // !!!注意：这里要用 WriteLockAsync，否则 Consumer 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
                     using (await _consumersLock.WriteLockAsync())
                     {
                         // 停止本 Peer 在该 Room 的消费
@@ -955,13 +957,13 @@ namespace TubumuMeeting.Meeting.Server
                             // 停止其他 Peer 在该 Room 对本 Peer 生产的消费(有可能本 Peer 消费本 Peer)
                             foreach (var producer in _producers.Values)
                             {
-                                producer.StopConsumersInRoom(ActiveRoom!.Room.RoomId);
+                                producer.StopConsumers();
                             }
                         }
                     }
 
-                    var result = await ActiveRoom!.Room.PeerLeaveAsync(PeerId);
-                    ActiveRoom = null;
+                    var result = await _activeRoom!.Room.PeerLeaveAsync(PeerId);
+                    _activeRoom = null;
                     return result;
                 }
             }
@@ -994,7 +996,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _activeRoomLock.WriteLockAsync())
                 {
-                    // !!!注意：这里用 WriteLockAsync，因为 Transport 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
+                    // !!!注意：这里要用 WriteLockAsync，否则 Transport 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
                     using (await _transportsLock.WriteLockAsync())
                     {
                         // Iterate and close all mediasoup Transport associated to this Peer, so all
@@ -1005,11 +1007,11 @@ namespace TubumuMeeting.Meeting.Server
                         }
                     }
 
-                    if (ActiveRoom != null)
+                    if (_activeRoom != null)
                     {
-                        var leaveRoomResult = await ActiveRoom.Room.PeerLeaveAsync(PeerId);
+                        var leaveRoomResult = await _activeRoom.Room.PeerLeaveAsync(PeerId);
                         leaveResult.OtherPeerIds = leaveRoomResult.OtherPeerIds;
-                        ActiveRoom = null;
+                        _activeRoom = null;
                     }
 
                     return leaveResult;
@@ -1127,7 +1129,7 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     CheckActiveRoom();
 
-                    return await ActiveRoom!.Room.GetPeerIdsAsync();
+                    return await _activeRoom!.Room.GetPeerIdsAsync();
                 }
             }
         }
@@ -1164,7 +1166,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private void CheckActiveRoom()
         {
-            if (ActiveRoom == null)
+            if (_activeRoom == null)
             {
                 throw new Exception($"CheckActiveRoom() | Peer:{PeerId} is not in any room.");
             }
@@ -1172,7 +1174,7 @@ namespace TubumuMeeting.Meeting.Server
 
         public async Task<string[]> GetOtherPeerIdsInteralAsync()
         {
-            return ActiveRoom != null ? await ActiveRoom!.Room.GetPeerIdsAsync() : Array.Empty<string>();
+            return _activeRoom != null ? await _activeRoom!.Room.GetPeerIdsAsync() : Array.Empty<string>();
         }
 
         #endregion Private Methods

@@ -360,13 +360,13 @@ namespace TubumuMeeting.Mediasoup
             }
         }
 
-        public void StopConsumersInRoom(string roomId)
+        public void StopConsumers()
         {
             // 关闭后也允许停止
             lock (_closeLock)
             {
-                _logger.LogDebug($"StopConsumers() | Producer:{ProducerId} RoomId:{roomId}");
-                foreach (var consumer in _consumers.Values.Where(m => m.RoomId == roomId))
+                _logger.LogDebug($"StopConsumers() | Producer:{ProducerId}");
+                foreach (var consumer in _consumers.Values)
                 {
                     consumer.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
                 }
