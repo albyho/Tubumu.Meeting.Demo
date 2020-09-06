@@ -17,28 +17,35 @@
               </el-form>
             </div>
             <div class="demo-block" v-if="joinForm.isJoined">
-              <el-form ref="roomsForm" :model="roomsForm" label-width="80px" size="mini">
+              <el-form ref="roomForm" :inline="true" :model="roomForm" label-width="80px" size="mini">
+                <el-form-item label="Room:">
+                  <el-select v-model="roomForm.roomId" :disabled="roomForm.isJoinedRoom" clearable placeholder="请选择">
+                    <el-option :label="`Room ${index}`" v-for="(item, index) in rooms" :key="item" :value="index"></el-option>
+                  </el-select>
+                </el-form-item>
                 <el-form-item>
-                  <el-transfer
-                      :titles="['可选房间', '已在房间']"
-                      :button-texts="['离开房间', '进入房间']"
-                      @change="onRoomsChanged"
-                      v-model="roomsForm.roomIds"
-                      :data="rooms">
-                    </el-transfer>
-               </el-form-item>
+                  <el-button type="primary" @click="onJoinRoom">{{(!roomForm.isJoinedRoom ? "Join" : "Leave")}}</el-button>
+                </el-form-item>
               </el-form>
             </div>
-            <div class="demo-block" v-if="joinForm.isJoined&&roomsForm.roomIds.length">
+            <div class="demo-block" v-if="joinForm.isJoined&&roomForm.isJoinedRoom">
               <el-form ref="peersForm" :model="peersForm" label-width="80px" size="mini">
                 <el-form-item>
-                  <el-tree
-                    default-expand-all
-                    highlight-current
-                    :data="peersForm.rooms"
-                    :props="defaultProps"
-                    @node-click="onPeerNodeClick">
-                  </el-tree>
+                  <el-table
+                    ref="singleTable"
+                    :data="peersForm.peers"
+                    highlight-current-row
+                    @current-change="onPeerNodeClick"
+                    style="width: 100%">
+                    <el-table-column
+                      type="index"
+                      width="50">
+                    </el-table-column>
+                    <el-table-column
+                      property="displayName"
+                      label="DisplayName">
+                    </el-table-column>
+                  </el-table>
                </el-form-item>
               </el-form>
             </div>
@@ -131,11 +138,12 @@ export default {
         peerId: null,
         isJoined: false
       },
-      roomsForm: {
-        roomIds: [],
+      roomForm: {
+        roomId: [],
+        isJoinedRoom: false
       },
       peersForm: {
-        rooms: []
+        peers: [],
       },
       defaultProps: {
           children: 'children',
@@ -147,16 +155,16 @@ export default {
         useDataChannel: false
       },
       rooms: [
-        { key: "0", label: "Room 0"},
-        { key: "1", label: "Room 1"},
-        { key: "2", label: "Room 2"},
-        { key: "3", label: "Room 3"},
-        { key: "4", label: "Room 4"},
-        { key: "5", label: "Room 5"},
-        { key: "6", label: "Room 6"},
-        { key: "7", label: "Room 7"},
-        { key: "8", label: "Room 8"},
-        { key: "9", label: "Room 9"}
+        "Room 0",
+        "Room 1",
+        "Room 2",
+        "Room 3",
+        "Room 4",
+        "Room 5",
+        "Room 6",
+        "Room 7",
+        "Room 8",
+        "Room 9"
       ],
       accessTokens: [
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMCIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.lX6ff6ZFNb4z-4otDcUAZ48qwD8rZAGM5_Rt4HlHgug',
@@ -185,10 +193,11 @@ export default {
          await this.connection.stop();
         }
         this.joinForm.isJoined = false;
+        this.roomForm.isJoinedRoom = false;
         this.webcamClosed();
         this.micClosed();
-        this.roomsForm.roomIds = [];
-        this.peersForm.rooms = [];
+        this.roomForm.roomId = null;
+        this.peersForm.peers = [];
         this.remoteVideoStreams = {};
         this.remoteAudioStreams = {};
         return;
@@ -266,7 +275,7 @@ export default {
         sctpCapabilities: this.form.useDataChannel && this.form.consume
 						? this.mediasoupDevice.sctpCapabilities
 						: undefined,
-        displayName: 'Guest',
+        displayName: null,
         sources: ['mic', 'webcam'],
         appData: {}
       });
@@ -274,6 +283,36 @@ export default {
         logger.error('processNotification() | Join failure.');
         return;
       }
+    },
+    async onJoinRoom() {
+      if(this.roomForm.isJoinedRoom) {
+        let result = await this.connection.invoke('LeaveRoom');
+        if (result.code !== 200) {
+          logger.error('onJoinRoom() | JoinRoom failure.');
+          return;
+        }
+        this.roomForm.roomId = null;
+        this.peersForm.peers = [];
+        this.roomForm.isJoinedRoom = false;
+        return;
+      } 
+      if(!this.roomForm.roomId && this.roomForm.roomId !== 0) {
+        this.$message.error('Join room,please.');
+        return;
+      }
+      let result = await this.connection.invoke('JoinRoom', {
+        roomId: this.roomForm.roomId
+      });
+      if (result.code !== 200) {
+        logger.error('onJoinRoom() | JoinRoom failure.');
+        return;
+      }
+
+      let {peers} = result.data;
+      for(let i = 0; i < peers.length; i++) {
+        this.peersForm.peers.push(peers[i]);
+      }
+      this.roomForm.isJoinedRoom = true;
 
       if(this.form.produce) {
         // Join成功，CreateWebRtcTransport(生产) 
@@ -286,7 +325,7 @@ export default {
 							: undefined
         });
         if (result.code !== 200) {
-          logger.error('processNotification() | CreateWebRtcTransport failed: %s', result.message);
+          logger.error('onJoinRoom() | CreateWebRtcTransport failed: %s', result.message);
           return;
         }
 
@@ -422,73 +461,9 @@ export default {
         logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
     },
-    async onRoomsChanged(value, direction, movedKeys) {
-      if (direction === 'right') {
-        for(let i = 0; i < movedKeys.length; i++) {
-          let result = await this.connection.invoke('JoinRoom', {
-            roomId: movedKeys[i],
-            roomSources: ['webcam', 'mic'],
-            roomAppData: {}
-          });
-          if (result.code !== 200) {
-            logger.error('onRoomsChanged() | JoinRoom failure.');
-            return;
-          }
-
-          const joinRoomData = result.data;
-          logger.debug('Peers: %o', joinRoomData.peers);
-          const roomId = joinRoomData.roomId;
-          let matchedRoom;
-          for(let j = 0; j < this.peersForm.rooms.length; j++) {
-            let room = this.peersForm.rooms[j];
-            if(room.roomId === roomId) {
-              matchedRoom = room;
-              break;
-            }
-          }
-          if(!matchedRoom) {
-            matchedRoom = {
-              roomId,
-              label: `Room ${roomId}`,
-              children:[]
-            }
-            this.peersForm.rooms.push(matchedRoom);
-          }
-          for(let i = 0; i < joinRoomData.peers.length; i++) {
-            let peerRoom = joinRoomData.peers[i]
-            matchedRoom.children.push({
-              label:  `Peer ${peerRoom.peer.peerId}`,
-              info: peerRoom
-            })
-          }
-          // for(let i = 0; i < joinRoomData.peers.length; i++) {
-          //   const {peer, roomId, roomSources} = joinRoomData.peers[i];
-          //   if(peer.peerId === this.joinForm.peerId || !roomSources || roomSources.length === 0) continue;
-          //   await this.pull(roomId, peer.peerId, roomSources)
-          // }
-        }
-      } else {
-        for(let i = 0; i < movedKeys.length; i++) {
-          let result = await this.connection.invoke('LeaveRoom', movedKeys[i]);
-          if (result.code !== 200) {
-            logger.error('onRoomsChanged() | LeaveRoom failure.');
-            return;
-          }
-          // let itemToRemove;
-          for(let j = 0; j < this.peersForm.rooms.length; j++) {
-            if(this.peersForm.rooms[j].roomId === movedKeys[i]) {
-              this.peersForm.rooms.splice(j,1);
-              break;
-            }
-          }
-        }
-      }
-    },
-    async onPeerNodeClick(data) {
-      logger.debug('onPeerNodeClick() | %o', data);
-      if(data.info) {
-        await this.pull(data.info.roomId, data.info.peer.peerId, data.info.roomSources)
-      }
+    async onPeerNodeClick(peer) {
+      logger.debug('onPeerNodeClick() | %o', peer);
+      await this.pull(peer.peerId, peer.sources)
     },
     async processNewConsumer(data) {
       const {
@@ -648,11 +623,10 @@ export default {
         throw error;
       }
     },
-    async pull(roomId, producerPeerId, roomSources) {
+    async pull(producerPeerId, sources) {
       const result = await this.connection.invoke('Pull', {
-        roomId,
         producerPeerId,
-        roomSources
+        sources
       });
       if (result.code !== 200) {
         logger.error('pull() | pull failure.');
@@ -683,28 +657,19 @@ export default {
 
         case 'peerJoinRoom': {
           // eslint-disable-next-line no-unused-vars
-          const {peer, roomId, roomSources } = data.data;
-          for(let i = 0; i < this.peersForm.rooms.length; i++) {
-            let room = this.peersForm.rooms[i]
-            if(room.roomId === roomId) {
-              room.children.push({
-                label:  `Peer ${peer.peerId}`,
-                info: data.data
-              })
-              break;
-            }
-          }
+          const {peer} = data.data;
+          this.peersForm.peers.push(peer);
           break;
         }
 
         case 'peerLeaveRoom':
         {
           // eslint-disable-next-line no-unused-vars
-          const { peerId, roomId } = data.data;
-          for(let i = 0; i < this.peersForm.rooms.length; i++) {
-            let room = this.peersForm.rooms[i]
-            if(room.roomId === roomId) {
-              room.children.splice(i, 1);
+          const { peerId } = data.data;
+          for(let i = this.peersForm.peers.length - 1; i > 0; i--) {
+            if(this.peersForm.peers[i].peerId === peerId) {
+              this.peersForm.peers.splice(i, 1);
+              break;
             }
           }
           break;

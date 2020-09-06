@@ -238,7 +238,10 @@ namespace TubumuMeeting.Meeting.Server
             // 将自身的信息告知给房间内的其他人
             var otherPeerIds = joinRoomResult.Peers.Select(m => m.PeerId).Where(m => m != joinRoomResult.SelfPeer.PeerId).ToArray();
             // Message: peerJoinRoom
-            SendNotification(otherPeerIds, "peerJoinRoom", joinRoomResult.SelfPeer);
+            SendNotification(otherPeerIds, "peerJoinRoom", new
+            {
+                Peer = joinRoomResult.SelfPeer
+            });
 
             // 返回包括自身的房间内的所有人的信息
             var data = new JoinRoomResponse

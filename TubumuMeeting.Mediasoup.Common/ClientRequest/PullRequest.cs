@@ -6,6 +6,6 @@ namespace TubumuMeeting.Mediasoup
     {
         public string ProducerPeerId { get; set; }
 
-        public HashSet<string> RoomSources { get; set; }
+        public HashSet<string> Sources { get; set; }
     }
 }

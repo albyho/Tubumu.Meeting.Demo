@@ -75,7 +75,7 @@ namespace TubumuMeeting.Meeting.Server
             _closed = false;
         }
 
-        public async Task<JoinRoomResult> PeerJoinAsync(Peer peer, IEnumerable<string>? roomSources, Dictionary<string, object>? roomAppData)
+        public async Task<JoinRoomResult> PeerJoinAsync(Peer peer)
         {
             using (await _closeLock.ReadLockAsync())
             {

@@ -206,7 +206,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 CheckConnection(peer, connectionId);
 
-                if (joinRoomRequest.RoomSources.Except(peer.Sources).Any())
+                if (peer.Sources.Except(peer.Sources).Any())
                 {
                     throw new Exception($"JoinRoomAsync() | Peer:{peerId} don't has some sources which is in Room:{joinRoomRequest.RoomId}.");
                 }
@@ -235,7 +235,7 @@ namespace TubumuMeeting.Meeting.Server
                         _rooms[room.RoomId] = room;
                     }
 
-                    return await peer.JoinRoomAsync(room, joinRoomRequest.RoomSources, joinRoomRequest.RoomAppData);
+                    return await peer.JoinRoomAsync(room);
                 }
                 finally
                 {
@@ -275,7 +275,7 @@ namespace TubumuMeeting.Meeting.Server
                     throw new Exception($"Pull() | Peer:{pullRequest.ProducerPeerId} is not exists.");
                 }
 
-                var pullResult = await peer.PullAsync(producePeer, pullRequest.RoomSources);
+                var pullResult = await peer.PullAsync(producePeer, pullRequest.Sources);
 
                 return new PullResult
                 {

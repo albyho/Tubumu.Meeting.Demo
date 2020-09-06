@@ -117,7 +117,7 @@ namespace TubumuMeeting.Meeting.Server
             _sctpCapabilities = sctpCapabilities;
             PeerId = peerId;
             ConnectionId = connectionId;
-            DisplayName = displayName.NullOrWhiteSpaceReplace("Guest");
+            DisplayName = displayName.NullOrWhiteSpaceReplace("Guest" + peerId.ToString().PadLeft(8, '0'));
             Sources = sources ?? Array.Empty<string>();
             AppData = new ConcurrentDictionary<string, object>(appData ?? new Dictionary<string, object>());
             _pullPaddingsLock.Set();
@@ -272,7 +272,7 @@ namespace TubumuMeeting.Meeting.Server
 
                                     var producerRoom = producerPeer._room!;
 
-                                    if (producerRoom.RoomId == consumerRoom.RoomId)
+                                    if (producerRoom.RoomId != consumerRoom.RoomId)
                                     {
                                         throw new Exception($"PullAsync() | Peer:{producerPeer.PeerId} and Peer:{PeerId} are not in the same room.");
                                     }
@@ -904,7 +904,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<JoinRoomResult> JoinRoomAsync(Room room, IEnumerable<string>? roomSources, Dictionary<string, object>? roomAppData)
+        public async Task<JoinRoomResult> JoinRoomAsync(Room room)
         {
             using (await _joinedLock.ReadLockAsync())
             {
@@ -919,7 +919,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     _room = room;
 
-                    return await _room.PeerJoinAsync(this, roomSources, roomAppData ?? new Dictionary<string, object>());
+                    return await _room.PeerJoinAsync(this);
                 }
             }
         }
@@ -938,22 +938,14 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     CheckRoom();
 
-                    // !!!注意：这里要用 WriteLockAsync，否则 Consumer 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
-                    using (await _consumersLock.WriteLockAsync())
+                    // !!!注意：这里要用 WriteLockAsync，否则 Transport 的 close 事件将报异常：不可升级的读取锁由调用方持有，无法升级。
+                    using (await _transportsLock.WriteLockAsync())
                     {
-                        // 停止本 Peer 在该 Room 的消费
-                        foreach (var consumer in _consumers.Values)
+                        // Iterate and close all mediasoup Transport associated to this Peer, so all
+                        // its Producers and Consumers will also be closed.
+                        foreach (var transport in _transports.Values)
                         {
-                            consumer.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
-                        }
-
-                        using (await _producersLock.ReadLockAsync())
-                        {
-                            // 停止其他 Peer 在该 Room 对本 Peer 生产的消费(有可能本 Peer 消费本 Peer)
-                            foreach (var producer in _producers.Values)
-                            {
-                                producer.StopConsumers();
-                            }
+                            transport.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
                         }
                     }
 
