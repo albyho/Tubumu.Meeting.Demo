@@ -53,8 +53,6 @@ namespace TubumuMeeting.Meeting.Server
 
         //private readonly AsyncAutoResetEvent _roomAppDataLock = new AsyncAutoResetEvent();
 
-        private Router? _router;
-
         #endregion Private Fields
 
         public RtpCapabilities DefaultRtpCapabilities { get; private set; }
@@ -228,12 +226,12 @@ namespace TubumuMeeting.Meeting.Server
                         {
                             MediaCodecs = mediaCodecs
                         });
-                        if (_router == null)
+                        if (router == null)
                         {
                             throw new Exception($"PeerJoinAsync() | Worker maybe closed.");
                         }
 
-                        room = new Room(_loggerFactory, _router, joinRoomRequest.RoomId, "Default");
+                        room = new Room(_loggerFactory, router, joinRoomRequest.RoomId, "Default");
                         _rooms[room.RoomId] = room;
                     }
 
