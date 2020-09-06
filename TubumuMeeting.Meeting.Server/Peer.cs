@@ -306,8 +306,8 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     foreach (var existsProducer in producerProducers)
                     {
-                        // 忽略在同一 Room 的重复消费？
-                        if (_consumers.Values.Any(m => m.RoomId == roomId && m.ProducerId == existsProducer.ProducerId))
+                        // 忽略重复消费
+                        if (_consumers.Values.Any(m => m.ProducerId == existsProducer.ProducerId))
                         {
                             continue;
                         }
@@ -444,7 +444,7 @@ namespace TubumuMeeting.Meeting.Server
         /// <param name="producer"></param>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        public async Task<Consumer> ConsumeAsync(Peer producerPeer, string producerId, string roomId)
+        public async Task<Consumer> ConsumeAsync(Peer producerPeer, string producerId)
         {
             using (await _joinedLock.ReadLockAsync())
             {
@@ -486,7 +486,6 @@ namespace TubumuMeeting.Meeting.Server
                                     Paused = true // Or: producer.Kind == MediaKind.Video
                                 });
 
-                                consumer.RoomId = roomId;
                                 consumer.Source = producer.Source;
 
                                 //consumer.On("@close", _ => ...);
@@ -946,7 +945,7 @@ namespace TubumuMeeting.Meeting.Server
                     using (await _consumersLock.WriteLockAsync())
                     {
                         // 停止本 Peer 在该 Room 的消费
-                        foreach (var consumer in _consumers.Values.Where(m => m.RoomId == ActiveRoom!.Room.RoomId))
+                        foreach (var consumer in _consumers.Values)
                         {
                             consumer.CloseAsync().ContinueWithOnFaultedHandleLog(_logger);
                         }

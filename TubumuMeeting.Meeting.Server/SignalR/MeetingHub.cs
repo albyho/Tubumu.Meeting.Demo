@@ -254,14 +254,13 @@ namespace TubumuMeeting.Meeting.Server
         /// </summary>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        public async Task<MeetingMessage> LeaveRoom(string roomId)
+        public async Task<MeetingMessage> LeaveRoom()
         {
-            var leaveRoomResult = await _scheduler.LeaveRoomAsync(UserId, ConnectionId, roomId);
+            var leaveRoomResult = await _scheduler.LeaveRoomAsync(UserId, ConnectionId);
 
             // Message: peerLeaveRoom
             SendNotification(leaveRoomResult.OtherPeerIds, "peerLeaveRoom", new
             {
-                RoomId = roomId,
                 PeerId = UserId
             });
 
@@ -338,12 +337,11 @@ namespace TubumuMeeting.Meeting.Server
             var consumeResult = await _scheduler.PullAsync(UserId, ConnectionId, consumeRequest);
             var consumerPeer = consumeResult.ConsumePeer;
             var producerPeer = consumeResult.ProducePeer;
-            var roomId = consumeRequest.RoomId;
 
             foreach (var producer in consumeResult.ExistsProducers)
             {
                 // 本 Peer 消费其他 Peer
-                CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(consumerPeer, producerPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             if (!consumeResult.ProduceSources.IsNullOrEmpty())
@@ -351,7 +349,6 @@ namespace TubumuMeeting.Meeting.Server
                 // Message: produceSources
                 SendNotification(consumeResult.ProducePeer.PeerId, "produceSources", new
                 {
-                    RoomId = consumeResult.RoomId,
                     ProduceSources = consumeResult.ProduceSources
                 });
             }
@@ -384,13 +381,10 @@ namespace TubumuMeeting.Meeting.Server
             var producerPeer = produceResult.ProducerPeer;
             var producer = produceResult.Producer;
 
-            foreach (var item in produceResult.PullPaddingConsumerPeerWithRoomIds)
+            foreach (var consumerPeer in produceResult.PullPaddingConsumerPeers)
             {
-                var consumerPeer = item.ConsumerPeer;
-                var roomId = item.RoomId;
-
                 // 其他 Peer 消费本 Peer
-                CreateConsumer(consumerPeer, producerPeer, producer, roomId).ContinueWithOnFaultedHandleLog(_logger);
+                CreateConsumer(consumerPeer, producerPeer, producer).ContinueWithOnFaultedHandleLog(_logger);
             }
 
             // NOTE: For Testing
@@ -639,7 +633,7 @@ namespace TubumuMeeting.Meeting.Server
 
         #region Private Methods
 
-        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer, string roomId)
+        private async Task CreateConsumer(Peer consumerPeer, Peer producerPeer, Producer producer)
         {
             _logger.LogDebug($"CreateConsumer() | [ConsumerPeer:\"{consumerPeer.PeerId}\", ProducerPeer:\"{producerPeer.PeerId}\", Producer:\"{producer.ProducerId}\"]");
 
@@ -648,7 +642,7 @@ namespace TubumuMeeting.Meeting.Server
 
             try
             {
-                consumer = await _scheduler.ConsumeAsync(producerPeer.PeerId, consumerPeer.PeerId, producer.ProducerId, roomId);
+                consumer = await _scheduler.ConsumeAsync(producerPeer.PeerId, consumerPeer.PeerId, producer.ProducerId);
             }
             catch (Exception ex)
             {
@@ -715,7 +709,6 @@ namespace TubumuMeeting.Meeting.Server
 
             SendNotification(consumerPeer.PeerId, "newConsumer", new ConsumeInfo
             {
-                RoomId = roomId,
                 ProducerPeerId = producerPeer.PeerId,
                 Kind = consumer.Kind,
                 ProducerId = producer.ProducerId,

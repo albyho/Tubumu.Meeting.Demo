@@ -244,7 +244,7 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
-        public async Task<LeaveRoomResult> LeaveRoomAsync(string peerId, string connectionId, string roomId)
+        public async Task<LeaveRoomResult> LeaveRoomAsync(string peerId, string connectionId)
         {
             using (await _peersLock.ReadLockAsync())
             {
@@ -473,17 +473,13 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 // NOTE: 这里假设了 Room 存在
-                var pullPaddingConsumerPeerWithRoomIds = new List<ConsumerPeerWithRoomId>();
+                var pullPaddingConsumerPeers = new List<Peer>();
                 foreach (var item in peerProduceResult.PullPaddings)
                 {
                     // 其他 Peer 消费本 Peer
                     if (_peers.TryGetValue(item.ConsumerPeerId, out var consumerPeer))
                     {
-                        pullPaddingConsumerPeerWithRoomIds.Add(new ConsumerPeerWithRoomId
-                        {
-                            ConsumerPeer = consumerPeer,
-                            RoomId = item.RoomId,
-                        });
+                        pullPaddingConsumerPeers.Add(consumerPeer);
                     }
                 }
 
@@ -491,14 +487,14 @@ namespace TubumuMeeting.Meeting.Server
                 {
                     ProducerPeer = peer,
                     Producer = peerProduceResult.Producer,
-                    PullPaddingConsumerPeerWithRoomIds = pullPaddingConsumerPeerWithRoomIds.ToArray(),
+                    PullPaddingConsumerPeers = pullPaddingConsumerPeers.ToArray(),
                 };
 
                 return produceResult;
             }
         }
 
-        public async Task<Consumer> ConsumeAsync(string producerPeerId, string cosumerPeerId, string producerId, string roomId)
+        public async Task<Consumer> ConsumeAsync(string producerPeerId, string cosumerPeerId, string producerId)
         {
             using (await _peersLock.ReadLockAsync())
             {
@@ -512,7 +508,7 @@ namespace TubumuMeeting.Meeting.Server
                 }
 
                 // NOTE: 这里假设了 Room 存在
-                var consumer = await cosumerPeer.ConsumeAsync(producerPeer, producerId, roomId);
+                var consumer = await cosumerPeer.ConsumeAsync(producerPeer, producerId);
                 if (consumer == null)
                 {
                     throw new Exception($"ConsumeAsync() | Peer:{cosumerPeerId} consume faild.");

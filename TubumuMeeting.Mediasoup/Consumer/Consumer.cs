@@ -111,11 +111,6 @@ namespace TubumuMeeting.Mediasoup
         public Dictionary<string, object>? AppData { get; private set; }
 
         /// <summary>
-        /// [扩展]RoomId.
-        /// </summary>
-        public string? RoomId { get; set; }
-
-        /// <summary>
         /// [扩展]Source.
         /// </summary>
         public string? Source { get; set; }

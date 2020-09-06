@@ -5,8 +5,6 @@ namespace TubumuMeeting.Meeting.Server
 {
     public class ConsumeInfo
     {
-        public string RoomId { get; set; }
-
         public string ProducerPeerId { get; set; }
 
         public MediaKind Kind { get; set; }
