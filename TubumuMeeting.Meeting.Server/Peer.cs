@@ -22,6 +22,10 @@ namespace TubumuMeeting.Meeting.Server
 
         public string DisplayName { get; }
 
+        public string[] Sources { get; private set; }
+
+        public ConcurrentDictionary<string, object> AppData { get; set; }
+
         public bool Equals(Peer other)
         {
             if (other == null)
@@ -96,10 +100,6 @@ namespace TubumuMeeting.Meeting.Server
         private RoomWithRoomAppData? _activeRoom;
 
         private readonly AsyncReaderWriterLock _activeRoomLock = new AsyncReaderWriterLock();
-
-        public string[] Sources { get; private set; }
-
-        public ConcurrentDictionary<string, object> AppData { get; set; }
 
         public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings,
             RtpCapabilities rtpCapabilities,
