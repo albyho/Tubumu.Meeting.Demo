@@ -1045,12 +1045,8 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _activeRoomLock.ReadLockAsync())
                 {
-                    if (ActiveRoom != null)
-                    {
-                        var allPeerIds = await ActiveRoom.Room.GetPeerIdsAsync();
-                        peerAppDataResult.OtherPeerIds = allPeerIds.Where(m => m != PeerId).ToArray();
-                    }
-
+                    var allPeerIds = await GetOtherPeerIdsInteralAsync();
+                    peerAppDataResult.OtherPeerIds = allPeerIds.Where(m => m != PeerId).ToArray();
                     return peerAppDataResult;
                 }
             }
@@ -1082,12 +1078,8 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _activeRoomLock.ReadLockAsync())
                 {
-                    if (ActiveRoom != null)
-                    {
-                        var allPeerIds = await ActiveRoom.Room.GetPeerIdsAsync();
-                        peerAppDataResult.OtherPeerIds = allPeerIds.Where(m => m != PeerId).ToArray();
-                    }
-
+                    var allPeerIds = await GetOtherPeerIdsInteralAsync();
+                    peerAppDataResult.OtherPeerIds = allPeerIds.Where(m => m != PeerId).ToArray();
                     return peerAppDataResult;
                 }
             }
@@ -1115,12 +1107,8 @@ namespace TubumuMeeting.Meeting.Server
 
                 using (await _activeRoomLock.ReadLockAsync())
                 {
-                    if (ActiveRoom != null)
-                    {
-                        var allPeerIds = await ActiveRoom.Room.GetPeerIdsAsync();
-                        peerAppDataResult.OtherPeerIds = allPeerIds.Where(m => m != PeerId).ToArray();
-                    }
-
+                    var allPeerIds = await GetOtherPeerIdsInteralAsync();
+                    peerAppDataResult.OtherPeerIds = allPeerIds.Where(m => m != PeerId).ToArray();
                     return peerAppDataResult;
                 }
             }
@@ -1180,6 +1168,11 @@ namespace TubumuMeeting.Meeting.Server
             {
                 throw new Exception($"CheckActiveRoom() | Peer:{PeerId} is not in any room.");
             }
+        }
+
+        public async Task<string[]> GetOtherPeerIdsInteralAsync()
+        {
+            return ActiveRoom != null ? await ActiveRoom!.Room.GetPeerIdsAsync() : Array.Empty<string>();
         }
 
         #endregion Private Methods
