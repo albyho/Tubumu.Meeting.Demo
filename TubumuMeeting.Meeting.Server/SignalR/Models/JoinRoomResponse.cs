@@ -6,8 +6,6 @@ namespace TubumuMeeting.Meeting.Server
 {
     public class JoinRoomResponse
     {
-        public string RoomId { get; set; }
-
-        public PeerWithRoomAppData[] Peers { get; set; }
+        public Peer[] Peers { get; set; }
     }
 }

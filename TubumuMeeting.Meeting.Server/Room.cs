@@ -59,7 +59,7 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncReaderWriterLock _closeLock = new AsyncReaderWriterLock();
 
-        private readonly Dictionary<string, PeerWithRoomAppData> _peers = new Dictionary<string, PeerWithRoomAppData>();
+        private readonly Dictionary<string, Peer> _peers = new Dictionary<string, Peer>();
 
         private readonly AsyncReaderWriterLock _peersLock = new AsyncReaderWriterLock();
 
@@ -91,17 +91,11 @@ namespace TubumuMeeting.Meeting.Server
                         throw new Exception($"PeerJoinAsync() | Peer:{peer.PeerId} was in Room:{RoomId} already.");
                     }
 
-                    var selfPeer = new PeerWithRoomAppData(peer)
-                    {
-                        RoomSources = roomSources != null ? roomSources.ToArray() : Array.Empty<string>(),
-                        RoomAppData = roomAppData ?? new Dictionary<string, object>()
-                    };
-
-                    _peers[peer.PeerId] = selfPeer;
+                    _peers[peer.PeerId] = peer;
 
                     return new JoinRoomResult
                     {
-                        SelfPeer = selfPeer,
+                        SelfPeer = peer,
                         Peers = _peers.Values.ToArray(),
                     };
                 }
@@ -128,7 +122,7 @@ namespace TubumuMeeting.Meeting.Server
 
                     return new LeaveRoomResult
                     {
-                        SelfPeer = peer.Peer,
+                        SelfPeer = peer,
                         OtherPeerIds = _peers.Keys.ToArray()
                     };
                 }

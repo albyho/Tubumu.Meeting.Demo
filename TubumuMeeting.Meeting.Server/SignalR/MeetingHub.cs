@@ -236,14 +236,13 @@ namespace TubumuMeeting.Meeting.Server
             var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, ConnectionId, joinRoomRequest);
 
             // 将自身的信息告知给房间内的其他人
-            var otherPeerIds = joinRoomResult.Peers.Select(m => m.Peer.PeerId).Where(m => m != joinRoomResult.SelfPeer.Peer.PeerId).ToArray();
+            var otherPeerIds = joinRoomResult.Peers.Select(m => m.PeerId).Where(m => m != joinRoomResult.SelfPeer.PeerId).ToArray();
             // Message: peerJoinRoom
             SendNotification(otherPeerIds, "peerJoinRoom", joinRoomResult.SelfPeer);
 
             // 返回包括自身的房间内的所有人的信息
             var data = new JoinRoomResponse
             {
-                RoomId = joinRoomRequest.RoomId,
                 Peers = joinRoomResult.Peers,
             };
             return new MeetingMessage<JoinRoomResponse> { Code = 200, Message = "JoinRoom 成功", Data = data };
@@ -266,66 +265,6 @@ namespace TubumuMeeting.Meeting.Server
 
             return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
         }
-
-        ///// <summary>
-        ///// Set room's appData of peer.
-        ///// </summary>
-        ///// <param name="setRoomAppDataRequest"></param>
-        ///// <returns></returns>
-        //public async Task<MeetingMessage> SetRoomAppData(SetRoomAppDataRequest setRoomAppDataRequest)
-        //{
-        //    var peerRoomAppDataResult = await _scheduler.SetRoomAppDataAsync(UserId, ConnectionId, setRoomAppDataRequest);
-
-        //    // Message: peerRoomAppDataChanged
-        //    SendNotification(peerRoomAppDataResult.OtherPeerIds, "peerRoomAppDataChanged", new
-        //    {
-        //        RoomId = setRoomAppDataRequest.RoomId,
-        //        PeerId = UserId,
-        //        AppData = peerRoomAppDataResult.AppData,
-        //    });
-
-        //    return new MeetingMessage { Code = 200, Message = "SetRoomAppData 成功" };
-        //}
-
-        ///// <summary>
-        ///// Unset room's appData of peer.
-        ///// </summary>
-        ///// <param name="unsetRoomAppDataRequest"></param>
-        ///// <returns></returns>
-        //public async Task<MeetingMessage> UnsetRoomAppData(UnsetRoomAppDataRequest unsetRoomAppDataRequest)
-        //{
-        //    var peerRoomAppDataResult = await _scheduler.UnsetRoomAppDataAsync(UserId, ConnectionId, unsetRoomAppDataRequest);
-
-        //    // Message: peerRoomAppDataChanged
-        //    SendNotification(peerRoomAppDataResult.OtherPeerIds, "peerRoomAppDataChanged", new
-        //    {
-        //        RoomId = unsetRoomAppDataRequest.RoomId,
-        //        PeerId = UserId,
-        //        RoomAppData = peerRoomAppDataResult.AppData,
-        //    });
-
-        //    return new MeetingMessage { Code = 200, Message = "UnsetRoomAppData 成功" };
-        //}
-
-        ///// <summary>
-        ///// Clear room's appData of peer.
-        ///// </summary>
-        ///// <param name="roomId"></param>
-        ///// <returns></returns>
-        //public async Task<MeetingMessage> ClearRoomAppData(string roomId)
-        //{
-        //    var peerRoomAppDataResult = await _scheduler.ClearRoomAppDataAsync(UserId, ConnectionId, roomId);
-
-        //    // Message: peerRoomAppDataChanged
-        //    SendNotification(peerRoomAppDataResult.OtherPeerIds, "peerRoomAppDataChanged", new
-        //    {
-        //        RoomId = roomId,
-        //        PeerId = UserId,
-        //        RoomAppData = peerRoomAppDataResult.AppData,
-        //    });
-
-        //    return new MeetingMessage { Code = 200, Message = "ClearRoomAppData 成功" };
-        //}
 
         /// <summary>
         /// Pull medias.
