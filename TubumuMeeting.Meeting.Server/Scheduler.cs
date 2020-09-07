@@ -35,24 +35,6 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncAutoResetEvent _roomsLock = new AsyncAutoResetEvent();
 
-        //private readonly Dictionary<string, List<RoomWithRoomAppData>> _peerRooms = new Dictionary<string, List<RoomWithRoomAppData>>();
-
-        /// <summary>
-        /// _peerRooms 锁。增改 List<RoomWithRoomAppData> 也应该用写锁。
-        /// </summary>
-        //private readonly AsyncReaderWriterLock _peerRoomsLock = new AsyncReaderWriterLock();
-
-        // private readonly Dictionary<string, List<PeerWithRoomAppData>> _roomPeers = new Dictionary<string, List<PeerWithRoomAppData>>();
-
-        /// <summary>
-        /// _roomPeers 锁。增改 List<PeerWithRoomAppData> 也应该用写锁。
-        /// </summary>
-        //private readonly AsyncReaderWriterLock _roomPeersLock = new AsyncReaderWriterLock();
-
-        //private readonly AsyncAutoResetEvent _peerAppDataLock = new AsyncAutoResetEvent();
-
-        //private readonly AsyncAutoResetEvent _roomAppDataLock = new AsyncAutoResetEvent();
-
         #endregion Private Fields
 
         public RtpCapabilities DefaultRtpCapabilities { get; private set; }
