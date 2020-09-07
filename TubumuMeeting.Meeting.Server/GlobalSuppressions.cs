@@ -5,7 +5,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Build", "VSTHRD200:如果方法返回可等待的类型，则在其名称中使用 “Async” 语法。", Justification = "<挂起>", Scope = "member", Target = "~M:TubumuMeeting.Meeting.Server.IPeer.Notify(TubumuMeeting.Meeting.Server.MeetingNotification)~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Build", "VSTHRD200:如果方法返回可等待的类型，则在其名称中使用 “Async” 语法。", Justification = "<挂起>", Scope = "member", Target = "~M:TubumuMeeting.Meeting.Server.MeetingHub.ClearPeerAppData~System.Threading.Tasks.Task{TubumuMeeting.Meeting.Server.MeetingMessage}")]
 [assembly: SuppressMessage("Build", "VSTHRD200:如果方法返回可等待的类型，则在其名称中使用 “Async” 语法。", Justification = "<挂起>", Scope = "member", Target = "~M:TubumuMeeting.Meeting.Server.MeetingHub.ClearRoomAppData(System.String)~System.Threading.Tasks.Task{TubumuMeeting.Meeting.Server.MeetingMessage}")]
 [assembly: SuppressMessage("Build", "VSTHRD200:如果方法返回可等待的类型，则在其名称中使用 “Async” 语法。", Justification = "<挂起>", Scope = "member", Target = "~M:TubumuMeeting.Meeting.Server.MeetingHub.CloseConsumer(System.String)~System.Threading.Tasks.Task{TubumuMeeting.Meeting.Server.MeetingMessage}")]

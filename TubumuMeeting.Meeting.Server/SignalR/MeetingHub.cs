@@ -87,7 +87,7 @@ namespace TubumuMeeting.Meeting.Server
         }
 
         /// <summary>
-        /// Set peer's appData.
+        /// Set peer's appData. Then notify other peer, if in a room.
         /// </summary>
         /// <param name="setPeerAppDataRequest"></param>
         /// <returns></returns>
@@ -106,7 +106,7 @@ namespace TubumuMeeting.Meeting.Server
         }
 
         /// <summary>
-        /// Unset peer'ss appData.
+        /// Unset peer'ss appData. Then notify other peer, if in a room.
         /// </summary>
         /// <param name="unsetPeerAppDataRequest"></param>
         /// <returns></returns>
@@ -125,7 +125,7 @@ namespace TubumuMeeting.Meeting.Server
         }
 
         /// <summary>
-        /// Clear peer's appData.
+        /// Clear peer's appData. Then notify other peer, if in a room.
         /// </summary>
         /// <returns></returns>
         public async Task<MeetingMessage> ClearPeerAppData()
@@ -667,7 +667,7 @@ namespace TubumuMeeting.Meeting.Server
             // For Testing
             if (type == "consumerLayersChanged" || type == "consumerScore" || type == "producerScore") return;
             var client = _hubContext.Clients.User(peerId);
-            client.Notify(new MeetingNotification
+            client.NotifyAsync(new MeetingNotification
             {
                 Type = type,
                 Data = data
@@ -679,7 +679,7 @@ namespace TubumuMeeting.Meeting.Server
             if (peerIds.IsNullOrEmpty()) return;
 
             var client = _hubContext.Clients.Users(peerIds);
-            client.Notify(new MeetingNotification
+            client.NotifyAsync(new MeetingNotification
             {
                 Type = type,
                 Data = data

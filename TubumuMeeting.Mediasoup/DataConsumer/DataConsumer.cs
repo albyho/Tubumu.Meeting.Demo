@@ -55,7 +55,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        private DataConsumerInternalData _internal;
+        private readonly DataConsumerInternalData _internal;
 
         /// <summary>
         /// DataConsumer id.

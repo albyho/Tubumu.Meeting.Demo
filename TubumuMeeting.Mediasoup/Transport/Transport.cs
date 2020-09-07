@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
@@ -306,7 +305,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 foreach (var consumer in Consumers.Values)
                 {
-                   await consumer.TransportClosedAsync();
+                    await consumer.TransportClosedAsync();
                 }
                 Consumers.Clear();
             }
@@ -561,7 +560,7 @@ namespace TubumuMeeting.Mediasoup
             // This may throw.
             var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities);
 
-            lock(_nextMidForConsumersLock)
+            lock (_nextMidForConsumersLock)
             {
                 // Set MID.
                 rtpParameters.Mid = (_nextMidForConsumers++).ToString();
@@ -791,7 +790,7 @@ namespace TubumuMeeting.Mediasoup
 
                 sctpStreamParameters = dataProducer.SctpStreamParameters.DeepClone<SctpStreamParameters>();
                 // This may throw.
-                lock(_sctpStreamIdsLock)
+                lock (_sctpStreamIdsLock)
                 {
                     sctpStreamId = GetNextSctpStreamId();
 
@@ -851,7 +850,7 @@ namespace TubumuMeeting.Mediasoup
                 try
                 {
                     DataConsumers.Remove(dataConsumer.DataConsumerId);
-                    lock(_sctpStreamIdsLock)
+                    lock (_sctpStreamIdsLock)
                     {
                         if (_sctpStreamIds != null && sctpStreamId >= 0)
                         {
@@ -871,7 +870,7 @@ namespace TubumuMeeting.Mediasoup
                 try
                 {
                     DataConsumers.Remove(dataConsumer.DataConsumerId);
-                    lock(_sctpStreamIdsLock)
+                    lock (_sctpStreamIdsLock)
                     {
                         if (_sctpStreamIds != null && sctpStreamId >= 0)
                         {

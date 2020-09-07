@@ -48,7 +48,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// Internal data.
         /// </summary>
-        private DataProducerInternalData _internal;
+        private readonly DataProducerInternalData _internal;
 
         /// <summary>
         /// DataProducer id.

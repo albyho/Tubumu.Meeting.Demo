@@ -104,7 +104,7 @@ namespace TubumuMeeting.Mediasoup
         /// PayloadChannel instance.
         /// </summary>
         private readonly PayloadChannel _payloadChannel;
-       
+
         /// <summary>
         /// App custom data.
         /// </summary>

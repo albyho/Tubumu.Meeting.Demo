@@ -9,7 +9,6 @@ using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Mediasoup.Extensions;
-using static Microsoft.VisualStudio.Threading.AsyncReaderWriterLock;
 
 namespace TubumuMeeting.Meeting.Server
 {
