@@ -51,8 +51,6 @@ namespace TubumuMeeting.Meeting.Server
             DefaultRtpCapabilities = ORTC.GenerateRouterRtpCapabilities(rtpCodecCapabilities);
 
             _roomsLock.Set();
-            //_peerAppDataLock.Set();
-            //_roomAppDataLock.Set();
         }
 
         public async Task<bool> JoinAsync(string peerId, string connectionId, JoinRequest joinRequest)

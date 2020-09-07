@@ -108,14 +108,14 @@ namespace TubumuMeeting.Meeting.Server
             {
                 if (_closed)
                 {
-                    throw new Exception($"PeerJoinAsync() | Room:{RoomId} was closed.");
+                    throw new Exception($"PeerLeaveAsync() | Room:{RoomId} was closed.");
                 }
 
                 using (await _peersLock.WriteLockAsync())
                 {
                     if (!_peers.TryGetValue(peerId, out var peer))
                     {
-                        throw new Exception($"PeerJoinAsync() | Peer:{peerId} is not in Room:{RoomId}.");
+                        throw new Exception($"PeerLeaveAsync() | Peer:{peerId} is not in Room:{RoomId}.");
                     }
 
                     _peers.Remove(peerId);
@@ -135,7 +135,7 @@ namespace TubumuMeeting.Meeting.Server
             {
                 if (_closed)
                 {
-                    throw new Exception($"PeerJoinAsync() | Room:{RoomId} was closed.");
+                    throw new Exception($"GetPeerIdsAsync() | Room:{RoomId} was closed.");
                 }
 
                 using (await _peersLock.ReadLockAsync())
@@ -159,7 +159,7 @@ namespace TubumuMeeting.Meeting.Server
                     return;
                 }
 
-                _logger.LogDebug($"Close() | Room:{RoomId}");
+                _logger.LogDebug($"CloseAsync() | Room:{RoomId}");
 
                 _closed = true;
 
