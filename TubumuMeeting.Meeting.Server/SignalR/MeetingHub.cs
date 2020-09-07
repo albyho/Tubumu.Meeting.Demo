@@ -87,6 +87,49 @@ namespace TubumuMeeting.Meeting.Server
         }
 
         /// <summary>
+        /// Join room.
+        /// </summary>
+        /// <param name="joinRoomRequest"></param>
+        /// <returns></returns>
+        public async Task<MeetingMessage<JoinRoomResponse>> JoinRoom(JoinRoomRequest joinRoomRequest)
+        {
+            var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, ConnectionId, joinRoomRequest);
+
+            // 将自身的信息告知给房间内的其他人
+            var otherPeerIds = joinRoomResult.Peers.Select(m => m.PeerId).Where(m => m != joinRoomResult.SelfPeer.PeerId).ToArray();
+            // Message: peerJoinRoom
+            SendNotification(otherPeerIds, "peerJoinRoom", new
+            {
+                Peer = joinRoomResult.SelfPeer
+            });
+
+            // 返回包括自身的房间内的所有人的信息
+            var data = new JoinRoomResponse
+            {
+                Peers = joinRoomResult.Peers,
+            };
+            return new MeetingMessage<JoinRoomResponse> { Code = 200, Message = "JoinRoom 成功", Data = data };
+        }
+
+        /// <summary>
+        /// Leave room.
+        /// </summary>
+        /// <param name="roomId"></param>
+        /// <returns></returns>
+        public async Task<MeetingMessage> LeaveRoom()
+        {
+            var leaveRoomResult = await _scheduler.LeaveRoomAsync(UserId, ConnectionId);
+
+            // Message: peerLeaveRoom
+            SendNotification(leaveRoomResult.OtherPeerIds, "peerLeaveRoom", new
+            {
+                PeerId = UserId
+            });
+
+            return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
+        }
+
+        /// <summary>
         /// Set peer's appData. Then notify other peer, if in a room.
         /// </summary>
         /// <param name="setPeerAppDataRequest"></param>
@@ -224,49 +267,6 @@ namespace TubumuMeeting.Meeting.Server
             }
 
             return new MeetingMessage { Code = 200, Message = "ConnectWebRtcTransport 成功" };
-        }
-
-        /// <summary>
-        /// Join room.
-        /// </summary>
-        /// <param name="joinRoomRequest"></param>
-        /// <returns></returns>
-        public async Task<MeetingMessage<JoinRoomResponse>> JoinRoom(JoinRoomRequest joinRoomRequest)
-        {
-            var joinRoomResult = await _scheduler.JoinRoomAsync(UserId, ConnectionId, joinRoomRequest);
-
-            // 将自身的信息告知给房间内的其他人
-            var otherPeerIds = joinRoomResult.Peers.Select(m => m.PeerId).Where(m => m != joinRoomResult.SelfPeer.PeerId).ToArray();
-            // Message: peerJoinRoom
-            SendNotification(otherPeerIds, "peerJoinRoom", new
-            {
-                Peer = joinRoomResult.SelfPeer
-            });
-
-            // 返回包括自身的房间内的所有人的信息
-            var data = new JoinRoomResponse
-            {
-                Peers = joinRoomResult.Peers,
-            };
-            return new MeetingMessage<JoinRoomResponse> { Code = 200, Message = "JoinRoom 成功", Data = data };
-        }
-
-        /// <summary>
-        /// Leave room.
-        /// </summary>
-        /// <param name="roomId"></param>
-        /// <returns></returns>
-        public async Task<MeetingMessage> LeaveRoom()
-        {
-            var leaveRoomResult = await _scheduler.LeaveRoomAsync(UserId, ConnectionId);
-
-            // Message: peerLeaveRoom
-            SendNotification(leaveRoomResult.OtherPeerIds, "peerLeaveRoom", new
-            {
-                PeerId = UserId
-            });
-
-            return new MeetingMessage { Code = 200, Message = "LeaveRoom 成功" };
         }
 
         /// <summary>

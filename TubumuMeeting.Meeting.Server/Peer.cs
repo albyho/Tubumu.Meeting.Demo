@@ -130,34 +130,34 @@ namespace TubumuMeeting.Meeting.Server
         /// <returns></returns>
         public async Task<WebRtcTransport> CreateWebRtcTransportAsync(CreateWebRtcTransportRequest createWebRtcTransportRequest)
         {
-            using (await _joinedLock.ReadLockAsync())
+            if (!(createWebRtcTransportRequest.Consuming ^ createWebRtcTransportRequest.Producing))
             {
-                CheckJoined();
+                throw new Exception("CreateWebRtcTransportAsync() | Consumer or Producing");
+            }
 
-                if (!(createWebRtcTransportRequest.Consuming ^ createWebRtcTransportRequest.Producing))
-                {
-                    throw new Exception("CreateWebRtcTransportAsync() | Consumer or Producing");
-                }
-
-                var webRtcTransportOptions = new WebRtcTransportOptions
-                {
-                    ListenIps = _webRtcTransportSettings.ListenIps,
-                    InitialAvailableOutgoingBitrate = _webRtcTransportSettings.InitialAvailableOutgoingBitrate,
-                    MaxSctpMessageSize = _webRtcTransportSettings.MaxSctpMessageSize,
-                    EnableSctp = createWebRtcTransportRequest.SctpCapabilities != null,
-                    NumSctpStreams = createWebRtcTransportRequest.SctpCapabilities?.NumStreams,
-                    AppData = new Dictionary<string, object>
+            var webRtcTransportOptions = new WebRtcTransportOptions
+            {
+                ListenIps = _webRtcTransportSettings.ListenIps,
+                InitialAvailableOutgoingBitrate = _webRtcTransportSettings.InitialAvailableOutgoingBitrate,
+                MaxSctpMessageSize = _webRtcTransportSettings.MaxSctpMessageSize,
+                EnableSctp = createWebRtcTransportRequest.SctpCapabilities != null,
+                NumSctpStreams = createWebRtcTransportRequest.SctpCapabilities?.NumStreams,
+                AppData = new Dictionary<string, object>
                     {
                         { "Consuming", createWebRtcTransportRequest.Consuming },
                         { "Producing", createWebRtcTransportRequest.Producing },
                     },
-                };
+            };
 
-                if (createWebRtcTransportRequest.ForceTcp)
-                {
-                    webRtcTransportOptions.EnableUdp = false;
-                    webRtcTransportOptions.EnableTcp = true;
-                }
+            if (createWebRtcTransportRequest.ForceTcp)
+            {
+                webRtcTransportOptions.EnableUdp = false;
+                webRtcTransportOptions.EnableTcp = true;
+            }
+
+            using (await _joinedLock.ReadLockAsync())
+            {
+                CheckJoined();
 
                 using (await _roomLock.ReadLockAsync())
                 {

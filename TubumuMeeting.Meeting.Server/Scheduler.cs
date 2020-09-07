@@ -99,6 +99,70 @@ namespace TubumuMeeting.Meeting.Server
             }
         }
 
+        public async Task<JoinRoomResult> JoinRoomAsync(string peerId, string connectionId, JoinRoomRequest joinRoomRequest)
+        {
+            using (await _peersLock.ReadLockAsync())
+            {
+                if (!_peers.TryGetValue(peerId, out var peer))
+                {
+                    throw new Exception($"JoinRoomAsync() | Peer:{peerId} is not exists.");
+                }
+
+                CheckConnection(peer, connectionId);
+
+                if (peer.Sources.Except(peer.Sources).Any())
+                {
+                    throw new Exception($"JoinRoomAsync() | Peer:{peerId} don't has some sources which is in Room:{joinRoomRequest.RoomId}.");
+                }
+
+                await _roomsLock.WaitAsync();
+                try
+                {
+                    // Room 如果不存在则创建
+                    if (!_rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
+                    {
+                        // Router media codecs.
+                        var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
+
+                        // Create a mediasoup Router.
+                        var worker = _mediasoupServer.GetWorker();
+                        var router = await worker.CreateRouterAsync(new RouterOptions
+                        {
+                            MediaCodecs = mediaCodecs
+                        });
+                        if (router == null)
+                        {
+                            throw new Exception($"PeerJoinAsync() | Worker maybe closed.");
+                        }
+
+                        room = new Room(_loggerFactory, router, joinRoomRequest.RoomId, "Default");
+                        _rooms[room.RoomId] = room;
+                    }
+
+                    return await peer.JoinRoomAsync(room);
+                }
+                finally
+                {
+                    _roomsLock.Set();
+                }
+            }
+        }
+
+        public async Task<LeaveRoomResult> LeaveRoomAsync(string peerId, string connectionId)
+        {
+            using (await _peersLock.ReadLockAsync())
+            {
+                if (!_peers.TryGetValue(peerId, out var peer))
+                {
+                    throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists.");
+                }
+
+                CheckConnection(peer, connectionId);
+
+                return await peer.LeaveRoomAsync();
+            }
+        }
+
         public async Task<PeerAppDataResult> SetPeerAppDataAsync(string peerId, string connectionId, SetPeerAppDataRequest setPeerAppDataRequest)
         {
             using (await _peersLock.ReadLockAsync())
@@ -171,70 +235,6 @@ namespace TubumuMeeting.Meeting.Server
                 CheckConnection(peer, connectionId);
 
                 return await peer.ConnectWebRtcTransportAsync(connectWebRtcTransportRequest);
-            }
-        }
-
-        public async Task<JoinRoomResult> JoinRoomAsync(string peerId, string connectionId, JoinRoomRequest joinRoomRequest)
-        {
-            using (await _peersLock.ReadLockAsync())
-            {
-                if (!_peers.TryGetValue(peerId, out var peer))
-                {
-                    throw new Exception($"JoinRoomAsync() | Peer:{peerId} is not exists.");
-                }
-
-                CheckConnection(peer, connectionId);
-
-                if (peer.Sources.Except(peer.Sources).Any())
-                {
-                    throw new Exception($"JoinRoomAsync() | Peer:{peerId} don't has some sources which is in Room:{joinRoomRequest.RoomId}.");
-                }
-
-                await _roomsLock.WaitAsync();
-                try
-                {
-                    // Room 如果不存在则创建
-                    if (!_rooms.TryGetValue(joinRoomRequest.RoomId, out var room))
-                    {
-                        // Router media codecs.
-                        var mediaCodecs = _mediasoupOptions.MediasoupSettings.RouterSettings.RtpCodecCapabilities;
-
-                        // Create a mediasoup Router.
-                        var worker = _mediasoupServer.GetWorker();
-                        var router = await worker.CreateRouterAsync(new RouterOptions
-                        {
-                            MediaCodecs = mediaCodecs
-                        });
-                        if (router == null)
-                        {
-                            throw new Exception($"PeerJoinAsync() | Worker maybe closed.");
-                        }
-
-                        room = new Room(_loggerFactory, router, joinRoomRequest.RoomId, "Default");
-                        _rooms[room.RoomId] = room;
-                    }
-
-                    return await peer.JoinRoomAsync(room);
-                }
-                finally
-                {
-                    _roomsLock.Set();
-                }
-            }
-        }
-
-        public async Task<LeaveRoomResult> LeaveRoomAsync(string peerId, string connectionId)
-        {
-            using (await _peersLock.ReadLockAsync())
-            {
-                if (!_peers.TryGetValue(peerId, out var peer))
-                {
-                    throw new Exception($"LeaveRoom() | Peer:{peerId} is not exists.");
-                }
-
-                CheckConnection(peer, connectionId);
-
-                return await peer.LeaveRoomAsync();
             }
         }
 
