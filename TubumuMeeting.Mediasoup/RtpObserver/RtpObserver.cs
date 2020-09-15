@@ -128,6 +128,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Remove notification subscriptions.
             Channel.MessageEvent -= OnChannelMessage;
+            //PayloadChannel.MessageEvent -= OnPayloadChannelMessage;
 
             // Fire and forget.
             Channel.RequestAsync(MethodId.RTP_OBSERVER_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
@@ -154,6 +155,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Remove notification subscriptions.
             Channel.MessageEvent -= OnChannelMessage;
+            //PayloadChannel.MessageEvent -= OnPayloadChannelMessage;
 
             Emit("routerclose");
 

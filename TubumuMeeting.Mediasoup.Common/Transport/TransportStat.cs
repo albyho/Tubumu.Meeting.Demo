@@ -35,10 +35,6 @@
 
         public int RtxSendBitrate { get; set; }
 
-        public int ProbationBytesReceived { get; set; }
-
-        public int ProbationRecvBitrate { get; set; }
-
         public int ProbationBytesSent { get; set; }
 
         public int ProbationSendBitrate { get; set; }

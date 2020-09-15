@@ -178,6 +178,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Remove notification subscriptions.
             //_channel.MessageEvent -= OnChannelMessage;
+            //_payloadChannel.MessageEvent -= OnPayloadChannelMessage;
 
             Emit("transportclose");
 

@@ -247,6 +247,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Remove notification subscriptions.
             //_channel.MessageEvent -= OnChannelMessage;
+            //_payloadChannel.MessageEvent -= OnPayloadChannelMessage;
 
             // Fire and forget
             Channel.RequestAsync(MethodId.TRANSPORT_CLOSE, Internal).ContinueWithOnFaultedHandleLog(_logger);
@@ -270,6 +271,7 @@ namespace TubumuMeeting.Mediasoup
 
             // Remove notification subscriptions.
             //_channel.MessageEvent -= OnChannelMessage;
+            //_payloadChannel.MessageEvent -= OnPayloadChannelMessage;
 
             await CloseIternalAsync(false);
 
