@@ -667,7 +667,7 @@ namespace TubumuMeeting.Meeting.Server
             // For Testing
             if (type == "consumerLayersChanged" || type == "consumerScore" || type == "producerScore") return;
             var client = _hubContext.Clients.User(peerId);
-            client.NotifyAsync(new MeetingNotification
+            client.Notify(new MeetingNotification
             {
                 Type = type,
                 Data = data
@@ -679,7 +679,7 @@ namespace TubumuMeeting.Meeting.Server
             if (peerIds.IsNullOrEmpty()) return;
 
             var client = _hubContext.Clients.Users(peerIds);
-            client.NotifyAsync(new MeetingNotification
+            client.Notify(new MeetingNotification
             {
                 Type = type,
                 Data = data
