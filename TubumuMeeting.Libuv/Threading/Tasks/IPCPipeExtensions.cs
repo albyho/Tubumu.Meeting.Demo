@@ -21,10 +21,10 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap(handle, data, offset, pipe.Write);
         }
 
-        public static Task WriteAsync(this IPCPipe pipe, Handle handle, byte[] data)
-        {
-            return HelperFunctions.Wrap(handle, data, pipe.Write);
-        }
+        //public static Task WriteAsync(this IPCPipe pipe, Handle handle, byte[] data)
+        //{
+        //    return HelperFunctions.Wrap(handle, data, pipe.Write);
+        //}
 
         #region Write string
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using Tubumu.Core.Extensions.Object;
+using Force.DeepCloner;
 
 namespace TubumuMeeting.Mediasoup
 {

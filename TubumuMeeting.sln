@@ -3,20 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29926.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Mediasoup", "TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj", "{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Mediasoup", "TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj", "{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Core", "TubumuMeeting.Core\TubumuMeeting.Core.csproj", "{9FD26270-4FD2-4583-AA76-F0D96BC451D0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Core", "TubumuMeeting.Core\TubumuMeeting.Core.csproj", "{9FD26270-4FD2-4583-AA76-F0D96BC451D0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Libuv", "TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj", "{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "03_Client", "03_Client", "{E27ED1FF-9159-4BD2-BACD-623D65B51E82}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "05_Client", "05_Client", "{E27ED1FF-9159-4BD2-BACD-623D65B51E82}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Meeting.Client.WPF", "TubumuMeeting.Meeting.Client.WPF\TubumuMeeting.Meeting.Client.WPF.csproj", "{99598050-19CE-4C87-81F0-16CEAD34C212}"
 	ProjectSection(ProjectDependencies) = postProject
 		{33D32F1E-58AD-4EC4-8B1D-17F739A9EB26} = {33D32F1E-58AD-4EC4-8B1D-17F739A9EB26}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_Server", "02_Server", "{B59FDD1B-57B1-4DB0-8F25-D58878B01ED0}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_Meeting", "02_Meeting", "{B59FDD1B-57B1-4DB0-8F25-D58878B01ED0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_Core", "01_Core", "{809FCE19-5D6E-40AE-9714-3C94083DBBFC}"
 EndProject
@@ -24,7 +24,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Meeting.Web",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Meeting.Server", "TubumuMeeting.Meeting.Server\TubumuMeeting.Meeting.Server.csproj", "{DC4340F5-1417-4DED-8A17-D4BA847AF03B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Mediasoup.Common", "TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj", "{33D32F1E-58AD-4EC4-8B1D-17F739A9EB26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Mediasoup.Common", "TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj", "{33D32F1E-58AD-4EC4-8B1D-17F739A9EB26}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Mediasoup.Executable", "TubumuMeeting.Mediasoup.Executable\TubumuMeeting.Mediasoup.Executable.csproj", "{2B5CF732-AA93-436B-AAE1-CED3225E659F}"
 EndProject
@@ -32,6 +32,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.GB28181.SIPSorcery", "TubumuMeeting.GB28181.SIPSorcery\TubumuMeeting.GB28181.SIPSorcery.csproj", "{9067E6B5-7703-4704-A028-C188A3BFFC09}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "03_GB28181", "03_GB28181", "{B592BC8C-EA42-436C-AB3A-30ACC2BF496C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.GB28181.Server", "TubumuMeeting.GB28181.Server\TubumuMeeting.GB28181.Server.csproj", "{4226F7A9-6228-49B0-A3B5-42524B4E2905}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "04_Web", "04_Web", "{954136A6-BF79-4CF9-BA76-100D08A83629}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -105,6 +113,22 @@ Global
 		{2B5CF732-AA93-436B-AAE1-CED3225E659F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2B5CF732-AA93-436B-AAE1-CED3225E659F}.Release|x86.ActiveCfg = Release|Any CPU
 		{2B5CF732-AA93-436B-AAE1-CED3225E659F}.Release|x86.Build.0 = Release|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Debug|x86.Build.0 = Debug|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Release|x86.ActiveCfg = Release|Any CPU
+		{9067E6B5-7703-4704-A028-C188A3BFFC09}.Release|x86.Build.0 = Release|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Debug|x86.Build.0 = Debug|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Release|x86.ActiveCfg = Release|Any CPU
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -114,10 +138,12 @@ Global
 		{9FD26270-4FD2-4583-AA76-F0D96BC451D0} = {809FCE19-5D6E-40AE-9714-3C94083DBBFC}
 		{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C} = {809FCE19-5D6E-40AE-9714-3C94083DBBFC}
 		{99598050-19CE-4C87-81F0-16CEAD34C212} = {E27ED1FF-9159-4BD2-BACD-623D65B51E82}
-		{0C19036C-390D-4966-AA88-B803D7C9869F} = {B59FDD1B-57B1-4DB0-8F25-D58878B01ED0}
+		{0C19036C-390D-4966-AA88-B803D7C9869F} = {954136A6-BF79-4CF9-BA76-100D08A83629}
 		{DC4340F5-1417-4DED-8A17-D4BA847AF03B} = {B59FDD1B-57B1-4DB0-8F25-D58878B01ED0}
 		{33D32F1E-58AD-4EC4-8B1D-17F739A9EB26} = {809FCE19-5D6E-40AE-9714-3C94083DBBFC}
 		{2B5CF732-AA93-436B-AAE1-CED3225E659F} = {809FCE19-5D6E-40AE-9714-3C94083DBBFC}
+		{9067E6B5-7703-4704-A028-C188A3BFFC09} = {B592BC8C-EA42-436C-AB3A-30ACC2BF496C}
+		{4226F7A9-6228-49B0-A3B5-42524B4E2905} = {B592BC8C-EA42-436C-AB3A-30ACC2BF496C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3E07B1BF-B8B0-49F6-BF3E-61B245F7AB1D}

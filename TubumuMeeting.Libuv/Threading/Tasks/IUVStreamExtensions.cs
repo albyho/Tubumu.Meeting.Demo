@@ -54,10 +54,10 @@ namespace TubumuMeeting.Libuv.Threading.Tasks
             return HelperFunctions.Wrap(data, index, count, stream.Write);
         }
 
-        public static Task WriteAsync(this IUVStream<ArraySegment<byte>> stream, byte[] data)
-        {
-            return HelperFunctions.Wrap(data, stream.Write);
-        }
+        //public static Task WriteAsync(this IUVStream<ArraySegment<byte>> stream, byte[] data)
+        //{
+        //    return HelperFunctions.Wrap(data, stream.Write);
+        //}
 
         public static Task<int> WriteAsync(this IUVStream<ArraySegment<byte>> stream, Encoding encoding, string text)
         {

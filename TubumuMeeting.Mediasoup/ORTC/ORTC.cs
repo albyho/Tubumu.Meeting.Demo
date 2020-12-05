@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Force.DeepCloner;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Extensions.Object;
 

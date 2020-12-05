@@ -87,7 +87,7 @@ namespace Tubumu.Core.Extensions.Object
         /// </summary>
         /// <param name="source">源对象</param>
         /// <returns>新对象</returns>
-        public static object DeepClone(this object source)
+        public static object DeepCloneSlow(this object source)
         {
             if (source == null)
             {
@@ -108,14 +108,14 @@ namespace Tubumu.Core.Extensions.Object
         /// </summary>
         /// <param name="source">源对象</param>
         /// <returns>新对象</returns>
-        public static T DeepClone<T>(this object source) where T : class
+        public static T DeepCloneSlow<T>(this object source) where T : class
         {
             if (source == null || source.GetType() != typeof(T))
             {
                 return null;
             }
 
-            return (T)DeepClone(source);
+            return (T)DeepCloneSlow(source);
         }
 
         /// <summary>

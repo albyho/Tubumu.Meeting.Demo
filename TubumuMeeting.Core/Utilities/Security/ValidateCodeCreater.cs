@@ -105,8 +105,6 @@ namespace Tubumu.Core.Utilities.Security
                             TextAlign = SKTextAlign.Center,
                             Color = fontColor,
                             TextSize = foneSize,
-                            IsVerticalText = true,
-                            IsAntialias = true,
                             Typeface = fonts[fontIndex],
 
                             //IsAntialias = rand.Next(1) == 1 ? true : false,
