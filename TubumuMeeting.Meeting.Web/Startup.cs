@@ -41,7 +41,7 @@ namespace TubumuMeeting.Web
                     {
                         var settings = options.SerializerSettings;
                         settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                        settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // ×Ô¶¨ÒåÈÕÆÚ¸ñÊ½¡£Ä¬ÈÏÊÇ ISO8601 ¸ñÊ½¡£
+                        settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½Ê½ï¿½ï¿½Ä¬ï¿½ï¿½ï¿½ï¿½ ISO8601 ï¿½ï¿½Ê½ï¿½ï¿½
                         settings.Converters = new JsonConverter[] { new EnumStringValueConverter() };
                     });
 
@@ -130,7 +130,7 @@ namespace TubumuMeeting.Web
                 {
                     var settings = options.PayloadSerializerSettings;
                     settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // ×Ô¶¨ÒåÈÕÆÚ¸ñÊ½¡£Ä¬ÈÏÊÇ ISO8601 ¸ñÊ½¡£
+                    settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½Ê½ï¿½ï¿½Ä¬ï¿½ï¿½ï¿½ï¿½ ISO8601 ï¿½ï¿½Ê½ï¿½ï¿½
                     settings.Converters = new JsonConverter[] { new EnumStringValueConverter() };
                 });
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
@@ -141,6 +141,7 @@ namespace TubumuMeeting.Web
             var workerSettings = mediasoupSettings.WorkerSettings;
             var routerSettings = mediasoupSettings.RouterSettings;
             var webRtcTransportSettings = mediasoupSettings.WebRtcTransportSettings;
+            var plainTransportSettings = mediasoupSettings.PlainTransportSettings;
             services.AddMediasoup(options =>
             {
                 // MediasoupStartupSettings
@@ -167,7 +168,7 @@ namespace TubumuMeeting.Web
                 {
                     options.MediasoupSettings.RouterSettings = routerSettings;
 
-                    // Fix RtpCodecCapabilities[x].Parameters ¡£´ÓÅäÖÃÎÄ¼þ·´ÐòÁÐ»¯Ê±½«Êý×Ö×ª»»³ÉÁË×Ö·û´®£¬ÕâÀï½øÐÐÐÞÕý¡£
+                    // Fix RtpCodecCapabilities[x].Parameters ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                     foreach (var codec in routerSettings.RtpCodecCapabilities.Where(m => m.Parameters != null))
                     {
                         foreach (var key in codec.Parameters.Keys.ToArray())
@@ -188,6 +189,13 @@ namespace TubumuMeeting.Web
                     options.MediasoupSettings.WebRtcTransportSettings.InitialAvailableOutgoingBitrate = webRtcTransportSettings.InitialAvailableOutgoingBitrate;
                     options.MediasoupSettings.WebRtcTransportSettings.MinimumAvailableOutgoingBitrate = webRtcTransportSettings.MinimumAvailableOutgoingBitrate;
                     options.MediasoupSettings.WebRtcTransportSettings.MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize;
+                }
+
+                // PlainTransportSettings
+                if (plainTransportSettings != null)
+                {
+                    options.MediasoupSettings.PlainTransportSettings.ListenIp = plainTransportSettings.ListenIp;
+                    options.MediasoupSettings.PlainTransportSettings.MaxSctpMessageSize = plainTransportSettings.MaxSctpMessageSize;
                 }
             });
         }
@@ -221,6 +229,11 @@ namespace TubumuMeeting.Web
                 {
                     await context.Response.WriteAsync("Tubumu Meeting");
                 });
+            });
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
             });
 
             app.UseSigSpec(options => { options.Hubs = new[] { typeof(MeetingHub) }; });

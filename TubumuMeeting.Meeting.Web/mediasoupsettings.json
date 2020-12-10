@@ -2,12 +2,12 @@
   "MediasoupStartupSettings": {
     "MediasoupVersion": "3.6.28",
     //"WorkerPath": "C:\\worker\\Release\\mediasoup-worker",
-    //"WorkerPath": "/worker/Release/mediasoup-worker",
+    "WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/mediasoup/worker/out/Release/mediasoup-worker",
     "NumberOfWorkers": 1
   },
   "MediasoupSettings": {
     "WorkerSettings": {
-      "LogLevel": "warn",
+      "LogLevel": "debug",
       "LogTags": [
         "info",
         "ice",
@@ -23,8 +23,8 @@
         "sctp",
         "message"
       ],
-      "RtcMinPort": 40000,
-      "RtcMaxPort": 49999
+      "RtcMinPort": 20000,
+      "RtcMaxPort": 29999
     },
     "RouterSettings": {
       "RtpCodecCapabilities": [
@@ -87,6 +87,13 @@
       "MaxSctpMessageSize": 262144,
       // Additional options that are not part of WebRtcTransportOptions.
       "MaximumIncomingBitrate": 1500000
+    },
+    "PlainTransportSettings": {
+      "ListenIp": {
+        "Ip": "0.0.0.0",
+        "AnnouncedIp": "192.168.1.5"
+      },
+      "MaxSctpMessageSize": 262144
     }
   }
 }

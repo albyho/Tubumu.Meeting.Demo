@@ -68,6 +68,8 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly WebRtcTransportSettings _webRtcTransportSettings;
 
+        private readonly PlainTransportSettings _plainTransportSettings;
+
         private readonly RtpCapabilities _rtpCapabilities;
 
         private readonly SctpCapabilities? _sctpCapabilities;
@@ -100,7 +102,9 @@ namespace TubumuMeeting.Meeting.Server
 
         private readonly AsyncReaderWriterLock _roomLock = new AsyncReaderWriterLock();
 
-        public Peer(ILoggerFactory loggerFactory, WebRtcTransportSettings webRtcTransportSettings,
+        public Peer(ILoggerFactory loggerFactory,
+            WebRtcTransportSettings webRtcTransportSettings,
+            PlainTransportSettings plainTransportSettings,
             RtpCapabilities rtpCapabilities,
             SctpCapabilities? sctpCapabilities,
             string peerId,
@@ -112,6 +116,7 @@ namespace TubumuMeeting.Meeting.Server
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<Peer>();
             _webRtcTransportSettings = webRtcTransportSettings;
+            _plainTransportSettings = plainTransportSettings;
             _rtpCapabilities = rtpCapabilities;
             _sctpCapabilities = sctpCapabilities;
             PeerId = peerId;
@@ -229,6 +234,59 @@ namespace TubumuMeeting.Meeting.Server
                         await transport.ConnectAsync(connectWebRtcTransportRequest.DtlsParameters);
                         return true;
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 创建 PlainTransport
+        /// </summary>
+        /// <param name="createPlainTransportRequest"></param>
+        /// <returns></returns>
+        public async Task<PlainTransport> CreatePlainTransportAsync(CreatePlainTransportRequest createPlainTransportRequest)
+        {
+            var plainTransportOptions = new PlainTransportOptions
+            {
+                ListenIp = _plainTransportSettings.ListenIp,
+                MaxSctpMessageSize = _plainTransportSettings.MaxSctpMessageSize,
+                RtcpMux = createPlainTransportRequest.RtcpMux, // 一般为 false
+                Comedia = createPlainTransportRequest.Comedia, // 一般为 true
+                AppData = new Dictionary<string, object>
+                    {
+                        { "Consuming", createPlainTransportRequest.Consuming },
+                        { "Producing", createPlainTransportRequest.Producing },
+                    },
+            };
+
+            using (await _joinedLock.ReadLockAsync())
+            {
+                CheckJoined();
+
+                using (await _roomLock.ReadLockAsync())
+                {
+                    CheckRoom();
+
+                    var transport = await _room!.Router.CreatePlainTransportAsync(plainTransportOptions);
+                    if (transport == null)
+                    {
+                        throw new Exception("CreatePlainTransportAsync() | Router.CreatePlainTransport faild");
+                    }
+
+                    using (await _transportsLock.WriteLockAsync())
+                    {
+                        // Store the WebRtcTransport into the Peer data Object.
+                        _transports[transport.TransportId] = transport;
+                    }
+
+                    transport.Observer.On("close", async _ =>
+                    {
+                        using (await _transportsLock.WriteLockAsync())
+                        {
+                            _transports.Remove(transport.TransportId);
+                        }
+                    });
+
+                    return transport;
                 }
             }
         }

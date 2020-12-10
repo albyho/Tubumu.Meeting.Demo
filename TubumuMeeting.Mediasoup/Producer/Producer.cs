@@ -61,7 +61,11 @@ namespace TubumuMeeting.Mediasoup
 
         private readonly Timer _checkConsumersTimer;
 
+#if DEBUG
+        private const int CheckConsumersTimeSeconds = 60 * 60 * 24;
+#else
         private const int CheckConsumersTimeSeconds = 10;
+#endif
 
         /// <summary>
         /// Producer id.

@@ -7,5 +7,7 @@
         public RouterSettings RouterSettings { get; set; }
 
         public WebRtcTransportSettings WebRtcTransportSettings { get; set; }
+
+        public PlainTransportSettings PlainTransportSettings { get; set; }
     }
 }

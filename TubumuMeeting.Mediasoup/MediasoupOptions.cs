@@ -106,6 +106,11 @@ namespace TubumuMeeting.Mediasoup
                     MinimumAvailableOutgoingBitrate = 600_000,
                     MaxSctpMessageSize = 256 * 1024,
                     MaximumIncomingBitrate = 1_500_000,
+                },
+                PlainTransportSettings = new PlainTransportSettings
+                {
+                    ListenIp = new TransportListenIp { Ip = "0.0.0.0", AnnouncedIp = null },
+                    MaxSctpMessageSize = 256 * 1024,
                 }
             }
         };

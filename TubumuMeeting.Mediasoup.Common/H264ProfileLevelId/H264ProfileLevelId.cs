@@ -227,7 +227,7 @@ namespace TubumuMeeting.Mediasoup
                 levelStr = $"0{levelStr}";
             }
 
-            return $"${profile_idc_iop_string}{levelStr}";
+            return $"{profile_idc_iop_string}{levelStr}";
         }
 
         /// <summary>

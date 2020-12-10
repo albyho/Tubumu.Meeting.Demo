@@ -68,6 +68,7 @@ namespace TubumuMeeting.Meeting.Server
 
                 peer = new Peer(_loggerFactory,
                     _mediasoupOptions.MediasoupSettings.WebRtcTransportSettings,
+                    _mediasoupOptions.MediasoupSettings.PlainTransportSettings,
                     joinRequest.RtpCapabilities,
                     joinRequest.SctpCapabilities,
                     peerId,
@@ -235,6 +236,21 @@ namespace TubumuMeeting.Meeting.Server
                 CheckConnection(peer, connectionId);
 
                 return await peer.ConnectWebRtcTransportAsync(connectWebRtcTransportRequest);
+            }
+        }
+
+        public async Task<PlainTransport> CreatePlainTransportAsync(string peerId, string connectionId, CreatePlainTransportRequest createPlainTransportRequest)
+        {
+            using (await _peersLock.ReadLockAsync())
+            {
+                if (!_peers.TryGetValue(peerId, out var peer))
+                {
+                    throw new Exception($"CreateWebRtcTransport() | Peer:{peerId} is not exists");
+                }
+
+                CheckConnection(peer, connectionId);
+
+                return await peer.CreatePlainTransportAsync(createPlainTransportRequest);
             }
         }
 
