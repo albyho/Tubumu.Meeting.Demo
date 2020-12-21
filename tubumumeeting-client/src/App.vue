@@ -3,7 +3,7 @@
     <el-container>
       <el-header>Demo</el-header>
         <el-container>
-          <el-aside width="800px">            
+          <el-aside width="400px">            
             <div class="demo-block">
               <el-form ref="joinForm" :inline="true" label-width="80px" size="mini">
                 <el-form-item label="Peer:">

@@ -35,6 +35,12 @@
           "Channels": 2
         },
         {
+          "Kind": "audio",
+          "MimeType": "audio/PCMA",
+          "ClockRate": 8000,
+          "Channels": 1
+        },
+        {
           "Kind": "video",
           "MimeType": "video/VP8",
           "ClockRate": 90000,
