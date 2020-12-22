@@ -32,8 +32,8 @@ namespace TubumuMeeting.Meeting.Web.Controllers
         {
             var roomId = "0";
             var deviceId = "100001@100001";
-            var videoSsrc = 2222u; // 由客户端生成作为参数传入
-            var audioSsrc = 2223u; // 由客户端生成作为参数传入
+            var videoSsrc = 2222u;
+            var audioSsrc = videoSsrc + 2;
 
             await _scheduler.LeaveAsync(deviceId);
 

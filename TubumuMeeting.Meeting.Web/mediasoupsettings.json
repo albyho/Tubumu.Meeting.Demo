@@ -2,7 +2,8 @@
   "MediasoupStartupSettings": {
     "MediasoupVersion": "3.6.28",
     //"WorkerPath": "C:\\worker\\Release\\mediasoup-worker",
-    "WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/mediasoup/worker/out/Release/mediasoup-worker",
+    //"WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/mediasoup/worker/out/Release/mediasoup-worker",
+    "WorkerPath": "/Users/alby/Library/Developer/Xcode/DerivedData/mediasoup-worker-cqgehmiqutauwddqhmqzanqfeefl/Build/Products/Debug/mediasoup-worker",
     "NumberOfWorkers": 1
   },
   "MediasoupSettings": {
