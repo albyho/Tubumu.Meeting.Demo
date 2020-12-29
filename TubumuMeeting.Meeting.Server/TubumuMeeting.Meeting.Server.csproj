@@ -24,7 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="..\TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj" />
     <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj" />
     <ProjectReference Include="..\TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj" />
   </ItemGroup>
 

@@ -5,6 +5,7 @@
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'TubumuMeeting.Meeting.Web' " />
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.1" />
@@ -19,6 +20,9 @@
   <ItemGroup>
     <ProjectReference Include="..\TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj" />
     <ProjectReference Include="..\TubumuMeeting.Meeting.Server\TubumuMeeting.Meeting.Server.csproj" />
+    <ProjectReference Include="..\TubumuMeeting.GB28181.Server\TubumuMeeting.GB28181.Server.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

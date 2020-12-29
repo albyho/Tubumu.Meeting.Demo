@@ -1,0 +1,10 @@
+{
+  "ConsulSettings": {
+    "Enabled": false,
+    "ServiceName": "TubumuMeeting",
+    "ServiceIP": "192.168.0.124",
+    "ServicePort": 5001,
+    "ServiceHealthCheck": "http://192.168.0.124:5000/api/Health",
+    "ConsulAddress": "http://192.168.0.124:8500"
+  }
+}

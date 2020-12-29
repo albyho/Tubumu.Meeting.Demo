@@ -1144,7 +1144,7 @@ body {
 }
 
 video {
-  width: 180px;
+  width: 360px;
   background-color: #000;
 }
 
