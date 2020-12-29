@@ -17,6 +17,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Json;
+using TubumuMeeting.GB28181.Settings;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Meeting.Server;
 using TubumuMeeting.Meeting.Server.Authorization;
@@ -130,10 +131,14 @@ namespace TubumuMeeting.Web
                 {
                     var settings = options.PayloadSerializerSettings;
                     settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // �Զ������ڸ�ʽ��Ĭ���� ISO8601 ��ʽ��
+                    settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // 日期时间格式默认是 ISO8601
                     settings.Converters = new JsonConverter[] { new EnumStringValueConverter() };
                 });
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
+
+            // Consul
+            var consulSettings = Configuration.GetSection("ConsulSettings").Get<ConsulSettings>();
+            services.AddSingleton(consulSettings);
 
             // Mediasoup
             var mediasoupStartupSettings = Configuration.GetSection("MediasoupStartupSettings").Get<MediasoupStartupSettings>();
@@ -200,6 +205,8 @@ namespace TubumuMeeting.Web
             });
 
             // GB28281
+            var sipSeetings = Configuration.GetSection("SIPSettings").Get<SIPSettings>();
+            services.AddSingleton(sipSeetings);
             services.AddGB28281();
         }
 
@@ -247,9 +254,6 @@ namespace TubumuMeeting.Web
                 endpoints.MapHub<MeetingHub>("/hubs/meetingHub");
             });
 
-            // Mediasoup
-            app.UseMediasoup();
-
             // Consul
             app.UseEndpoints(endpoints =>
             {
@@ -258,19 +262,10 @@ namespace TubumuMeeting.Web
                     await context.Response.WriteAsync("ok");
                 });
             });
+            app.UseConsul(lifetime);
 
-            var consulSettings = Configuration.GetSection("ConsulSettings").Get<ConsulSettings>();
-            if (consulSettings.Enabled)
-            {
-                try
-                {
-                    app.UseConsul(lifetime, consulSettings);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "UseConsul()");
-                }
-            }
+            // Mediasoup
+            app.UseMediasoup();
 
             // GB28281
             app.UseGB28181();

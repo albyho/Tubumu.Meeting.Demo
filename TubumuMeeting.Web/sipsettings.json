@@ -1,0 +1,15 @@
+﻿{
+  "SIPSettings": {
+    "Id": "00000000-0000-0000-0000-000000000000",
+    "Name": "Default SIP Server",
+    "SIPServerNumber": "34020000002000000001",
+    "SIPServerDomain": "3402000000",
+    "SIPServerIP": null,
+    "SIPServerPort": 5060,
+    "Authentication": true,
+    "SIPDefaultUsername": "admin",
+    "SIPDefaultPassword": "123456",
+    "KeepaliveInterval": 3600,
+    "MaxTimeOutNumber": 3
+  }
+}

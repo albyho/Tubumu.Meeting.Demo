@@ -18,6 +18,7 @@
     <Folder Include="Microsoft\AspNetCore\Builder\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TubumuMeeting.GB28181.SIPSorcery\TubumuMeeting.GB28181.SIPSorcery.csproj" />
+    <ProjectReference Include="..\TubumuMeeting.GB28181\TubumuMeeting.GB28181.csproj" />
+    <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
   </ItemGroup>
 </Project>
