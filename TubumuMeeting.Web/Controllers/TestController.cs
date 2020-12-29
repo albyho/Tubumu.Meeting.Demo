@@ -6,7 +6,7 @@ using Tubumu.Core.Models;
 using TubumuMeeting.Mediasoup;
 using TubumuMeeting.Meeting.Server;
 
-namespace TubumuMeeting.Meeting.Web.Controllers
+namespace TubumuMeeting.Web.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]
@@ -20,7 +20,7 @@ namespace TubumuMeeting.Meeting.Web.Controllers
             _logger = logger;
             _scheduler = scheduler;
         }
-
+        
         [HttpGet]
         public ApiResult Get()
         {

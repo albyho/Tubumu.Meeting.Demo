@@ -1,14 +1,25 @@
 ﻿using System;
 using Consul;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using TubumuMeeting.Meeting.Server;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.Builder
 {
     public static class ConsulApplicationBuilderExtensions
     {
-        public static IApplicationBuilder UseConsul(this IApplicationBuilder app, IHostApplicationLifetime lifetime, ConsulSettings consulSettings)
+        public static IApplicationBuilder UseConsul(this IApplicationBuilder app, IHostApplicationLifetime lifetime)
         {
+            var loggerFactory = app.ApplicationServices.GetRequiredService<ILoggerFactory>();
+            var logger = loggerFactory.CreateLogger("Consul");
+
+            var consulSettings = app.ApplicationServices.GetService<ConsulSettings>();
+            if(consulSettings == null || !consulSettings.Enabled)
+            {
+                return app;
+            }
+
             var consulClient = new ConsulClient(config =>
             {
                 config.Address = new Uri(consulSettings.ConsulAddress);
@@ -29,9 +40,17 @@ namespace Microsoft.AspNetCore.Builder
                 }
             };
 
-            // 服务注册
-            consulClient.Agent.ServiceRegister(registration).ConfigureAwait(false).GetAwaiter().GetResult();
-
+            try
+            {
+                app.UseConsul(lifetime);
+                // 服务注册
+                consulClient.Agent.ServiceRegister(registration).ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "UseConsul()");
+            }
+ 
             // 应用程序终止时，服务取消注册
             lifetime.ApplicationStopping.Register(() =>
             {

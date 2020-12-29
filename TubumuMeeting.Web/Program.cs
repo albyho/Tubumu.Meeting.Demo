@@ -47,6 +47,7 @@ namespace TubumuMeeting.Web
                     .AddJsonFile("hosting.json", optional: false)
                     .AddJsonFile("mediasoupsettings.json", optional: false)
                     .AddJsonFile("consulsettings.json", optional: false)
+                    .AddJsonFile("sipsettings.json", optional: false)
                     .Build();
 
                 webBuilder.UseConfiguration(configs);
