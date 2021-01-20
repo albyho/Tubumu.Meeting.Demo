@@ -173,7 +173,7 @@ namespace TubumuMeeting.Web
                 {
                     options.MediasoupSettings.RouterSettings = routerSettings;
 
-                    // Fix RtpCodecCapabilities[x].Parameters ���������ļ������л�ʱ������ת�������ַ������������������
+                    // Fix RtpCodecCapabilities[x].Parameters 。从配置文件反序列化时将数字转换成了字符串，这里进行修正。
                     foreach (var codec in routerSettings.RtpCodecCapabilities.Where(m => m.Parameters != null))
                     {
                         foreach (var key in codec.Parameters.Keys.ToArray())
