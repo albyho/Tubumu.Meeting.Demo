@@ -880,7 +880,7 @@ namespace TubumuMeeting.Mediasoup
         /// to reduce codecs, codecs' RTCP feedback and header extensions, and also enables
         /// or disabled RTX.
         /// </summary>
-        public static RtpParameters GetConsumerRtpParameters(RtpParameters consumableParams, RtpCapabilities caps)
+        public static RtpParameters GetConsumerRtpParameters(RtpParameters consumableParams, RtpCapabilities caps, bool pipe)
         {
             var consumerParams = new RtpParameters
             {
@@ -972,48 +972,73 @@ namespace TubumuMeeting.Mediasoup
                 }
             }
 
-            var consumerEncoding = new RtpEncodingParameters
+            if (!pipe)
             {
-                Ssrc = Utils.GenerateRandomNumber()
-            };
+                var consumerEncoding = new RtpEncodingParameters
+                {
+                    Ssrc = Utils.GenerateRandomNumber()
+                };
 
-            if (rtxSupported)
-            {
-                consumerEncoding.Rtx = new Rtx { Ssrc = Utils.GenerateRandomNumber() };
+                if (rtxSupported)
+                {
+                    consumerEncoding.Rtx = new Rtx { Ssrc = consumerEncoding.Ssrc + 1 };
+                }
+
+                // If any in the consumableParams.Encodings has scalabilityMode, process it
+                // (assume all encodings have the same value).
+                var encodingWithScalabilityMode = consumableParams.Encodings.Where(encoding => !encoding.ScalabilityMode.IsNullOrWhiteSpace()).FirstOrDefault();
+
+                var scalabilityMode = encodingWithScalabilityMode?.ScalabilityMode;
+
+                // If there is simulast, mangle spatial layers in scalabilityMode.
+                if (consumableParams.Encodings!.Count > 1)
+                {
+                    var scalabilityModeObject = ScalabilityMode.Parse(scalabilityMode); // TODO: (alby)注意 null 引用
+
+                    scalabilityMode = $"S{ consumableParams.Encodings.Count }T{ scalabilityModeObject.TemporalLayers }";
+                }
+
+                if (!scalabilityMode.IsNullOrWhiteSpace())
+                {
+                    consumerEncoding.ScalabilityMode = scalabilityMode;
+                }
+
+                // Use the maximum maxBitrate in any encoding and honor it in the Consumer's
+                // encoding.
+                var maxEncodingMaxBitrate = consumableParams.Encodings.Max(m => m.MaxBitrate);
+                if (maxEncodingMaxBitrate.HasValue && maxEncodingMaxBitrate.Value > 0)
+                {
+                    consumerEncoding.MaxBitrate = maxEncodingMaxBitrate;
+                }
+
+                // Set a single encoding for the Consumer.
+                consumerParams.Encodings.Add(consumerEncoding);
             }
-
-            // If any in the consumableParams.Encodings has scalabilityMode, process it
-            // (assume all encodings have the same value).
-            var encodingWithScalabilityMode = consumableParams.Encodings.Where(encoding => !encoding.ScalabilityMode.IsNullOrWhiteSpace()).FirstOrDefault();
-
-            var scalabilityMode = encodingWithScalabilityMode?.ScalabilityMode;
-
-            // If there is simulast, mangle spatial layers in scalabilityMode.
-            if (consumableParams.Encodings!.Count > 1)
+            else
             {
-                var scalabilityModeObject = ScalabilityMode.Parse(scalabilityMode); // TODO: (alby)注意 null 引用
+                var consumableEncodings = consumableParams.Encodings.DeepClone();
+                var baseSsrc = Utils.GenerateRandomNumber();
+                var baseRtxSsrc = Utils.GenerateRandomNumber();
 
-                scalabilityMode = $"S{ consumableParams.Encodings.Count }T{ scalabilityModeObject.TemporalLayers }";
+                for (var i = 0; i < consumableEncodings.Count; ++i)
+                {
+                    var encoding = consumableEncodings[i];
+
+                    encoding.Ssrc = baseSsrc + (uint)i;
+
+                    if (rtxSupported)
+                    {
+                        encoding.Rtx = new Rtx { Ssrc = baseRtxSsrc + (uint)i };
+
+                    }
+                    else
+                    {
+                        encoding.Rtx = null;
+                    }
+
+                    consumerParams.Encodings!.Add(encoding);
+                }
             }
-
-            if (!scalabilityMode.IsNullOrWhiteSpace())
-            {
-                consumerEncoding.ScalabilityMode = scalabilityMode;
-            }
-
-            // Use the maximum maxBitrate in any encoding and honor it in the Consumer's
-            // encoding.
-            var maxEncodingMaxBitrate = consumableParams.Encodings.Max(m => m.MaxBitrate);
-            if (maxEncodingMaxBitrate.HasValue && maxEncodingMaxBitrate.Value > 0)
-            {
-                consumerEncoding.MaxBitrate = maxEncodingMaxBitrate;
-            }
-
-            // Set a single encoding for the Consumer.
-            consumerParams.Encodings.Add(consumerEncoding);
-
-            // Copy verbatim.
-            consumerParams.Rtcp = consumableParams.Rtcp;
 
             return consumerParams;
         }

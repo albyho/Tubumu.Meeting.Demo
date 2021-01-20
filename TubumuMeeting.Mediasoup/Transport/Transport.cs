@@ -559,19 +559,23 @@ namespace TubumuMeeting.Mediasoup
                 throw new NullReferenceException($"Producer with id {consumerOptions.ProducerId} not found");
             }
 
+            var pipe = consumerOptions.Pipe.HasValue && consumerOptions.Pipe.Value;
             // This may throw.
-            var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities);
+            var rtpParameters = ORTC.GetConsumerRtpParameters(producer.ConsumableRtpParameters, consumerOptions.RtpCapabilities, pipe);
 
-            lock (_nextMidForConsumersLock)
+            if(pipe)
             {
-                // Set MID.
-                rtpParameters.Mid = (_nextMidForConsumers++).ToString();
-
-                // We use up to 8 bytes for MID (string).
-                if (_nextMidForConsumers == 100_000_000)
+                lock (_nextMidForConsumersLock)
                 {
-                    _logger.LogDebug($"ConsumeAsync() | Reaching max MID value {_nextMidForConsumers}");
-                    _nextMidForConsumers = 0;
+                    // Set MID.
+                    rtpParameters.Mid = (_nextMidForConsumers++).ToString();
+
+                    // We use up to 8 bytes for MID (string).
+                    if (_nextMidForConsumers == 100_000_000)
+                    {
+                        _logger.LogDebug($"ConsumeAsync() | Reaching max MID value {_nextMidForConsumers}");
+                        _nextMidForConsumers = 0;
+                    }
                 }
             }
 
@@ -587,7 +591,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 producer.Kind,
                 RtpParameters = rtpParameters,
-                producer.Type,
+                Type = pipe ? ProducerType.Pipe : producer.Type,
                 ConsumableRtpEncodings = producer.ConsumableRtpParameters.Encodings,
                 consumerOptions.Paused,
                 consumerOptions.PreferredLayers
@@ -600,7 +604,7 @@ namespace TubumuMeeting.Mediasoup
             {
                 producer.Kind,
                 RtpParameters = rtpParameters,
-                Type = (ConsumerType)producer.Type, // 注意：类型转换。ProducerType 的每一种值在 ConsumerType 都有对应且相同的值。
+                Type = (ConsumerType)(pipe ? ProducerType.Pipe : producer.Type), // 注意：类型转换。ProducerType 的每一种值在 ConsumerType 都有对应且相同的值。
             };
 
             var consumer = new Consumer(_loggerFactory,

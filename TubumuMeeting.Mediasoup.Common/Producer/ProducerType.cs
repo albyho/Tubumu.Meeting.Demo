@@ -14,6 +14,9 @@ namespace TubumuMeeting.Mediasoup
         Simulcast,
 
         [EnumStringValue("svc")]
-        Svc
+        Svc,
+
+        [EnumStringValue("pipe")]
+        Pipe
     }
 }
