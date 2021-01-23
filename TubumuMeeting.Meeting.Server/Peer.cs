@@ -7,8 +7,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json;
 using Tubumu.Core.Extensions;
-using TubumuMeeting.Mediasoup;
-using TubumuMeeting.Mediasoup.Extensions;
+using Tubumu.Mediasoup;
+using Tubumu.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Meeting.Server
 {

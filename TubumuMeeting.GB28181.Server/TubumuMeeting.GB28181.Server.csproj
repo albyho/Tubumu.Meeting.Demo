@@ -19,6 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TubumuMeeting.GB28181\TubumuMeeting.GB28181.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
+    <ProjectReference Include="..\Tubumu.Core\Tubumu.Core.csproj" />
   </ItemGroup>
 </Project>

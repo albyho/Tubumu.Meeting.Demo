@@ -18,7 +18,7 @@ using Newtonsoft.Json.Serialization;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Json;
 using TubumuMeeting.GB28181.Settings;
-using TubumuMeeting.Mediasoup;
+using Tubumu.Mediasoup;
 using TubumuMeeting.Meeting.Server;
 using TubumuMeeting.Meeting.Server.Authorization;
 

@@ -22,9 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj" />
+    <ProjectReference Include="..\..\Tubumu.Mediasoup\Tubumu.Mediasoup.csproj" />
+    <ProjectReference Include="..\..\Tubumu.Libuv\Tubumu.Libuv.csproj" />
+    <ProjectReference Include="..\..\Tubumu.Core\Tubumu.Core.csproj" />
   </ItemGroup>
 
 </Project>

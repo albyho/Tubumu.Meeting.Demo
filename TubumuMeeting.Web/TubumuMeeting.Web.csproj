@@ -18,11 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj" />
+    <ProjectReference Include="..\..\Tubumu.Core\Tubumu.Core.csproj" />
+    <ProjectReference Include="..\..\Tubumu.Mediasoup\Tubumu.Mediasoup.csproj" />
     <ProjectReference Include="..\TubumuMeeting.Meeting.Server\TubumuMeeting.Meeting.Server.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.GB28181.Server\TubumuMeeting.GB28181.Server.csproj">
-      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
-    </ProjectReference>
+    <ProjectReference Include="..\TubumuMeeting.GB28181.Server\TubumuMeeting.GB28181.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

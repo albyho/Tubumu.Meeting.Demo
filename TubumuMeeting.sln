@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29926.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Mediasoup", "TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj", "{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Mediasoup", "..\Tubumu.Mediasoup\Tubumu.Mediasoup.csproj", "{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Core", "TubumuMeeting.Core\TubumuMeeting.Core.csproj", "{9FD26270-4FD2-4583-AA76-F0D96BC451D0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Core", "..\Tubumu.Core\Tubumu.Core.csproj", "{9FD26270-4FD2-4583-AA76-F0D96BC451D0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Libuv", "TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj", "{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tubumu.Libuv", "..\Tubumu.Libuv\Tubumu.Libuv.csproj", "{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "06_Client", "06_Client", "{E27ED1FF-9159-4BD2-BACD-623D65B51E82}"
 EndProject
@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01_Core", "01_Core", "{809F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Meeting.Server", "TubumuMeeting.Meeting.Server\TubumuMeeting.Meeting.Server.csproj", "{DC4340F5-1417-4DED-8A17-D4BA847AF03B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TubumuMeeting.Mediasoup.Executable", "TubumuMeeting.Mediasoup.Executable\TubumuMeeting.Mediasoup.Executable.csproj", "{2B5CF732-AA93-436B-AAE1-CED3225E659F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tubumu.Mediasoup.Executable", "..\Tubumu.Mediasoup.Executable\Tubumu.Mediasoup.Executable.csproj", "{2B5CF732-AA93-436B-AAE1-CED3225E659F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CA8D3D85-B2F8-4000-B516-DF01B69C89BD}"
 	ProjectSection(SolutionItems) = preProject
@@ -36,7 +36,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Web", "Tubumu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02_Mediasoup", "02_Mediasoup", "{5808D516-3160-4471-BE56-3D5D705E995C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.Mediasoup.Common", "TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj", "{783D12BE-D00E-443B-A5BC-002FDD453A8F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Mediasoup.Common", "..\Tubumu.Mediasoup.Common\Tubumu.Mediasoup.Common.csproj", "{783D12BE-D00E-443B-A5BC-002FDD453A8F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TubumuMeeting.GB28181", "TubumuMeeting.GB28181\TubumuMeeting.GB28181.csproj", "{4C686C97-F5CF-4BF0-920F-DEFEC9719569}"
 EndProject

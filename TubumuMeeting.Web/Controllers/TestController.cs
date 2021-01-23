@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Tubumu.Core.Models;
-using TubumuMeeting.Mediasoup;
+using Tubumu.Mediasoup;
 using TubumuMeeting.Meeting.Server;
 
 namespace TubumuMeeting.Web.Controllers

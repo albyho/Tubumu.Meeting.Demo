@@ -10,7 +10,7 @@ using System.Windows;
 using System.Windows.Interop;
 using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json;
-using TubumuMeeting.Mediasoup;
+using Tubumu.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Client.WPF
 {

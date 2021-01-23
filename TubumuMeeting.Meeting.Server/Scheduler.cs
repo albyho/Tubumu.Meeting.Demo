@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
-using TubumuMeeting.Mediasoup;
+using Tubumu.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {

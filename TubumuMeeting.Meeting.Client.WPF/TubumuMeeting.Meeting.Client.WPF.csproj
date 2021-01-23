@@ -210,7 +210,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj">
+    <ProjectReference Include="..\Tubumu.Mediasoup.Common\Tubumu.Mediasoup.Common.csproj">
       <Project>{33d32f1e-58ad-4ec4-8b1d-17f739a9eb26}</Project>
       <Name>TubumuMeeting.Mediasoup.Common</Name>
     </ProjectReference>
