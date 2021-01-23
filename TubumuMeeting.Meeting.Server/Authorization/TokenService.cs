@@ -8,7 +8,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Tubumu.Core.Extensions;
-using TubumuMeeting.Mediasoup.Extensions;
+using Tubumu.Mediasoup.Extensions;
 
 namespace TubumuMeeting.Meeting.Server.Authorization
 {

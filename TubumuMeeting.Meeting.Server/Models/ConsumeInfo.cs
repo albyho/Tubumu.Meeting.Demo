@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using TubumuMeeting.Mediasoup;
+using Tubumu.Mediasoup;
 
 namespace TubumuMeeting.Meeting.Server
 {

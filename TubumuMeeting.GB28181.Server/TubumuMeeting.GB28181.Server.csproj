@@ -12,7 +12,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Http.Connections" Version="1.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.2" />
     <PackageReference Include="SIPSorcery" Version="5.0.3" />
-    <PackageReference Include="Tubumu.Core" Version="1.0.0" />
+    <PackageReference Include="Tubumu.Core" Version="1.0.3" />
   </ItemGroup>
 
   <ItemGroup>
