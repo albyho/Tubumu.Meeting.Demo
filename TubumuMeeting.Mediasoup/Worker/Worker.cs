@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
 using Tubumu.Core.Extensions;
-using TubumuMeeting.Libuv;
+using Tubumu.Libuv;
 
 namespace TubumuMeeting.Mediasoup
 {
@@ -38,7 +38,7 @@ namespace TubumuMeeting.Mediasoup
         /// <summary>
         /// mediasoup-worker child process.
         /// </summary>
-        private TubumuMeeting.Libuv.Process? _child;
+        private Tubumu.Libuv.Process? _child;
 
         /// <summary>
         /// Worker process PID.

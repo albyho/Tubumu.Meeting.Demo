@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TubumuMeeting.GB28181.Models
+﻿namespace TubumuMeeting.GB28181.Models
 {
     /// <summary>
     /// 命令类型

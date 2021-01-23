@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TubumuMeeting.Libuv;
+using Tubumu.Libuv;
 using TubumuMeeting.Mediasoup;
 
 namespace Microsoft.AspNetCore.Builder

@@ -18,11 +18,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="16.8.55" />
     <PackageReference Include="DeepCloner" Version="0.10.2" />
+    <PackageReference Include="Tubumu.Core" Version="1.0.0" />
+    <PackageReference Include="Tubumu.Libuv" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj" />
     <ProjectReference Include="..\TubumuMeeting.Mediasoup.Executable\TubumuMeeting.Mediasoup.Executable.csproj" />
     <ProjectReference Include="..\TubumuMeeting.Mediasoup.Common\TubumuMeeting.Mediasoup.Common.csproj" />
   </ItemGroup>

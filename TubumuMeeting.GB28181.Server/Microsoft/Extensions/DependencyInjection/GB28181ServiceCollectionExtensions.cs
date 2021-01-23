@@ -1,6 +1,4 @@
-﻿using System;
-using SIPSorcery.SIP;
-using TubumuMeeting.GB28181.Settings;
+﻿using SIPSorcery.SIP;
 using TubumuMeeting.GB28181.SIP;
 
 namespace Microsoft.Extensions.DependencyInjection

@@ -19,11 +19,11 @@
     <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.2" />
     <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
+    <PackageReference Include="Tubumu.Core" Version="1.0.0" />
+    <PackageReference Include="Tubumu.Libuv" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TubumuMeeting.Libuv\TubumuMeeting.Libuv.csproj" />
-    <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
     <ProjectReference Include="..\TubumuMeeting.Mediasoup\TubumuMeeting.Mediasoup.csproj" />
   </ItemGroup>
 

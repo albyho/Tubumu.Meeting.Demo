@@ -5,6 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="SIPSorcery" Version="5.0.3" />
+    <PackageReference Include="Tubumu.Core" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Settings\" />
     <Folder Include="SIP\" />
     <Folder Include="SIP\Abstractions\" />
@@ -13,10 +18,5 @@
     <Folder Include="App\SIPUserAgents\" />
     <Folder Include="App\SIPUserAgents\Abstractions\" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="SIPSorcery" Version="5.0.3" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TubumuMeeting.Core\TubumuMeeting.Core.csproj" />
-  </ItemGroup>
+
 </Project>
