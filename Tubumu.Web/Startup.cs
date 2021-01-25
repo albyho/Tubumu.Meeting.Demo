@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -13,8 +15,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Tubumu.Core.Extensions;
 using Tubumu.Core.Json;
 using Tubumu.GB28181.Settings;
@@ -38,13 +38,11 @@ namespace Tubumu.Web
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc()
-                    .AddNewtonsoftJson(options =>
-                    {
-                        var settings = options.SerializerSettings;
-                        settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                        settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // �Զ������ڸ�ʽ��Ĭ���� ISO8601 ��ʽ��
-                        settings.Converters = new JsonConverter[] { new EnumStringValueConverter() };
-                    });
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
 
             // Cache
             services.AddDistributedRedisCache(options =>
@@ -127,12 +125,9 @@ namespace Tubumu.Web
                 {
                     options.EnableDetailedErrors = true;
                 })
-                .AddNewtonsoftJsonProtocol(options =>
-                {
-                    var settings = options.PayloadSerializerSettings;
-                    settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    settings.DateFormatString = "yyyy'-'MM'-'dd' 'HH':'mm':'ss"; // 日期时间格式默认是 ISO8601
-                    settings.Converters = new JsonConverter[] { new EnumStringValueConverter() };
+                .AddJsonProtocol(options => {
+                    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+                    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 });
             services.Replace(ServiceDescriptor.Singleton(typeof(IUserIdProvider), typeof(NameUserIdProvider)));
 
