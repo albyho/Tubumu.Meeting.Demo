@@ -16,7 +16,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Tubumu.Core.Extensions;
-using Tubumu.Core.Json;
 using Tubumu.GB28181.Settings;
 using Tubumu.Mediasoup;
 using Tubumu.Meeting.Server;
@@ -199,6 +198,9 @@ namespace Tubumu.Web
                 }
             });
 
+            // Meeting server
+            services.AddMeetingServer();
+
             // GB28281
             var sipSeetings = Configuration.GetSection("SIPSettings").Get<SIPSettings>();
             services.AddSingleton(sipSeetings);
@@ -250,6 +252,7 @@ namespace Tubumu.Web
             });
 
             // Consul
+            app.UseConsul(lifetime);
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGet("/api/Health", async context =>
@@ -257,7 +260,6 @@ namespace Tubumu.Web
                     await context.Response.WriteAsync("ok");
                 });
             });
-            app.UseConsul(lifetime);
 
             // Mediasoup
             app.UseMediasoup();
