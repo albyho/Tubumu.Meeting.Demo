@@ -20,6 +20,7 @@ using Tubumu.GB28181.Settings;
 using Tubumu.Mediasoup;
 using Tubumu.Meeting.Server;
 using Tubumu.Meeting.Server.Authorization;
+using Tubumu.Meeting.Server.Consul;
 
 namespace Tubumu.Web
 {
