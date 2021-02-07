@@ -140,7 +140,7 @@ namespace Tubumu.Meeting.Client.WPF
             var joinResult = await connection.InvokeAsync<MeetingMessage>("Join", new JoinRequest
             {
                 RtpCapabilities = ObjectExtensions.FromJson<RtpCapabilities>(deviceRtpCapabilities.ToString()),
-                SctpCapabilities = null,
+                SctpCapabilities = null, // DataChannel
                 DisplayName = null,
                 Sources = new[] { "mic", "cam" },
                 AppData = new Dictionary<string, object>(),
@@ -185,7 +185,9 @@ namespace Tubumu.Meeting.Client.WPF
                 throw new Exception();
             }
 
-            isSuccessed = MediasoupClient.SendTansport.Produce("video", false);
+            isSuccessed = MediasoupClient.SendTansport.Produce("video", false, new Dictionary<string, object> {
+                { "source", "cam" }
+            }.ToJson());
             Debug.WriteLine($"Produce: {isSuccessed}");
             if (!isSuccessed)
             {
