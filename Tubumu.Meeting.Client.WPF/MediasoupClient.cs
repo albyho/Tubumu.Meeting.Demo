@@ -11,7 +11,7 @@ namespace Tubumu.Meeting.Client.WPF
         //private const string MediasoupClientWrapperDllName = "runtimes/win/native/MediasoupClientWrapper.dll";
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Initialize(string webrtcDebug);
+        public static extern void Initialize(string webrtcDebug, IntPtr callbacks);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Cleanup();
@@ -92,9 +92,13 @@ namespace Tubumu.Meeting.Client.WPF
     public struct Callbacks
     {
         public OnTransportConnect OnTransportConnect;
+
         public OnTransportConnectionStateChange OnTransportConnectionStateChange;
+
         public OnSendTransportProduce OnSendTransportProduce;
+
         public OnProducerTransportClose OnProducerTransportClose;
+
         public OnConsumerTransportClose OnConsumerTransportClose;
     };
 }

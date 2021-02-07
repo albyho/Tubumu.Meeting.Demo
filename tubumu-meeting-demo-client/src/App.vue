@@ -364,7 +364,7 @@ export default {
 
         this.sendTransport.on(
           'produce',
-          // appData 需要包含 roomId 和 source
+          // appData 需要包含 source
           // eslint-disable-next-line no-unused-vars
           async ({ kind, rtpParameters, appData }, callback, errback) => {
             logger.debug('sendTransport.on() produce, appData: %o', appData);
