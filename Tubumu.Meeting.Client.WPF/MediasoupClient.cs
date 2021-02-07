@@ -11,7 +11,7 @@ namespace Tubumu.Meeting.Client.WPF
         //private const string MediasoupClientWrapperDllName = "runtimes/win/native/MediasoupClientWrapper.dll";
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Initialize();
+        public static extern void Initialize(string webrtcDebug);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Cleanup();
