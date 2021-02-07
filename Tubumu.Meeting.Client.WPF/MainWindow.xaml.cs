@@ -43,7 +43,7 @@ namespace Tubumu.Meeting.Client.WPF
 
         public async Task Test()
         {
-            MediasoupClient.Initialize();
+            MediasoupClient.Initialize("info");
 
             var version = new StringBuilder();
             MediasoupClient.Version(version);

@@ -11,7 +11,7 @@ namespace Tubumu.Meeting.Client.WPF
         //private const string MediasoupClientWrapperDllName = "runtimes/win/native/MediasoupClientWrapper.dll";
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Initialize();
+        public static extern void Initialize(string webrtcDebug);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Cleanup();
@@ -32,12 +32,36 @@ namespace Tubumu.Meeting.Client.WPF
 
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern bool GetSctpCapabilities([MarshalAs(UnmanagedType.LPStr)] StringBuilder deviceSctpCapabilities);
+            
+            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern bool CreateSendTransport(string args);
+
+            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern bool CreateRecvTransport(string args);
         }
 
         public static class SendTansport
         {
+            /// <summary>
+            /// Produce 
+            /// </summary>
+            /// <param name="mediaKind">video or audio</param>
+            /// <param name="useSimulcast"></param>
+            /// <returns></returns>
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool Produce();
+            public static extern bool Produce(string mediaKind, bool useSimulcast/* for video*/);
+        }
+
+        public static class RecvTansport
+        {
+            /// <summary>
+            /// Consume
+            /// </summary>
+            /// <param name="args"></param>
+            /// <param name="handle"></param>
+            /// <returns></returns>
+            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern bool Consume(string args, IntPtr handle);
         }
     }
 
