@@ -93,7 +93,7 @@ namespace Tubumu.Meeting.Client.WPF
             var routerRtpCapabilities = getRouterRtpCapabilitiesResult.Data.ToJson();
 
             // Device: Load
-            var isSuccessed = MediasoupClient.Load(routerRtpCapabilities);
+            var isSuccessed = MediasoupClient.Device.Load(routerRtpCapabilities);
             if (!isSuccessed)
             {
                 throw new Exception();
