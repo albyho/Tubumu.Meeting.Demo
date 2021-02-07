@@ -185,7 +185,9 @@ namespace Tubumu.Meeting.Client.WPF
                 throw new Exception();
             }
 
-            isSuccessed = MediasoupClient.SendTansport.Produce("video", false);
+            isSuccessed = MediasoupClient.SendTansport.Produce("video", false, new Dictionary<string, object> {
+                { "source", "cam" }
+            }.ToJson());
             Debug.WriteLine($"Produce: {isSuccessed}");
             if (!isSuccessed)
             {

@@ -49,7 +49,7 @@ namespace Tubumu.Meeting.Client.WPF
             /// <param name="useSimulcast"></param>
             /// <returns></returns>
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool Produce(string mediaKind, bool useSimulcast/* for video*/);
+            public static extern bool Produce(string mediaKind, bool useSimulcast/* for video*/, string appData);
         }
 
         public static class RecvTansport
