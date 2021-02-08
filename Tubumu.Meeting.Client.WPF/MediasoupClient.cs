@@ -7,8 +7,11 @@ namespace Tubumu.Meeting.Client.WPF
 {
     public static class MediasoupClient
     {
+#if DEBUG
         private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\libmediasoupclient\out\Release\MediasoupClientWrapper.dll";
-        //private const string MediasoupClientWrapperDllName = "runtimes/win/native/MediasoupClientWrapper.dll";
+#else
+        private const string MediasoupClientWrapperDllName = "runtimes/win/native/MediasoupClientWrapper.dll";
+#endif
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Initialize(string webrtcDebug, IntPtr callbacks);
@@ -17,7 +20,7 @@ namespace Tubumu.Meeting.Client.WPF
         public static extern void Cleanup();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Version([MarshalAs(UnmanagedType.LPStr)] StringBuilder version);
+        public static extern void Version([MarshalAs(UnmanagedType.LPStr)] StringBuilder buffer, int length);
 
         public static class Device
         {
@@ -28,10 +31,10 @@ namespace Tubumu.Meeting.Client.WPF
             public static extern bool IsLoaded();
 
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool GetRtpCapabilities([MarshalAs(UnmanagedType.LPStr)] StringBuilder deviceRtpCapabilities);
+            public static extern bool GetRtpCapabilities([MarshalAs(UnmanagedType.LPStr)] StringBuilder deviceRtpCapabilities, int length);
 
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool GetSctpCapabilities([MarshalAs(UnmanagedType.LPStr)] StringBuilder deviceSctpCapabilities);
+            public static extern bool GetSctpCapabilities([MarshalAs(UnmanagedType.LPStr)] StringBuilder deviceSctpCapabilities, int length);
             
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern bool CreateSendTransport(string args);
@@ -80,13 +83,16 @@ namespace Tubumu.Meeting.Client.WPF
     /// </summary>
     /// <param name="value"></param>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnSendTransportProduce(IntPtr value);
+    public delegate IntPtr OnSendTransportProduce(IntPtr value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void OnProducerTransportClose(IntPtr value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void OnConsumerTransportClose(IntPtr value);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void OnLogging(IntPtr value);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct Callbacks
@@ -100,5 +106,7 @@ namespace Tubumu.Meeting.Client.WPF
         public OnProducerTransportClose OnProducerTransportClose;
 
         public OnConsumerTransportClose OnConsumerTransportClose;
+
+        public OnLogging OnLogging;
     };
 }
