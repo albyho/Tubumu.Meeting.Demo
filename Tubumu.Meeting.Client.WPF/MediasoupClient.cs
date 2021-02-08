@@ -20,7 +20,7 @@ namespace Tubumu.Meeting.Client.WPF
         public static extern void Cleanup();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Version([MarshalAs(UnmanagedType.LPStr)] StringBuilder buffer, int length);
+        public static extern IntPtr Version();
 
         public static class Device
         {
@@ -31,10 +31,10 @@ namespace Tubumu.Meeting.Client.WPF
             public static extern bool IsLoaded();
 
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool GetRtpCapabilities([MarshalAs(UnmanagedType.LPStr)] StringBuilder deviceRtpCapabilities, int length);
+            public static extern IntPtr GetRtpCapabilities();
 
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool GetSctpCapabilities([MarshalAs(UnmanagedType.LPStr)] StringBuilder deviceSctpCapabilities, int length);
+            public static extern IntPtr GetSctpCapabilities();
             
             [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern bool CreateSendTransport(string args);

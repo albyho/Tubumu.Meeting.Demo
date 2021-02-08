@@ -57,9 +57,13 @@ namespace Tubumu.Meeting.Client.WPF
             Marshal.StructureToPtr(callbacks, ptr, true);
             MediasoupClient.Initialize("info", ptr);
 
-            var versionBuffer = new StringBuilder(64);
-            MediasoupClient.Version(versionBuffer, versionBuffer.Capacity);
-            Debug.WriteLine($"MediasoupClient version: {versionBuffer}");
+            //var versionBuffer = new StringBuilder(64);
+            //MediasoupClient.Version(versionBuffer, versionBuffer.Capacity);
+            //Debug.WriteLine($"MediasoupClient version: {versionBuffer}");
+            var versionPtr = MediasoupClient.Version();
+            var version = Marshal.PtrToStringAnsi(versionPtr);
+            Marshal.FreeHGlobal(versionPtr);
+            Debug.WriteLine($"MediasoupClient version: {version}");
 
             var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE";
             connection = new HubConnectionBuilder()
@@ -120,22 +124,16 @@ namespace Tubumu.Meeting.Client.WPF
             }
 
             // Device: GetRtpCapabilities
-            var deviceRtpCapabilities = new StringBuilder(1024 * 20);
-            isSuccessed = MediasoupClient.Device.GetRtpCapabilities(deviceRtpCapabilities, deviceRtpCapabilities.Capacity);
-            Debug.WriteLine($"RtpCapabilities: {deviceRtpCapabilities}", "Device");
-            if (!isSuccessed)
-            {
-                throw new Exception();
-            }
+            var deviceRtpCapabilitiesPtr = MediasoupClient.Device.GetRtpCapabilities();
+            var deviceRtpCapabilities = Marshal.PtrToStringAnsi(deviceRtpCapabilitiesPtr);
+            Marshal.FreeHGlobal(deviceRtpCapabilitiesPtr);
+            Debug.WriteLine($"deviceRtpCapabilities: {deviceRtpCapabilities}");
 
             // Device: GetSctpCapabilities
-            var deviceSctpCapabilities = new StringBuilder(1024);
-            isSuccessed = MediasoupClient.Device.GetSctpCapabilities(deviceSctpCapabilities, deviceSctpCapabilities.Capacity);
-            Debug.WriteLine($"SctpCapabilities: {deviceSctpCapabilities}", "Device");
-            if (!isSuccessed)
-            {
-                throw new Exception();
-            }
+            var deviceSctpCapabilitiesPtr = MediasoupClient.Device.GetSctpCapabilities();
+            var deviceSctpCapabilities = Marshal.PtrToStringAnsi(deviceSctpCapabilitiesPtr);
+            Marshal.FreeHGlobal(deviceSctpCapabilitiesPtr);
+            Debug.WriteLine($"deviceRtpCapabilities: {deviceSctpCapabilities}");
 
             // Join
             var joinResult = await connection.InvokeAsync<MeetingMessage>("Join", new JoinRequest
@@ -203,7 +201,7 @@ namespace Tubumu.Meeting.Client.WPF
 
         private void ProcessNotification(object message)
         {
-            Debug.WriteLine(message.ToString());
+            Debug.WriteLine(message.ToString(), "Notification");
         }
 
         #region Callbacks
@@ -211,9 +209,11 @@ namespace Tubumu.Meeting.Client.WPF
         public void OnTransportConnectHandle(IntPtr value)
         {
             var json = Marshal.PtrToStringAnsi(value);
-            Debug.WriteLine($"OnTransportConnectHandle: {json}");
+            Debug.WriteLine(json, "Callback: OnTransportConnectHandle");
 
             var connectWebRtcTransportRequest = ObjectExtensions.FromJson<ConnectWebRtcTransportRequest>(json);
+            Marshal.FreeHGlobal(value);
+
             connection.InvokeAsync<MeetingMessage>("ConnectWebRtcTransport", connectWebRtcTransportRequest).ContinueWith(val =>
             {
                 val.Exception.Handle(ex =>
@@ -226,16 +226,22 @@ namespace Tubumu.Meeting.Client.WPF
 
         public void OnTransportConnectionStateChangeHandle(IntPtr value)
         {
-            var json = Marshal.PtrToStringAnsi(value);
-            Debug.WriteLine($"OnTransportConnectionStateChangeHandle: {json}");
+            //var json = Marshal.PtrToStringAnsi(value);
+            //Debug.WriteLine(json, "OnTransportConnectionStateChangeHandle");
+
+            Marshal.FreeHGlobal(value);
         }
 
         public IntPtr OnSendTransportProduceHandle(IntPtr value)
         {
             var json = Marshal.PtrToStringAnsi(value);
-            Debug.WriteLine($"OnSendTransportProduceHandle: {json}");
+            Debug.WriteLine(json, "Callback: OnSendTransportProduceHandle");
+
             var produceRequest = ObjectExtensions.FromJson<ProduceRequest>(json);
-            var produceRespose = connection.InvokeAsync<MeetingMessage<ProduceRespose>>("Produce", produceRequest).GetAwaiter().GetResult();
+            Marshal.FreeHGlobal(value);
+
+            var produceRespose = connection.InvokeAsync<MeetingMessage<ProduceRespose>>("Produce", produceRequest).ConfigureAwait(false).GetAwaiter().GetResult();
+
             IntPtr ptr = Marshal.StringToHGlobalAnsi(produceRespose.Data.Id);
             return ptr;
         }
@@ -243,19 +249,23 @@ namespace Tubumu.Meeting.Client.WPF
         public void OnProducerTransportCloseHandle(IntPtr value)
         {
             var json = Marshal.PtrToStringAnsi(value);
-            Debug.WriteLine($"OnProducerTransportCloseHandle: {json}");
+            Debug.WriteLine(json, "Callback: OnProducerTransportCloseHandle");
+
+            Marshal.FreeHGlobal(value);
         }
 
         public void OnConsumerTransportCloseHandle(IntPtr value)
         {
             var json = Marshal.PtrToStringAnsi(value);
-            Debug.WriteLine($"OnConsumerTransportCloseHandle: {json}");
+            Debug.WriteLine(json, "Callback: OnConsumerTransportCloseHandle");
+
+            Marshal.FreeHGlobal(value);
         }
 
         public void OnLoggingHandle(IntPtr value)
         {
             var log = Marshal.PtrToStringAnsi(value);
-            Debug.WriteLine($"OnLoggingHandle: {log}");
+            Debug.WriteLine(log);
         }
 
         #endregion
