@@ -9,15 +9,19 @@ namespace Tubumu.Meeting.Client.WPF
     public static class MediasoupClient
     {
 #if DEBUG
-        private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\Debug\MediasoupClientWrapper.dll";
-        //private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\Release\MediasoupClientWrapper.dll";
+        private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\x64\Debug\MediasoupClientWrapper.dll";
+        //private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\x64\Release\MediasoupClientWrapper.dll";
 #else
+        //private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\x64\Release\MediasoupClientWrapper.dll";
         private const string MediasoupClientWrapperDllName = "runtimes/win/native/MediasoupClientWrapper.dll";
 #endif
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        //public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupclientDebug, [MarshalAs(UnmanagedType.LPStr)] string webrtcDebug, ref Callbacks callbacks);
-        public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupclientDebug, [MarshalAs(UnmanagedType.LPStr)] string webrtcDebug, IntPtr callbacks);
+        //public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel, ref Callbacks callbacks);
+        public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string serverUrl, 
+            [MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, 
+            [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel, 
+            IntPtr callbacks);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Cleanup();

@@ -23,6 +23,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.VisualStudio.Threading;
 using System.Threading;
+using Tubumu.Core.Extensions;
 
 namespace Tubumu.Meeting.Client.WPF
 {
@@ -48,6 +49,8 @@ namespace Tubumu.Meeting.Client.WPF
 
         public async Task Run()
         {
+            var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE";
+
             callbacks = new Callbacks
             {
                 OnTransportConnect = OnTransportConnectHandle,
@@ -60,21 +63,21 @@ namespace Tubumu.Meeting.Client.WPF
             //MediasoupClient.Initialize("warn", ref callbacks);
             IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(callbacks)); // TODO: Marshal.FreeHGlobal(ptr);
             Marshal.StructureToPtr(callbacks, ptr, true);
-            MediasoupClient.Initialize("debug", "warn", ptr);
+            MediasoupClient.Initialize($"https://192.168.1.8:5001/hubs/meetingHub?access_token={accessToken}", "debug", "warn", ptr);
 
             var versionPtr = MediasoupClient.Version();
             var version = Marshal.PtrToStringAnsi(versionPtr);
             //Marshal.FreeHGlobal(versionPtr);
             Debug.WriteLine($"MediasoupClient version: {version}");
 
-            var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE";
+            return;
             connection = new HubConnectionBuilder()
                 .AddJsonProtocol(options =>
                 {
                     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                     options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
                 })
-                .WithUrl($"https://192.168.101.11:5001/hubs/meetingHub?access_token={accessToken}", options =>
+                .WithUrl($"https://192.168.1.8:5001/hubs/meetingHub?access_token={accessToken}", options =>
                 {
                     var handler = new HttpClientHandler
                     {
@@ -208,7 +211,7 @@ namespace Tubumu.Meeting.Client.WPF
 
         #region Callbacks
 
-        public async void OnTransportConnectHandle(IntPtr value)
+        public void OnTransportConnectHandle(IntPtr value)
         {
             var json = Marshal.PtrToStringAnsi(value);
             Debug.WriteLine(json, "Callback: OnTransportConnectHandle");
@@ -216,7 +219,8 @@ namespace Tubumu.Meeting.Client.WPF
             var connectWebRtcTransportRequest = ObjectExtensions.FromJson<ConnectWebRtcTransportRequest>(json);
             //Marshal.FreeHGlobal(value);
 
-            var t = await connection.InvokeAsync<MeetingMessage>("ConnectWebRtcTransport", connectWebRtcTransportRequest);
+            connection.InvokeAsync<MeetingMessage>("ConnectWebRtcTransport", connectWebRtcTransportRequest).NoWarning();
+            //var t = await connection.InvokeAsync<MeetingMessage>("ConnectWebRtcTransport", connectWebRtcTransportRequest);
             return;
 
             var result = jtf.Run(async delegate

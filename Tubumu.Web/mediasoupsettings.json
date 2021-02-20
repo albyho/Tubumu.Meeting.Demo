@@ -43,23 +43,23 @@
           "ClockRate": 8000,
           "Channels": 1
         },
-        {
-          "Kind": "video",
-          "MimeType": "video/VP8",
-          "ClockRate": 90000,
-          "Parameters": {
-            "x-google-start-bitrate": 1000
-          }
-        },
-        {
-          "Kind": "video",
-          "MimeType": "video/VP9",
-          "ClockRate": 90000,
-          "Parameters": {
-            "profile-id": 2,
-            "x-google-start-bitrate": 1000
-          }
-        },
+        //{
+        //  "Kind": "video",
+        //  "MimeType": "video/VP8",
+        //  "ClockRate": 90000,
+        //  "Parameters": {
+        //    "x-google-start-bitrate": 1000
+        //  }
+        //},
+        //{
+        //  "Kind": "video",
+        //  "MimeType": "video/VP9",
+        //  "ClockRate": 90000,
+        //  "Parameters": {
+        //    "profile-id": 2,
+        //    "x-google-start-bitrate": 1000
+        //  }
+        //},
         {
           "Kind": "video",
           "MimeType": "video/h264",
@@ -88,7 +88,7 @@
       "ListenIps": [
         {
           "Ip": "0.0.0.0",
-          "AnnouncedIp": "192.168.101.11"
+          "AnnouncedIp": "192.168.1.8"
         }
       ],
       "InitialAvailableOutgoingBitrate": 1000000,
@@ -100,7 +100,7 @@
     "PlainTransportSettings": {
       "ListenIp": {
         "Ip": "0.0.0.0",
-        "AnnouncedIp": "192.168.101.11"
+        "AnnouncedIp": "192.168.1.8"
       },
       "MaxSctpMessageSize": 262144
     }
