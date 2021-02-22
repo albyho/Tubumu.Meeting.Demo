@@ -18,9 +18,9 @@ namespace Tubumu.Meeting.Client.WPF
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         //public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel, ref Callbacks callbacks);
-        public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string serverUrl, 
-            [MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, 
-            [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel, 
+        public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, 
+            [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel,
+            [MarshalAs(UnmanagedType.LPStr)] string signalRLogLevel,
             IntPtr callbacks);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
@@ -28,6 +28,15 @@ namespace Tubumu.Meeting.Client.WPF
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr Version();
+
+        public static class SignalR
+        {
+            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern void Start([MarshalAs(UnmanagedType.LPStr)] string serverUrl);
+
+            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern void Stop();
+        }
 
         public static class Device
         {

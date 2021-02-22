@@ -40,14 +40,16 @@ namespace Tubumu.Meeting.Client.WPF
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += MainWindow_Loaded;
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            await Run();
+           await RunAsync();
+           //await MeettingAsync();
         }
 
-        public async Task Run()
+        public async Task RunAsync()
         {
             var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE";
 
@@ -63,13 +65,15 @@ namespace Tubumu.Meeting.Client.WPF
             //MediasoupClient.Initialize("warn", ref callbacks);
             IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(callbacks)); // TODO: Marshal.FreeHGlobal(ptr);
             Marshal.StructureToPtr(callbacks, ptr, true);
-            MediasoupClient.Initialize($"https://192.168.1.8:5001/hubs/meetingHub?access_token={accessToken}", "debug", "warn", ptr);
+            MediasoupClient.Initialize("debug", "warn", "all", ptr);
 
             var versionPtr = MediasoupClient.Version();
             var version = Marshal.PtrToStringAnsi(versionPtr);
             //Marshal.FreeHGlobal(versionPtr);
             Debug.WriteLine($"MediasoupClient version: {version}");
 
+            MediasoupClient.SignalR.Start($"http://192.168.1.8:5000/hubs/meetingHub?access_token={accessToken}");
+            //MediasoupClient.SignalR.Stop();
             return;
             connection = new HubConnectionBuilder()
                 .AddJsonProtocol(options =>
@@ -104,7 +108,10 @@ namespace Tubumu.Meeting.Client.WPF
             });
 
             await connection.StartAsync();
+        }
 
+        public async Task MeettingAsync()
+        {
             // GetRouterRtpCapabilities
             var getRouterRtpCapabilitiesResult = await connection.InvokeAsync<MeetingMessage<RtpCapabilities>>("GetRouterRtpCapabilities");
             if (getRouterRtpCapabilitiesResult.Code != 200)
@@ -155,10 +162,10 @@ namespace Tubumu.Meeting.Client.WPF
             }
 
             // JoinRoom
-            var joinRoomResult = await connection.InvokeAsync<MeetingMessage>("JoinRoom", new JoinRoomRequest
+            var joinRoomResult = connection.InvokeAsync<MeetingMessage>("JoinRoom", new JoinRoomRequest
             {
                 RoomId = "0",
-            });
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
             if (joinRoomResult.Code != 200)
             {
                 throw new Exception();
