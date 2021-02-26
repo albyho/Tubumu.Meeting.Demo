@@ -172,20 +172,16 @@ namespace Tubumu.Meeting.Client.WPF
             }
 
             // CreateWebRtcTransport: Producing
-            var createProducingWebRtcTransportResult = await connection.InvokeAsync<MeetingMessage<CreateWebRtcTransportResult>>("CreateWebRtcTransport", new CreateWebRtcTransportRequest
+            var createProducingWebRtcTransportResult = await connection.InvokeAsync<MeetingMessage<CreateWebRtcTransportResult>>("CreateSendWebRtcTransport", new CreateWebRtcTransportRequest
             {
                 ForceTcp = false,
-                Consuming = true,
-                Producing = false,
             });
             Debug.WriteLine($"CreateWebRtcTransportResult: {createProducingWebRtcTransportResult.Data.ToJson()}", "SignalR");
 
             // CreateWebRtcTransport: Consuming
-            var createConsumingWebRtcTransportResult = await connection.InvokeAsync<MeetingMessage<CreateWebRtcTransportResult>>("CreateWebRtcTransport", new CreateWebRtcTransportRequest
+            var createConsumingWebRtcTransportResult = await connection.InvokeAsync<MeetingMessage<CreateWebRtcTransportResult>>("CreateRecvWebRtcTransport", new CreateWebRtcTransportRequest
             {
                 ForceTcp = false,
-                Consuming = false,
-                Producing = true,
             });
             Debug.WriteLine($"CreateWebRtcTransportResult: {createConsumingWebRtcTransportResult.Data.ToJson()}", "SignalR");
 
@@ -295,7 +291,7 @@ namespace Tubumu.Meeting.Client.WPF
 
         public void OnLoggingHandle(IntPtr value)
         {
-            var log = Marshal.PtrToStringAnsi(value);
+            var log = Marshal.PtrToStringUTF8(value);
             Debug.WriteLine(log);
         }
 

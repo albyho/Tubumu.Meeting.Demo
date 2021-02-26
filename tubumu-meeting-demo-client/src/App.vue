@@ -324,20 +324,18 @@ export default {
 
       if(this.form.produce) {
         // Join成功，CreateWebRtcTransport(生产) 
-        result = await this.connection.invoke('CreateWebRtcTransport', {
+        result = await this.connection.invoke('CreateSendWebRtcTransport', {
           forceTcp: false,
-          producing: true,
-          consuming: false,
           sctpCapabilities: this.form.useDataChannel
 							? this.mediasoupDevice.sctpCapabilities
 							: undefined
         });
         if (result.code !== 200) {
-          logger.error('onJoinRoom() | CreateWebRtcTransport failed: %s', result.message);
+          logger.error('onJoinRoom() | CreateSendWebRtcTransport failed: %s', result.message);
           return;
         }
 
-        // CreateWebRtcTransport(生产), createSendTransport
+        // CreateSendWebRtcTransport(生产), createSendTransport
         this.sendTransport = this.mediasoupDevice.createSendTransport({
           id: result.data.transportId,
           iceParameters: result.data.iceParameters,
@@ -431,17 +429,15 @@ export default {
 					}
         });
       }
-      // createSendTransport 成功, CreateWebRtcTransport(消费)
-      result = await this.connection.invoke('CreateWebRtcTransport', {
+      // createSendTransport 成功, CreateRecvWebRtcTransport(消费)
+      result = await this.connection.invoke('CreateRecvWebRtcTransport', {
         forceTcp: false,
-        producing: false,
-        consuming: true,
         sctpCapabilities: this.form.useDataChannel
 							? this._mediasoupDevice.sctpCapabilities
 							: undefined
       });
 
-      // CreateWebRtcTransport(消费)成功, createRecvTransport
+      // CreateRecvWebRtcTransport(消费)成功, createRecvTransport
       this.recvTransport = this.mediasoupDevice.createRecvTransport({
         id: result.data.transportId,
         iceParameters: result.data.iceParameters,
