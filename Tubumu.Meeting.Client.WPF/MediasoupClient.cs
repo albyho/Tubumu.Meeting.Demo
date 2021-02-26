@@ -29,100 +29,36 @@ namespace Tubumu.Meeting.Client.WPF
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr Version();
 
-        public static class SignalR
-        {
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern void Start([MarshalAs(UnmanagedType.LPStr)] string serverUrl);
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void Start([MarshalAs(UnmanagedType.LPStr)] string serverUrl);
 
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern void Stop();
-        }
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void Stop();
 
-        public static class Device
-        {
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool Load([MarshalAs(UnmanagedType.LPStr)] string routerRtpCapabilities);
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void Join([MarshalAs(UnmanagedType.LPStr)] string args);
 
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool IsLoaded();
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void JoinRoom([MarshalAs(UnmanagedType.LPStr)] string roomId);
 
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern IntPtr GetRtpCapabilities();
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void LeaveRoom();
 
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern IntPtr GetSctpCapabilities();
-            
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool CreateSendTransport([MarshalAs(UnmanagedType.LPStr)] string args);
-
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool CreateRecvTransport([MarshalAs(UnmanagedType.LPStr)] string args);
-        }
-
-        public static class SendTansport
-        {
-            /// <summary>
-            /// Produce 
-            /// </summary>
-            /// <param name="mediaKind">video or audio</param>
-            /// <param name="useSimulcast"></param>
-            /// <returns></returns>
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool Produce([MarshalAs(UnmanagedType.LPStr)] string mediaKind, bool useSimulcast/* for video*/, [MarshalAs(UnmanagedType.LPStr)] string appData);
-        }
-
-        public static class RecvTansport
-        {
-            /// <summary>
-            /// Consume
-            /// </summary>
-            /// <param name="args"></param>
-            /// <param name="handle"></param>
-            /// <returns></returns>
-            [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern bool Consume([MarshalAs(UnmanagedType.LPStr)] string args, IntPtr handle);
-        }
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void Pull([MarshalAs(UnmanagedType.LPStr)] string args);
     }
-
-    /// <summary>
-    /// SignalR:ConnectWebRtcTransport
-    /// </summary>
-    /// <param name="value"></param>
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnTransportConnect(IntPtr value);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnTransportConnectionStateChange(IntPtr value);
-
-    /// <summary>
-    /// SignalR:Produce
-    /// </summary>
-    /// <param name="value"></param>
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate IntPtr OnSendTransportProduce(IntPtr value);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnProducerTransportClose(IntPtr value);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnConsumerTransportClose(IntPtr value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void OnLogging(IntPtr value);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void OnMessage(IntPtr value);
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct Callbacks
     {
-        public OnTransportConnect OnTransportConnect;
-
-        public OnTransportConnectionStateChange OnTransportConnectionStateChange;
-
-        public OnSendTransportProduce OnSendTransportProduce;
-
-        public OnProducerTransportClose OnProducerTransportClose;
-
-        public OnConsumerTransportClose OnConsumerTransportClose;
-
         public OnLogging OnLogging;
+
+        public OnLogging OnMessage;
     };
 }
