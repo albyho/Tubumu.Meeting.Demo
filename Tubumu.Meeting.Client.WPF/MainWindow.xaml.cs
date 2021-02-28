@@ -41,7 +41,7 @@ namespace Tubumu.Meeting.Client.WPF
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Initialize();
-            Start();
+            Connect();
         }
 
         public void Initialize()
@@ -71,15 +71,52 @@ namespace Tubumu.Meeting.Client.WPF
             MediasoupClient.Cleanup();
         }
 
-        private void Start()
+        private void Connect()
         {
             var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE";
-            MediasoupClient.Start($"http://192.168.1.8:5000/hubs/meetingHub?access_token={accessToken}");
+            MediasoupClient.Connect($"http://192.168.1.8:5000/hubs/meetingHub?access_token={accessToken}");
         }
 
-        private void Stop()
+        private void Disconnect()
         {
-            MediasoupClient.Stop();
+            MediasoupClient.Disconnect();
+        }
+
+        private void Join(JoinRequest joinRequest)
+        {
+            // Example:
+            /*
+            joinRequest = new JoinRequest
+            {
+                Sources = new[] { "audio:mic", "video:cam" },
+                DisplayName = null,
+                AppData = null,
+            };
+            */
+            MediasoupClient.Join(joinRequest.ToJson());
+        }
+
+        private void JoinRoom(string roomId)
+        {
+            MediasoupClient.Join(roomId);
+        }
+
+        private void LeaveRoom()
+        {
+            MediasoupClient.LeaveRoom();
+        }
+
+        private void Pull(PullRequest pullRequest)
+        {
+            // Example:
+            /*
+            pullRequest = new PullRequest
+            {
+                ProducerPeerId = 0,
+                Sources = new[] { "audio:mic", "video:cam" },
+            };
+            */
+            MediasoupClient.Pull(pullRequest.ToJson());
         }
 
         #region Callbacks
