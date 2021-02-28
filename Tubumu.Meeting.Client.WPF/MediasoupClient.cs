@@ -10,7 +10,6 @@ namespace Tubumu.Meeting.Client.WPF
     {
 #if DEBUG
         private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\x64\Debug\MediasoupClientWrapper.dll";
-        //private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\x64\Release\MediasoupClientWrapper.dll";
 #else
         //private const string MediasoupClientWrapperDllName = @"C:\Developer\OpenSource\Meeting\Tubumu.Meeting.Group\Tubumu.Meeting.Demo\x64\Release\MediasoupClientWrapper.dll";
         private const string MediasoupClientWrapperDllName = "runtimes/win/native/MediasoupClientWrapper.dll";
@@ -21,7 +20,8 @@ namespace Tubumu.Meeting.Client.WPF
         public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, 
             [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel,
             [MarshalAs(UnmanagedType.LPStr)] string signalRLogLevel,
-            IntPtr callbacks);
+            IntPtr callbacks,
+            IntPtr handle);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Cleanup();
@@ -54,11 +54,16 @@ namespace Tubumu.Meeting.Client.WPF
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void OnMessage(IntPtr value);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void OnNotification(IntPtr type, IntPtr value);
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct Callbacks
     {
         public OnLogging OnLogging;
 
-        public OnLogging OnMessage;
+        public OnMessage OnMessage;
+
+        public OnNotification OnNotification;
     };
 }
