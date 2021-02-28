@@ -30,7 +30,7 @@ namespace Tubumu.Meeting.Client.WPF
         public static extern IntPtr Version();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Connect([MarshalAs(UnmanagedType.LPStr)] string serverUrl);
+        public static extern void Connect([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string joinArguments);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Disconnect();
