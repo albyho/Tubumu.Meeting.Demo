@@ -323,7 +323,7 @@ export default {
       this.roomForm.isJoinedRoom = true;
 
       if(this.form.produce) {
-        // Join成功，CreateWebRtcTransport(生产) 
+        // Join成功，CreateSendWebRtcTransport(生产) 
         result = await this.connection.invoke('CreateSendWebRtcTransport', {
           forceTcp: false,
           sctpCapabilities: this.form.useDataChannel
@@ -335,7 +335,7 @@ export default {
           return;
         }
 
-        // CreateSendWebRtcTransport(生产), createSendTransport
+        // CreateSendWebRtcTransport(生产)成功, createSendTransport
         this.sendTransport = this.mediasoupDevice.createSendTransport({
           id: result.data.transportId,
           iceParameters: result.data.iceParameters,
