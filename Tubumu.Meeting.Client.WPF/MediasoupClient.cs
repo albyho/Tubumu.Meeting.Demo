@@ -52,23 +52,23 @@ namespace Tubumu.Meeting.Client.WPF
     public delegate void OnLogging(IntPtr log);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnMessage(IntPtr message);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void OnNotification(IntPtr type, IntPtr content);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnStateChanged(int state);
+    public delegate void OnConnectionStateChanged(int from, int to);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate IntPtr OnNewVideoTrack(IntPtr args);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct Callbacks
     {
         public OnLogging OnLogging;
 
-        public OnMessage OnMessage;
-
         public OnNotification OnNotification;
 
-        public OnStateChanged OnStateChanged;
+        public OnConnectionStateChanged OnConnectionStateChanged;
+
+        public OnNewVideoTrack OnNewVideoTrack;
     };
 }

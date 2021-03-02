@@ -50,9 +50,9 @@ namespace Tubumu.Meeting.Client.WPF
                 callbacks = new Callbacks
                 {
                     OnLogging = OnLoggingHandle,
-                    OnMessage = OnMessageHandle,
                     OnNotification = OnNotificationHandle,
-                    OnStateChanged = OnStateChangedHandle,
+                    OnConnectionStateChanged = OnConnectionStateChangedHandle,
+                    OnNewVideoTrack = OnNewVideoTrackHandle,
                 };
             }
             //MediasoupClient.Initialize("warn", ref callbacks);
@@ -118,12 +118,6 @@ namespace Tubumu.Meeting.Client.WPF
             Debug.WriteLine(logString);
         }
 
-        public void OnMessageHandle(IntPtr message)
-        {
-            var messageString = Marshal.PtrToStringUTF8(message);
-            Debug.WriteLine(messageString);
-        }
-
         public void OnNotificationHandle(IntPtr type, IntPtr content)
         {
             var typeString = Marshal.PtrToStringUTF8(type);
@@ -131,9 +125,14 @@ namespace Tubumu.Meeting.Client.WPF
             Debug.WriteLine($"Notification: {typeString}|{contentString}");
         }
 
-        public void OnStateChangedHandle(int state)
+        public void OnConnectionStateChangedHandle(int from, int to)
         {
-            Debug.WriteLine($"State: {state}");
+            Debug.WriteLine($"State: {from} -> {to}");
+        }
+
+        public IntPtr OnNewVideoTrackHandle(IntPtr args)
+        {
+            return IntPtr.Zero;
         }
 
         #endregion
