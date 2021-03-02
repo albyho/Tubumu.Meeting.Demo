@@ -40,8 +40,7 @@ namespace Tubumu.Meeting.Client.WPF
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            Initialize();
-            Connect();
+
         }
 
         public void Initialize()
@@ -53,12 +52,13 @@ namespace Tubumu.Meeting.Client.WPF
                     OnLogging = OnLoggingHandle,
                     OnMessage = OnMessageHandle,
                     OnNotification = OnNotificationHandle,
+                    OnStateChanged = OnStateChangedHandle,
                 };
             }
             //MediasoupClient.Initialize("warn", ref callbacks);
             IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(callbacks)); // TODO: Marshal.FreeHGlobal(ptr);
             Marshal.StructureToPtr(callbacks, ptr, true);
-            MediasoupClient.Initialize("debug", "warn", "all", ptr, new WindowInteropHelper(this).Handle);
+            MediasoupClient.Initialize("debug", "warn", "all", ptr, localVideoPanel.Handle);
 
             var versionPtr = MediasoupClient.Version();
             var version = Marshal.PtrToStringAnsi(versionPtr);
@@ -71,10 +71,8 @@ namespace Tubumu.Meeting.Client.WPF
             MediasoupClient.Cleanup();
         }
 
-        private void Connect()
+        private void Connect(string serverUrl)
         {
-            var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE";
-            var serverUrl = $"http://192.168.1.8:5000/hubs/meetingHub?access_token={accessToken}";
             var joinRequest = new JoinRequest
             {
                 Sources = new[] { "audio:mic", "video:cam" },
@@ -114,23 +112,63 @@ namespace Tubumu.Meeting.Client.WPF
 
         #region Callbacks
 
-        public void OnLoggingHandle(IntPtr value)
+        public void OnLoggingHandle(IntPtr log)
         {
-            var log = Marshal.PtrToStringUTF8(value);
-            Debug.WriteLine(log);
+            var logString = Marshal.PtrToStringUTF8(log);
+            Debug.WriteLine(logString);
         }
 
-        public void OnMessageHandle(IntPtr value)
+        public void OnMessageHandle(IntPtr message)
         {
-            var message = Marshal.PtrToStringUTF8(value);
-            Debug.WriteLine(message);
+            var messageString = Marshal.PtrToStringUTF8(message);
+            Debug.WriteLine(messageString);
         }
 
-        public void OnNotificationHandle(IntPtr type, IntPtr value)
+        public void OnNotificationHandle(IntPtr type, IntPtr content)
         {
             var typeString = Marshal.PtrToStringUTF8(type);
-            var valueString = Marshal.PtrToStringUTF8(value);
-            Debug.WriteLine($"Notification: {typeString}|{valueString}");
+            var contentString = Marshal.PtrToStringUTF8(content);
+            Debug.WriteLine($"Notification: {typeString}|{contentString}");
+        }
+
+        public void OnStateChangedHandle(int state)
+        {
+            Debug.WriteLine($"State: {state}");
+        }
+
+        #endregion
+
+        #region Event handlers
+
+        private void InitializeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (InitializeButton.Content.ToString() == "Initialize")
+            {
+                Initialize();
+                InitializeButton.Content = "Cleanup";
+            }
+            else
+            {
+                Cleanup();
+                InitializeButton.Content = "Initialize";
+            }
+        }
+
+        private void ConnectButton_Click(object sender, RoutedEventArgs e)
+        {
+
+            if (ConnectButton.Content.ToString() == "Connect")
+            {
+                var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE";
+                var serverUrl = $"{ServerUrlTextBox.Text}?access_token={accessToken}";
+                Connect(serverUrl);
+                ConnectButton.Content = "Disconnect";
+            }
+            else
+            {
+                Disconnect();
+                ConnectButton.Content = "Connect";
+            }
         }
 
         #endregion

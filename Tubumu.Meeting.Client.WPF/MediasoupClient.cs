@@ -49,13 +49,16 @@ namespace Tubumu.Meeting.Client.WPF
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnLogging(IntPtr value);
+    public delegate void OnLogging(IntPtr log);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnMessage(IntPtr value);
+    public delegate void OnMessage(IntPtr message);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnNotification(IntPtr type, IntPtr value);
+    public delegate void OnNotification(IntPtr type, IntPtr content);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void OnStateChanged(int state);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct Callbacks
@@ -65,5 +68,7 @@ namespace Tubumu.Meeting.Client.WPF
         public OnMessage OnMessage;
 
         public OnNotification OnNotification;
+
+        public OnStateChanged OnStateChanged;
     };
 }
