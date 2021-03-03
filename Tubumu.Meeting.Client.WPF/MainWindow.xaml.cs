@@ -58,7 +58,7 @@ namespace Tubumu.Meeting.Client.WPF
             //MediasoupClient.Initialize("warn", ref callbacks);
             IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(callbacks)); // TODO: Marshal.FreeHGlobal(ptr);
             Marshal.StructureToPtr(callbacks, ptr, true);
-            MediasoupClient.Initialize("debug", "warn", "all", ptr, localVideoPanel.Handle);
+            MediasoupClient.Initialize("debug", "warn", "all", ptr);
 
             var versionPtr = MediasoupClient.Version();
             var version = Marshal.PtrToStringAnsi(versionPtr);
@@ -69,6 +69,17 @@ namespace Tubumu.Meeting.Client.WPF
         private void Cleanup()
         {
             MediasoupClient.Cleanup();
+        }
+
+        private void StartPreviewLocalVideo()
+        {
+            MediasoupClient.StartPreviewLocalVideo(localVideoPanel.Handle);
+        }
+
+        private void StopPreviewLocalVideo()
+        {
+            MediasoupClient.StopPreviewLocalVideo();
+
         }
 
         private void Connect(string serverUrl)
@@ -122,12 +133,12 @@ namespace Tubumu.Meeting.Client.WPF
         {
             var typeString = Marshal.PtrToStringUTF8(type);
             var contentString = Marshal.PtrToStringUTF8(content);
-            Debug.WriteLine($"Notification: {typeString}|{contentString}");
+            Debug.WriteLine($"OnNotificationHandle: {typeString}|{contentString}");
         }
 
-        public void OnConnectionStateChangedHandle(int from, int to)
+        public void OnConnectionStateChangedHandle(ConnectionState from, ConnectionState to)
         {
-            Debug.WriteLine($"State: {from} -> {to}");
+            Debug.WriteLine($"OnConnectionStateChangedHandle: {from} -> {to}");
         }
 
         public IntPtr OnNewVideoTrackHandle(IntPtr args)
@@ -167,6 +178,20 @@ namespace Tubumu.Meeting.Client.WPF
             {
                 Disconnect();
                 ConnectButton.Content = "Connect";
+            }
+        }
+
+        private void PreviewButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (PreviewButton.Content.ToString() == "Start Preview")
+            {
+                StartPreviewLocalVideo();
+                PreviewButton.Content = "Stop Preview";
+            }
+            else
+            {
+                StopPreviewLocalVideo();
+                PreviewButton.Content = "Start Preview";
             }
         }
 

@@ -14,6 +14,9 @@
             <RowDefinition Height="12*"/>
         </Grid.RowDefinitions>
         <Button x:Name="InitializeButton" Content="Initialize" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="86,9,0,0" Width="100" Height="30" Click="InitializeButton_Click" />
+        
+        <Button x:Name="PreviewButton" Content="Start Preview" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="206,9,0,0" Width="100" Height="30" Click="PreviewButton_Click" />
+
         <Label Content="Server Url:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,49,0,0" Width="70" Height="26" />
         <TextBox x:Name="ServerUrlTextBox" Text="http://192.168.1.8:5000/hubs/meetingHub" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="85,49,0,0" Width="382" Height="26" TextWrapping="Wrap" />
         <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="479,47,0,0" Width="100" Height="30" Click="ConnectButton_Click" />

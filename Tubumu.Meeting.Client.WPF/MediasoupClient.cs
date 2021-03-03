@@ -6,6 +6,14 @@ using System.Threading.Tasks;
 
 namespace Tubumu.Meeting.Client.WPF
 {
+    public enum ConnectionState
+    {
+        Connecting,
+        Connected,
+        Disconnecting,
+        Disconnected
+    };
+
     public static class MediasoupClient
     {
 #if DEBUG
@@ -17,17 +25,22 @@ namespace Tubumu.Meeting.Client.WPF
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         //public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel, ref Callbacks callbacks);
-        public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, 
+        public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel,
             [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel,
             [MarshalAs(UnmanagedType.LPStr)] string signalRLogLevel,
-            IntPtr callbacks,
-            IntPtr handle);
+            IntPtr callbacks);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Cleanup();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr Version();
+
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void StartPreviewLocalVideo(IntPtr handle);
+
+        [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void StopPreviewLocalVideo();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Connect([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string joinArguments);
@@ -55,7 +68,7 @@ namespace Tubumu.Meeting.Client.WPF
     public delegate void OnNotification(IntPtr type, IntPtr content);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void OnConnectionStateChanged(int from, int to);
+    public delegate void OnConnectionStateChanged(ConnectionState from, ConnectionState to);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate IntPtr OnNewVideoTrack(IntPtr args);
