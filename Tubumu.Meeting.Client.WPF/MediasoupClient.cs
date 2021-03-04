@@ -14,6 +14,14 @@ namespace Tubumu.Meeting.Client.WPF
         Disconnected
     };
 
+    public enum ErrorCode
+    {
+        Success = 0,
+        Uninitialized = -1000,
+        Unconnected = -1001,
+        DataError = -1002
+    };
+
     public static class MediasoupClient
     {
 #if DEBUG
@@ -25,40 +33,40 @@ namespace Tubumu.Meeting.Client.WPF
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         //public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel, [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel, ref Callbacks callbacks);
-        public static extern void Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel,
+        public static extern ErrorCode Initialize([MarshalAs(UnmanagedType.LPStr)] string mediasoupClientLogLevel,
             [MarshalAs(UnmanagedType.LPStr)] string rtcLogLevel,
             [MarshalAs(UnmanagedType.LPStr)] string signalRLogLevel,
             IntPtr callbacks);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Cleanup();
+        public static extern ErrorCode Cleanup();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr Version();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void StartPreviewLocalVideo(IntPtr handle);
+        public static extern ErrorCode StartPreviewLocalVideo(IntPtr handle);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void StopPreviewLocalVideo();
+        public static extern ErrorCode StopPreviewLocalVideo();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Connect([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string joinArguments);
+        public static extern ErrorCode Connect([MarshalAs(UnmanagedType.LPStr)] string serverUrl, [MarshalAs(UnmanagedType.LPStr)] string joinArguments);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Disconnect();
+        public static extern ErrorCode Disconnect();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Join([MarshalAs(UnmanagedType.LPStr)] string args);
+        public static extern ErrorCode Join([MarshalAs(UnmanagedType.LPStr)] string args);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void JoinRoom([MarshalAs(UnmanagedType.LPStr)] string roomId);
+        public static extern ErrorCode JoinRoom([MarshalAs(UnmanagedType.LPStr)] string roomId);
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void LeaveRoom();
+        public static extern ErrorCode LeaveRoom();
 
         [DllImport(MediasoupClientWrapperDllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Pull([MarshalAs(UnmanagedType.LPStr)] string args);
+        public static extern ErrorCode Pull([MarshalAs(UnmanagedType.LPStr)] string args);
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

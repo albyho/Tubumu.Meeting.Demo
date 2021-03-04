@@ -58,7 +58,7 @@ namespace Tubumu.Meeting.Client.WPF
             //MediasoupClient.Initialize("warn", ref callbacks);
             IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(callbacks)); // TODO: Marshal.FreeHGlobal(ptr);
             Marshal.StructureToPtr(callbacks, ptr, true);
-            MediasoupClient.Initialize("debug", "warn", "all", ptr);
+            var result = MediasoupClient.Initialize("debug", "warn", "all", ptr);
 
             var versionPtr = MediasoupClient.Version();
             var version = Marshal.PtrToStringAnsi(versionPtr);
@@ -90,7 +90,7 @@ namespace Tubumu.Meeting.Client.WPF
                 DisplayName = null,
                 AppData = null,
             };
-            MediasoupClient.Connect(serverUrl, joinRequest.ToJson());
+            var result = MediasoupClient.Connect(serverUrl, joinRequest.ToJson());
         }
 
         private void Disconnect()
