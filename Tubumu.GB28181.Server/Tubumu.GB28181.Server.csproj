@@ -15,8 +15,14 @@
   </ItemGroup>
 
   <ItemGroup>
+<<<<<<< HEAD
+=======
+    <Folder Include="Microsoft\AspNetCore\Builder\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Tubumu.Core\Tubumu.Core.csproj" />
+>>>>>>> 280572695039dd5503bffd362f4d508da0d244b8
     <ProjectReference Include="..\Tubumu.GB28181\Tubumu.GB28181.csproj" />
-    <ProjectReference Include="..\Tubumu.Core\Tubumu.Core.csproj" />
   </ItemGroup>
 
 </Project>

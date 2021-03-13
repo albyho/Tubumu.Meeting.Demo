@@ -4,16 +4,42 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Tubumu.Meeting.Client.WPF"
+        xmlns:WinFormHost="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
+        xmlns:WinFormControls="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         mc:Ignorable="d"
-        Title="MainWindow" Height="480" Width="800">
-    <Grid Margin="0,0,20,20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="109*" />
-            <ColumnDefinition Width="288*" />
-        </Grid.ColumnDefinitions>
-        <Button x:Name="ConnectButton" Content="Connect" Click="ConnectButton_Click" HorizontalAlignment="Left" Margin="267.138,10.713,0,0" VerticalAlignment="Top" Width="160" Height="30" Grid.Column="1" />
-        <TextBox x:Name="messageTextBox" HorizontalAlignment="Left" Height="26" Margin="73,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="392.531" Grid.ColumnSpan="2" />
-        <ListBox x:Name="messagesList" HorizontalAlignment="Left" Height="380.429" Margin="73,48.571,0,0" VerticalAlignment="Top" Width="392.531" RenderTransformOrigin="-0.304,0.109" BorderThickness="1" Grid.ColumnSpan="2" BorderBrush="Gainsboro" />
-        <Label Content="RoomId" HorizontalAlignment="Left" Height="26" Margin="10,10,0,0" VerticalAlignment="Top" Width="58" />
+        Title="MainWindow" Height="600" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="12*"/>
+        </Grid.RowDefinitions>
+        <Button x:Name="InitializeButton" Content="Initialize" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="86,9,0,0" Width="100" Height="30" Click="InitializeButton_Click" />
+        
+        <Button x:Name="PreviewButton" Content="Start Preview" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="206,9,0,0" Width="100" Height="30" Click="PreviewButton_Click" />
+
+        <Label Content="Server Url:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,49,0,0" Width="70" Height="26" />
+        <TextBox x:Name="ServerUrlTextBox" Text="http://192.168.1.8:5000/hubs/meetingHub" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="85,49,0,0" Width="382" Height="26" TextWrapping="Wrap" />
+        <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="479,47,0,0" Width="100" Height="30" Click="ConnectButton_Click" />
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="133*"/>
+                <ColumnDefinition Width="267*"/>
+            </Grid.ColumnDefinitions>
+            <WindowsFormsHost Grid.Column="0" x:Name="localVideoHost" HorizontalAlignment="Left" Height="124" Margin="6,9,0,0" VerticalAlignment="Top" Width="250">
+                <WinFormControls:Panel x:Name="localVideoPanel" Margin="0,0,0,0"/>
+            </WindowsFormsHost>
+            <ListBox x:Name="peersListBox" Grid.Column="0" Margin="0,160,0,0" />
+            <StackPanel Grid.Column="1">
+                <WindowsFormsHost x:Name="remoteVideoHost0" HorizontalAlignment="Left" Height="124" Margin="6,9,0,0" VerticalAlignment="Top" Width="250">
+                    <WinFormControls:Panel x:Name="remoteVideoPanel0" Margin="0,0,0,0"/>
+                </WindowsFormsHost>
+                <WindowsFormsHost x:Name="remoteVideoHost1" HorizontalAlignment="Left" Height="124" Margin="6,9,0,0" VerticalAlignment="Top" Width="250">
+                    <WinFormControls:Panel x:Name="remoteVideoPanel1" Margin="0,0,0,0"/>
+                </WindowsFormsHost>
+                <WindowsFormsHost x:Name="remoteVideoHost2" HorizontalAlignment="Left" Height="124" Margin="6,9,0,0" VerticalAlignment="Top" Width="250">
+                    <WinFormControls:Panel x:Name="remoteVideoPanel2" Margin="0,0,0,0"/>
+                </WindowsFormsHost>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Tubumu.Meeting.Client.WPF": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

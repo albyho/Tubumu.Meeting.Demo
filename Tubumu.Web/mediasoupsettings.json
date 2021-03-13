@@ -3,8 +3,9 @@
     "MediasoupVersion": "3.6.31",
     //"WorkerPath": "C:\\worker\\Release\\mediasoup-worker",
     //"WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/mediasoup/worker/out/Release/mediasoup-worker",
-    "WorkerPath": "/Users/alby/Developer/Tubumu/Tubumu.Mediasoup.Executable/runtimes/osx/native/mediasoup-worker",
+    //"WorkerPath": "/Users/alby/Developer/Tubumu/Tubumu.Mediasoup.Executable/runtimes/osx/native/mediasoup-worker",
     //"WorkerPath": "/Users/alby/Library/Developer/Xcode/DerivedData/mediasoup-worker-cqgehmiqutauwddqhmqzanqfeefl/Build/Products/Debug/mediasoup-worker",
+    "WorkerPath": "C:\\Developer\\OpenSource\\Meeting\\mediasoup\\worker\\out\\Release\\mediasoup-worker",
     "NumberOfWorkers": 1
   },
   "MediasoupSettings": {
@@ -13,10 +14,10 @@
       "LogTags": [
         "info",
         "ice",
-        "dtls",
-        "rtp",
-        "srtp",
-        "rtcp",
+        //"dtls",
+        //"rtp",
+        //"srtp",
+        //"rtcp",
         "rtx",
         "bwe",
         "score",
@@ -42,23 +43,23 @@
           "ClockRate": 8000,
           "Channels": 1
         },
-        {
-          "Kind": "video",
-          "MimeType": "video/VP8",
-          "ClockRate": 90000,
-          "Parameters": {
-            "x-google-start-bitrate": 1000
-          }
-        },
-        {
-          "Kind": "video",
-          "MimeType": "video/VP9",
-          "ClockRate": 90000,
-          "Parameters": {
-            "profile-id": 2,
-            "x-google-start-bitrate": 1000
-          }
-        },
+        //{
+        //  "Kind": "video",
+        //  "MimeType": "video/VP8",
+        //  "ClockRate": 90000,
+        //  "Parameters": {
+        //    "x-google-start-bitrate": 1000
+        //  }
+        //},
+        //{
+        //  "Kind": "video",
+        //  "MimeType": "video/VP9",
+        //  "ClockRate": 90000,
+        //  "Parameters": {
+        //    "profile-id": 2,
+        //    "x-google-start-bitrate": 1000
+        //  }
+        //},
         {
           "Kind": "video",
           "MimeType": "video/h264",
@@ -87,7 +88,7 @@
       "ListenIps": [
         {
           "Ip": "0.0.0.0",
-          "AnnouncedIp": "192.168.1.3"
+          "AnnouncedIp": "192.168.1.8"
         }
       ],
       "InitialAvailableOutgoingBitrate": 1000000,
@@ -99,7 +100,7 @@
     "PlainTransportSettings": {
       "ListenIp": {
         "Ip": "0.0.0.0",
-        "AnnouncedIp": "192.168.1.3"
+        "AnnouncedIp": "192.168.1.8"
       },
       "MaxSctpMessageSize": 262144
     }

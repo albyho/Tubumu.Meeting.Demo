@@ -4,6 +4,5 @@
              xmlns:local="clr-namespace:Tubumu.Meeting.Client.WPF"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
     </Application.Resources>
 </Application>
