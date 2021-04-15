@@ -39,4 +39,10 @@
 
 因为没有将前端放入基于 `ASP.NET Core` 的 Web 项目中，并且没有使用正式的 TLS 证书，所以先访问一次 `https://192.168.x.x:5001/` 。提示不安全时请继续访问。
 
-在同一个浏览器用两个标签或者在两台电脑的浏览器上分别打开 `https://192.168.x.x:8080，然后选择不同的 Peer 。提示不安全时请继续访问；提示访问摄像头和麦克风当然应该允许。
+在同一个浏览器用两个标签或者在两台电脑的浏览器上分别打开 `https://192.168.x.x:8080`，然后选择不同的 Peer 。提示不安全时请继续访问；提示访问摄像头和麦克风当然应该允许。
+
+[![NuGet](https://img.shields.io/nuget/v/Tubumu.Mediasoup.AspNetCore.svg)](https://www.nuget.org/packages/Tubumu.Mediasoup.AspNetCore)
+![License](https://img.shields.io/github/license/albyho/Tubumu.Mediasoup.AspNetCore)
+
+## WeChat group
+![WeChat group](https://raw.githubusercontent.com/albyho/Tubumu.Meeting.Demo/dev-07/docs/WeChat-Group.jpg)
