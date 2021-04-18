@@ -22,7 +22,6 @@
     <ProjectReference Include="..\..\Tubumu.Mediasoup.Executable\Tubumu.Mediasoup.Executable.csproj" />
     <ProjectReference Include="..\..\Tubumu.Meeting.Server\Tubumu.Meeting.Server.csproj" />
     <ProjectReference Include="..\..\Tubumu.Meeting.Server.Consul\Tubumu.Meeting.Server.Consul.csproj" />
-    <ProjectReference Include="..\Tubumu.GB28181.Server\Tubumu.GB28181.Server.csproj" />
   </ItemGroup>
 
 </Project>
