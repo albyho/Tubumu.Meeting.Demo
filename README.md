@@ -1,14 +1,14 @@
 # Tubumu.Meeting.Demo
 
-![](http://blog.tubumu.com/postimages/mediasoup-01/004.jpg)
+![截图](http://blog.tubumu.com/postimages/mediasoup-01/004.jpg)
 
 对该项目实现上的介绍，见：[使用 ASP.NET Core 实现 mediasoup 的信令服务器](https://blog.tubumu.com/2020/05/05/mediasoup-01/)。
 
-`Tubumu.Meeting.Demo` 是基于 `mediasoup` 实现的视频会议系统，但将其服务端的 `Node.js` 模块使用 `ASP.NET Core` 重新进行了实现。有别于官方 Demo，本项目有如下特点：
+`Tubumu.Meeting.Demo` 是基于 `mediasoup` 实现的视频会议系统。有别于官方 Demo，本项目有如下特点：
 
-1. 客户端启动时不主动 Produce;
-3. 客户端可根据需要 Pull 对端的支持的音视频进行 Consume，而对端按需 Produce；
-4. 客户端使用 Vue 实现。
+1. 将 mediasoup 服务端的 `Node.js` 模块使用 `.Net Core` 重新进行了实现。
+2. 客户端启动时不主动 Produce; 客户端可根据需要 Pull 对端的支持的音视频进行 Consume，而对端按需 Produce。这样做的目的是避免长时间挂起的而又没有对端(Consumer)浏览的客户端，可以节省带宽。
+3. 客户端使用 Vue 实现。
 
 > 备注：在 mediasoupsettings.json 配置文件中搜索，将 AnnouncedIp 改为本机的局域网 IP。
 
@@ -43,6 +43,18 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Tubumu.Mediasoup.AspNetCore.svg)](https://www.nuget.org/packages/Tubumu.Mediasoup.AspNetCore)
 ![License](https://img.shields.io/github/license/albyho/Tubumu.Mediasoup.AspNetCore)
+
+## 关联项目
+
+1. [Tubumu.Core: 工具类等。](https://github.com/albyho/Tubumu.Core)
+2. [Tubumu.Libuv: Libuv 封装。](https://github.com/albyho/Tubumu.Libuv)
+3. [Tubumu.Mediasoup: mediasoup 服务端库的 C# 实现](https://github.com/albyho/Tubumu.Mediasoup)
+4. [Tubumu.Mediasoup.Common: 公共类封装。也可供 WinForm 或 WPF 等使用。](https://github.com/albyho/Tubumu.Mediasoup.Common)
+5. [Tubumu.Mediasoup.AspNetCore: 主要是 Asp.Net Core 服务注册和中间件。](https://github.com/albyho/Tubumu.Mediasoup.AspNetCore)
+6. [Tubumu.Mediasoup.Executable: mediasoup-work 可执行程序，目前提供了 macOS 和 Windows 版。可自行编译特定版本，比如 Linux 版。可选。](https://github.com/albyho/Tubumu.Mediasoup.Executable)
+7. [Tubumu.Meeting.Server: 会议系统的业务实现。](https://github.com/albyho/Tubumu.Meeting.Server)
+8. [Tubumu.Meeting.Server.Consul: 供 Consul 使用的服务注册等设置。可选。](https://github.com/albyho/Tubumu.Meeting.Server.Consul)
+9. [Tubumu.Meeting.Demo: 简单的 Asp.Net Core 项目。该项目下的 tubumu-meeting-demo-client 为前端实现。](https://github.com/albyho/Tubumu.Meeting.Demo)
 
 ## WeChat group
 
