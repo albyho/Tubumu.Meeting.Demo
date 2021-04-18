@@ -16,7 +16,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Tubumu.Core.Extensions;
-using Tubumu.GB28181.Settings;
 using Tubumu.Mediasoup;
 using Tubumu.Meeting.Server;
 using Tubumu.Meeting.Server.Authorization;
@@ -201,11 +200,6 @@ namespace Tubumu.Web
 
             // Meeting server
             services.AddMeetingServer();
-
-            // GB28281
-            var sipSeetings = Configuration.GetSection("SIPSettings").Get<SIPSettings>();
-            services.AddSingleton(sipSeetings);
-            services.AddGB28281();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -264,9 +258,6 @@ namespace Tubumu.Web
 
             // Mediasoup
             app.UseMediasoup();
-
-            // GB28281
-            app.UseGB28181();
         }
     }
 }
