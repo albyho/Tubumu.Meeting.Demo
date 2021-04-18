@@ -41,9 +41,6 @@
 
 在同一个浏览器用两个标签或者在两台电脑的浏览器上分别打开 `https://192.168.x.x:8080`，然后选择不同的 Peer 。提示不安全时请继续访问；提示访问摄像头和麦克风当然应该允许。
 
-[![NuGet](https://img.shields.io/nuget/v/Tubumu.Mediasoup.AspNetCore.svg)](https://www.nuget.org/packages/Tubumu.Mediasoup.AspNetCore)
-![License](https://img.shields.io/github/license/albyho/Tubumu.Mediasoup.AspNetCore)
-
 ## 关联项目
 
 1. [Tubumu.Core: 工具类等。](https://github.com/albyho/Tubumu.Core)
