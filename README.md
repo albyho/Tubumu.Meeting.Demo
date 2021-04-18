@@ -10,11 +10,14 @@
 2. 客户端启动时不主动 Produce; 客户端可根据需要 Pull 对端的支持的音视频进行 Consume，而对端按需 Produce。这样做的目的是避免长时间挂起的而又没有对端(Consumer)浏览的客户端，可以节省带宽。
 3. 客户端使用 Vue 实现。
 
-> 备注：在 mediasoupsettings.json 配置文件中搜索，将 AnnouncedIp 改为本机的局域网 IP。
+## 一、启动服务端
 
-## 1、启动服务端
+1. 请打开 `mediasoupsettings.json` 进行两处修改。
 
-打开 `mediasoupsettings.json`。在 `MediasoupStartupSettings.WorkerPath` 节点设置 `mediasoup-worker` 可执行程序的物理路径。在 `Tubumu.Meeting.Web` 目录执行 `dotnet run` 或者在 `Vistual Sudio` 打开解决方案启动 `Tubumu.Meeting.Web` 项目。
+- 在配置文件中搜索将 `AnnouncedIp` ，将其值改为本机的局域网或外网的 IP。
+- 在 `MediasoupStartupSettings.WorkerPath` 节点设置 `mediasoup-worker` 可执行程序的物理路径。
+
+2. 在 `Tubumu.Meeting.Web` 目录执行 `dotnet run` 或者在 `Vistual Sudio` 打开解决方案启动 `Tubumu.Meeting.Web` 项目。
 
 ``` shell
 > cd Tubumu.Meeting.Web
@@ -23,7 +26,7 @@
 
 > 备注：如果将 MediasoupStartupSettings.WorkerPath 注释，启动时将自动去 "runtimes/{platform}/native" 目录查找 "mediasoup-worker" 。其中 "{platform}" 根据平台分别可以是：win、osx 和 linux。 详见 Worker.cs 文件中 Worker 类的构造函数。
 
-## 2、启动前端
+## 二、启动前端
 
 在 `tubumu-meeting-demo-client` 安装 Node.js 包并运行。
 
@@ -33,7 +36,7 @@
 > yarn serve
 ```
 
-## 3、打开浏览器
+## 三、打开浏览器
 
 >备注：请使用 Chrome、Firefox 或 Edge 浏览器。
 
