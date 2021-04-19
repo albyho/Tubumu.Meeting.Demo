@@ -1,6 +1,6 @@
 {
   "MediasoupStartupSettings": {
-    "MediasoupVersion": "3.6.31",
+    "MediasoupVersion": "3.7.1",
     //"WorkerPath": "C:\\worker\\Release\\mediasoup-worker",
     //"WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/mediasoup/worker/out/Release/mediasoup-worker",
     //"WorkerPath": "/Users/alby/Developer/Tubumu/Tubumu.Mediasoup.Executable/runtimes/osx/native/mediasoup-worker",
