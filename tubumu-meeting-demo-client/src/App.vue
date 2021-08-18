@@ -879,7 +879,7 @@ export default {
             opusStereo: 1,
             opusDtx: 1
           },
-          appData: { source: 'mic', roomId: '1' }
+          appData: { source: 'mic' }
         });
 
         this.micProducer.on('transportclose', () => {
@@ -997,7 +997,7 @@ export default {
           encodings,
           codecOptions,
           codec,
-          appData: { source: 'webcam', roomId: '1' }
+          appData: { source: 'webcam' }
         });
 
         this.webcamProducer.on('transportclose', () => {

@@ -1,9 +1,9 @@
 {
   "MediasoupStartupSettings": {
-    "MediasoupVersion": "3.7.17",
-    //"WorkerPath": "/Users/alby/Developer/OpenSource/Meeting/mediasoup/worker/out/Release/mediasoup-worker",
-    //"WorkerPath": "/Users/alby/Developer/Tubumu/Tubumu.Mediasoup.Executable/runtimes/osx/native/mediasoup-worker",
-    "WorkerPath": "/Users/alby/Library/Developer/Xcode/DerivedData/mediasoup-worker-cqgehmiqutauwddqhmqzanqfeefl/Build/Products/Debug/mediasoup-worker",
+    "MediasoupVersion": "3.8.2",
+    "WorkerPath": "/Users/alby/Workspace/OpenSource/versatica/mediasoup/worker/out/Release/mediasoup-worker",
+    //"WorkerPath": "/Users/alby/Workspace/Tubumu.Mediasoup/Tubumu.Mediasoup.Executable/runtimes/osx/native/mediasoup-worker",
+    //"WorkerPath": "/Users/alby/Library/Developer/Xcode/DerivedData/mediasoup-worker-cqgehmiqutauwddqhmqzanqfeefl/Build/Products/Debug/mediasoup-worker",
     //"WorkerPath": "C:\\Developer\\OpenSource\\Meeting\\mediasoup\\worker\\out\\Release\\mediasoup-worker",
     "NumberOfWorkers": 1
   },
@@ -87,7 +87,7 @@
       "ListenIps": [
         {
           "Ip": "0.0.0.0",
-          "AnnouncedIp": "192.168.3.26"
+          "AnnouncedIp": "192.168.1.7"
         }
       ],
       "InitialAvailableOutgoingBitrate": 1000000,
@@ -99,7 +99,7 @@
     "PlainTransportSettings": {
       "ListenIp": {
         "Ip": "0.0.0.0",
-        "AnnouncedIp": "192.168.3.26"
+        "AnnouncedIp": "192.168.1.7"
       },
       "MaxSctpMessageSize": 262144
     }

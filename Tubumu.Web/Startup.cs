@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,6 +17,9 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using SignalRSwaggerGen;
+using SignalRSwaggerGen.Attributes;
 using Tubumu.Core.Extensions;
 using Tubumu.Mediasoup;
 using Tubumu.Meeting.Server;
@@ -199,7 +204,22 @@ namespace Tubumu.Web
             });
 
             // Meeting server
-            services.AddMeetingServer();
+            services.AddMeetingServer(options =>
+            {
+                options.ServeMode = ServeMode.Pull;
+            });
+
+            // Swagger
+            services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo {
+                    Title = "Meeting API",
+                    Version = "v1"
+                });
+                options.DocumentFilter<SignalRSwaggerGen.SignalRSwaggerGen>(new List<Assembly> {
+                    typeof(MeetingHub).Assembly
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -238,13 +258,20 @@ namespace Tubumu.Web
                 endpoints.MapControllers();
             });
 
-            app.UseSigSpec(options => { options.Hubs = new[] { typeof(MeetingHub) }; });
+
+            // Swagger
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+            });
 
             // SignalR
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<MeetingHub>("/hubs/meetingHub");
+                endpoints.MapHub<MeetingHub>(typeof(MeetingHub).GetCustomAttribute<SignalRHubAttribute>().Path.Replace(Constants.HubNamePlaceholder, typeof(MeetingHub).Name));
             });
+            app.UseSigSpec(options => { options.Hubs = new[] { typeof(MeetingHub) }; });
 
             // Consul
             app.UseConsul(lifetime);
