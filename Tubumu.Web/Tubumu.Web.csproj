@@ -29,7 +29,4 @@
   <ItemGroup>
     <None Remove="Swashbuckle.AspNetCore" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\.editorconfig" />
-  </ItemGroup>
 </Project>
