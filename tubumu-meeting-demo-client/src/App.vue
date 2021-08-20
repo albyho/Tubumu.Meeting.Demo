@@ -5,18 +5,18 @@
         <el-container>
           <el-aside width="400px">            
             <div class="demo-block">
-              <el-form ref="joinForm" :inline="true" label-width="80px" size="mini">
+              <el-form ref="connectForm" :inline="true" label-width="80px" size="mini">
                 <el-form-item label="Peer:">
-                  <el-select v-model="joinForm.peerId" :disabled="joinForm.isJoined" clearable placeholder="请选择">
+                  <el-select v-model="connectForm.peerId" :disabled="connectForm.isConnected" clearable placeholder="请选择">
                     <el-option :label="`Peer ${index}`" v-for="(item, index) in accessTokens" :key="item" :value="index"></el-option>
                   </el-select>
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="onJoin">{{(!joinForm.isJoined ? "Join" : "Leave")}}</el-button>
+                  <el-button type="primary" @click="onConnected">{{(!connectForm.isConnected ? "Connect" : "Disconnect")}}</el-button>
                 </el-form-item>
               </el-form>
             </div>
-            <div class="demo-block" v-if="joinForm.isJoined">
+            <div class="demo-block" v-if="connectForm.isConnected">
               <el-form ref="roomForm" :inline="true" :model="roomForm" label-width="80px" size="mini">
                 <el-form-item label="Room:">
                   <el-select v-model="roomForm.roomId" :disabled="roomForm.isJoinedRoom" clearable placeholder="请选择">
@@ -28,7 +28,7 @@
                 </el-form-item>
               </el-form>
             </div>
-            <div class="demo-block" v-if="joinForm.isJoined&&roomForm.isJoinedRoom">
+            <div class="demo-block" v-if="connectForm.isConnected&&roomForm.isJoinedRoom">
               <el-form ref="peersForm" :model="peersForm" label-width="80px" size="mini">
                 <el-form-item>
                   <el-table
@@ -134,9 +134,9 @@ export default {
       consumers: new Map(),
       dataProducer: null,
       dataConsumers: new Map(),
-      joinForm: {
+      connectForm: {
         peerId: null,
-        isJoined: false
+        isConnected: false
       },
       roomForm: {
         roomId: [],
@@ -182,9 +182,9 @@ export default {
   },
   async mounted() {
     const { peerId, peerid } = querystring.parse(location.search.replace('?', ''));
-    this.joinForm.peerId = peerId || peerid;
-    if(this.joinForm.peerId) {
-      this.joinForm.peerId = parseInt(this.joinForm.peerId);
+    this.connectForm.peerId = peerId || peerid;
+    if(this.connectForm.peerId) {
+      this.connectForm.peerId = parseInt(this.connectForm.peerId);
     }
 
     const { roomId, roomid } = querystring.parse(location.search.replace('?', ''));
@@ -194,15 +194,15 @@ export default {
     }
 
     // For Testing
-    // this.form.produce = this.joinForm.peerId !== '0' && this.joinForm.peerId !== '1';
+    // this.form.produce = this.connectForm.peerId !== '0' && this.connectForm.peerId !== '1';
   },
   methods: {
-    async onJoin() {
-      if(this.joinForm.isJoined) {
+    async onConnected() {
+      if(this.connectForm.isConnected) {
         if(this.connection) {
          await this.connection.stop();
         }
-        this.joinForm.isJoined = false;
+        this.connectForm.isConnected = false;
         this.roomForm.isJoinedRoom = false;
         this.webcamClosed();
         this.micClosed();
@@ -216,7 +216,7 @@ export default {
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub`, {
-              accessTokenFactory: () => this.accessTokens[this.joinForm.peerId],
+              accessTokenFactory: () => this.accessTokens[this.connectForm.peerId],
               skipNegotiation: true,
               transport: signalR.HttpTransportType.WebSockets,
             }
@@ -236,7 +236,7 @@ export default {
           .build();
 
         this.connection.onclose(e => {
-          this.joinForm.isJoined = false;
+          this.connectForm.isConnected = false;
           if(e) {
             logger.error(e)
           }
@@ -247,7 +247,7 @@ export default {
         });
         await this.connection.start();
         await this.start();
-        this.joinForm.isJoined = true;
+        this.connectForm.isConnected = true;
       } catch (e) {
         logger.debug(e.message);
       }
@@ -464,10 +464,19 @@ export default {
       this.recvTransport.on('connectionstatechange', connectionState => {
         logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
+
+      await this.enableMic();
+      await this.enableWebcam();
+
+      result = await this.connection.invoke('Ready');
+      if (result.code !== 200) {
+        logger.error('Ready() | Ready failure.');
+        return;
+      }
     },
     async onPeerNodeClick(peer) {
       logger.debug('onPeerNodeClick() | %o', peer);
-      await this.pull(peer.peerId, peer.sources)
+      //await this.pull(peer.peerId, peer.sources)
     },
     async processNewConsumer(data) {
       const {

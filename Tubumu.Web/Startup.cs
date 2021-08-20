@@ -206,7 +206,7 @@ namespace Tubumu.Web
             // Meeting server
             services.AddMeetingServer(options =>
             {
-                options.ServeMode = ServeMode.Pull;
+                options.ServeMode = ServeMode.Open;
             });
 
             // Swagger
