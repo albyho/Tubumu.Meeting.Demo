@@ -44,7 +44,7 @@ namespace Tubumu.Web.Controllers
                 Sources = new[] { "video", "audio" },
                 AppData = new Dictionary<string, object> { ["type"] = "Device" },
             };
-            if (!await _scheduler.JoinAsync(deviceId, null, joinRequest))
+            if (!await _scheduler.JoinAsync(deviceId, "", joinRequest))
             {
                 return new ApiResult { Code = 400, Message = "Join 失败" };
             }
@@ -53,7 +53,7 @@ namespace Tubumu.Web.Controllers
             {
                 RoomId = roomId,
             };
-            var joinRoomResult = await _scheduler.JoinRoomAsync(deviceId, null, joinRoomRequest);
+            var joinRoomResult = await _scheduler.JoinRoomAsync(deviceId, "", joinRoomRequest);
 
             var createPlainTransportRequest = new CreatePlainTransportRequest
             {
@@ -62,7 +62,7 @@ namespace Tubumu.Web.Controllers
                 Producing = true,
                 Consuming = false,
             };
-            var transport = await _scheduler.CreatePlainTransportAsync(deviceId, null, createPlainTransportRequest);
+            var transport = await _scheduler.CreatePlainTransportAsync(deviceId, "", createPlainTransportRequest);
 
             // Audio: "{ \"codecs\": [{ \"mimeType\":\"audio/opus\", \"payloadType\":${AUDIO_PT}, \"clockRate\":48000, \"channels\":2, \"parameters\":{ \"sprop-stereo\":1 } }], \"encodings\": [{ \"ssrc\":${AUDIO_SSRC} }] }"
             // Video :"{ \"codecs\": [{ \"mimeType\":\"video/vp8\", \"payloadType\":${VIDEO_PT}, \"clockRate\":90000 }], \"encodings\": [{ \"ssrc\":${VIDEO_SSRC} }] }"
@@ -93,7 +93,7 @@ namespace Tubumu.Web.Controllers
                     ["peerId"] = deviceId,
                 }
             };
-            var videoProduceResult = await _scheduler.ProduceAsync(deviceId, null, videoProduceRequest);
+            var videoProduceResult = await _scheduler.ProduceAsync(deviceId, "", videoProduceRequest);
 
             var audioProduceRequest = new ProduceRequest
             {
@@ -122,7 +122,7 @@ namespace Tubumu.Web.Controllers
                     ["peerId"] = deviceId,
                 }
             };
-            var audioProduceResult = await _scheduler.ProduceAsync(deviceId, null, audioProduceRequest);
+            var audioProduceResult = await _scheduler.ProduceAsync(deviceId, "", audioProduceRequest);
 
             var result = new CreatePlainTransportResult
             {

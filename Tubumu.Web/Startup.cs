@@ -269,7 +269,7 @@ namespace Tubumu.Web
             // SignalR
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<MeetingHub>(typeof(MeetingHub).GetCustomAttribute<SignalRHubAttribute>().Path.Replace(Constants.HubNamePlaceholder, typeof(MeetingHub).Name));
+                endpoints.MapHub<MeetingHub>(typeof(MeetingHub).GetCustomAttribute<SignalRHubAttribute>()!.Path.Replace(Constants.HubNamePlaceholder, typeof(MeetingHub).Name));
             });
             app.UseSigSpec(options => { options.Hubs = new[] { typeof(MeetingHub) }; });
 
