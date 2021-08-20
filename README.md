@@ -7,7 +7,11 @@
 `Tubumu.Meeting.Demo` 是基于 `mediasoup` 实现的视频会议系统 Demo。有别于官方 Demo，本项目有如下特点：
 
 1. 将 mediasoup 服务端的 `Node.js` 模块使用 `.Net Core` 重新进行了实现。
-2. 客户端启动时不主动 Produce; 客户端可根据需要 Pull 对端的支持的音视频进行 Consume，而对端按需 Produce。这样做的目的是避免长时间挂起的而又没有对端(Consumer)浏览的客户端，可以节省带宽。
+2. 支持三种服务模式：
+`Open`: 进入会议室立即发送音视频供其他用户浏览，并浏览其他用户的音视频。
+`Pull`: 客户端启动时不主动 Produce; 客户端可根据需要 Pull 对端的支持的音视频进行 Consume，而对端按需 Produce。仅 Pull 者会浏览。其他人要浏览可自行 Pull。
+`Invite`: 会议室管理员邀请其他用户发言；其他用户也可以向管理员申请发言。
+
 3. 客户端使用 Vue 实现。
 
 ## 一、启动服务端

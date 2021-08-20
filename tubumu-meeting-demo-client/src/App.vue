@@ -12,7 +12,7 @@
                   </el-select>
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="onConnected">{{(!connectForm.isConnected ? "Connect" : "Disconnect")}}</el-button>
+                  <el-button type="primary" @click="handleConnect">{{(!connectForm.isConnected ? "Connect" : "Disconnect")}}</el-button>
                 </el-form-item>
               </el-form>
             </div>
@@ -24,7 +24,7 @@
                   </el-select>
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="onJoinRoom">{{(!roomForm.isJoinedRoom ? "Join" : "Leave")}}</el-button>
+                  <el-button type="primary" @click="handleJoinRoom">{{(!roomForm.isJoinedRoom ? "Join" : "Leave")}}</el-button>
                 </el-form-item>
               </el-form>
             </div>
@@ -197,7 +197,7 @@ export default {
     // this.form.produce = this.connectForm.peerId !== '0' && this.connectForm.peerId !== '1';
   },
   methods: {
-    async onConnected() {
+    async handleConnect() {
       if(this.connectForm.isConnected) {
         if(this.connection) {
          await this.connection.stop();
@@ -237,6 +237,8 @@ export default {
 
         this.connection.onclose(e => {
           this.connectForm.isConnected = false;
+          this.roomForm.isJoinedRoom = false;
+          this.peersForm.peers = [];
           if(e) {
             logger.error(e)
           }
@@ -293,11 +295,11 @@ export default {
         return;
       }
     },
-    async onJoinRoom() {
+    async handleJoinRoom() {
       if(this.roomForm.isJoinedRoom) {
         let result = await this.connection.invoke('LeaveRoom');
         if (result.code !== 200) {
-          logger.error('onJoinRoom() | JoinRoom failure.');
+          logger.error('handleJoinRoom() | JoinRoom failure.');
           return;
         }
         this.peersForm.peers = [];
@@ -305,14 +307,14 @@ export default {
         return;
       } 
       if(!this.roomForm.roomId && this.roomForm.roomId !== 0) {
-        this.$message.error('Join room,please.');
+        this.$message.error('Join room, please.');
         return;
       }
       let result = await this.connection.invoke('JoinRoom', {
         roomId: this.roomForm.roomId.toString()
       });
       if (result.code !== 200) {
-        logger.error('onJoinRoom() | JoinRoom failure.');
+        logger.error('handleJoinRoom() | JoinRoom failure.');
         return;
       }
 
@@ -331,7 +333,7 @@ export default {
 							: undefined
         });
         if (result.code !== 200) {
-          logger.error('onJoinRoom() | CreateSendWebRtcTransport failed: %s', result.message);
+          logger.error('handleJoinRoom() | CreateSendWebRtcTransport failed: %s', result.message);
           return;
         }
 
