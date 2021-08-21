@@ -21,6 +21,7 @@ using Microsoft.OpenApi.Models;
 using SignalRSwaggerGen;
 using SignalRSwaggerGen.Attributes;
 using Tubumu.Core.Extensions;
+using Tubumu.Core.Extensions.Ip;
 using Tubumu.Mediasoup;
 using Tubumu.Meeting.Server;
 using Tubumu.Meeting.Server.Authorization;
@@ -195,11 +196,27 @@ namespace Tubumu.Web
                     options.MediasoupSettings.WebRtcTransportSettings.MaxSctpMessageSize = webRtcTransportSettings.MaxSctpMessageSize;
                 }
 
+                // 如果没有设置 AnnouncedIp 则取本机的 IPv4 地址
+                var localIPv4IPAddress = IPAddressExtensions.GetLocalIPv4IPAddress()?.ToString();
+                foreach (var listenIp in options.MediasoupSettings.WebRtcTransportSettings.ListenIps)
+                {
+                    if (listenIp.AnnouncedIp.IsNullOrWhiteSpace())
+                    {
+                        listenIp.AnnouncedIp = localIPv4IPAddress;
+                    }
+                }
+
                 // PlainTransportSettings
                 if (plainTransportSettings != null)
                 {
                     options.MediasoupSettings.PlainTransportSettings.ListenIp = plainTransportSettings.ListenIp;
                     options.MediasoupSettings.PlainTransportSettings.MaxSctpMessageSize = plainTransportSettings.MaxSctpMessageSize;
+                }
+
+                // 如果没有设置 AnnouncedIp 则取本机的 IPv4 地址
+                if (options.MediasoupSettings.PlainTransportSettings.ListenIp.AnnouncedIp.IsNullOrWhiteSpace())
+                {
+                    options.MediasoupSettings.PlainTransportSettings.ListenIp.AnnouncedIp = localIPv4IPAddress;
                 }
             });
 
