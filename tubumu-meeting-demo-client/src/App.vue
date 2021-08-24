@@ -239,6 +239,8 @@ export default {
           this.connectForm.isConnected = false;
           this.roomForm.isJoinedRoom = false;
           this.peersForm.peers = [];
+          this.disableMic();
+          this.disableWebcam();
           if(e) {
             logger.error(e)
           }
@@ -791,6 +793,10 @@ export default {
               break;
             }
           }
+          break;
+        }
+
+        case 'producerVideoOrientationChanged': {
           break;
         }
 

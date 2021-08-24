@@ -147,6 +147,7 @@ namespace Tubumu.Web
             var routerSettings = mediasoupSettings.RouterSettings;
             var webRtcTransportSettings = mediasoupSettings.WebRtcTransportSettings;
             var plainTransportSettings = mediasoupSettings.PlainTransportSettings;
+            var meetingServerSettings = Configuration.GetSection("MeetingServerSettings").Get<MeetingServerSettings>();
             services.AddMediasoup(options =>
             {
                 // MediasoupStartupSettings
@@ -223,7 +224,7 @@ namespace Tubumu.Web
             // Meeting server
             services.AddMeetingServer(options =>
             {
-                options.ServeMode = ServeMode.Open;
+                options.ServeMode = meetingServerSettings.ServeMode;
             });
 
             // Swagger
@@ -262,13 +263,14 @@ namespace Tubumu.Web
 
             app.UseCors("DefaultPolicy");
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGet("/", async context =>
-                {
-                    await context.Response.WriteAsync("Tubumu Meeting");
-                });
-            });
+            // For Testing.
+            //app.UseEndpoints(endpoints =>
+            //{
+            //    endpoints.MapGet("/", async context =>
+            //    {
+            //        await context.Response.WriteAsync("Tubumu Meeting");
+            //    });
+            //});
 
             app.UseEndpoints(endpoints =>
             {

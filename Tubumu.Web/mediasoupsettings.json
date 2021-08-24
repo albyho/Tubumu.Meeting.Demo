@@ -30,12 +30,12 @@
     },
     "RouterSettings": {
       "RtpCodecCapabilities": [
-        {
-          "Kind": "audio",
-          "MimeType": "audio/opus",
-          "ClockRate": 48000,
-          "Channels": 2
-        },
+        //{
+        //  "Kind": "audio",
+        //  "MimeType": "audio/opus",
+        //  "ClockRate": 48000,
+        //  "Channels": 2
+        //},
         {
           "Kind": "audio",
           "MimeType": "audio/PCMA",
@@ -87,7 +87,7 @@
       "ListenIps": [
         {
           "Ip": "0.0.0.0",
-          "AnnouncedIp": null
+          "AnnouncedIp": "192.168.3.66"
         }
       ],
       "InitialAvailableOutgoingBitrate": 1000000,
@@ -103,5 +103,8 @@
       },
       "MaxSctpMessageSize": 262144
     }
+  },
+  "MeetingServerSettings": {
+    "ServeMode": "Open" // Open,Invite,Pull
   }
 }
