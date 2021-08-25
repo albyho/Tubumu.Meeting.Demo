@@ -4,5 +4,5 @@ services:
   tubumu.web:
     image: ${DOCKER_REGISTRY-}tubumu
     build:
-      context: .
-      dockerfile: Tubumu.Web/Dockerfile
+      context: Tubumu.Web/
+      dockerfile: Dockerfile

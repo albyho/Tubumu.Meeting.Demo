@@ -4,10 +4,11 @@ services:
   tubumu.web:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_URLS=https://+:5001;http://+:5000
     ports:
-      - "80"
-      - "443"
+      - "5000"
+      - "5001"
+      - "20000-29999"
     volumes:
       - ~/.aspnet/https:/root/.aspnet/https:ro
       - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
