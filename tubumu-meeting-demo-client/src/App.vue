@@ -8,7 +8,7 @@
               <el-form ref="connectForm" :inline="true" label-width="80px" size="mini">
                 <el-form-item label="Peer:">
                   <el-select v-model="connectForm.peerId" :disabled="connectForm.isConnected" clearable placeholder="请选择">
-                    <el-option :label="`Peer ${index}`" v-for="(item, index) in accessTokens" :key="item" :value="index"></el-option>
+                    <el-option :label="`Peer ${index}${index == 8 || index === 9 ? '(admin)' : ''}`" v-for="(item, index) in accessTokens" :key="item" :value="index"></el-option>
                   </el-select>
                 </el-form-item>
                 <el-form-item>
@@ -314,7 +314,8 @@ export default {
         return;
       }
       let result = await this.connection.invoke('JoinRoom', {
-        roomId: this.roomForm.roomId.toString()
+        roomId: this.roomForm.roomId.toString(),
+        role: this.connectForm.peerId === 8 || this.connectForm.peerId === 9 ? "admin" : "normal"
       });
       if (result.code !== 200) {
         logger.error('handleJoinRoom() | JoinRoom failure.');
