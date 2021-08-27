@@ -7,8 +7,9 @@ EXPOSE 20000-29999
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY . .
+COPY ["Tubumu.Web.csproj", "."]
 RUN dotnet restore "Tubumu.Web.csproj"
+COPY . .
 RUN dotnet build "Tubumu.Web.csproj" -c Release -o /app/build
 
 FROM build AS publish

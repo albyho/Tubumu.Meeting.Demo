@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   tubumu.web:
-    image: ${DOCKER_REGISTRY-}tubumu
+    image: ${DOCKER_REGISTRY-}tubumu/tubumu.web
     build:
       context: Tubumu.Web/
       dockerfile: Dockerfile

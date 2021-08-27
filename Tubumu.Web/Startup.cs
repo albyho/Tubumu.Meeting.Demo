@@ -250,7 +250,6 @@ namespace Tubumu.Web
             else
             {
                 app.UseHsts();
-                app.UseHttpsRedirection();
             }
 
             app.UseDefaultFiles();
