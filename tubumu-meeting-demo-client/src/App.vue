@@ -115,6 +115,7 @@ export default {
   components: {},
   data() {
     return {
+      serveMode: 'Invite',
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
@@ -180,6 +181,11 @@ export default {
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiOSIsIm5iZiI6MTU4NDM0OTA0NiwiZXhwIjoxNTg2OTQxMDQ2LCJpc3MiOiJpc3N1ZXIiLCJhdWQiOiJhdWRpZW5jZSJ9.3Hnnkoxe52L7joy99dXkcIjHtz9FUitf4BGYCYjyKdE'
         ]
     };
+  },
+  computed: {
+    isAdmin: function () {
+      return this.connectForm.peerId === 8 || this.connectForm.peerId === 9
+    }
   },
   async mounted() {
     const { peerId, peerid } = querystring.parse(location.search.replace('?', ''));
@@ -260,7 +266,8 @@ export default {
     async start() {
       let result = await this.connection.invoke('GetRouterRtpCapabilities');
       if (result.code !== 200) {
-        logger.error('processNotification() | GetRouterRtpCapabilities failure.');
+        logger.error(`start() | GetRouterRtpCapabilities failed: ${result.message}`);
+        this.$message.error(`start() | GetRouterRtpCapabilities failed: ${result.message}`);
         return;
       }
 
@@ -294,7 +301,8 @@ export default {
         appData: {}
       });
       if (result.code !== 200) {
-        logger.error('processNotification() | Join failure.');
+        logger.error(`processNotification() | Join failed: ${result.message}`);
+        this.$message.error(`processNotification() | Join failed: ${result.message}`);
         return;
       }
     },
@@ -302,7 +310,8 @@ export default {
       if(this.roomForm.isJoinedRoom) {
         let result = await this.connection.invoke('LeaveRoom');
         if (result.code !== 200) {
-          logger.error('handleJoinRoom() | JoinRoom failure.');
+          logger.error(`handleJoinRoom() | JoinRoom failed: ${result.message}`)
+          this.$message.error(`handleJoinRoom() | JoinRoom failed: ${result.message}`);
           return;
         }
         this.peersForm.peers = [];
@@ -313,12 +322,14 @@ export default {
         this.$message.error('Join room, please.');
         return;
       }
+
       let result = await this.connection.invoke('JoinRoom', {
         roomId: this.roomForm.roomId.toString(),
-        role: this.connectForm.peerId === 8 || this.connectForm.peerId === 9 ? "admin" : "normal"
+        role: this.isAdmin ? "admin" : "normal"
       });
       if (result.code !== 200) {
-        logger.error('handleJoinRoom() | JoinRoom failure.');
+        logger.error('handleJoinRoom() | JoinRoom failed.');
+        this.$message.error(`handleJoinRoom() | JoinRoom failed: ${result.message}`);
         return;
       }
 
@@ -337,7 +348,8 @@ export default {
 							: undefined
         });
         if (result.code !== 200) {
-          logger.error('handleJoinRoom() | CreateSendWebRtcTransport failed: %s', result.message);
+          logger.error(`handleJoinRoom() | CreateSendWebRtcTransport failed: ${result.message}`);
+          this.$message.error(`handleJoinRoom() | CreateSendWebRtcTransport failed: ${result.message}`);
           return;
         }
 
@@ -381,7 +393,8 @@ export default {
                 appData
               });
               if (result.code !== 200) {
-                logger.debug(result.message);
+                logger.error(`sendTransport 'produce' callbak | failed: ${result.message}`);
+                this.$message.error(`sendTransport 'produce' callbak | failed: ${result.message}`);
                 errback(new Error(result.message));
                 return;
               }
@@ -471,18 +484,25 @@ export default {
         logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
 
-      await this.enableMic();
-      await this.enableWebcam();
+      if(this.serveMode == 'Open') {
+        await this.enableMic();
+        await this.enableWebcam();
+      }
 
       result = await this.connection.invoke('Ready');
       if (result.code !== 200) {
-        logger.error('Ready() | Ready failure.');
+        logger.error(`Ready() | failed: ${result.message}`);
+        this.$message.error(`Ready() | failed: ${result.message}`);
         return;
       }
     },
     async onPeerNodeClick(peer) {
       logger.debug('onPeerNodeClick() | %o', peer);
-      //await this.pull(peer.peerId, peer.sources)
+      if(this.serveMode === 'Pull') {
+        await this.pull(peer.peerId, peer.sources)
+      } else if(this.serveMode === 'Invite' && this.isAdmin) {
+        await this.invite(peer.peerId, peer.sources)
+      }
     },
     async processNewConsumer(data) {
       const {
@@ -547,7 +567,8 @@ export default {
       logger.debug('processNewConsumer() ResumeConsumer');
       const result = await this.connection.invoke('ResumeConsumer', consumerId);
       if (result.code !== 200) {
-        logger.error('processNewConsumer() | ResumeConsumer failure.');
+        logger.error(`processNewConsumer() | ResumeConsumer failed: ${result.message}`);
+        this.$message.error(`processNewConsumer() | ResumeConsumer failed: ${result.message}`);
         return;
       }
     },
@@ -642,13 +663,25 @@ export default {
         throw error;
       }
     },
-    async pull(producerPeerId, sources) {
+    async pull(peerId, sources) {
       const result = await this.connection.invoke('Pull', {
-        producerPeerId,
+        peerId,
         sources
       });
       if (result.code !== 200) {
-        logger.error('pull() | pull failure.');
+        logger.error(`pull() | failed: ${result.message}`);
+        this.$message.error(`pull() | failed: ${result.message}`);
+        return;
+      }
+    },
+    async invite(peerId, sources) {
+      const result = await this.connection.invoke('Invite', {
+        peerId,
+        sources
+      });
+      if (result.code !== 200) {
+        logger.error(`invite() | failed: ${result.message}`);
+        this.$message.error(`invite() | failed: ${result.message}`);
         return;
       }
     },
@@ -703,12 +736,16 @@ export default {
         {
           if(!this.form.produce) break;
 
-          const { /*roomId, */produceSources } = data.data;
-          for(let i =0; i < produceSources.length; i++){
-            if(produceSources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
-              await this.enableMic();
-            } else if(produceSources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
-              await this.enableWebcam();
+          const { /*roomId, */sources } = data.data;
+          for(let i =0; i < sources.length; i++){
+            if(sources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
+              if(!this.micProducer) {
+                await this.enableMic();
+              }
+            } else if(sources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
+              if(!this.webcamProducer) {
+                await this.enableWebcam();
+              }
             }
           }
 
@@ -1047,6 +1084,7 @@ export default {
       }
 
       this.webcamProducer = null;
+      this.localVideoStream = null;
     },
     webcamClosed() {
       if (!this.webcamProducer) return;
