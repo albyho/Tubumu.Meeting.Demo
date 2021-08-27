@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <el-container>
-      <el-header>Demo</el-header>
+      <el-header>Demo - 服务模式: {{serveModeText}}</el-header>
         <el-container>
           <el-aside width="400px">            
             <div class="demo-block">
@@ -185,6 +185,9 @@ export default {
   computed: {
     isAdmin: function () {
       return this.connectForm.peerId === 8 || this.connectForm.peerId === 9
+    },
+    serveModeText: function () {
+      return this.serveMode === 'Open' ? '开放(Open)模式' : this.serveMode === 'Invite' ? '邀请(Invite)模式' : '拉取(Pull)模式'
     }
   },
   async mounted() {
