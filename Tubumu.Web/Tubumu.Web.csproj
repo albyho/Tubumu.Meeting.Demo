@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Tubumu.Core\Tubumu.Core.csproj" />
+    <ProjectReference Include="..\..\Tubumu.Utils\Tubumu.Utils.csproj" />
     <ProjectReference Include="..\..\Tubumu.Mediasoup\Tubumu.Mediasoup.csproj" />
     <ProjectReference Include="..\..\Tubumu.Mediasoup.AspNetCore\Tubumu.Mediasoup.AspNetCore.csproj" />
     <ProjectReference Include="..\..\Tubumu.Mediasoup.Executable\Tubumu.Mediasoup.Executable.csproj" />
@@ -32,7 +32,7 @@
   </ItemGroup>
 
 <!--  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PackageReference Include="Tubumu.Core" Version="4.0.0" />
+    <PackageReference Include="Tubumu.Utils" Version="4.0.0" />
     <PackageReference Include="Tubumu.Mediasoup" Version="4.0.0" />
     <PackageReference Include="Tubumu.Mediasoup.Common" Version="4.0.0" />
     <PackageReference Include="Tubumu.Mediasoup.AspNetCore" Version="4.0.0" />

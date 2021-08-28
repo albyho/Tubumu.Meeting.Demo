@@ -50,7 +50,7 @@
 
 ## 关联项目
 
-1. [Tubumu.Core: 工具类等。](https://github.com/albyho/Tubumu.Core)
+1. [Tubumu.Utils: 工具类等。](https://github.com/albyho/Tubumu.Utils)
 2. [Tubumu.Libuv: Libuv 封装。](https://github.com/albyho/Tubumu.Libuv)
 3. [Tubumu.Mediasoup: mediasoup 服务端库的 C# 实现。](https://github.com/albyho/Tubumu.Mediasoup)
 4. [Tubumu.Mediasoup.Common: 公共类封装。也可供 WinForm 或 WPF 等使用。](https://github.com/albyho/Tubumu.Mediasoup.Common)

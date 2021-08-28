@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29926.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Mediasoup", "..\Tubumu.Mediasoup\Tubumu.Mediasoup.csproj", "{3215483D-073D-4EBF-9DA2-B53FAE56B3FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Core", "..\Tubumu.Core\Tubumu.Core.csproj", "{9FD26270-4FD2-4583-AA76-F0D96BC451D0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Utils", "..\Tubumu.Utils\Tubumu.Utils.csproj", "{9FD26270-4FD2-4583-AA76-F0D96BC451D0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tubumu.Libuv", "..\Tubumu.Libuv\Tubumu.Libuv.csproj", "{DB17A15E-07E8-4F7D-BF26-7549B90D5F2C}"
 EndProject

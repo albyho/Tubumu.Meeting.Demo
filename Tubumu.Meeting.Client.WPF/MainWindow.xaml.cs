@@ -16,11 +16,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Tubumu.Mediasoup;
-using Tubumu.Core.Extensions.Object;
+using Tubumu.Utils.Extensions.Object;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
-using Tubumu.Core.Extensions;
+using Tubumu.Utils.Extensions;
 using System.Windows.Interop;
 
 namespace Tubumu.Meeting.Client.WPF
