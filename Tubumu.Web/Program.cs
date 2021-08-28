@@ -43,11 +43,16 @@ namespace Tubumu.Web
             .UseSerilog(dispose: true)
             .ConfigureWebHostDefaults(webBuilder =>
             {
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
                 var configs = new ConfigurationBuilder()
-                    .AddJsonFile("hosting.json", optional: false)
+                    .AddJsonFile("hosting.json", optional: true)
+                    .AddJsonFile($"hosting.{environment}.json", optional: true)
                     .AddJsonFile("mediasoupsettings.json", optional: false)
+                    .AddJsonFile($"mediasoupsettings.{environment}.json", optional: true)
                     .AddJsonFile("consulsettings.json", optional: false)
+                    .AddJsonFile($"consulsettings.{environment}.json", optional: true)
                     .AddJsonFile("sipsettings.json", optional: false)
+                    .AddJsonFile($"sipsettings.{environment}.json", optional: true)
                     .Build();
 
                 webBuilder.UseConfiguration(configs);
