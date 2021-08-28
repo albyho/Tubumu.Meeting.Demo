@@ -22,7 +22,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.5" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <ItemGroup>
     <ProjectReference Include="..\..\Tubumu.Core\Tubumu.Core.csproj" />
     <ProjectReference Include="..\..\Tubumu.Mediasoup\Tubumu.Mediasoup.csproj" />
     <ProjectReference Include="..\..\Tubumu.Mediasoup.AspNetCore\Tubumu.Mediasoup.AspNetCore.csproj" />
@@ -31,7 +31,7 @@
     <ProjectReference Include="..\..\Tubumu.Meeting.Server.Consul\Tubumu.Meeting.Server.Consul.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+<!--  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PackageReference Include="Tubumu.Core" Version="4.0.0" />
     <PackageReference Include="Tubumu.Mediasoup" Version="4.0.0" />
     <PackageReference Include="Tubumu.Mediasoup.Common" Version="4.0.0" />
@@ -39,6 +39,6 @@
     <PackageReference Include="Tubumu.Mediasoup.Executable" Version="4.0.0" />
     <PackageReference Include="Tubumu.Meeting.Server" Version="4.0.0" />
     <PackageReference Include="Tubumu.Meeting.Server.Consul" Version="4.0.0" />
-  </ItemGroup>
+  </ItemGroup>-->
 
 </Project>

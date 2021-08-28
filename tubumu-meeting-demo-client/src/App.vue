@@ -129,6 +129,7 @@ export default {
       forceH264: false,
       forceVP9: false,
       forceTcp: true,
+      localAudioStream: null,
       localVideoStream: null,
       remoteVideoStreams: {},
       remoteAudioStreams: {},
@@ -509,8 +510,14 @@ export default {
       logger.debug('onPeerNodeClick() | %o', peer);
       if(this.serveMode === 'Pull') {
         await this.pull(peer.peerId, peer.sources)
-      } else if(this.serveMode === 'Invite' && this.isAdmin) {
-        await this.invite(peer.peerId, peer.sources)
+      } else if(this.serveMode === 'Invite') {
+        if(this.isAdmin) {
+          await this.invite(peer.peerId, peer.sources)
+        } 
+        else
+        {
+          this.$message.error('仅管理员可进行邀请操作。');
+        }
       }
     },
     async processNewConsumer(data) {
@@ -935,6 +942,7 @@ export default {
             deviceId: { ideal: deviceId }
           }
         });
+        this.localAudioStream = stream;
 
         track = stream.getAudioTracks()[0];
 
@@ -975,11 +983,19 @@ export default {
       }
 
       this.micProducer = null;
+      this.micClosed();
     },
     micClosed() {
-      if (!this.micProducer) return;
-      this.micProducer.close();
-      this.micProducer = null;
+      if(this.micProducer)
+      {
+        this.micProducer.close();
+        this.micProducer = null;
+      }
+      if(this.localAudioStream)
+      {
+        this.localAudioStream.close();
+        this.localAudioStream = null;
+      }
     },
     async enableWebcam() {
       logger.debug('enableWebcam()');
@@ -1093,12 +1109,19 @@ export default {
       }
 
       this.webcamProducer = null;
-      this.localVideoStream = null;
+      this.webcamClosed();
     },
     webcamClosed() {
-      if (!this.webcamProducer) return;
-      this.webcamProducer.close();
-      this.webcamProducer = null;
+      if(this.webcamProducer)
+      {
+        this.webcamProducer.close();
+        this.webcamProducer = null;
+      }
+      if(this.localVideoStream)
+      {
+        this.localVideoStream.close();
+        this.localVideoStream = null;
+      }
     },
     async _updateAudioDevices() {
       logger.debug('_updateAudioDevices()');
