@@ -32,13 +32,13 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PackageReference Include="Tubumu.Core" Version="3.2.0" />
-    <PackageReference Include="Tubumu.Mediasoup" Version="3.2.0" />
-    <PackageReference Include="Tubumu.Mediasoup.Common" Version="3.2.0" />
-    <PackageReference Include="Tubumu.Mediasoup.AspNetCore" Version="3.2.0" />
-    <PackageReference Include="Tubumu.Mediasoup.Executable" Version="3.2.0" />
-    <PackageReference Include="Tubumu.Meeting.Server" Version="3.2.0" />
-    <PackageReference Include="Tubumu.Meeting.Server.Consul" Version="3.2.0" />
+    <PackageReference Include="Tubumu.Core" Version="3.2.1" />
+    <PackageReference Include="Tubumu.Mediasoup" Version="3.2.1" />
+    <PackageReference Include="Tubumu.Mediasoup.Common" Version="3.2.1" />
+    <PackageReference Include="Tubumu.Mediasoup.AspNetCore" Version="3.2.1" />
+    <PackageReference Include="Tubumu.Mediasoup.Executable" Version="3.2.1" />
+    <PackageReference Include="Tubumu.Meeting.Server" Version="3.2.1" />
+    <PackageReference Include="Tubumu.Meeting.Server.Consul" Version="3.2.1" />
   </ItemGroup>
 
 </Project>
