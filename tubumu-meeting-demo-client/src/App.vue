@@ -221,6 +221,12 @@ export default {
         this.remoteAudioStreams = {};
         return;
       }
+
+      if(!this.connectForm.peerId && this.connectForm.peerId !== 0) {
+        this.$message.error('Select a peer, please.');
+        return;
+      }
+
       try {
         const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
         this.connection = new signalR.HubConnectionBuilder()
@@ -313,8 +319,8 @@ export default {
       if(this.roomForm.isJoinedRoom) {
         let result = await this.connection.invoke('LeaveRoom');
         if (result.code !== 200) {
-          logger.error(`handleJoinRoom() | JoinRoom failed: ${result.message}`)
-          this.$message.error(`handleJoinRoom() | JoinRoom failed: ${result.message}`);
+          logger.error(`handleJoinRoom() | LeaveRoom failed: ${result.message}`)
+          this.$message.error(`handleJoinRoom() | LeaveRoom failed: ${result.message}`);
           return;
         }
         this.peersForm.peers = [];
@@ -322,7 +328,7 @@ export default {
         return;
       } 
       if(!this.roomForm.roomId && this.roomForm.roomId !== 0) {
-        this.$message.error('Join room, please.');
+        this.$message.error('Select a room, please.');
         return;
       }
 
