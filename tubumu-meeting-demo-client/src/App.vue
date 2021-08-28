@@ -62,7 +62,6 @@
 
 <script>
 import Logger from './lib/Logger';
-import querystring from 'querystring';
 import * as mediasoupClient from 'mediasoup-client';
 import * as signalR from '@microsoft/signalr';
 
@@ -70,7 +69,9 @@ import * as signalR from '@microsoft/signalr';
 const VIDEO_CONSTRAINS = {
   qvga: { width: { ideal: 320 }, height: { ideal: 240 } },
   vga: { width: { ideal: 640 }, height: { ideal: 480 } },
-  hd: { width: { ideal: 1280 }, height: { ideal: 720 } }
+  '720P': { width: { ideal: 1280 }, height: { ideal: 720 } },
+  '1080P': { width: { ideal: 1920 }, height: { ideal: 1080 } },
+  '4k': { width: { ideal: 4096 }, height: { ideal: 2160 } }
 };
 
 const PC_PROPRIETARY_CONSTRAINTS = {
@@ -192,14 +193,13 @@ export default {
     }
   },
   async mounted() {
-    const { peerId, peerid } = querystring.parse(location.search.replace('?', ''));
-    this.connectForm.peerId = peerId || peerid;
+    var searchParams = new URLSearchParams(location.search.replace('?', ''));
+    this.connectForm.peerId = searchParams.get('peerId') || searchParams.get('peerid');
     if(this.connectForm.peerId) {
       this.connectForm.peerId = parseInt(this.connectForm.peerId);
     }
 
-    const { roomId, roomid } = querystring.parse(location.search.replace('?', ''));
-    this.roomForm.roomId = roomId || roomid;
+    this.roomForm.roomId =  searchParams.get('roomId') || searchParams.get('roomid');
     if(this.roomForm.roomId) {
       this.roomForm.roomId = parseInt(this.roomForm.roomId);
     }
