@@ -507,6 +507,7 @@ export default {
       }
     },
     async onPeerNodeClick(peer) {
+      if(!peer) return;
       logger.debug('onPeerNodeClick() | %o', peer);
       if(this.serveMode === 'Pull') {
         await this.pull(peer.peerId, peer.sources)
@@ -734,11 +735,15 @@ export default {
         {
           // eslint-disable-next-line no-unused-vars
           const { peerId } = data.data;
-          for(let i = this.peersForm.peers.length - 1; i > 0; i--) {
+          let idx = -1;
+          for(let i = 0; i < this.peersForm.peers.length; i++) {
             if(this.peersForm.peers[i].peerId === peerId) {
-              this.peersForm.peers.splice(i, 1);
+              idx = i;
               break;
             }
+          }
+          if(idx >= 0){
+            this.peersForm.peers.splice(idx, 1);
           }
           break;
         }
@@ -991,11 +996,7 @@ export default {
         this.micProducer.close();
         this.micProducer = null;
       }
-      if(this.localAudioStream)
-      {
-        this.localAudioStream.close();
-        this.localAudioStream = null;
-      }
+      this.localAudioStream = null;
     },
     async enableWebcam() {
       logger.debug('enableWebcam()');
@@ -1117,11 +1118,7 @@ export default {
         this.webcamProducer.close();
         this.webcamProducer = null;
       }
-      if(this.localVideoStream)
-      {
-        this.localVideoStream.close();
-        this.localVideoStream = null;
-      }
+      this.localVideoStream = null;
     },
     async _updateAudioDevices() {
       logger.debug('_updateAudioDevices()');
