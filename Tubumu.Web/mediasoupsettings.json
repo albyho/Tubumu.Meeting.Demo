@@ -1,7 +1,7 @@
 {
   "MediasoupStartupSettings": {
     "MediasoupVersion": "3.8.2",
-    "WorkerPath": "/Users/alby/Workspace/OpenSource/versatica/mediasoup/worker/out/Release/mediasoup-worker",
+    //"WorkerPath": "/Users/alby/Workspace/OpenSource/versatica/mediasoup/worker/out/Release/mediasoup-worker",
     //"WorkerPath": "/Users/alby/Workspace/Tubumu.Mediasoup/Tubumu.Mediasoup.Executable/runtimes/osx/native/mediasoup-worker",
     //"WorkerPath": "/Users/alby/Library/Developer/Xcode/DerivedData/mediasoup-worker-cqgehmiqutauwddqhmqzanqfeefl/Build/Products/Debug/mediasoup-worker",
     //"WorkerPath": "C:\\Developer\\OpenSource\\Meeting\\mediasoup\\worker\\out\\Release\\mediasoup-worker",
