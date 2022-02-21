@@ -229,7 +229,7 @@ export default {
       }
 
       try {
-        const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:5001`;
+        const host = process.env.NODE_ENV === 'production' ? '' : `https://${window.location.hostname}:9001`;
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(
             `${host}/hubs/meetingHub`, {
