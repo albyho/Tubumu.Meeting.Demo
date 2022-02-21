@@ -203,7 +203,7 @@ namespace Tubumu.Web
                     if (listenIps.IsNullOrEmpty())
                     {
                         var localIPv4IPAddresses = IPAddressExtensions.GetLocalIPAddresses(AddressFamily.InterNetwork).Where(m => m != IPAddress.Loopback);
-                        if (localIPv4IPAddresses.IsNullOrEmpty())
+                        if (EnumerableExtensions.IsNullOrEmpty(localIPv4IPAddresses))
                         {
                             throw new ArgumentException("无法获取本机 IPv4 配置 WebRtcTransport。");
                         }
@@ -280,9 +280,6 @@ namespace Tubumu.Web
                 options.SwaggerDoc("v1", new OpenApiInfo {
                     Title = "Meeting API",
                     Version = "v1"
-                });
-                options.DocumentFilter<SignalRSwaggerGen.SignalRSwaggerGen>(new List<Assembly> {
-                    typeof(MeetingHub).Assembly
                 });
             });
         }
