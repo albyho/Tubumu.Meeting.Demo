@@ -30,18 +30,18 @@
     },
     "RouterSettings": {
       "RtpCodecCapabilities": [
-        //{
-        //  "Kind": "audio",
-        //  "MimeType": "audio/opus",
-        //  "ClockRate": 48000,
-        //  "Channels": 2
-        //},
         {
           "Kind": "audio",
-          "MimeType": "audio/PCMA",
-          "ClockRate": 8000,
-          "Channels": 1
+          "MimeType": "audio/opus",
+          "ClockRate": 48000,
+          "Channels": 2
         },
+        //{
+        //  "Kind": "audio",
+        //  "MimeType": "audio/PCMA",
+        //  "ClockRate": 8000,
+        //  "Channels": 1
+        //},
         {
           "Kind": "video",
           "MimeType": "video/VP8",
@@ -105,6 +105,6 @@
     }
   },
   "MeetingServerSettings": {
-    "ServeMode": "Invite" // Open,Invite,Pull
+    "ServeMode": "Open" // Open,Invite,Pull
   }
 }

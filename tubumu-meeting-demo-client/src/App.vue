@@ -116,7 +116,7 @@ export default {
   components: {},
   data() {
     return {
-      serveMode: 'Invite',
+      serveMode: 'Open',
       connection: null,
       mediasoupDevice: null,
       sendTransport: null,
@@ -274,7 +274,15 @@ export default {
       }
     },
     async start() {
-      let result = await this.connection.invoke('GetRouterRtpCapabilities');
+      let result = await this.connection.invoke('GetServeMode');
+      if (result.code !== 200) {
+        logger.error(`start() | GetServeMode failed: ${result.message}`);
+        this.$message.error(`start() | GetServeMode failed: ${result.message}`);
+        return;
+      }
+      this.serveMode = result.data.serveMode;
+
+      result = await this.connection.invoke('GetRouterRtpCapabilities');
       if (result.code !== 200) {
         logger.error(`start() | GetRouterRtpCapabilities failed: ${result.message}`);
         this.$message.error(`start() | GetRouterRtpCapabilities failed: ${result.message}`);
