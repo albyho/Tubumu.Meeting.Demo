@@ -51,7 +51,7 @@
             </div>
           </el-aside>
           <el-main>
-            <video id="localVideo" ref="localVideo" v-if="!!webcamProducer" :srcObject.prop="localVideoStream" autoplay playsinline />
+            <video id="localVideo" ref="localVideo" v-if="!!camProducer" :srcObject.prop="localVideoStream" autoplay playsinline />
             <video v-for="(value, key) in remoteVideoStreams" :key="key" :srcObject.prop="value" autoplay playsinline />
             <audio v-for="(value, key) in remoteAudioStreams" :key="key" :srcObject.prop="value" autoplay />
           </el-main>
@@ -85,7 +85,7 @@ const WEBCAM_SIMULCAST_ENCODINGS = [
   { scaleResolutionDownBy: 1, maxBitrate: 5000000 }
 ];
 
-// Used for VP9 webcam video.
+// Used for VP9 cam video.
 // eslint-disable-next-line no-unused-vars
 const WEBCAM_KSVC_ENCODINGS = [
   { scalabilityMode: 'S3T3_KEY' }
@@ -122,14 +122,14 @@ export default {
       sendTransport: null,
       recvTransport: null,
       nextDataChannelTestNumber: 0,
-      webcams: {},
+      cams: {},
       audioDevices: {},
-      webcamProducer: null,
+      camProducer: null,
       micProducer: null,
       useSimulcast: false,
       forceH264: false,
       forceVP9: false,
-      forceTcp: true,
+      forceTcp: false,
       localAudioStream: null,
       localVideoStream: null,
       remoteVideoStreams: {},
@@ -156,6 +156,8 @@ export default {
       form: {
         consume: true,
         produce: true,
+        produceAudio: true,
+        produceVideo: false,
         useDataChannel: false
       },
       rooms: [
@@ -215,7 +217,7 @@ export default {
         }
         this.connectForm.isConnected = false;
         this.roomForm.isJoinedRoom = false;
-        this.webcamClosed();
+        this.camClosed();
         this.micClosed();
         this.peersForm.peers = [];
         this.remoteVideoStreams = {};
@@ -315,7 +317,7 @@ export default {
 						? this.mediasoupDevice.sctpCapabilities
 						: undefined,
         displayName: null,
-        sources: ['mic', 'webcam'],
+        sources: ['audio:mic', 'video:cam'],
         appData: {}
       });
       if (result.code !== 200) {
@@ -502,16 +504,18 @@ export default {
         logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
 
-      if(this.serveMode == 'Open') {
+      if(this.serveMode === 'Open') {
         await this.enableMic();
         await this.enableWebcam();
       }
 
-      result = await this.connection.invoke('Ready');
-      if (result.code !== 200) {
-        logger.error(`Ready() | failed: ${result.message}`);
-        this.$message.error(`Ready() | failed: ${result.message}`);
-        return;
+      if(this.serveMode !== 'Pull') {
+        let result = await this.connection.invoke('Ready');
+        if (result.code !== 200) {
+          logger.error(`Ready() | failed: ${result.message}`);
+          this.$message.error(`Ready() | failed: ${result.message}`);
+          return;
+        }
       }
     },
     async onPeerNodeClick(peer) {
@@ -767,12 +771,13 @@ export default {
 
           const { /*roomId, */sources } = data.data;
           for(let i =0; i < sources.length; i++){
-            if(sources[i] === 'mic' && this.mediasoupDevice.canProduce('audio')) {
-              if(!this.micProducer) {
+            if(sources[i] === 'audio:mic' && this.mediasoupDevice.canProduce('audio')) {
+              logger.debug(this.form.produceAudio);
+              if(this.form.produceAudio && !this.micProducer) {
                 await this.enableMic();
               }
-            } else if(sources[i] === 'webcam' && this.mediasoupDevice.canProduce('video')) {
-              if(!this.webcamProducer) {
+            } else if(sources[i] === 'video:cam' && this.mediasoupDevice.canProduce('video')) {
+              if(this.form.produceVideo && !this.camProducer) {
                 await this.enableWebcam();
               }
             }
@@ -844,9 +849,9 @@ export default {
 
           if (!producer) break;
 
-          if(producer.source === 'webcam') {
-            this.webcamClosed();
-          } else if(producer.source === 'mic') {
+          if(producer.source === 'video:cam') {
+            this.camClosed();
+          } else if(producer.source === 'audio:mic') {
             this.micClosed();
           }
 
@@ -965,7 +970,7 @@ export default {
             opusStereo: 1,
             opusDtx: 1
           },
-          appData: { source: 'mic' }
+          appData: { source: 'audio:mic' }
         });
 
         this.micProducer.on('transportclose', () => {
@@ -1009,7 +1014,7 @@ export default {
     async enableWebcam() {
       logger.debug('enableWebcam()');
 
-      if (this.webcamProducer) return;
+      if (this.camProducer) return;
       if (this.mediasoupDevice && !this.mediasoupDevice.canProduce('video')) {
         logger.error('enableWebcam() | cannot produce video');
         return;
@@ -1020,13 +1025,13 @@ export default {
       try {
         const deviceId = await this._getWebcamDeviceId();
 
-        logger.debug(`_setWebcamProducer() | webcam: ${deviceId}`);
+        logger.debug(`_setWebcamProducer() | cam: ${deviceId}`);
 
-        const device = this.webcams.get(deviceId);
+        const device = this.cams.get(deviceId);
 
-        if (!device) throw new Error(`no webcam devices: ${JSON.stringify(this.webcams)}`);
+        if (!device) throw new Error(`no cam devices: ${JSON.stringify(this.cams)}`);
 
-        logger.debug('_setWebcamProducer() | new selected webcam [device:%o]', device);
+        logger.debug('_setWebcamProducer() | new selected cam [device:%o]', device);
 
         logger.debug('_setWebcamProducer() | calling getUserMedia()');
 
@@ -1082,19 +1087,19 @@ export default {
           else encodings = WEBCAM_SIMULCAST_ENCODINGS;
         }
 
-        this.webcamProducer = await this.sendTransport.produce({
+        this.camProducer = await this.sendTransport.produce({
           track,
           encodings,
           codecOptions,
           codec,
-          appData: { source: 'webcam' }
+          appData: { source: 'video:cam' }
         });
 
-        this.webcamProducer.on('transportclose', () => {
-          this.webcamProducer = null;
+        this.camProducer.on('transportclose', () => {
+          this.camProducer = null;
         });
 
-        this.webcamProducer.on('trackended', () => {
+        this.camProducer.on('trackended', () => {
           this.disableWebcam().catch(() => {});
         });
         logger.debug('_setWebcamProducer() succeeded');
@@ -1107,24 +1112,24 @@ export default {
     async disableWebcam() {
       logger.debug('disableWebcam()');
 
-      if (!this.webcamProducer) return;
+      if (!this.camProducer) return;
 
-      this.webcamProducer.close();
+      this.camProducer.close();
 
       try {
-        await this.connection.invoke('CloseProducer', this.webcamProducer.id);
+        await this.connection.invoke('CloseProducer', this.camProducer.id);
       } catch (error) {
         logger.error('disableWebcam() [error:"%o"]', error);
       }
 
-      this.webcamProducer = null;
-      this.webcamClosed();
+      this.camProducer = null;
+      this.camClosed();
     },
-    webcamClosed() {
-      if(this.webcamProducer)
+    camClosed() {
+      if(this.camProducer)
       {
-        this.webcamProducer.close();
-        this.webcamProducer = null;
+        this.camProducer.close();
+        this.camProducer = null;
       }
       this.localVideoStream = null;
     },
@@ -1152,7 +1157,7 @@ export default {
       logger.debug('_updateWebcams()');
 
       // Reset the list.
-      this.webcams = new Map();
+      this.cams = new Map();
 
       try {
         logger.debug('_updateWebcams() | calling enumerateDevices()');
@@ -1163,7 +1168,7 @@ export default {
         for (const device of devices) {
           if (device.kind !== 'videoinput') continue;
           logger.debug('_updateWebcams() | %o', device);
-          this.webcams.set(device.deviceId, device);
+          this.cams.set(device.deviceId, device);
         }
       } catch (error) {
         logger.error('_updateWebcams() failed: %o', error);
@@ -1191,8 +1196,8 @@ export default {
 
         await this._updateWebcams();
 
-        const webcams = Array.from(this.webcams.values());
-        return webcams[0] ? webcams[0].deviceId : null;
+        const cams = Array.from(this.cams.values());
+        return cams[0] ? cams[0].deviceId : null;
       } catch (error) {
         logger.error('_getWebcamDeviceId() failed: %o', error);
       }

@@ -1,6 +1,6 @@
 {
   "MediasoupStartupSettings": {
-    "MediasoupVersion": "3.8.2",
+    "MediasoupVersion": "3.9.9",
     //"WorkerPath": "/Users/alby/Workspace/OpenSource/versatica/mediasoup/worker/out/Release/mediasoup-worker",
     //"WorkerPath": "/Users/alby/Workspace/Tubumu.Mediasoup/Tubumu.Mediasoup.Executable/runtimes/osx/native/mediasoup-worker",
     //"WorkerPath": "/Users/alby/Library/Developer/Xcode/DerivedData/mediasoup-worker-cqgehmiqutauwddqhmqzanqfeefl/Build/Products/Debug/mediasoup-worker",
@@ -30,18 +30,18 @@
     },
     "RouterSettings": {
       "RtpCodecCapabilities": [
-        {
-          "Kind": "audio",
-          "MimeType": "audio/opus",
-          "ClockRate": 48000,
-          "Channels": 2
-        },
         //{
         //  "Kind": "audio",
-        //  "MimeType": "audio/PCMA",
-        //  "ClockRate": 8000,
-        //  "Channels": 1
+        //  "MimeType": "audio/opus",
+        //  "ClockRate": 48000,
+        //  "Channels": 2
         //},
+        {
+          "Kind": "audio",
+          "MimeType": "audio/PCMA",
+          "ClockRate": 8000,
+          "Channels": 1
+        },
         {
           "Kind": "video",
           "MimeType": "video/VP8",
@@ -105,6 +105,6 @@
     }
   },
   "MeetingServerSettings": {
-    "ServeMode": "Open" // Open,Invite,Pull
+    "ServeMode": "Pull" // Open,Invite,Pull
   }
 }
