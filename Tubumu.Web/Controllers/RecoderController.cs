@@ -35,7 +35,7 @@ namespace Tubumu.Web.Controllers
             {
                 PeerId = "100001@100001",
                 RoomId = "0",
-                ProducerPeerId = "0",
+                ProducerPeerId = "9",
                 ProducerSources = new string[] { "audio:mic" }
             };
 
@@ -116,13 +116,17 @@ namespace Tubumu.Web.Controllers
 
             // Create PlainTransport
             var transport = await CreatePlainTransport(recorderPrepareRequest.PeerId);
-            var recorderPrepareResult = new RecorderPrepareResult
+            var remoteRtpIp = "127.0.0.1";
+            var remoteRtpPort = 8787;
+            int? remoteRtcpPort = transport.RtcpMux.HasValue && transport.RtcpMux.Value ? null : 8788;
+            var plainTransportConnectParameters = new PlainTransportConnectParameters
             {
-                TransportId = transport.TransportId,
-                Ip = transport.Tuple.LocalIp,
-                Port = transport.Tuple.LocalPort,
-                RtcpPort = transport.RtcpTuple != null ? transport.RtcpTuple.LocalPort : null
+                Ip = remoteRtpIp,
+                Port = remoteRtpPort,
+                RtcpPort = remoteRtcpPort,
             };
+
+            await transport.ConnectAsync(plainTransportConnectParameters);
 
             // Create Consumers
             var producerPeer = joinRoomResult.Peers.Where(m => m.PeerId == recorderPrepareRequest.ProducerPeerId).FirstOrDefault();
@@ -130,6 +134,14 @@ namespace Tubumu.Web.Controllers
             {
                 return new ApiResult { Code = 400, Message = "生产者 Peer 不存在" };
             }
+
+            var recorderPrepareResult = new RecorderPrepareResult
+            {
+                TransportId = transport.TransportId,
+                Ip = plainTransportConnectParameters.Ip,
+                Port = plainTransportConnectParameters.Port,
+                RtcpPort = plainTransportConnectParameters.RtcpPort,
+            };
 
             var producers = await producerPeer.GetProducersASync();
             foreach (var source in recorderPrepareRequest.ProducerSources)
@@ -150,6 +162,8 @@ namespace Tubumu.Web.Controllers
                     return new ApiResult { Code = 400, Message = $"已经在消费 {source}" };
                 }
 
+                await consumer.ResumeAsync();
+
                 recorderPrepareResult.ConsumerParameters.Add(new ConsumerParameters
                 {
                     Source = source,
@@ -159,7 +173,6 @@ namespace Tubumu.Web.Controllers
                 });
             }
 
-
             return Content(recorderPrepareResult.Sdp(0));
         }
 
@@ -167,8 +180,8 @@ namespace Tubumu.Web.Controllers
         {
             var createPlainTransportRequest = new CreatePlainTransportRequest
             {
-                Comedia = true,
-                RtcpMux = false,
+                Comedia = false, /* 推流设置为 true*/
+                RtcpMux = true, /* 推流设置为 false, FFmpeg 设置为 true, GStreamer 设置为 false */
                 Producing = false,
                 Consuming = true,
             };
