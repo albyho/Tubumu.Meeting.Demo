@@ -9,7 +9,7 @@ using Tubumu.Meeting.Server;
 namespace Tubumu.Web.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/[controller]")]
     public class TestController : ControllerBase
     {
         private readonly ILogger<TestController> _logger;
@@ -44,16 +44,14 @@ namespace Tubumu.Web.Controllers
                 Sources = new[] { "video", "audio" },
                 AppData = new Dictionary<string, object> { ["type"] = "Device" },
             };
-            if (!await _scheduler.JoinAsync(deviceId, "", joinRequest))
-            {
-                return new ApiResult { Code = 400, Message = "Join 失败" };
-            }
+
+            _ = await _scheduler.JoinAsync(deviceId, "", joinRequest);
 
             var joinRoomRequest = new JoinRoomRequest
             {
                 RoomId = roomId,
             };
-            var joinRoomResult = await _scheduler.JoinRoomAsync(deviceId, "", joinRoomRequest);
+            _ = await _scheduler.JoinRoomAsync(deviceId, "", joinRoomRequest);
 
             var createPlainTransportRequest = new CreatePlainTransportRequest
             {

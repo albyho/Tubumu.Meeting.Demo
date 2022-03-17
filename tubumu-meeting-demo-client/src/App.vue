@@ -504,9 +504,13 @@ export default {
         logger.debug(`recvTransport.on() connectionstatechange: ${connectionState}`);
       });
 
-      if(this.serveMode === 'Open') {
-        await this.enableMic();
-        await this.enableWebcam();
+      if(this.serveMode === 'Open' && this.form.produce) {
+        if(this.form.produceAudio) {
+          await this.enableMic();
+        }
+        if(this.form.produceVideo) {
+          await this.enableWebcam();
+        }
       }
 
       if(this.serveMode !== 'Pull') {

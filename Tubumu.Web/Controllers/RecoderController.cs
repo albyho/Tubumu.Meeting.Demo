@@ -2,20 +2,21 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Tubumu.Utils.Models;
 using Tubumu.Mediasoup;
 using Tubumu.Meeting.Server;
+using Tubumu.Utils.Models;
+using System.Linq;
 
 namespace Tubumu.Web.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
-    public class TestController : ControllerBase
+    [Route("api/[controller]")]
+    public class RecoderController : ControllerBase
     {
         private readonly ILogger<TestController> _logger;
         private readonly Scheduler _scheduler;
 
-        public TestController(ILogger<TestController> logger, Scheduler scheduler)
+        public RecoderController(ILogger<TestController> logger, Scheduler scheduler)
         {
             _logger = logger;
             _scheduler = scheduler;
@@ -27,113 +28,152 @@ namespace Tubumu.Web.Controllers
             return new ApiResult();
         }
 
-        [HttpGet("Test")]
-        public async Task<ApiResult> Test()
+        [HttpGet("Record.sdp")]
+        public async Task<object> Record()
         {
-            var roomId = "0";
-            var deviceId = "100001@100001";
-            var videoSsrc = 2222u;
-            var audioSsrc = videoSsrc + 2;
+            var recorderPrepareRequest = new RecorderPrepareRequest
+            {
+                PeerId = "100001@100001",
+                RoomId = "0",
+                ProducerPeerId = "0",
+                ProducerSources = new string[] { "audio:mic" }
+            };
 
-            await _scheduler.LeaveAsync(deviceId);
-
+            // Join
+            _ = await _scheduler.LeaveAsync(recorderPrepareRequest.PeerId);
             var joinRequest = new JoinRequest
             {
-                RtpCapabilities = new RtpCapabilities(),
-                DisplayName = $"Device:{deviceId}",
-                Sources = new[] { "video", "audio" },
-                AppData = new Dictionary<string, object> { ["type"] = "Device" },
-            };
-            if (!await _scheduler.JoinAsync(deviceId, "", joinRequest))
-            {
-                return new ApiResult { Code = 400, Message = "Join 失败" };
-            }
+                RtpCapabilities = new RtpCapabilities
+                {
+                    Codecs = new List<RtpCodecCapability>
+                    {
+                        new RtpCodecCapability {
+                            Kind = MediaKind.Audio,
+                            MimeType = "audio/opus",
+                            ClockRate = 48000,
+                            Channels = 2,
+                            RtcpFeedback = new RtcpFeedback[]
+                            {
+                                new RtcpFeedback{
+                                    Type = "transport-cc",
+                                },
+                            }
+                        },
+                        //new RtpCodecCapability {
+                        //    Kind = MediaKind.Audio,
+                        //    MimeType ="audio/PCMA",
+                        //    PreferredPayloadType= 8,
+                        //    ClockRate = 8000,
+                        //    RtcpFeedback = new RtcpFeedback[]
+                        //    {
+                        //        new RtcpFeedback{
+                        //            Type = "transport-cc",
+                        //        },
+                        //    }
+                        //},
+                        new RtpCodecCapability {
+                            Kind = MediaKind.Video,
+                            MimeType ="video/H264",
+                            ClockRate = 90000,
+                            Parameters = new Dictionary<string, object> {
+                                { "level-asymmetry-allowed", 1 },
+                            },
+                            RtcpFeedback = new RtcpFeedback[]
+                            {
+                                new RtcpFeedback {
+                                    Type = "nack",
+                                },
+                                new RtcpFeedback {
+                                    Type = "nack", Parameter = "pli",
+                                },
+                                new RtcpFeedback {
+                                    Type = "ccm", Parameter = "fir",
+                                },
+                                new RtcpFeedback {
+                                    Type = "goog-remb",
+                                },
+                                new RtcpFeedback {
+                                    Type = "transport-cc",
+                                },
+                            }
+                        },
 
+                    },
+                },
+                DisplayName = $"Recorder:{recorderPrepareRequest.PeerId}",
+                Sources = null,
+                AppData = new Dictionary<string, object> { ["type"] = "Recorder" },
+            };
+
+            _ = await _scheduler.JoinAsync(recorderPrepareRequest.PeerId, "", joinRequest);
+
+            // Join room
             var joinRoomRequest = new JoinRoomRequest
             {
-                RoomId = roomId,
+                RoomId = recorderPrepareRequest.RoomId,
             };
-            var joinRoomResult = await _scheduler.JoinRoomAsync(deviceId, "", joinRoomRequest);
+            var joinRoomResult = await _scheduler.JoinRoomAsync(recorderPrepareRequest.PeerId, "", joinRoomRequest);
 
-            var createPlainTransportRequest = new CreatePlainTransportRequest
-            {
-                Comedia = true,
-                RtcpMux = false,
-                Producing = true,
-                Consuming = false,
-            };
-            var transport = await _scheduler.CreatePlainTransportAsync(deviceId, "", createPlainTransportRequest);
-
-            // Audio: "{ \"codecs\": [{ \"mimeType\":\"audio/opus\", \"payloadType\":${AUDIO_PT}, \"clockRate\":48000, \"channels\":2, \"parameters\":{ \"sprop-stereo\":1 } }], \"encodings\": [{ \"ssrc\":${AUDIO_SSRC} }] }"
-            // Video :"{ \"codecs\": [{ \"mimeType\":\"video/vp8\", \"payloadType\":${VIDEO_PT}, \"clockRate\":90000 }], \"encodings\": [{ \"ssrc\":${VIDEO_SSRC} }] }"
-            var videoProduceRequest = new ProduceRequest
-            {
-                Kind = MediaKind.Video,
-                Source = "video",
-                RtpParameters = new RtpParameters
-                {
-                    Codecs = new List<RtpCodecParameters>
-                    {
-                        new RtpCodecParameters
-                        {
-                            MimeType = "video/h264",
-                            PayloadType = 98,
-                            ClockRate = 90000,
-                        }
-                    },
-                    Encodings = new List<RtpEncodingParameters> {
-                        new RtpEncodingParameters
-                        {
-                            Ssrc = videoSsrc
-                        }
-                    },
-                },
-                AppData = new Dictionary<string, object>
-                {
-                    ["peerId"] = deviceId,
-                }
-            };
-            var videoProduceResult = await _scheduler.ProduceAsync(deviceId, "", videoProduceRequest);
-
-            var audioProduceRequest = new ProduceRequest
-            {
-                Kind = MediaKind.Audio,
-                Source = "audio",
-                RtpParameters = new RtpParameters
-                {
-                    Codecs = new List<RtpCodecParameters>
-                    {
-                        new RtpCodecParameters
-                        {
-                            MimeType = "audio/PCMA",
-                            PayloadType = 8,
-                            ClockRate = 8000,
-                        }
-                    },
-                    Encodings = new List<RtpEncodingParameters> {
-                        new RtpEncodingParameters
-                        {
-                            Ssrc = audioSsrc
-                        }
-                    },
-                },
-                AppData = new Dictionary<string, object>
-                {
-                    ["peerId"] = deviceId,
-                }
-            };
-            var audioProduceResult = await _scheduler.ProduceAsync(deviceId, "", audioProduceRequest);
-
-            var result = new CreatePlainTransportResult
+            // Create PlainTransport
+            var transport = await CreatePlainTransport(recorderPrepareRequest.PeerId);
+            var recorderPrepareResult = new RecorderPrepareResult
             {
                 TransportId = transport.TransportId,
                 Ip = transport.Tuple.LocalIp,
                 Port = transport.Tuple.LocalPort,
+                RtcpPort = transport.RtcpTuple != null ? transport.RtcpTuple.LocalPort : null
             };
-            return new ApiResult<CreatePlainTransportResult>
+
+            // Create Consumers
+            var producerPeer = joinRoomResult.Peers.Where(m => m.PeerId == recorderPrepareRequest.ProducerPeerId).FirstOrDefault();
+            if(producerPeer == null)
             {
-                Data = result
+                return new ApiResult { Code = 400, Message = "生产者 Peer 不存在" };
+            }
+
+            var producers = await producerPeer.GetProducersASync();
+            foreach (var source in recorderPrepareRequest.ProducerSources)
+            {
+                if (!producerPeer.Sources.Contains(source))
+                {
+                    return new ApiResult { Code = 400, Message = $"生产者 Sources 不包含请求的 {source}" };
+                }
+
+                var producer = producers.Values.FirstOrDefault(m => m.Source == source);
+                if(producer == null)
+                {
+                    return new ApiResult { Code = 400, Message = $"生产者尚未生产 {source}" };
+                }
+                var consumer = await _scheduler.ConsumeAsync(recorderPrepareRequest.ProducerPeerId, recorderPrepareRequest.PeerId, producer.ProducerId);
+                if(consumer == null)
+                {
+                    return new ApiResult { Code = 400, Message = $"已经在消费 {source}" };
+                }
+
+                recorderPrepareResult.ConsumerParameters.Add(new ConsumerParameters
+                {
+                    Source = source,
+                    Kind = consumer.Kind,
+                    PayloadType = consumer.RtpParameters.Codecs[0].PayloadType,
+                    Ssrc = consumer.RtpParameters!.Encodings![0].Ssrc
+                });
+            }
+
+
+            return Content(recorderPrepareResult.Sdp(0));
+        }
+
+        private async Task<PlainTransport> CreatePlainTransport(string peerId)
+        {
+            var createPlainTransportRequest = new CreatePlainTransportRequest
+            {
+                Comedia = true,
+                RtcpMux = false,
+                Producing = false,
+                Consuming = true,
             };
+            var transport = await _scheduler.CreatePlainTransportAsync(peerId, "", createPlainTransportRequest);
+            return transport;
         }
     }
 }
