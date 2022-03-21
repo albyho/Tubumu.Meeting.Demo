@@ -515,7 +515,7 @@ export default {
         }
       }
 
-      if(this.serveMode !== 'Pull') {
+      if (this.serveMode !== 'Pull') {
         let result = await this.connection.invoke('Ready');
         if (result.code !== 200) {
           logger.error(`Ready() | failed: ${result.message}`);
@@ -556,7 +556,6 @@ export default {
         producerId,
         kind,
         rtpParameters,
-        // producerAppData 中 peerId 是生成者的 PeerId，容易引起歧义。
         appData: { ...producerAppData, producerPeerId } // Trick.
       });
       logger.debug('processNewConsumer() Consumer: %o', consumer);
@@ -577,7 +576,6 @@ export default {
         consumer.rtpParameters.encodings[0].scalabilityMode
       );
 
-      logger.debug('scalabilityMode: %o', consumer.rtpParameters.encodings[0].scalabilityMode)
       /*
       if (kind === 'audio') {
         consumer.volume = 0;
@@ -780,12 +778,11 @@ export default {
           const { /*roomId, */sources } = data.data;
           for(let i =0; i < sources.length; i++){
             if(sources[i] === 'audio:mic' && this.mediasoupDevice.canProduce('audio')) {
-              logger.debug(this.form.produceAudio);
-              if(this.form.produceAudio && !this.micProducer) {
+              if(!this.micProducer) {
                 await this.enableMic();
               }
             } else if(sources[i] === 'video:cam' && this.mediasoupDevice.canProduce('video')) {
-              if(this.form.produceVideo && !this.camProducer) {
+              if(!this.camProducer) {
                 await this.enableCam();
               }
             }
@@ -982,15 +979,14 @@ export default {
         });
 
         this.micProducer.on('transportclose', () => {
-          console.log('micProducer.on(\'transportclose\')');
-          this.micClosed()
+          this.micProducer = null;
         });
 
         this.micProducer.on('trackended', () => {
-          console.log('micProducer.on(\'trackended\')');
           this.disableMic().catch(() => {});
         });
 
+        this.micProducer.volume = 0;
       } catch (error) {
         console.log('enableMic() failed: %o', error);
         logger.error('enableMic() failed: %o', error);
@@ -1001,22 +997,19 @@ export default {
       logger.debug('disableMic()');
       if (!this.micProducer) return;
 
-      logger.error('disableMic() close');
-      this.micProducer.close();
+      const micProducerId = this.micProducer.id;
+      this.micClosed();
 
       try {
-        await this.connection.invoke('CloseProducer', this.micProducer.id);
+        await this.connection.invoke('CloseProducer', micProducerId);
       } catch (error) {
         logger.error('disableMic() [error:"%o"]', error);
       }
 
-      this.micClosed();
     },
     micClosed() {
-      logger.debug('micClosed()');
       if(this.micProducer)
       {
-        logger.debug('micClosed() close');
         this.micProducer.close();
         this.micProducer = null;
       }
@@ -1107,7 +1100,7 @@ export default {
         });
 
         this.camProducer.on('transportclose', () => {
-          this.camClosed();
+          this.camProducer = null;
         });
 
         this.camProducer.on('trackended', () => {
@@ -1125,16 +1118,14 @@ export default {
 
       if (!this.camProducer) return;
 
-      logger.error('disableCam() close');
-      this.camProducer.close();
+      const camProducerId = this.camProducer.id;
+      this.camClosed();
 
       try {
-        await this.connection.invoke('CloseProducer', this.camProducer.id);
+        await this.connection.invoke('CloseProducer', camProducerId);
       } catch (error) {
         logger.error('disableCam() [error:"%o"]', error);
       }
-
-      this.camClosed();
     },
     camClosed() {
       if(this.camProducer)
