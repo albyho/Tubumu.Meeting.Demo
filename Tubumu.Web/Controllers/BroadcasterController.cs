@@ -10,12 +10,12 @@ namespace Tubumu.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TestController : ControllerBase
+    public class BroadcasterController : ControllerBase
     {
-        private readonly ILogger<TestController> _logger;
+        private readonly ILogger<BroadcasterController> _logger;
         private readonly Scheduler _scheduler;
 
-        public TestController(ILogger<TestController> logger, Scheduler scheduler)
+        public BroadcasterController(ILogger<BroadcasterController> logger, Scheduler scheduler)
         {
             _logger = logger;
             _scheduler = scheduler;
@@ -27,8 +27,8 @@ namespace Tubumu.Web.Controllers
             return new ApiResult();
         }
 
-        [HttpGet("Test")]
-        public async Task<ApiResult> Test()
+        [HttpGet("Broadcast")]
+        public async Task<ApiResult> Broadcast()
         {
             var roomId = "0";
             var deviceId = "100001@100001";
@@ -41,7 +41,7 @@ namespace Tubumu.Web.Controllers
             {
                 RtpCapabilities = new RtpCapabilities(),
                 DisplayName = $"Device:{deviceId}",
-                Sources = new[] { "video", "audio" },
+                Sources = new[] { "video:cam", "audio:mic" },
                 AppData = new Dictionary<string, object> { ["type"] = "Device" },
             };
 

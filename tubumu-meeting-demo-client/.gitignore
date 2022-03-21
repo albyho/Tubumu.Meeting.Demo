@@ -1,6 +1,9 @@
 .DS_Store
 node_modules
 /dist
+*.aac
+*.mp3
+*.ogg
 
 
 # local env files

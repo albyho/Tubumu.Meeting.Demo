@@ -157,7 +157,7 @@ export default {
         consume: true,
         produce: true,
         produceAudio: true,
-        produceVideo: false,
+        produceVideo: true,
         useDataChannel: false
       },
       rooms: [
@@ -336,6 +336,8 @@ export default {
         }
         this.peersForm.peers = [];
         this.roomForm.isJoinedRoom = false;
+        this.disableMic();
+        this.disableWebcam();
         return;
       } 
       if(!this.roomForm.roomId && this.roomForm.roomId !== 0) {
@@ -554,6 +556,7 @@ export default {
         producerId,
         kind,
         rtpParameters,
+        // producerAppData 中 peerId 是生成者的 PeerId，容易引起歧义。
         appData: { ...producerAppData, producerPeerId } // Trick.
       });
       logger.debug('processNewConsumer() Consumer: %o', consumer);
@@ -978,7 +981,7 @@ export default {
         });
 
         this.micProducer.on('transportclose', () => {
-          this.micProducer = null;
+          this.micClosed()
         });
 
         this.micProducer.on('trackended', () => {
@@ -1004,7 +1007,6 @@ export default {
         logger.error('disableMic() [error:"%o"]', error);
       }
 
-      this.micProducer = null;
       this.micClosed();
     },
     micClosed() {
@@ -1100,7 +1102,7 @@ export default {
         });
 
         this.camProducer.on('transportclose', () => {
-          this.camProducer = null;
+          this.camClosed();
         });
 
         this.camProducer.on('trackended', () => {
@@ -1126,7 +1128,6 @@ export default {
         logger.error('disableWebcam() [error:"%o"]', error);
       }
 
-      this.camProducer = null;
       this.camClosed();
     },
     camClosed() {

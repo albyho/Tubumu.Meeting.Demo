@@ -13,10 +13,10 @@ namespace Tubumu.Web.Controllers
     [Route("api/[controller]")]
     public class RecoderController : ControllerBase
     {
-        private readonly ILogger<TestController> _logger;
+        private readonly ILogger<RecoderController> _logger;
         private readonly Scheduler _scheduler;
 
-        public RecoderController(ILogger<TestController> logger, Scheduler scheduler)
+        public RecoderController(ILogger<RecoderController> logger, Scheduler scheduler)
         {
             _logger = logger;
             _scheduler = scheduler;
