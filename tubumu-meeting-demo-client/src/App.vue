@@ -258,8 +258,8 @@ export default {
           this.connectForm.isConnected = false;
           this.roomForm.isJoinedRoom = false;
           this.peersForm.peers = [];
-          this.disableMic();
-          this.disableWebcam();
+          this.disableMic().catch(() => {});
+          this.disableCam().catch(() => {});
           if(e) {
             logger.error(e)
           }
@@ -336,8 +336,8 @@ export default {
         }
         this.peersForm.peers = [];
         this.roomForm.isJoinedRoom = false;
-        this.disableMic();
-        this.disableWebcam();
+        await this.disableMic();
+        await this.disableCam();
         return;
       } 
       if(!this.roomForm.roomId && this.roomForm.roomId !== 0) {
@@ -511,7 +511,7 @@ export default {
           await this.enableMic();
         }
         if(this.form.produceVideo) {
-          await this.enableWebcam();
+          await this.enableCam();
         }
       }
 
@@ -577,6 +577,7 @@ export default {
         consumer.rtpParameters.encodings[0].scalabilityMode
       );
 
+      logger.debug('scalabilityMode: %o', consumer.rtpParameters.encodings[0].scalabilityMode)
       /*
       if (kind === 'audio') {
         consumer.volume = 0;
@@ -785,7 +786,7 @@ export default {
               }
             } else if(sources[i] === 'video:cam' && this.mediasoupDevice.canProduce('video')) {
               if(this.form.produceVideo && !this.camProducer) {
-                await this.enableWebcam();
+                await this.enableCam();
               }
             }
           }
@@ -981,14 +982,15 @@ export default {
         });
 
         this.micProducer.on('transportclose', () => {
+          console.log('micProducer.on(\'transportclose\')');
           this.micClosed()
         });
 
         this.micProducer.on('trackended', () => {
+          console.log('micProducer.on(\'trackended\')');
           this.disableMic().catch(() => {});
         });
 
-        this.micProducer.volume = 0;
       } catch (error) {
         console.log('enableMic() failed: %o', error);
         logger.error('enableMic() failed: %o', error);
@@ -999,6 +1001,7 @@ export default {
       logger.debug('disableMic()');
       if (!this.micProducer) return;
 
+      logger.error('disableMic() close');
       this.micProducer.close();
 
       try {
@@ -1010,36 +1013,38 @@ export default {
       this.micClosed();
     },
     micClosed() {
+      logger.debug('micClosed()');
       if(this.micProducer)
       {
+        logger.debug('micClosed() close');
         this.micProducer.close();
         this.micProducer = null;
       }
       this.localAudioStream = null;
     },
-    async enableWebcam() {
-      logger.debug('enableWebcam()');
+    async enableCam() {
+      logger.debug('enableCam()');
 
       if (this.camProducer) return;
       if (this.mediasoupDevice && !this.mediasoupDevice.canProduce('video')) {
-        logger.error('enableWebcam() | cannot produce video');
+        logger.error('enableCam() | cannot produce video');
         return;
       }
 
       let track;
 
       try {
-        const deviceId = await this._getWebcamDeviceId();
+        const deviceId = await this._getCamDeviceId();
 
-        logger.debug(`_setWebcamProducer() | cam: ${deviceId}`);
+        logger.debug(`enableCam() | cam: ${deviceId}`);
 
         const device = this.cams.get(deviceId);
 
         if (!device) throw new Error(`no cam devices: ${JSON.stringify(this.cams)}`);
 
-        logger.debug('_setWebcamProducer() | new selected cam [device:%o]', device);
+        logger.debug('enableCam() | new selected cam [device:%o]', device);
 
-        logger.debug('_setWebcamProducer() | calling getUserMedia()');
+        logger.debug('enableCam() | calling getUserMedia()');
 
         //const stream = await navigator.mediaDevices.getUserMedia({ video: true })
         //*
@@ -1106,26 +1111,27 @@ export default {
         });
 
         this.camProducer.on('trackended', () => {
-          this.disableWebcam().catch(() => {});
+          this.disableCam().catch(() => {});
         });
-        logger.debug('_setWebcamProducer() succeeded');
+        logger.debug('enableCam() succeeded');
       } catch (error) {
-        logger.error('_setWebcamProducer() failed:%o', error);
+        logger.error('enableCam() failed:%o', error);
 
         if (track) track.stop();
       }
     },
-    async disableWebcam() {
-      logger.debug('disableWebcam()');
+    async disableCam() {
+      logger.debug('disableCam()');
 
       if (!this.camProducer) return;
 
+      logger.error('disableCam() close');
       this.camProducer.close();
 
       try {
         await this.connection.invoke('CloseProducer', this.camProducer.id);
       } catch (error) {
-        logger.error('disableWebcam() [error:"%o"]', error);
+        logger.error('disableCam() [error:"%o"]', error);
       }
 
       this.camClosed();
@@ -1158,25 +1164,25 @@ export default {
         logger.error('_updateAudioDevices() failed: %o', error);
       }
     },
-    async _updateWebcams() {
-      logger.debug('_updateWebcams()');
+    async _updateCams() {
+      logger.debug('_updateCams()');
 
       // Reset the list.
       this.cams = new Map();
 
       try {
-        logger.debug('_updateWebcams() | calling enumerateDevices()');
+        logger.debug('_updateCams() | calling enumerateDevices()');
 
         const devices = await navigator.mediaDevices.enumerateDevices();
 
-        logger.debug('_updateWebcams() | %o', devices);
+        logger.debug('_updateCams() | %o', devices);
         for (const device of devices) {
           if (device.kind !== 'videoinput') continue;
-          logger.debug('_updateWebcams() | %o', device);
+          logger.debug('_updateCams() | %o', device);
           this.cams.set(device.deviceId, device);
         }
       } catch (error) {
-        logger.error('_updateWebcams() failed: %o', error);
+        logger.error('_updateCams() failed: %o', error);
       }
     },
     async _getAudioDeviceId() {
@@ -1193,18 +1199,18 @@ export default {
         logger.error('_getAudioDeviceId() failed: %o', error);
       }
     },
-    async _getWebcamDeviceId() {
-      logger.debug('_getWebcamDeviceId()');
+    async _getCamDeviceId() {
+      logger.debug('_getCamDeviceId()');
 
       try {
-        logger.debug('_getWebcamDeviceId() | calling _updateWebcams()');
+        logger.debug('_getCamDeviceId() | calling _updateCams()');
 
-        await this._updateWebcams();
+        await this._updateCams();
 
         const cams = Array.from(this.cams.values());
         return cams[0] ? cams[0].deviceId : null;
       } catch (error) {
-        logger.error('_getWebcamDeviceId() failed: %o', error);
+        logger.error('_getCamDeviceId() failed: %o', error);
       }
     }
   }
