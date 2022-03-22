@@ -556,6 +556,7 @@ export default {
         producerId,
         kind,
         rtpParameters,
+        // producerAppData 中的 peerId 为生产者的 PeerId。
         appData: { ...producerAppData, producerPeerId } // Trick.
       });
       logger.debug('processNewConsumer() Consumer: %o', consumer);
@@ -986,7 +987,6 @@ export default {
           this.disableMic().catch(() => {});
         });
 
-        this.micProducer.volume = 0;
       } catch (error) {
         console.log('enableMic() failed: %o', error);
         logger.error('enableMic() failed: %o', error);
