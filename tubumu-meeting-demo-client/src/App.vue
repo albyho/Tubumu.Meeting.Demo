@@ -1044,7 +1044,7 @@ export default {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             deviceId: { ideal: deviceId },
-            ...VIDEO_CONSTRAINS.qvga
+            ...VIDEO_CONSTRAINS['720P']
           }
         });
         //*/
