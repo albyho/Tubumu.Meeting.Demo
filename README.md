@@ -1,5 +1,7 @@
 # Tubumu.Meeting.Demo
 
+Moved to: [https://github.com/albyho/Tubumu.Mediasoup](https://github.com/albyho/Tubumu.Mediasoup)
+
 ![截图](http://blog.tubumu.com/postimages/mediasoup-01/004.jpg)
 
 对该项目实现上的介绍，见：[使用 ASP.NET Core 实现 mediasoup 的信令服务器](https://blog.tubumu.com/2020/05/05/mediasoup-01/)。
